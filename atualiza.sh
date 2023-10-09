@@ -197,7 +197,6 @@ prog=""
 VVERSAO=""
 tools="$destino""$pasta"
 dir="$destino""$base"
-#TEMPROGS="$tools""$progs"
 #### EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.
 ANTERIOR="anterior"
 #### PARAMETRO PARA O LOGS
@@ -1201,17 +1200,20 @@ _ferramentas() {
     printf "\n"
     printf "     ${GREEN}6${NORM} - ${WHITE}Expurgar ${NORM}%s\n"
     printf "\n"
+    printf "     ${GREEN}7${NORM} - ${WHITE}Update ${NORM}%s\n"
+    printf "\n"
     printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n"
     printf "\n" 
     printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
     read -r OPCAO1
     case $OPCAO1 in
-        1) _temps      ;;
-        2) _rebuild    ;;
-        3) _backup     ;;
-        4) _unbackup   ;;
+        1) _temps        ;;
+        2) _rebuild      ;;
+        3) _backup       ;;
+        4) _unbackup     ;;
         5) _backupavulso ;;
         6) _expurgador   ;;
+        7) _update       ;;
         9) clear ; _principal ;;
         *) Opcao Invalida ; printf ; _ferramentas ;;
     esac
@@ -1809,6 +1811,26 @@ cd "$tools"/ || exit
 _press
 _ferramentas
 }
+
+_update () {
+    printf "    Atualizar este sistema \n"
+    printf "    o termino da atualizacao sair e entrar novamente \n"
+    cd "$tools""$progs" || exit 
+     wget -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
+     
+## Descompactando o programa baixado
+
+    unzip -o "atualiza.zip" >> "$LOG_ATU"
+    read_sleep 1
+    clear
+    cd "$tools""$progs"/Atualiza-main || exit
+# Atualizando somente o atualiza.sh
+    mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
+
+_press
+exit   
+}
+
 _principal
 tput sgr0
 
