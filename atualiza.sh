@@ -1816,7 +1816,7 @@ _update () {
     printf "    Atualizar este sistema \n"
     printf "    o termino da atualizacao sair e entrar novamente \n"
     cd "$tools""$progs" || exit 
-     wget -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
+    wget -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
 ## Descompactando o programa baixado
 
@@ -1825,6 +1825,7 @@ _update () {
     clear
     cd "$tools""$progs"/Atualiza-main || exit
 # Atualizando somente o atualiza.sh
+    chmod -x atualiza.sh 
     mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
 
 _press
