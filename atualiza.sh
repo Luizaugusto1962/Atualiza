@@ -1836,6 +1836,12 @@ _update () {
     "$cmd_unzip" -o "atualiza.zip" >> "$LOG_ATU"
     read_sleep 1
     clear
+    ### limpando diretorio 
+        local DIR1="$tools""$progs"/
+        for pprog in {*.zip}
+        do
+		"$cmd_find" "$DIR1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
+        done
     cd "$tools""$progs"/Atualiza-main || exit
 # Atualizando somente o atualiza.sh
     chmod +x "atualiza.sh"
