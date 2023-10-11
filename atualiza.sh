@@ -1827,7 +1827,7 @@ _update () {
     cp atualiza.sh "$tools""$backup"
     
     cd "$tools""$progs" || exit 
-    wget -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
+    wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
 ## Descompactando o programa baixado
 
