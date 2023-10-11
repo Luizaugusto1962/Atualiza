@@ -186,6 +186,10 @@ M60="..Checando estrutura dos diretorios do atualiza.sh.."
 M61="..Encontrado o diretorio do sistema .." 
 #M62="<<   Pressione qualquer tecla para continuar... >>"
 
+## Mensagens em verde
+M71="Atualizar este sistema"
+M72="ao termino da atualizacao sair e entrar novamente"
+
 ### Variavel para identificar o programa ou versao a atualizada ###
 #-----------------------------------------------------------------#
 tput bold
@@ -1813,21 +1817,28 @@ _ferramentas
 }
 
 _update () {
-    printf "    Atualizar este sistema \n"
-    printf "    o termino da atualizacao sair e entrar novamente \n"
+     clear
+     printf "\n"
+     printf "\n" 
+     _linha
+     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M71}+COLUMNS)/2)) "$M71" ;printf "%*s""${NORM}"
+     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M72}+COLUMNS)/2)) "$M72" ;printf "%*s""${NORM}"
+     _linha
+    cp atualiza.sh "$tools""$backup"
+    
     cd "$tools""$progs" || exit 
     wget -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
 ## Descompactando o programa baixado
 
-    unzip -o "atualiza.zip" >> "$LOG_ATU"
+    "$cmd_unzip" -o "atualiza.zip" >> "$LOG_ATU"
     read_sleep 1
     clear
     cd "$tools""$progs"/Atualiza-main || exit
 # Atualizando somente o atualiza.sh
-    chmod -x atualiza.sh 
     mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
-
+    cd "$tools" || exit
+    chmod +x "atualiza.sh"
 _press
 exit   
 }
