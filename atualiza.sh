@@ -1833,16 +1833,12 @@ _update () {
      
 ## Descompactando o programa baixado
 
-    "$cmd_unzip" -o "atualiza.zip" >> "$LOG_ATU"
+atualizagit="atualiza.zip"
+    "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
     read_sleep 1
-    clear
-    ### limpando diretorio 
-        local DIR1="$tools""$progs"/
-        for pprog in {*.zip}
-        do
-		"$cmd_find" "$DIR1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
-        done
-    cd "$tools""$progs"/Atualiza-main || exit
+ #   clear
+    "$cmd_find" "$tools""$progs" -name "$atualizagit" -exec rm -r {} \; 
+     cd "$tools""$progs"/Atualiza-main || exit
 # Atualizando somente o atualiza.sh
     chmod +x "atualiza.sh"
     mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
