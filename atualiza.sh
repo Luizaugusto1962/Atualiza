@@ -200,7 +200,7 @@ PEDARQ=""
 prog=""
 VVERSAO=""
 tools="$destino""$pasta"
-dir="$destino""$base"
+DIR="$destino""$base"
 #### EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.
 ANTERIOR="anterior"
 #### PARAMETRO PARA O LOGS
@@ -816,7 +816,8 @@ _volta_geral () {
     _linha
 
     cd "$tools""$olds"/ || exit
-    for FILES in "$tools""$olds"/ ;do
+    while true 
+    do
     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds">> "$LOG_ATU"
     done
     cd "$tools" || exit
@@ -1239,7 +1240,7 @@ _temps() {
     if [ "$sistema" = "iscobol" ]; then
     cd "$tools"/ || exit
     local arqs
-
+    line=""
     arqs=$(cat atualizat)
     DIRDEST="$tools""$backup"
     DIR="$destino""$base"/
@@ -1252,9 +1253,10 @@ _temps() {
          fi 
          for line in $arqs
          do
-           zip -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" $DIR"$line"  >> "$LOG_LIMPA"
-         done
-    
+            printf "${GREEN}""$line""${NORM}%s\n"
+            zip -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
+        done 
+  
      #           Movendo arquivos Temporarios
          _linha
          printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M11}+COLUMNS)/2)) "$M11" ;printf "%*s""${NORM}"
@@ -1319,9 +1321,9 @@ _rebuild1() {
          printf "
          \033c\033[10;10H${RED}Voce nao informou o arquivo a ser recuperado:${NORM}%s\n"
  local jut="$destino""$JUTIL"
-    cd "$dir"/ || exit
+    cd "$DIR"/ || exit
 
-        for i in $dir/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
+        for i in $DIR/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
         do
 ## grava tamanho do arquivo em variavel
     TAMANHO=$(du "$i" | awk '{print $1}')
@@ -1341,7 +1343,7 @@ _press
 _ferramentas
     done
 
-        cd "$dir" || exit 
+        cd "$DIR" || exit 
     local ARQUIVO="$PEDARQ.???.dat"
         for i in $ARQUIVO
         do 
@@ -1360,9 +1362,9 @@ cd "$tools"/ || exit
 else
      printf "
          \033c\033[10;10H${RED}Recuperacao Isam :${NORM}%s\n"
-    cd "$dir"/ || exit
+    cd "$DIR"/ || exit
 
-for i in $dir/{*.ARQ,*.DAT,*.LOG,*.PAN}
+for i in $DIR/{*.ARQ,*.DAT,*.LOG,*.PAN}
 do
 # grava tamanho do arquivo em variavel
     TAMANHO=$(du "$i" | awk '{print $1}')
@@ -1394,7 +1396,7 @@ cd "$tools"/ || exit
 local arqs
 arqs=$(cat atualizaj)
 local jut="$destino""$JUTIL"
-cd "$dir"/ || exit
+cd "$DIR"/ || exit
     for line in $arqs
     do
 # grava tamanho do arquivo em variavel
@@ -1436,7 +1438,7 @@ M23=".. Criando o diretorio dos backups em $DIRDEST.."
     fi
     
 DAYS2=$(find "$DIRDEST" -ctime -2 -name "$EMPRESA"\*zip)
-    cd "$dir" || exit
+    cd "$DIR" || exit
 if [ "$DAYS2" ] ; then
 
 M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
@@ -1743,7 +1745,7 @@ _press
 _ferramentas   
     fi
 
-    mv -f "$VARQUIVO"*.* "$dir" >> "$LOG_ATU" 
+    mv -f "$VARQUIVO"*.* "$DIR" >> "$LOG_ATU" 
     cd "$tools"/ || exit
     clear
 #   VOLTA DO ARQUIVO CONCLUIDA$
@@ -1765,7 +1767,7 @@ M34="O arquivo ""$VARQUIVO"
     cd "$DIRBACK" || exit
     unzip -o "$DIRDEST""$VBACKUP".zip  >> "$LOG_ATU"
     
-    mv -f -- *.* "$dir" >> "$LOG_ATU"
+    mv -f -- *.* "$DIR" >> "$LOG_ATU"
  
     cd "$tools"/ || exit
     clear
