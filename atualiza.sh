@@ -1836,8 +1836,9 @@ _update () {
     clear
     cd "$tools""$progs"/Atualiza-main || exit
 # Atualizando somente o atualiza.sh
+    chmod +x "atualiza.sh"
     mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
-    chmod +x "$tools"/atualiza.sh
+    
 _press
 exit   
 }
