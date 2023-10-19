@@ -86,10 +86,7 @@
 #               Enviar ZIP feito pela opcao 3                                                                     #
 #           6 - Expurgar                                                                                          #
 #               Excluir, zips e bkps com mais de 30 dias processado                                               #
-<<<<<<< HEAD
 #           7 - Update                                                                                            #                                                                                                      #
-=======
->>>>>>> develop
 #               Atualizacao do programa atualiza.sh                                                               #
 #                                                                                                                 #
 #                                                                                                                 #
