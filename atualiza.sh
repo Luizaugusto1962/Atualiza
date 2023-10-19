@@ -733,17 +733,17 @@ _desatualizado
 _volta_progy () {
 
              if [ "$sistema" = "iscobol" ]; then
-    "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \; >> "$LOG_ATU" 
+    "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \; 
 
-    "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; >> "$LOG_ATU" 
+    "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
 
-    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \; >> "$LOG_ATU" 
+    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
 
     clear
              else
-    "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; >> "$LOG_ATU" 
+    "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
 
-	"$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; >> "$LOG_ATU" 
+	"$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
 
 			 fi
 
