@@ -259,7 +259,7 @@ _press () {
 ###################################################
 
 _linha () {
-    printf -v Espacos %60s # quantidade de tracos por linha
+    printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
     printf -v Traco "*"
     linhas=${Espacos// /$Traco}
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"

@@ -54,13 +54,14 @@ INI="backup"
 
 ##############( TRANSPC )###########################################
 ### Nome de arquivo de atualizacao ###
-SAVATU1=tempSAV_"$VERCLASS'_classA_
+SAVATU1=tempSAV_"$VERCLASS"_classA_
 SAVATU2=tempSAV_"$VERCLASS"_classB_
 SAVATU3=tempSAV_"$VERCLASS"_tel_isc_
 SAVATU4=tempSAV_"$VERCLASS"_xml_ 
-
+#
 ####################################################################
 #### ISAM #####
 #SAVATU1=tempSAVintA_
 #SAVATU2=tempSAVintB_
 #SAVATU3=tempSAVtel_ 
+#
