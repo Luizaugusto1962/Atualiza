@@ -737,7 +737,15 @@ _volta_progy () {
 
     "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
 
+<<<<<<< Updated upstream
     "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
+=======
+<<<<<<< HEAD
+    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+=======
+    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
+>>>>>>> 1.2.0
+>>>>>>> Stashed changes
 
     clear
              else
