@@ -111,7 +111,7 @@ SAVATU3=""
 SAVATU4=""
 
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
-source ./atualizac
+"." ./atualizac
 
 #-----------------------------------------------------------------#
 ## Comandos 
@@ -525,7 +525,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
     if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
 _principal
     elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
-    source ./atualizac
+#    source ./atualizac
       if [ "$OPCAO" = 1 ] ; then
          _pacoteon
       else
