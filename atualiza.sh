@@ -111,7 +111,7 @@ SAVATU3=""
 SAVATU4=""
 
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
-source ./atualizac
+"." ./atualizac
 
 #-----------------------------------------------------------------#
 ## Comandos 
@@ -259,7 +259,7 @@ _press () {
 ###################################################
 
 _linha () {
-    printf -v Espacos %60s # quantidade de tracos por linha
+    printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
     printf -v Traco "*"
     linhas=${Espacos// /$Traco}
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
@@ -525,7 +525,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
     if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
 _principal
     elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
-    source ./atualizac
+#    source ./atualizac
       if [ "$OPCAO" = 1 ] ; then
          _pacoteon
       else
@@ -737,7 +737,19 @@ _volta_progy () {
 
     "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
 
+<<<<<<< HEAD
     "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+=======
+<<<<<<< Updated upstream
+    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
+=======
+<<<<<<< HEAD
+    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+=======
+    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
+>>>>>>> 1.2.0
+>>>>>>> Stashed changes
+>>>>>>> 1.4.1
 
     clear
              else
