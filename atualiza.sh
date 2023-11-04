@@ -379,8 +379,8 @@ _atualizacao () {
     case $OPCAO in
 		1) _pacoteon ;;
 		2) _pacoteoff ;;
-                9) clear ; _principal ;;
-                *) Opcao Invalida ; printf ; _principal ;;
+        9) clear ; _principal ;;
+        *) Opcao Invalida ; printf ; _principal ;;
     esac
 }
 
@@ -485,15 +485,15 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
           mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
         done
 #               ..   BACKUP do programa efetuado   ..
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M24}+COLUMNS)/2)) "$M24" ;printf "%*s""${NORM}"
-    _linha
-     read_sleep 1
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M24}+COLUMNS)/2)) "$M24" ;printf "%*s""${NORM}"
+     _linha
+      read_sleep 1
  # Atualizando o novo programa.
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M26}+COLUMNS)/2)) "$M26" ;printf "%*s""${NORM}"
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M07}+COLUMNS)/2)) "$M07" ;printf "%*s""${NORM}"
-    _linha
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M26}+COLUMNS)/2)) "$M26" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M07}+COLUMNS)/2)) "$M07" ;printf "%*s""${NORM}"
+     _linha
  
 # ALTERANDO A EXTENSAO DA ATUALIZACAO...  De *.zip para *.bkp
      _linha
@@ -506,13 +506,13 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      done
 
 #                      Atualizacao COMPLETA$
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M17}+COLUMNS)/2)) "$M17" ;printf "%*s""${NORM}"
-    _linha
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M17}+COLUMNS)/2)) "$M17" ;printf "%*s""${NORM}"
+     _linha
  
-    mv -f -- "$prog""$class".bkp "$tools""$progs"
-    mv -f -- "$prog"-$ANTERIOR.zip "$tools""$olds"
-    clear
+     mv -f -- "$prog""$class".bkp "$tools""$progs"
+     mv -f -- "$prog"-$ANTERIOR.zip "$tools""$olds"
+     clear
 
 ##########################################
 #       Escolha de multi programas       # 
@@ -733,30 +733,21 @@ _desatualizado
 _volta_progy () {
 
              if [ "$sistema" = "iscobol" ]; then
-    "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \; 
-
-    "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-
-<<<<<<< HEAD
-    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
-=======
-<<<<<<< Updated upstream
-    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
-=======
-<<<<<<< HEAD
-    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
-=======
-    "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
->>>>>>> 1.2.0
->>>>>>> Stashed changes
->>>>>>> 1.4.1
-
-    clear
+                "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \; 
+	            
+                "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
+	            
+                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+	            
+                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
+	            
+                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+	            
+                clear
              else
-    "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-
-	"$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
-
+                "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
+	            
+	            "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
 			 fi
 
 #                VOLTA DE PROGRAMAS CONCLUIDA
