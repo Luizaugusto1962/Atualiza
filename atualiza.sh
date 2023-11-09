@@ -5,9 +5,9 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 03/10/2023                                                                                              #  
+## UPDATE 09/10/2023                                                                                              #  
 #                                                                                                                 #
-# INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG  											  #
+# INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						  #
 # incluir PACOTE de programas                                                                                     #
 #-----------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
@@ -45,7 +45,7 @@
 #      Atualiza a biblioteca que esta no diretorio /home/savatu/biblioteca/temp/(diretorio                        #
 #      conforme  sistema que esta sendo usado.                                                                    #
 #      Mesmo procedimento acima.                                                                                  #
-#            3 - Atualizacao9 OFF-Line                                                                             #
+#            3 - Atualizacao9 OFF-Line                                                                            #
 #      Atualiza a biblioteca que deve estar salva no diretorio ?/sav/tmp                                          #
 #      Mesmo procedimento acima.                                                                                  #
 #                                                                                                                 #
@@ -86,7 +86,7 @@
 #               Enviar ZIP feito pela opcao 3                                                                     #
 #           6 - Expurgar                                                                                          #
 #               Excluir, zips e bkps com mais de 30 dias processado                                               #
-#           7 - Update                                                                                            #                                                                                                      #
+#           7 - Update                                                                                            #
 #               Atualizacao do programa atualiza.sh                                                               #
 #                                                                                                                 #
 #                                                                                                                 #
@@ -246,7 +246,7 @@ read_sleep() {
 }
 
 ###################################################
-# Funcao de espera                                #
+# Funcao teclar qualquer tecla                    #
 ###################################################
 _press () {
     printf "\n"
@@ -270,16 +270,16 @@ _linha () {
 ###############################################
  clear
     if [ -d "$exec" ]; then
-# "..Encontrado o diretorio do sistema .."  	
+# "..Encontrado o diretorio do sistema .."
 _linha
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M61}+COLUMNS)/2)) "$M61" ;printf "%*s""${NORM}"
 _linha
     read_sleep 1
     else
-M44="Nao foi encontrado o diretorio ""$exec"    
+M44="Nao foi encontrado o diretorio ""$exec"
 _linha
 printf "%*s""${RED}" ;printf "%*s\n" $(((${#M44}+COLUMNS)/2)) "$M44" ;printf "%*s""${NORM}"
-_linha  
+_linha
     read_sleep 2
     exit
     fi
@@ -287,31 +287,31 @@ _linha
 if [ -d "$tools" ]; then
 _linha
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}"
-_linha  
+_linha
 
         if [ -d "$tools""$olds" ]; then
             printf " Diretorio olds ... ok \n"
             else
             mkdir olds
-        fi  
+        fi
         if [ -d "$tools""$progs" ]; then
             printf " Diretorio progs ... ok \n"
-            else  
+            else
             mkdir progs
-        fi  
+        fi
         if [ -d "$tools""$logs" ]; then
-            printf " Diretorio logs ... ok \n"         
-            else 
+            printf " Diretorio logs ... ok \n"
+            else
             mkdir logs
-        fi  
+        fi
         if [ -d "$tools""$backup" ]; then
-            printf " Diretorio backups ... ok \n" 
+            printf " Diretorio backups ... ok \n"
             else
             mkdir backup
-        fi  
+        fi
     else
     exit
-fi  
+fi
 clear
 
 _principal () {
@@ -355,7 +355,6 @@ _principal () {
         *) clear ; _principal ;;
     esac
 }
-
 
 ##############################################################
 #       Procedimento da atualizacao de programas             # 
@@ -467,7 +466,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
         for pprog in *.class
         do
         zip "$prog"-$ANTERIOR "$exec"/"$pprog"   
-        read_sleep 2		
+        read_sleep 2 
         mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
 		done
      else 
@@ -476,8 +475,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
           zip "$prog"-$ANTERIOR "$exec"/"$pprog"
         done
         read_sleep 2
-	 fi	
-             
+	 fi
         for pprog in *.TEL
         do
           zip -r "$prog"-$ANTERIOR "$telas"/"$pprog"
@@ -537,9 +535,9 @@ _atupacote
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M08}+COLUMNS)/2)) "$M08" ;printf "%*s""${NORM}"
     _linha
-_press 
+_press
 _principal
-    fi  
+    fi
     _principal
 }
 
@@ -604,7 +602,7 @@ M02="Voltando a versao anterior do programa ""$prog"
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M02}+COLUMNS)/2)) "$M02" ;printf "%*s""${NORM}"
     _linha
-    
+
     unzip -o "$tools$olds"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
     read_sleep 2
         clear
@@ -674,13 +672,13 @@ _desatualizado
 ##################################
 ##  VOLTA PROGRAMA ESPECIFICO   ##
 ##################################
-_volta_progx () {	
+_volta_progx () {
     read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
     while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; do
 
      printf "
      \033c\033[10;10H${RED}ERRO: Voce informou o nome do programa esta em minusculo ${NORM}
-	 %s\n" 
+	 %s\n"
 _press
  _desatualizado
     done
@@ -733,22 +731,21 @@ _desatualizado
 _volta_progy () {
 
              if [ "$sistema" = "iscobol" ]; then
-                "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \; 
-	            
-                "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-	            
+                "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
+
+                "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
+
                 "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
-	            
-                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;  
-	            
+
+                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \ 
+
                 "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
-	            
                 clear
              else
                 "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-	            
-	            "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
-			 fi
+
+                "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
+             fi
 
 #                VOLTA DE PROGRAMAS CONCLUIDA
     _linha
@@ -771,7 +768,7 @@ _volta_bibli () {
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M03}+COLUMNS)/2)) "$M01" ;printf "%*s""${NORM}"
      _linha
-     
+
     read_sleep 1
 	if [ "$sistema" = "iscobol" ]; then
 
@@ -786,7 +783,7 @@ _volta_bibli () {
 
     cd "$tools"/ || exit
     clear
-    
+ 
     else
     cd "$tools""$olds"/ || exit
 	"$cmd_find" "$tools""$olds" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
@@ -1570,12 +1567,13 @@ _press
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M29}+COLUMNS)/2)) "$M29" ;printf "%*s""${NORM}"
      _linha
 
-     "$cmd_scp" -P "$PORTA" "$DIRDEST/$ARQ" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
+     "$cmd_scp" -r -P "$PORTA" "$DIRDEST/$ARQ" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M15}+COLUMNS)/2)) "$M15" ;printf "%*s""${NORM}"
      _linha
      read_sleep 3 
+     _ferramentas
      else
 #   Opcao Invalida
      _linha
