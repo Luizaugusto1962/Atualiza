@@ -322,26 +322,18 @@ _principal () {
     printf "${GREEN}     |${NORM}   ${BLUE}.. Sistema: ""$sistema"" ..Empresa: ""$EMPRESA"" ..  ${GREEN}|${NORM}%s\n"
     printf "${GREEN}     +-----------------------------------------------+${NORM}%s\n"
     printf "\n"
-    printf " ${PURPLE}    Escolha a opcao: ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n"
-    printf "\n"
+    printf " ${PURPLE}    Escolha a opcao: ${NORM}%s\n\n"
+    printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
+    printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
+    printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
     if [ "$sistema" = "iscobol" ]; then
-              printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n"
+              printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
          else
-               printf "     ${GREEN}4${NORM} - ${NORM}%s\n"
+               printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
          fi
-    printf "\n"
-    printf "     ${GREEN}5${NORM} - ${WHITE}Versao do Linux ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}6${NORM} - ${WHITE}Ferramentas ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Sair${NORM}%s\n"
-    printf "\n"
+    printf "     ${GREEN}5${NORM} - ${WHITE}Versao do Linux ${NORM}%s\n\n"
+    printf "     ${GREEN}6${NORM} - ${WHITE}Ferramentas ${NORM}%s\n\n"
+    printf "     ${GREEN}9${NORM} - ${RED}Sair${NORM}%s\n\n"
     printf " ${YELLOW}    Digita a opcao desejada -> ${NORM}%s"
     read -r OPCAO
     case $OPCAO in
@@ -363,16 +355,11 @@ _atualizacao () {
     clear
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
     printf "${GREEN}     |${NORM}      ${RED}       Menu de Programas              ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "\n"
-    printf "     ${PURPLE}Escolha o tipo de Atualizacao: ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Programa ou Pacote ON-Line${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n"
-    printf "\n" 
+    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n"
+    printf "     ${PURPLE}Escolha o tipo de Atualizacao: ${NORM}%s\n\n"
+    printf "     ${GREEN}1${NORM} - ${WHITE}Programa ou Pacote ON-Line${NORM}%s\n\n"
+    printf "     ${GREEN}2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line${NORM}%s\n\n"
+    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
     printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
     read -r OPCAO
     case $OPCAO in
@@ -548,18 +535,12 @@ _desatualizado () {
     clear
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
     printf "${GREEN}     |${NORM}      ${RED}      Menu Desatualizacao             ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "\n"
-    printf "\n"
-    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Voltar programa Atualizado ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Voltar antes da Biblioteca  ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n"
-    printf "\n" 
-    printf "    ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
+    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
+    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n"
+    printf "     ${GREEN}1${NORM} - ${WHITE}Voltar programa Atualizado ${NORM}%s\n\n"
+    printf "     ${GREEN}2${NORM} - ${WHITE}Voltar antes da Biblioteca  ${NORM}%s\n\n"
+    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
+    printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
     read -r OPCAO1
     case $OPCAO1 in
         1) _voltaprog ;;
@@ -857,23 +838,15 @@ _biblioteca () {
     clear
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
     printf "${GREEN}     |${NORM}      ${RED}          Menu Biblioteca             ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "\n"
-    printf "\n"
-    printf "    ${PURPLE}Escolha o local da Biblioteca: ${NORM}%s\n"
-    printf "\n"
-    printf "    ${GREEN}1${NORM} - ${WHITE}Atualizacao do Transpc ${NORM}%s\n"
-    printf "\n"
-    printf "    ${GREEN}2${NORM} - ${WHITE}Atualizacao do Savatu ${NORM}%s\n"
-    printf "\n"
-    printf "    ${GREEN}3${NORM} - ${WHITE}Atualizacao OFF-Line${NORM}%s\n"
-    printf "\n"
-    printf "    ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n"
-    printf "\n" 
+    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
+    printf "    ${PURPLE}Escolha o local da Biblioteca: ${NORM}%s\n\n"
+    printf "    ${GREEN}1${NORM} - ${WHITE}Atualizacao do Transpc ${NORM}%s\n\n"
+    printf "    ${GREEN}2${NORM} - ${WHITE}Atualizacao do Savatu ${NORM}%s\n\n"
+    printf "    ${GREEN}3${NORM} - ${WHITE}Atualizacao OFF-Line${NORM}%s\n\n"
+    printf "    ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
     printf "    ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
     read -r OPCAO1
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     case $OPCAO1 in
         1) _transpc ;;
         2) _savatu ;;
@@ -1117,8 +1090,7 @@ _linux () {
     printf "\n"
     printf "  Vamos descobrir qual SO / Distro voce esta executando.\n"
     _linha
-	printf "\n"
-    printf "\n"
+    printf "\n\n"
     printf "  A partir de algumas informacoes basicas o seu sistema, parece estar executando:\n"
     _linha
 # identificando OS
@@ -1159,13 +1131,10 @@ else
     OS=$(uname -s)
     VER=$(uname -r)
 fi
-    printf "${GREEN}          OS:${NORM}      ${CYAN} ""$OS""   ${NORM}%s\n"
-	printf "\n"
-    printf "${GREEN}          VER:${NORM}      ${CYAN} ""$VER"" ${NORM}%s\n"
-	printf "\n"
-    printf "${GREEN}          UPSTREAM_ID:${NORM} ${CYAN} ""$UPSTREAM_ID"" ${NORM}%s\n" 
-    printf "\n"
-	_linha
+    printf "${GREEN}          OS:${NORM}      ${CYAN} ""$OS""   ${NORM}%s\n\n"
+    printf "${GREEN}          VER:${NORM}      ${CYAN} ""$VER"" ${NORM}%s\n\n"
+    printf "${GREEN}          UPSTREAM_ID:${NORM} ${CYAN} ""$UPSTREAM_ID"" ${NORM}%s\n\n" 
+_linha
     printf "\n"
 _press
 _principal
@@ -1173,18 +1142,12 @@ _principal
 
 _ferramentas() {
     clear
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
     printf "${GREEN}     |${NORM}      ${RED}          Menu Ferramentas            ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "\n"
-    printf "\n"
-    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n"
-    printf "\n"
-    printf "\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Limpar Temporarios ${NORM}%s\n"
-    printf "\n"
+    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
+    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n\n"
+    printf "     ${GREEN}1${NORM} - ${WHITE}Limpar Temporarios ${NORM}%s\n\n"
         if [ "$BANCO" = "s" ]; then
     printf " "
         else
@@ -1203,14 +1166,10 @@ _ferramentas() {
     printf "     ${GREEN}4${NORM} - ${WHITE}Restaurar Backup da base de dados ${NORM}%s\n"
         fi
     printf "\n"
-    printf "     ${GREEN}5${NORM} - ${WHITE}Enviar Backup${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}6${NORM} - ${WHITE}Expurgar ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}7${NORM} - ${WHITE}Update ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n"
-    printf "\n" 
+    printf "     ${GREEN}5${NORM} - ${WHITE}Enviar Backup${NORM}%s\n\n"
+    printf "     ${GREEN}6${NORM} - ${WHITE}Expurgar ${NORM}%s\n\n"
+    printf "     ${GREEN}7${NORM} - ${WHITE}Update ${NORM}%s\n\n"
+    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
     printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
     read -r OPCAO1
     case $OPCAO1 in
@@ -1263,14 +1222,14 @@ _temps() {
          _linha
          printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M11}+COLUMNS)/2)) "$M11" ;printf "%*s""${NORM}"
          _linha
-       
+
     cd "$tools"/ || exit
     else
     #              Sistema nao e IsCOBOL
          _linha
          printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M05}+COLUMNS)/2)) "$M05" ;printf "%*s""${NORM}"
          _linha
-       
+ 
     fi
 
 _press
@@ -1286,17 +1245,11 @@ _rebuild    () {
     clear
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
     printf "${GREEN}     |${NORM}      ${RED}          Menu Rebuild                ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "\n"
-    printf "\n"
-    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Um arquivo ou Todos ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Arquivos Principais ${NORM}%s\n"
-    printf "\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n"
-    printf "\n"
+    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
+    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n"
+    printf "     ${GREEN}1${NORM} - ${WHITE}Um arquivo ou Todos ${NORM}%s\n\n"
+    printf "     ${GREEN}2${NORM} - ${WHITE}Arquivos Principais ${NORM}%s\n\n"
+    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
     printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
     read -r OPCAO1
     case $OPCAO1 in
@@ -1444,8 +1397,7 @@ DAYS2=$(find "$DIRDEST" -ctime -2 -name "$EMPRESA"\*zip)
 if [ "$DAYS2" ] ; then
 
 M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     _linha
     printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M62}+COLUMNS)/2)) "$M62" ;printf "%*s""${NORM}"
     _linha  
@@ -1547,8 +1499,7 @@ M10="O backup de nome \"""$ARQ""\""
    
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
-     printf "\n"
-     printf "\n"
+     printf "\n\n"
      if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then    
      _ferramentas
      elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
@@ -1605,13 +1556,12 @@ _press
 _ferramentas
     done
     if test ! -r "$tools""$backup"/"$VBACKUP".zip ; then
-        printf "
-         ************************************************************
-               ${RED}Backup nao encontrado no diretorio${NORM}
-         ************************************************************
-%s\n"
-_press
-_ferramentas
+#   Backup nao encontrado no diretorio
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M45}+COLUMNS)/2)) "$M45" ;printf "%*s""${NORM}"
+     _linha    
+     _press
+     _ferramentas
     fi
     printf "\n"
     clear
