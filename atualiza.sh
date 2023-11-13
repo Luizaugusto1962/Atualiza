@@ -717,10 +717,6 @@ _volta_progy () {
                 "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
 
                 "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
-
-                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \ 
-
-                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
                 clear
              else
                 "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
