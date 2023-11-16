@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # set -xv
 #set -e
 #-----------------------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 09/10/2023                                                                                              #  
+## UPDATE 16/11/2023                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						  #
 # incluir PACOTE de programas                                                                                     #
@@ -460,6 +460,8 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
         for pprog in *.int
         do
           zip "$prog"-$ANTERIOR "$exec"/"$pprog"
+          read_sleep 2 
+        mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
         done
         read_sleep 2
 	 fi
