@@ -1027,6 +1027,7 @@ _principal
 ##############################################################
 #       Procedimento da Atualizacao de Programas             # 
 ##############################################################
+    cd "$tools"
 #               ATUALIZANDO OS PROGRAMAS...
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M19}+COLUMNS)/2)) "$M19" ;printf "%*s""${NORM}"
