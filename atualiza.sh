@@ -5,7 +5,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 16/11/2023                                                                                              #  
+## UPDATE 21/11/2023                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						  #
 # incluir PACOTE de programas                                                                                     #
@@ -208,6 +208,7 @@ ANTERIOR="anterior"
 #### PARAMETRO PARA O LOGS
 LOG_ATU="$tools""$logs"/atualiza.$(date +'%Y-%m-%d').log
 LOG_LIMPA="$tools""$logs"/limpando.$(date +'%Y-%m-%d').log
+UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 #-----------------------------------------------------------------#
 ###############################
@@ -429,6 +430,15 @@ _principal
 
 _atupacote () {
 
+    if test -f "$tools$olds"/"$prog"-"$ANTERIOR".zip ; then
+        clear
+M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
+    _linha
+    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M43}+COLUMNS)/2)) "$M43" ;printf "%*s""${NORM}"
+    _linha
+    mv -f -- "$tools$olds"/"$prog"-"$ANTERIOR".zip "$tools$olds"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
+    fi
+
 NOMEPROG="$prog""$class".zip
 
     if  test ! -f "$NOMEPROG" ; then
@@ -439,15 +449,13 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
     _linha
     exit
     fi
-### Limpando diretorio temporario ###
-
 
 ## Descompactando o programa baixado
     unzip -o "$prog""$class".zip >> "$LOG_ATU"
     read_sleep 1
     clear
 
-# Verificando nome do arquivo com a extens o .class ou .int
+## Verificando nome do arquivo com a extensao .class ou .int
 
      if [ "$sistema" = "iscobol" ]; then 
         for pprog in *.class
@@ -1027,7 +1035,7 @@ _principal
 ##############################################################
 #       Procedimento da Atualizacao de Programas             # 
 ##############################################################
-    cd "$tools"
+    cd "$tools" || exit
 #               ATUALIZANDO OS PROGRAMAS...
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M19}+COLUMNS)/2)) "$M19" ;printf "%*s""${NORM}"
@@ -1200,7 +1208,7 @@ _temps() {
     if [ "$sistema" = "iscobol" ]; then
     cd "$tools"/ || exit
     local arqs
-    line=""
+    lin=" "
     arqs=$(cat atualizat)
     DIRDEST="$tools""$backup"
     DIR="$destino""$base"/
@@ -1211,10 +1219,10 @@ _temps() {
              printf "%*s""\033c\033[10;10H${RED}"Existe um backup no \
              Diretorio """$DIRDEST"" "antigo sera excluido."${NORM}"
          fi 
-         for line in $arqs
+         for lin in $arqs
          do
             printf "${GREEN}""$line""${NORM}%s\n"
-            zip -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
+            zip -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$lin  >> "$LOG_LIMPA"
         done 
   
      #           Movendo arquivos Temporarios
