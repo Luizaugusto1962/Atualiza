@@ -805,10 +805,10 @@ _volta_geral () {
     _linha
 
     cd "$tools""$olds"/ || exit
-    while true 
-    do
-    "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds">> "$LOG_ATU"
-    done
+#    while true 
+#    do
+    "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds"
+#    done
     cd "$tools" || exit
     clear
 
