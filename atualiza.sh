@@ -111,6 +111,10 @@ SAVATU3=""
 SAVATU4=""
 
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
+#----------------------------- TESTE de CONFIGURACOES--------------------#
+[[ ! -e "atualizac" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
+[[ ! -r "atualizac" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
+#------------------------------------------------------------------------#
 "." ./atualizac
 
 #-----------------------------------------------------------------#
@@ -220,11 +224,6 @@ CYAN="${ESC}[36m" WHITE="${ESC}[37m" NORM="${ESC}[39m"
 
 COLUMNS=$(tput cols)
 #----------------------------- TESTE de CONFIGURACOES--------------------#
-
-[ ! -e "atualizac" ] && printf "ERRO. Arquivo nao existe."    && exit 1
-[ ! -r "atualizac" ] && printf "ERRO. Sem acesso de leitura." && exit 1
-#------------------------------------------------------------------------#
-##########################################################################
 
 #### - Configuracao para acesso ao scp - #####
 PORTA="41122"
