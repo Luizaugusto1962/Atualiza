@@ -7,14 +7,14 @@
 ##  Versao do atualiza.sh                                                                                         #
 ## UPDATE 21/11/2023                                                                                              #  
 #                                                                                                                 #
-# INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						  #
+# INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #
 #-----------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
 # "atualizac" = Contem a configuracao de diretorios e de qual tipo de                                             #
 #               sistema esta sendo utilizado pela a Empresa.                                                      #
 # "atualizaj" = Lista de arquivos principais do sistema. "Usado no menu Ferramentas"                              #
-# "atualizat" = Lista de arquivos temporarios a ser exclu dos da pasta de dados.                                  #
+# " = Lista de arquivos temporarios a ser exclu dos da pasta de dados.                                            #
 #               "Usado no menu Ferramentas"                                                                       #
 #                                                                                                                 #
 # Menus                                                                                                           #
@@ -1198,8 +1198,8 @@ _ferramentas() {
 
 #---------------------- TESTE Arquivos ----------------------------------#
 
-[ ! -e "atualizat" ] && printf "ERRO. Arquivo nao existe."    && exit 1
-[ ! -r "atualizat" ] && printf "ERRO. Sem acesso de leitura." && exit 1
+[[ ! -e "atualizat" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
+[[ ! -r "atualizat" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
 #------------------------------------------------------------------------#
 ### Rotina para excluir arquivo temporarios###
 _temps() {
@@ -1346,8 +1346,8 @@ _rebuild
 ##  os arquivos estao cadatrados em "atualizaj"  ##
 ###################################################
 #---------------------- TESTE Arquivos ----------------------------------#
-[ ! -e "atualizaj" ] && printf "ERRO. Arquivo nao existe."    && exit 1
-[ ! -r "atualizaj" ] && printf "ERRO. Sem acesso de leitura." && exit 1
+[[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
+[[! -r "atualizaj" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
 #------------------------------------------------------------------------#
 
 _rebuildlista() {
