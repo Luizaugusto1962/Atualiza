@@ -122,6 +122,9 @@ SAVATU4=""
 cmd_unzip=""
 cmd_unzip="unzip"
 ##
+cmd_zip=""
+cmd_zip="zip"
+##
 cmd_find=""
 cmd_find="find"
 ##
@@ -429,7 +432,7 @@ _principal
 
 _atupacote () {
 
-    if test -f "$tools$olds"/"$prog"-"$ANTERIOR".zip ; then
+    if [[ -f "$tools$olds"/"$prog"-"$ANTERIOR".zip ]] ; then
         clear
 M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
     _linha
@@ -440,7 +443,7 @@ M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
 
 NOMEPROG="$prog""$class".zip
 
-    if  test ! -f "$NOMEPROG" ; then
+    if  [[ ! -f "$NOMEPROG" ]] ; then
         clear
 M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
     _linha
@@ -450,7 +453,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
     fi
 
 ## Descompactando o programa baixado
-    unzip -o "$prog""$class".zip >> "$LOG_ATU"
+    "$cmd_unzip" -o "$prog""$class".zip >> "$LOG_ATU"
     read_sleep 1
     clear
 
@@ -459,14 +462,14 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      if [ "$sistema" = "iscobol" ]; then 
         for pprog in *.class
         do
-        zip "$prog"-$ANTERIOR "$exec"/"$pprog"   
+        "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
         read_sleep 2 
         mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
 		done
      else 
         for pprog in *.int
         do
-          zip "$prog"-$ANTERIOR "$exec"/"$pprog"
+          "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"
           read_sleep 2 
         mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
         done
@@ -474,7 +477,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 	 fi
         for pprog in *.TEL
         do
-          zip -r "$prog"-$ANTERIOR "$telas"/"$pprog"
+          "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
          read_sleep 2 
           mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
         done
@@ -578,7 +581,7 @@ _press
 _principal
     done
 
-    if test ! -r "$tools$olds"/"$prog"-"$ANTERIOR".zip ; then
+    if [[ ! -r "$tools$olds"/"$prog"-"$ANTERIOR".zip ]]; then
         clear
 M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
     _linha
@@ -593,7 +596,7 @@ M02="Voltando a versao anterior do programa ""$prog"
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M02}+COLUMNS)/2)) "$M02" ;printf "%*s""${NORM}"
     _linha
 
-    unzip -o "$tools$olds"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
+    "$cmd_unzip" -o "$tools$olds"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
     read_sleep 2
         clear
 #                   VOLTA DE PROGRAMA CONCLUIDA
@@ -625,7 +628,7 @@ _press
 _desatualizado
     done
 
-    if test ! -r "$tools""$olds"/"$INI-$VVERSAO"*.zip ; then
+    if [[ ! -r "$tools""$olds"/"$INI-$VVERSAO".zip ]]; then
 
 #    Backup da Biblioteca nao encontrado no diretorio
     _linha
@@ -680,7 +683,7 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
     _linha
 
     cd "$tools""$olds"/ || exit
-    unzip -j "$INI"-"$VVERSAO".zip 
+    "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
 _volta_progy
 }
 
@@ -926,7 +929,7 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _linha
      if [ "$sistema" = "iscobol" ]; then
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-        if  test ! -r "$atu""$VERSAO"".zip" ; then
+        if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear
 #          Atualizacao nao encontrado no diretorio
     _linha
@@ -946,7 +949,7 @@ _press
 _principal
     else
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
-           if  test ! -r "$atu""$VERSAO"".zip" ; then
+           if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear 
 #          Atualizacao nao encontrado no diretorio
     _linha
@@ -975,13 +978,13 @@ _processo () {
 	if [ "$sistema" = "iscobol" ]; then
     cd "$exec"/ || exit
 	find "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
-#    zip -r "$tools"/"$INI"-"$VERSAO" -i "*.class" "*.jpg" "*.png" "*.brw" "*." "*.dll"
+#    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.class" "*.jpg" "*.png" "*.brw" "*." "*.dll"
     cd "$telas"/ || exit
 	find "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
-#    zip -r "$tools"/"$INI"-"$VERSAO" -i "*.TEL"
+#    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.TEL"
     cd "$xml"/ || exit
 	find "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
-#    zip -r "$tools"/"$INI"-"$VERSAO" -i "*.xml"
+#    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.xml"
     cd "$tools"/ || exit
     clear
     
@@ -1000,7 +1003,7 @@ _processo () {
 
     read_sleep 1
     
-    if test ! -r "$tools"/"$INI-$VERSAO"*.zip ; then
+    if [[ ! -r "$tools"/"$INI-$VERSAO".zip ]]; then
 #               Backup nao encontrado no diretorio
     _linha
     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M45}+COLUMNS)/2)) "$M45" ;printf "%*s""${NORM}"
@@ -1041,7 +1044,7 @@ _principal
     _linha
     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
 	    printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
-        unzip -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
+        "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
       read_sleep 2
       clear
       done
@@ -1221,7 +1224,7 @@ _temps() {
          for lin in $arqs
          do
             printf "${GREEN}""$line""${NORM}%s\n"
-            zip -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$lin  >> "$LOG_LIMPA"
+            "$cmd_zip" -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$lin  >> "$LOG_LIMPA"
         done 
   
      #           Movendo arquivos Temporarios
@@ -1347,7 +1350,7 @@ _rebuild
 ###################################################
 #---------------------- TESTE Arquivos ----------------------------------#
 [[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
-[[! -r "atualizaj" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
+[[ ! -r "atualizaj" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
 #------------------------------------------------------------------------#
 
 _rebuildlista() {
@@ -1455,7 +1458,7 @@ _progresso () {
 
 _dobackup () {
     # put backup commands here
-	zip "$DIRDEST"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+	"$cmd_zip" "$DIRDEST"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
 }
 
 # Inicia em background
@@ -1561,7 +1564,7 @@ local VBACKUP="$EMPRESA"_"$VBACKAV"
 _press
 _ferramentas
     done
-    if test ! -r "$tools""$backup"/"$VBACKUP".zip ; then
+    if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]]; then
 #   Backup nao encontrado no diretorio
      _linha
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#M45}+COLUMNS)/2)) "$M45" ;printf "%*s""${NORM}"
@@ -1646,7 +1649,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
 _press
 _ferramentas
     done
-    if test ! -r "$tools""$backup"/"$VBACKUP".zip ; then
+    if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]] ; then
 #   Backup nao encontrado no diretorio
      _linha
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#M45}+COLUMNS)/2)) "$M45" ;printf "%*s""${NORM}"
@@ -1685,7 +1688,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha
 
     cd "$DIRBACK" || exit
-    unzip -o "$DIRDEST""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
+    "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
     read_sleep 1
 
     if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
@@ -1724,7 +1727,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha
    
     cd "$DIRBACK" || exit
-    unzip -o "$DIRDEST""$VBACKUP".zip  >> "$LOG_ATU"
+    "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip  >> "$LOG_ATU"
     
     mv -f -- *.* "$DIR" >> "$LOG_ATU"
  
