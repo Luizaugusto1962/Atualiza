@@ -208,13 +208,15 @@ ARQUIVO=""
 PEDARQ=""
 prog=""
 VVERSAO=""
-tools="$destino""$pasta"
-DIR="$destino""$base"
+tools=$destino$pasta
+DIR=$destino$base
+
 #### EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.
 ANTERIOR="anterior"
+
 #### PARAMETRO PARA O LOGS
-LOG_ATU="$tools""$logs"/atualiza.$(date +'%Y-%m-%d').log
-LOG_LIMPA="$tools""$logs"/limpando.$(date +'%Y-%m-%d').log
+LOG_ATU=$tools$logs/atualiza.$(date +"%Y-%m-%d").log
+LOG_LIMPA=$tools$logs/limpando.$(date +"%Y-%m-%d").log
 UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 #-----------------------------------------------------------------#
@@ -256,7 +258,7 @@ _press () {
     read -t 15 -n 1 -s -r -p  "${YELLOW}""          <<   Pressione qualquer tecla para continuar... >>""${NORM}"
     clear
 }
-#printf "%*s"read -t 15 -n 1 -s -r -p"${YELLOW}" ;printf "%*s\n" $(((${#M62}+COLUMNS)/2)) "$M62" ;printf "%*s""${NORM}"
+
 ###################################################
 # Linha tracejada                                 #
 ###################################################
@@ -291,26 +293,29 @@ if [ -d "$tools" ]; then
 _linha
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}"
 _linha
-
-        if [ -d "$tools""$olds" ]; then
+        OLDS=$tools$olds
+        if [ -e $OLDS ]; then
             printf " Diretorio olds ... ok \n"
             else
-            mkdir olds
+            mkdir -p $OLDS
         fi
-        if [ -d "$tools""$progs" ]; then
+		PROGS=$tools$progs
+        if [ -e $PROGS ]; then
             printf " Diretorio progs ... ok \n"
             else
-            mkdir progs
+            mkdir -p $PROGS
         fi
-        if [ -d "$tools""$logs" ]; then
+		LOGS=$tools$logs
+        if [ -e $LOGS ]; then
             printf " Diretorio logs ... ok \n"
             else
-            mkdir logs
+            mkdir -p $LOGS
         fi
-        if [ -d "$tools""$backup" ]; then
+		BACKUP=$tools$backup
+        if [ -e $BACKUP ]; then
             printf " Diretorio backups ... ok \n"
             else
-            mkdir backup
+            mkdir -p $BACKUP
         fi
     else
     exit
