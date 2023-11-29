@@ -5,7 +5,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 21/11/2023                                                                                              #  
+## UPDATE 28/11/2023                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #
@@ -223,9 +223,15 @@ UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 ###############################
 # Variaveis de cores          #
 ###############################
-ESC=$(printf '\033') RED="${ESC}[31m"
-GREEN="${ESC}[32m" YELLOW="${ESC}[33m" BLUE="${ESC}[34m" PURPLE="${ESC}[35m"
-CYAN="${ESC}[36m" WHITE="${ESC}[37m" NORM="${ESC}[39m"
+ESC=$(printf '\033') 
+RED="${ESC}[31m"
+GREEN="${ESC}[32m" 
+YELLOW="${ESC}[33m" 
+BLUE="${ESC}[34m"
+PURPLE="${ESC}[35m"
+CYAN="${ESC}[36m" 
+WHITE="${ESC}[37m"
+NORM="${ESC}[39m"
 
 COLUMNS=$(tput cols)
 #----------------------------- TESTE de CONFIGURACOES--------------------#
@@ -241,10 +247,20 @@ DESTINO2TRANSPC="/u/varejo/trans_pc/"
 DESTINO2=""
 
 ##########################################################################
+### Processo do scp ###
+_run_scp () {
+     "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
+}
+
+### Processo do scp2 ###
+_run_scp2 () {
+     "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""$atu""$VERSAO".zip . # programas da biblioteca
+}
+
 ###################################################
 # Funcao de sleep                                 #
 ###################################################
-read_sleep() {
+read_sleep () {
     # Usage: read_sleep 1
     #        read_sleep 0.2
     read -rt "$1" <> <(:) || :
@@ -274,7 +290,7 @@ _linha () {
 # Verificacoes de parametro e diretorio       #
 ###############################################
  clear
-    if [ -d "$exec" ]; then
+    if [[ -d "$exec" ]]; then
 # "..Encontrado o diretorio do sistema .."
 _linha
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M61}+COLUMNS)/2)) "$M61" ;printf "%*s""${NORM}"
@@ -289,33 +305,33 @@ _linha
     exit
     fi
 
-if [ -d "$tools" ]; then
+if [[ -d "$tools" ]]; then
 _linha
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}"
 _linha
         OLDS=$tools$olds
-        if [ -e $OLDS ]; then
+        if [[ -e $OLDS ]]; then
             printf " Diretorio olds ... ok \n"
             else
-            mkdir -p $OLDS
+            mkdir -p "$OLDS"
         fi
 		PROGS=$tools$progs
-        if [ -e $PROGS ]; then
+        if [[ -e $PROGS ]]; then
             printf " Diretorio progs ... ok \n"
             else
-            mkdir -p $PROGS
+            mkdir -p "$PROGS"
         fi
 		LOGS=$tools$logs
-        if [ -e $LOGS ]; then
+        if [[ -e $LOGS ]]; then
             printf " Diretorio logs ... ok \n"
             else
-            mkdir -p $LOGS
+            mkdir -p "$LOGS"
         fi
 		BACKUP=$tools$backup
-        if [ -e $BACKUP ]; then
+        if [[ -e $BACKUP ]]; then
             printf " Diretorio backups ... ok \n"
             else
-            mkdir -p $BACKUP
+            mkdir -p "$BACKUP"
         fi
     else
     exit
@@ -334,7 +350,7 @@ _principal () {
     printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
     printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
     printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
-    if [ "$sistema" = "iscobol" ]; then
+    if [[ "$sistema" = "iscobol" ]]; then
               printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
          else
                printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
@@ -402,10 +418,6 @@ _principal
 #   PROGRAMAS E/OU PACOTES    # 
 ###############################
 
-_run_scp () {
-     "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
-}
-
 _pacoteon () {
      _qualprograma
 #             Informe a senha do usuario do scp 
@@ -464,7 +476,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 
 ## Verificando nome do arquivo com a extensao .class ou .int
 
-     if [ "$sistema" = "iscobol" ]; then 
+     if [[ "$sistema" = "iscobol" ]]; then 
         for pprog in *.class
         do
         "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
@@ -524,11 +536,11 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
     read -r -n1 CONT 
     printf "\n"
     printf "\n"
-    if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
+    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 _principal
-    elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
 #    source ./atualizac
-      if [ "$OPCAO" = 1 ] ; then
+      if [[ "$OPCAO" = 1 ]] ; then
          _pacoteon
       else
         _pacoteoff
@@ -649,11 +661,11 @@ _desatualizado
     printf "\n"
     printf "\n"
 
-    if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
+    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 	    _linha
 _volta_progx
 #
-    elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
 	    _linha
 _volta_geral
 #
@@ -698,7 +710,7 @@ _volta_progz () {
     read -r -n1 CONT 
     printf "\n"
     printf "\n"
-    if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
+    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 _press
 ### limpando diretorio 
         local DIR1="$tools""$olds"/
@@ -710,7 +722,7 @@ _press
 _desatualizado
     fi
 	local Vprog=" "
-    if [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+    if [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
     read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
        if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
 
@@ -728,7 +740,7 @@ _desatualizado
 
 _volta_progy () {
 
-             if [ "$sistema" = "iscobol" ]; then
+             if [[ "$sistema" = "iscobol" ]]; then
                 "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
 
                 "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
@@ -764,7 +776,7 @@ _volta_bibli () {
      _linha
 
     read_sleep 1
-	if [ "$sistema" = "iscobol" ]; then
+	if [[ "$sistema" = "iscobol" ]]; then
 
     cd "$tools""$olds" || exit
 
@@ -869,12 +881,6 @@ _biblioteca () {
     esac
 }
 
-### Processo do scp ###
-_run_scp2 () {
-     scp -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""$atu""$VERSAO".zip . # programas da biblioteca
-}
-
-
 #### Processo de recepcao de biblioteca ##
 _scp_biblioteca () {
 	if [ "$sistema" = "iscobol" ]; then
@@ -932,7 +938,7 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M21}+COLUMNS)/2)) "$M21" ;printf "%*s""${NORM}"
      _linha
-     if [ "$sistema" = "iscobol" ]; then
+     if [[ "$sistema" = "iscobol" ]]; then
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
         if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear
@@ -980,7 +986,7 @@ _processo () {
      _linha
      
     read_sleep 1
-	if [ "$sistema" = "iscobol" ]; then
+	if [[ "$sistema" = "iscobol" ]]; then
     cd "$exec"/ || exit
 	find "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
 #    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.class" "*.jpg" "*.png" "*.brw" "*." "*.dll"
@@ -1024,9 +1030,9 @@ _processo () {
     read -r -n1 CONT 
     printf "\n"
     printf "\n"
-        if [ "$CONT" = N ] || [ "$CONT" = n ]; then
+        if [[ "$CONT" = N ]] || [[ "$CONT" = n ]]; then
 _principal
-        elif [ "$CONT" = S ] || [ "$CONT" = s ] || [ "$CONT" = "" ]; then
+        elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] || [[ "$CONT" = "" ]]; then
      printf "
       \033c\033[10;10H${YELLOW}Continuando a atualizacao...: ${NORM}
 %s\n"
@@ -1079,7 +1085,7 @@ _principal
 #    Mostrar a versao do iscobol que esta sendo usada.       # 
 ##############################################################
 _iscobol () {
-    if [ "$sistema" = "iscobol" ]; then
+    if [[ "$sistema" = "iscobol" ]]; then
     clear    
 	_linha
           /u/sav/savisc/iscobol/bin/iscclient -v
@@ -1108,14 +1114,14 @@ _linux () {
     printf "  A partir de algumas informacoes basicas o seu sistema, parece estar executando:\n"
     _linha
 # identificando OS
-if [ -f /etc/os-release ]; then
+if [[ -f /etc/os-release ]]; then
     # freedesktop.org and systemd
     . /etc/os-release
     OS=$NAME
     VER=$VERSION_ID
     UPSTREAM_ID=${ID_LIKE,,}
     # Fallback to ID_LIKE if ID was not 'ubuntu' or 'debian'
-    if [ "${UPSTREAM_ID}" != "debian" ] && [ "${UPSTREAM_ID}" != "ubuntu" ]; then
+    if [[ "${UPSTREAM_ID}" != "debian" ]] && [[ "${UPSTREAM_ID}" != "ubuntu" ]]; then
         UPSTREAM_ID="$(echo "${ID_LIKE,,}" | sed s/\"//g | cut -d' ' -f1)"
     fi
 
@@ -1123,20 +1129,20 @@ elif type lsb_release >/dev/null 2>&1; then
     # linuxbase.org
     OS=$(lsb_release -si)
     VER=$(lsb_release -sr)
-elif [ -f /etc/lsb-release ]; then
+elif [[ -f /etc/lsb-release ]]; then
     # Para algumas versões do Debian/Ubuntu sem o comando lsb_release
     . /etc/lsb-release
     OS=$DISTRIB_ID
     VER=$DISTRIB_RELEASE
-elif [ -f /etc/debian_version ]; then
+elif [[ -f /etc/debian_version ]]; then
     # Velhas distros Debian/Ubuntu/etc.
     OS=Debian
     VER=$(cat /etc/debian_version)
-elif [ -f /etc/SuSe-release ]; then
+elif [[ -f /etc/SuSe-release ]]; then
     # Velhas distros SuSE/etc.
     OS=SuSE
     VER=$(cat /etc/SuSe-release)
-elif [ -f /etc/redhat-release ]; then
+elif [[ -f /etc/redhat-release ]]; then
     # Velhas distros Red Hat, CentOS, etc.
     OS=RedHat
     VER=$(cat /etc/redhat-release)
@@ -1154,7 +1160,7 @@ _press
 _principal
     }
 
-_ferramentas() {
+_ferramentas () {
     clear
     printf "\n\n"
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
@@ -1162,19 +1168,19 @@ _ferramentas() {
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
     printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n\n"
     printf "     ${GREEN}1${NORM} - ${WHITE}Limpar Temporarios ${NORM}%s\n\n"
-        if [ "$BANCO" = "s" ]; then
+        if [[ "$BANCO" = "s" ]]; then
     printf " "
         else
     printf "     ${GREEN}2${NORM} - ${WHITE}Recuperar arquivos ${NORM}%s\n"
         fi
     printf "\n"
-        if [ "$BANCO" = "s" ]; then
+        if [[ "$BANCO" = "s" ]]; then
     printf " "
         else
     printf "     ${GREEN}3${NORM} - ${WHITE}Backup da base de dados ${NORM}%s\n"
         fi
     printf "\n"
-        if [ "$BANCO" = "s" ]; then
+        if [[ "$BANCO" = "s" ]]; then
     printf " "
         else
     printf "     ${GREEN}4${NORM} - ${WHITE}Restaurar Backup da base de dados ${NORM}%s\n"
@@ -1210,9 +1216,10 @@ _ferramentas() {
 [[ ! -r "atualizat" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
 #------------------------------------------------------------------------#
 ### Rotina para excluir arquivo temporarios###
-_temps() {
-#clear
-    if [ "$sistema" = "iscobol" ]; then
+clear
+
+_temps () {
+    if [[ "$sistema" = "iscobol" ]]; then
     cd "$tools"/ || exit
     local arqs
     lin=" "
@@ -1222,7 +1229,7 @@ _temps() {
     TEMPORARIOS="Temps"
     ETIQUETATEMPO="$(date +'%d-%m-%Y')"
     DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
-         if [ "$DAYS" ] ; then
+         if [[ "$DAYS" ]] ; then
              printf "%*s""\033c\033[10;10H${RED}"Existe um backup no \
              Diretorio """$DIRDEST"" "antigo sera excluido."${NORM}"
          fi 
@@ -1255,7 +1262,7 @@ _ferramentas
 ##  Rotina de recuperar arquivos                 ##
 ###################################################
 
-_rebuild    () {
+_rebuild () {
     clear
     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
     printf "${GREEN}     |${NORM}      ${RED}          Menu Rebuild                ${GREEN}|${NORM}%s\n"
@@ -1279,14 +1286,14 @@ _rebuild    () {
 ##     todos se deixar em branco                 ##
 ###################################################
 
-_rebuild1() {
- if [ "$sistema" = "iscobol" ]; then
+_rebuild1 () {
+ if [[ "$sistema" = "iscobol" ]]; then
          printf "
          \033c\033[10;10H${RED}Informe o nome do arquivo ser recuperado
         ou enter para todos os arquivos do diretorio: ${NORM} %s\n"
         read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
 
-        if [ -z "$PEDARQ" ]; then
+        if [[ -z "$PEDARQ" ]]; then
          printf "
          \033c\033[10;10H${RED}Voce nao informou o arquivo a ser recuperado:${NORM}%s\n"
  local jut="$destino""$JUTIL"
@@ -1297,7 +1304,7 @@ _rebuild1() {
 ## grava tamanho do arquivo em variavel
     TAMANHO=$(du "$i" | awk '{print $1}')
 ## executa rebuild se tamanho for maior que zero
-        if [ "$TAMANHO" -gt 0 ] ; then
+        if [[ "$TAMANHO" -gt 0 ]] ; then
         $jut -rebuild "$i" -a -f
         fi
         done 
@@ -1338,7 +1345,7 @@ do
 # grava tamanho do arquivo em variavel
     TAMANHO=$(du "$i" | awk '{print $1}')
 # executa rebuild se tamanho for maior que zero
-    if [ "$TAMANHO" -gt 0 ]; then
+    if [[ "$TAMANHO" -gt 0 ]]; then
      rebuild -e "$i"
     else
     rebuild -d -e "$i"
@@ -1358,9 +1365,9 @@ _rebuild
 [[ ! -r "atualizaj" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
 #------------------------------------------------------------------------#
 
-_rebuildlista() {
+_rebuildlista () {
 clear
-if [ "$sistema" = "iscobol" ]; then
+if [[ "$sistema" = "iscobol" ]]; then
 cd "$tools"/ || exit
 local arqs
 arqs=$(cat atualizaj)
@@ -1371,7 +1378,7 @@ cd "$DIR"/ || exit
 # grava tamanho do arquivo em variavel
     TAMANHO=$(du "$line" | awk '{print $1}')
 # executa rebuild se tamanho for maior que zero
-    if [ "$TAMANHO" -gt 0 ] ; then
+    if [[ "$TAMANHO" -gt 0 ]] ; then
     $jut -rebuild "$line" -a -f
     fi
     done 
@@ -1397,7 +1404,7 @@ _rebuild
 _backup () {
 clear
 local DIRDEST="$tools""$backup"
-    if [ ! -d "$DIRDEST" ]; then
+    if [[ ! -d "$DIRDEST" ]]; then
 M23=".. Criando o diretorio dos backups em $DIRDEST.."
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M23}+COLUMNS)/2)) "$M23" ;printf "%*s""${NORM}"
@@ -1408,7 +1415,7 @@ M23=".. Criando o diretorio dos backups em $DIRDEST.."
     
 DAYS2=$(find "$DIRDEST" -ctime -2 -name "$EMPRESA"\*zip)
     cd "$DIR" || exit
-if [ "$DAYS2" ] ; then
+if [[ "$DAYS2" ]] ; then
 
 M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
     printf "\n\n"
@@ -1419,7 +1426,7 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
     printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
     read -r -n1 CONT 
     printf "\n"
-        if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
+        if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 
 #            Backup Abortado!
      _linha
@@ -1427,7 +1434,7 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
      _linha        
     read_sleep 3
     _ferramentas 
-        elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+        elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
 
 #            Sera criado mais um backup para o periodo.
      _linha
@@ -1514,9 +1521,9 @@ M10="O backup de nome \"""$ARQ""\""
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
      printf "\n\n"
-     if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then    
+     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
      _ferramentas
-     elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
      printf "
       \033c\033[10;10H${RED}Enviar backup para a SAV. ${NORM}%s\n"
@@ -1589,9 +1596,9 @@ _ferramentas
     read -r -n1 CONT 
     printf "\n"
     printf "\n"
-    if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then    
+    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
     _ferramentas
-    elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
      printf "
       \033c\033[10;10H${RED}Enviar backup para a SAV. ${NORM}%s\n"
@@ -1632,7 +1639,7 @@ _unbackup () {
 local DIRDEST="$tools""$backup"/
 local DIRBACK="$tools""$backup"/dados
 
-    if [ ! -d "$DIRBACK" ]; then
+    if [[ ! -d "$DIRBACK" ]]; then
 
 M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
      _linha
@@ -1671,7 +1678,7 @@ _ferramentas
     read -r -n1 CONT 
     printf "\n"
     printf "\n"
-    if [ "$CONT" = N ] || [ "$CONT" = n ] || [ "$CONT" = "" ] ; then
+    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 
     read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
     while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
@@ -1722,7 +1729,7 @@ _ferramentas
    
 _press
 _ferramentas
-    elif [ "$CONT" = S ] || [ "$CONT" = s ] ; then
+    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
 #    ---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
