@@ -310,25 +310,25 @@ _linha
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}"
 _linha
         OLDS=$tools$olds
-        if [[ -e $OLDS ]]; then
+        if [[ -d $OLDS ]]; then
             printf " Diretorio olds ... ok \n"
             else
             mkdir -p "$OLDS"
         fi
 		PROGS=$tools$progs
-        if [[ -e $PROGS ]]; then
+        if [[ -d $PROGS ]]; then
             printf " Diretorio progs ... ok \n"
             else
             mkdir -p "$PROGS"
         fi
 		LOGS=$tools$logs
-        if [[ -e $LOGS ]]; then
+        if [[ -d $LOGS ]]; then
             printf " Diretorio logs ... ok \n"
             else
             mkdir -p "$LOGS"
         fi
 		BACKUP=$tools$backup
-        if [[ -e $BACKUP ]]; then
+        if [[ -d $BACKUP ]]; then
             printf " Diretorio backups ... ok \n"
             else
             mkdir -p "$BACKUP"
@@ -350,7 +350,7 @@ _principal () {
     printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
     printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
     printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
-    if [[ "$sistema" = "iscobol" ]]; then
+    if [[ "$sistema" == "iscobol" ]]; then
               printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
          else
                printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
