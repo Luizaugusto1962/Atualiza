@@ -5,7 +5,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 28/11/2023                                                                                              #  
+## UPDATE 30/11/2023                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #

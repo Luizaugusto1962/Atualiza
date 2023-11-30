@@ -2,3 +2,7 @@
 gitkraken_rsa
 
 *.pub
+
+*.un~
+
+*.sh~
