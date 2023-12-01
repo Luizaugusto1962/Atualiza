@@ -142,7 +142,7 @@ M03="Volta do(s) programa(s) Concluida(s)"
 M04="Volta do(s) Arquivo(s) Concluida" 
 M05="Sistema nao e IsCOBOL" 
 M06="Sera criado mais um backup para o periodo"  
-M07="Programa(s) a ser(em) atualizado(s) -"
+#M07="Programa(s) a ser(em) atualizado(s) -"
 M08="Opcao Invalida"  
 M09="O programa tem que estar no diretorio"   
 #M10="O backup de nome \"""$ARQ""\"" 
@@ -504,6 +504,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _linha
       read_sleep 1
  # Atualizando o novo programa.
+ M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M26}+COLUMNS)/2)) "$M26" ;printf "%*s""${NORM}"
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M07}+COLUMNS)/2)) "$M07" ;printf "%*s""${NORM}"
@@ -518,7 +519,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      for f in *"$prog""$class".zip; do
          mv -f -- "$f" "${f%.zip}.bkp"
      done
-
+     read_sleep 1
 #                      Atualizacao COMPLETA$
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M17}+COLUMNS)/2)) "$M17" ;printf "%*s""${NORM}"
@@ -526,7 +527,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
  
      mv -f -- "$prog""$class".bkp "$tools""$progs"
      mv -f -- "$prog"-$ANTERIOR.zip "$tools""$olds"
-     clear
+     read_sleep 1
 
 ##########################################
 #       Escolha de multi programas       # 
