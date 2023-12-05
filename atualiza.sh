@@ -350,7 +350,7 @@ _principal () {
     printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
     printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
     printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
-    if [[ "$sistema" == "iscobol" ]]; then
+    if [[ "$sistema" = "iscobol" ]]; then
               printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
          else
                printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
@@ -535,8 +535,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
     printf "
       \033c\033[10;10H${YELLOW}Deseja informar mais algum programa para ser atualizado? (N/s): ${NORM}%s\n"
     read -r -n1 CONT 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 _principal
     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
@@ -659,8 +658,7 @@ _desatualizado
     printf "\n"
     printf "%*s\n""${YELLOW}""Deseja volta todos os programas para antes da atualizacao? (N/s):""${NORM}"
     read -r -n1 CONT 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
 
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 	    _linha
@@ -709,8 +707,7 @@ _volta_progz () {
     printf "\n"
     printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
     read -r -n1 CONT 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 _press
 ### limpando diretorio 
@@ -1029,8 +1026,7 @@ _processo () {
       \033c\033[10;10H${YELLOW}Deseja continuar a atualizacao? (n/S): ${NORM}
 %s\n"
     read -r -n1 CONT 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
         if [[ "$CONT" = N ]] || [[ "$CONT" = n ]]; then
 _principal
         elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] || [[ "$CONT" = "" ]]; then
@@ -1107,8 +1103,7 @@ _principal
 ##############################################################
 _linux () {
 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     printf "  Vamos descobrir qual SO / Distro voce esta executando.\n"
     _linha
     printf "\n\n"
@@ -1222,8 +1217,8 @@ clear
 _temps () {
     if [[ "$sistema" = "iscobol" ]]; then
     cd "$tools"/ || exit
-    local arqs
-    lin=" "
+    local arqs=""
+    line=" "
     arqs=$(cat atualizat)
     DIRDEST="$tools""$backup"
     DIR="$destino""$base"/
@@ -1234,11 +1229,11 @@ _temps () {
              printf "%*s""\033c\033[10;10H${RED}"Existe um backup no \
              Diretorio """$DIRDEST"" "antigo sera excluido."${NORM}"
          fi 
-         for lin in $arqs
+         for line in $arqs
          do
             printf "${GREEN}""$line""${NORM}%s\n"
-            "$cmd_zip" -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$lin  >> "$LOG_LIMPA"
-        done 
+            "$cmd_zip" -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
+         done 
   
      #           Movendo arquivos Temporarios
          _linha
@@ -1370,7 +1365,7 @@ _rebuildlista () {
 clear
 if [[ "$sistema" = "iscobol" ]]; then
 cd "$tools"/ || exit
-local arqs
+local arqs=""
 arqs=$(cat atualizaj)
 local jut="$destino""$JUTIL"
 cd "$DIR"/ || exit
@@ -1595,8 +1590,8 @@ _ferramentas
 %s\n"
     printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
     read -r -n1 CONT 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
+
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
     _ferramentas
     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
@@ -1653,7 +1648,7 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      _linha
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#M53}+COLUMNS)/2)) "$M53" ;printf "%*s""${NORM}"
      _linha
-     read -rp "${YELLOW}""         1- Informe nome BACKUP: ""${NORM}" VBACK
+     read -rp "${YELLOW}""         1- Informe somente a data do BACKUP: ""${NORM}" VBACK
 local VBACKUP="$EMPRESA"_"$VBACK"
     while [[ -f "$VBACKUP".zip ]] ;do 
     clear
@@ -1677,8 +1672,7 @@ _ferramentas
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M35}+COLUMNS)/2)) "$M35" ;printf "%*s""${NORM}"
     _linha
     read -r -n1 CONT 
-    printf "\n"
-    printf "\n"
+    printf "\n\n"
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 
     read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
@@ -1785,8 +1779,7 @@ _expurgador () {
      _linha
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#M51}+COLUMNS)/2)) "$M51" ;printf "%*s""${NORM}"
      _linha
-     printf "\n"
-     printf "\n" 
+     printf "\n\n"
 cd "$tools"/ || exit
 
 _press
@@ -1795,8 +1788,7 @@ _ferramentas
 
 _update () {
      clear
-     printf "\n"
-     printf "\n" 
+     printf "\n\n"
      _linha
      printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M71}+COLUMNS)/2)) "$M71" ;printf "%*s""${NORM}"
      printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M72}+COLUMNS)/2)) "$M72" ;printf "%*s""${NORM}"
