@@ -5,7 +5,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 30/11/2023                                                                                              #  
+## UPDATE 06/12/2023                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #
@@ -350,7 +350,7 @@ _principal () {
     printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
     printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
     printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
-    if [[ "$sistema" = "iscobol" ]]; then
+    if [ "$sistema" = "iscobol" ]; then
               printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
          else
                printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
@@ -476,7 +476,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 
 ## Verificando nome do arquivo com a extensao .class ou .int
 
-     if [[ "$sistema" = "iscobol" ]]; then 
+     if [ "$sistema" = "iscobol" ]; then 
         for pprog in *.class
         do
         "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
@@ -738,7 +738,7 @@ _desatualizado
 
 _volta_progy () {
 
-             if [[ "$sistema" = "iscobol" ]]; then
+             if [ "$sistema" = "iscobol" ]; then
                 "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
 
                 "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
@@ -774,7 +774,7 @@ _volta_bibli () {
      _linha
 
     read_sleep 1
-	if [[ "$sistema" = "iscobol" ]]; then
+	if [ "$sistema" = "iscobol" ]; then
 
     cd "$tools""$olds" || exit
 
@@ -936,7 +936,7 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M21}+COLUMNS)/2)) "$M21" ;printf "%*s""${NORM}"
      _linha
-     if [[ "$sistema" = "iscobol" ]]; then
+     if [ "$sistema" = "iscobol" ]; then
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
         if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear
@@ -984,7 +984,7 @@ _processo () {
      _linha
      
     read_sleep 1
-	if [[ "$sistema" = "iscobol" ]]; then
+	if [ "$sistema" = "iscobol" ]; then
     cd "$exec"/ || exit
 	find "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
 #    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.class" "*.jpg" "*.png" "*.brw" "*." "*.dll"
@@ -1082,7 +1082,7 @@ _principal
 #    Mostrar a versao do iscobol que esta sendo usada.       # 
 ##############################################################
 _iscobol () {
-    if [[ "$sistema" = "iscobol" ]]; then
+    if [ "$sistema" = "iscobol" ]; then
     clear    
 	_linha
           /u/sav/savisc/iscobol/bin/iscclient -v
@@ -1215,12 +1215,13 @@ _ferramentas () {
 clear
 
 _temps () {
-    if [[ "$sistema" = "iscobol" ]]; then
+    "." ./atualizat
+    if [ "$sistema" = "iscobol" ]; then
     cd "$tools"/ || exit
     local arqs=""
     line=" "
-    arqs=$(cat atualizat)
-    DIRDEST="$tools""$backup"
+    arqs="atualizat"
+    DIRDEST="$tools""$backup"/
     DIR="$destino""$base"/
     TEMPORARIOS="Temps"
     ETIQUETATEMPO="$(date +'%d-%m-%Y')"
@@ -1229,11 +1230,11 @@ _temps () {
              printf "%*s""\033c\033[10;10H${RED}"Existe um backup no \
              Diretorio """$DIRDEST"" "antigo sera excluido."${NORM}"
          fi 
-         for line in $arqs
+         while read -r line;
          do
             printf "${GREEN}""$line""${NORM}%s\n"
-            "$cmd_zip" -m "$DIRDEST"/"$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
-         done 
+            "$cmd_zip" -m "$DIRDEST""$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
+         done < "$arqs"
   
      #           Movendo arquivos Temporarios
          _linha
@@ -1283,7 +1284,7 @@ _rebuild () {
 ###################################################
 
 _rebuild1 () {
- if [[ "$sistema" = "iscobol" ]]; then
+ if [ "$sistema" = "iscobol" ]; then
          printf "
          \033c\033[10;10H${RED}Informe o nome do arquivo ser recuperado
         ou enter para todos os arquivos do diretorio: ${NORM} %s\n"
@@ -1363,7 +1364,7 @@ _rebuild
 
 _rebuildlista () {
 clear
-if [[ "$sistema" = "iscobol" ]]; then
+if [ "$sistema" = "iscobol" ]; then
 cd "$tools"/ || exit
 local arqs=""
 arqs=$(cat atualizaj)
