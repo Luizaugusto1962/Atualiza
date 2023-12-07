@@ -203,7 +203,9 @@ M72="ao termino da atualizacao sair e entrar novamente"
 #-----------------------------------------------------------------#
 tput bold
 VERSAO=""
-JUTIL="/sav/savisc/iscobol/bin/jutil"
+SAVISC="$destino""/sav/savisc/iscobol/bin/"
+JUTIL="jutil"
+ISCCLIENT="iscclient"
 ARQUIVO=""
 PEDARQ=""
 prog=""
@@ -1085,7 +1087,7 @@ _iscobol () {
     if [ "$sistema" = "iscobol" ]; then
     clear    
 	_linha
-          /u/sav/savisc/iscobol/bin/iscclient -v
+          "$SAVISC""$ISCCLIENT" -v
      _linha
 
     else
@@ -1293,7 +1295,7 @@ _rebuild1 () {
         if [[ -z "$PEDARQ" ]]; then
          printf "
          \033c\033[10;10H${RED}Voce nao informou o arquivo a ser recuperado:${NORM}%s\n"
- local jut="$destino""$JUTIL"
+    jut="$SAVISC""$JUTIL"
     cd "$DIR"/ || exit
 
         for i in $DIR/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
@@ -1302,7 +1304,7 @@ _rebuild1 () {
     TAMANHO=$(du "$i" | awk '{print $1}')
 ## executa rebuild se tamanho for maior que zero
         if [[ "$TAMANHO" -gt 0 ]] ; then
-        $jut -rebuild "$i" -a -f
+        "$SAVISC""$JUTIL" -rebuild "$i" -a -f
         fi
         done 
         cd "$tools"/ || exit
@@ -1320,7 +1322,7 @@ _ferramentas
     local ARQUIVO="$PEDARQ.???.dat"
         for i in $ARQUIVO
         do 
-        "$destino""$JUTIL" -rebuild "$i" -a -f 
+        "$SAVISC""$JUTIL" -rebuild "$i" -a -f 
         done
  
        cd "$tools"/ || exit
@@ -1368,7 +1370,7 @@ if [ "$sistema" = "iscobol" ]; then
 cd "$tools"/ || exit
 local arqs=""
 arqs=$(cat atualizaj)
-local jut="$destino""$JUTIL"
+local jut="$SAVISC""$JUTIL"
 cd "$DIR"/ || exit
     for line in $arqs
     do
