@@ -241,7 +241,7 @@ COLUMNS=$(tput cols)
 #### - Configuracao para acesso ao scp - #####
 PORTA="41122"
 USUARIO="atualiza"
-IPSERVER="177.102.143.23"
+IPSERVER="177.115.194.15"
 DESTINO2SERVER="/u/varejo/man/"
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
