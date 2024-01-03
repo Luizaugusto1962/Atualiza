@@ -174,6 +174,7 @@ M35="Deseja voltar todos os ARQUIVOS do Backup ? (N/s):"
 
 
 ## Mensagens em RED
+
 #M40="Versao atualizada - ""$VERSAO" 
 #M41="Programa nao encontrado no diretorio" 
 #M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
@@ -191,11 +192,13 @@ M53="Informe de qual o Backup que deseja voltara o(s) arquivo(s)."
 #M54="Programa na versao 9 digitos nao encontrada baixar da class20"
 
 ## Mensagens em cyan
+
 M60="..Checando estrutura dos diretorios do atualiza.sh.." 
 M61="..Encontrado o diretorio do sistema .." 
 #M62="<<   Pressione qualquer tecla para continuar... >>"
 
 ## Mensagens em verde
+
 M71="Atualizar este sistema"
 M72="ao termino da atualizacao sair e entrar novamente"
 
@@ -203,15 +206,57 @@ M72="ao termino da atualizacao sair e entrar novamente"
 #-----------------------------------------------------------------#
 tput bold
 VERSAO=""
-SAVISC="$destino""/sav/savisc/iscobol/bin/"
-JUTIL="jutil"
-ISCCLIENT="iscclient"
+if [ -z "$VERSAO" ]; then
+          VERSAO=""
+fi
+
+SAVISCC="$destino""/sav/savisc/iscobol/bin/"
+if [ -n "$SAVISCC" ]; then
+          SAVISC=$SAVISCC
+fi
+
+JUTILL="jutil"
+if [ -n "$JUTILL" ]; then
+          JUTIL=$JUTILL
+fi
+
+ISCCLIENTT="iscclient"
+if [ -n "$ISCCLIENTT" ]; then
+          ISCCLIENT=$ISCCLIENTT
+fi
+
 ARQUIVO=""
+if [ -z "$ARQUIVO" ]; then
+          ARQUIVO=""
+fi
+
 PEDARQ=""
+if [ -z "$PEDARQ" ]; then
+          PEDARQ=""
+fi
+
 prog=""
+if [ -z "$prog" ]; then
+          prog=""
+fi
+
 VVERSAO=""
+if [ -z "$VVERSAO" ]; then
+          VVERSAO=""
+fi
+
 tools=$destino$pasta
+        if [[ -d $tools ]]; then
+            printf " Diretorio ... ok \n"
+            else
+            exit
+        fi
 DIR=$destino$base
+        if [[ -d $DIR ]]; then
+            printf " Diretorio ... ok \n"
+            else
+            exit
+        fi
 
 #### EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.
 ANTERIOR="anterior"
@@ -247,6 +292,9 @@ DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
 DESTINO2TRANSPC="/u/varejo/trans_pc/"
 DESTINO2=""
+if [ -z "$DESTINO2" ]; then
+          DESTINO2=""
+fi
 
 ##########################################################################
 ### Processo do scp ###
@@ -352,7 +400,7 @@ _principal () {
     printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
     printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
     printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
-    if [ "$sistema" = "iscobol" ]; then
+         if [ "$sistema" = "iscobol" ]; then
               printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
          else
                printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
@@ -494,12 +542,15 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
         done
         read_sleep 2
 	 fi
-        for pprog in *.TEL
-        do
-          "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
-         read_sleep 2 
-          mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
-        done
+        if [[ -f "$prog".TEL ]]; then
+              
+            for pprog in *.TEL
+            do
+              "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
+               read_sleep 2 
+               mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
+            done
+        fi
 #               ..   BACKUP do programa efetuado   ..
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M24}+COLUMNS)/2)) "$M24" ;printf "%*s""${NORM}"
@@ -988,23 +1039,23 @@ _processo () {
     read_sleep 1
 	if [ "$sistema" = "iscobol" ]; then
     cd "$exec"/ || exit
-	find "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	"$cmd_find" "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
 #    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.class" "*.jpg" "*.png" "*.brw" "*." "*.dll"
     cd "$telas"/ || exit
-	find "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	"$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
 #    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.TEL"
     cd "$xml"/ || exit
-	find "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	"$cmd_find" "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
 #    "$cmd_zip" -r "$tools"/"$INI"-"$VERSAO" -i "*.xml"
     cd "$tools"/ || exit
     clear
     
     else
     cd "$exec"/ || exit
-	find "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	"$cmd_find" "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
 
     cd "$telas"/ || exit
-	find "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	"$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
     fi 
 
 #               ..   BACKUP COMPLETO   ..
