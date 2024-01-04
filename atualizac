@@ -23,6 +23,8 @@ sistema=iscobol
 #VERCLASS=IS2020C9
 class=-class20
 VERCLASS=IS2020
+class=-class23
+VERCLASS=IS2023
 ###
 ### Diretorio para o iscobol
 exec=/u/sav/classes
