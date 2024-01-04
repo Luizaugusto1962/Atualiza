@@ -1103,30 +1103,30 @@ _principal
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M19}+COLUMNS)/2)) "$M19" ;printf "%*s""${NORM}"
     _linha
-    for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-	    printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
-        "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
+     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+	   printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
+       "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
       read_sleep 2
       clear
-      done
+     done
 #                 Atualizacao COMPLETA
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M17}+COLUMNS)/2)) "$M17" ;printf "%*s""${NORM}"
     _linha
 
-        for f in *_"$VERSAO".zip; do
-            mv -f -- "$f" "${f%.zip}.bkp"
-        done
-        mv -f -- *_"$VERSAO".bkp "$tools""$backup"
-        mv -f -- "$INI"-"$VERSAO".zip "$tools""$olds"
+     for f in *_"$VERSAO".zip; do
+         mv -f -- "$f" "${f%.zip}.bkp"
+     done
+         mv -f -- *_"$VERSAO".bkp "$tools""$backup"
+         mv -f -- "$INI"-"$VERSAO".zip "$tools""$olds"
 #             ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #Versao atualizada - $VERSAO$
 M40="Versao atualizada - ""$VERSAO"
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M20}+COLUMNS)/2)) "$M20" ;printf "%*s""${NORM}"
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M13}+COLUMNS)/2)) "$M13" ;printf "%*s""${NORM}"
-    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M40}+COLUMNS)/2)) "$M40" ;printf "%*s""${NORM}"
-    _linha
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M20}+COLUMNS)/2)) "$M20" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M13}+COLUMNS)/2)) "$M13" ;printf "%*s""${NORM}"
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M40}+COLUMNS)/2)) "$M40" ;printf "%*s""${NORM}"
+     _linha
 _press
 _principal
 }
@@ -1135,18 +1135,18 @@ _principal
 #    Mostrar a versao do iscobol que esta sendo usada.       # 
 ##############################################################
 _iscobol () {
-    if [ "$sistema" = "iscobol" ]; then
-    clear    
-	_linha
+     if [ "$sistema" = "iscobol" ]; then
+     clear    
+	 _linha
           "$SAVISC""$ISCCLIENT" -v
      _linha
 
-    else
+     else
 #             Sistema nao e IsCOBOL
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M05}+COLUMNS)/2)) "$M05" ;printf "%*s""${NORM}"
      _linha
-    fi
+     fi
 _press
 _principal
 }
@@ -1155,13 +1155,16 @@ _principal
 #    Mostrar a versao do Linux que esta sendo usada.         # 
 ##############################################################
 _linux () {
+    clear
+     LX="Vamos descobrir qual SO / Distro voce esta executando"
+     LM="A partir de algumas informacoes basicas o seu sistema, parece estar executando:"
+     printf "\n\n"
+     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#LX}+COLUMNS)/2)) "$LX" ;printf "%*s""${NORM}"
+     _linha
+     printf "\n\n"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#LM}+COLUMNS)/2)) "$LM" ;printf "%*s""${NORM}"
+     _linha
 
-    printf "\n\n"
-    printf "  Vamos descobrir qual SO / Distro voce esta executando.\n"
-    _linha
-    printf "\n\n"
-    printf "  A partir de algumas informacoes basicas o seu sistema, parece estar executando:\n"
-    _linha
 # identificando OS
 if [[ -f /etc/os-release ]]; then
     # freedesktop.org and systemd
@@ -1170,39 +1173,39 @@ if [[ -f /etc/os-release ]]; then
     VER=$VERSION_ID
     UPSTREAM_ID=${ID_LIKE,,}
     # Fallback to ID_LIKE if ID was not 'ubuntu' or 'debian'
-    if [[ "${UPSTREAM_ID}" != "debian" ]] && [[ "${UPSTREAM_ID}" != "ubuntu" ]]; then
+     if [[ "${UPSTREAM_ID}" != "debian" ]] && [[ "${UPSTREAM_ID}" != "ubuntu" ]]; then
         UPSTREAM_ID="$(echo "${ID_LIKE,,}" | sed s/\"//g | cut -d' ' -f1)"
-    fi
+     fi
 
 elif type lsb_release >/dev/null 2>&1; then
     # linuxbase.org
-    OS=$(lsb_release -si)
-    VER=$(lsb_release -sr)
+     OS=$(lsb_release -si)
+     VER=$(lsb_release -sr)
 elif [[ -f /etc/lsb-release ]]; then
     # Para algumas versões do Debian/Ubuntu sem o comando lsb_release
     . /etc/lsb-release
-    OS=$DISTRIB_ID
-    VER=$DISTRIB_RELEASE
+     OS=$DISTRIB_ID
+     VER=$DISTRIB_RELEASE
 elif [[ -f /etc/debian_version ]]; then
     # Velhas distros Debian/Ubuntu/etc.
-    OS=Debian
-    VER=$(cat /etc/debian_version)
+     OS=Debian
+     VER=$(cat /etc/debian_version)
 elif [[ -f /etc/SuSe-release ]]; then
     # Velhas distros SuSE/etc.
-    OS=SuSE
-    VER=$(cat /etc/SuSe-release)
+     OS=SuSE
+     VER=$(cat /etc/SuSe-release)
 elif [[ -f /etc/redhat-release ]]; then
     # Velhas distros Red Hat, CentOS, etc.
-    OS=RedHat
-    VER=$(cat /etc/redhat-release)
+     OS=RedHat
+     VER=$(cat /etc/redhat-release)
 else
     # Para uname, e.x. "Linux <version>", também funciona para o BSD, etc.
-    OS=$(uname -s)
-    VER=$(uname -r)
+     OS=$(uname -s)
+     VER=$(uname -r)
 fi
-    printf "${GREEN}          OS:${NORM}      ${CYAN} ""$OS""   ${NORM}%s\n\n"
-    printf "${GREEN}          VER:${NORM}      ${CYAN} ""$VER"" ${NORM}%s\n\n"
-    printf "${GREEN}          UPSTREAM_ID:${NORM} ${CYAN} ""$UPSTREAM_ID"" ${NORM}%s\n\n" 
+     printf "${GREEN}          OS:${NORM}      ${CYAN} ""$OS""   ${NORM}%s\n\n"
+     printf "${GREEN}          VER:${NORM}      ${CYAN} ""$VER"" ${NORM}%s\n\n"
+     printf "${GREEN}          UPSTREAM_ID:${NORM} ${CYAN} ""$UPSTREAM_ID"" ${NORM}%s\n\n" 
 _linha
     printf "\n"
 _press
@@ -1268,17 +1271,16 @@ _ferramentas () {
 clear
 
 _temps () {
-    "." ./atualizat
-    if [ "$sistema" = "iscobol" ]; then
-    cd "$tools"/ || exit
-    local arqs=""
-    line=" "
-    arqs="atualizat"
-    DIRDEST="$tools""$backup"/
-    DIR="$destino""$base"/
-    TEMPORARIOS="Temps"
-    ETIQUETATEMPO="$(date +'%d-%m-%Y')"
-    DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
+     if [ "$sistema" = "iscobol" ]; then
+     cd "$tools"/ || exit
+     local arqs=""
+     line=" "
+     arqs="atualizat"
+     DIRDEST="$tools""$backup"/
+     DIR="$destino""$base"/
+     TEMPORARIOS="Temps"
+     ETIQUETATEMPO="$(date +'%d-%m-%Y')"
+     DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
          if [[ "$DAYS" ]] ; then
              printf "%*s""\033c\033[10;10H${RED}"Existe um backup no \
              Diretorio """$DIRDEST"" "antigo sera excluido."${NORM}"
@@ -1295,13 +1297,13 @@ _temps () {
          _linha
 
     cd "$tools"/ || exit
-    else
+     else
     #              Sistema nao e IsCOBOL
          _linha
          printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M05}+COLUMNS)/2)) "$M05" ;printf "%*s""${NORM}"
          _linha
  
-    fi
+     fi
 
 _press
 _ferramentas
@@ -1314,21 +1316,21 @@ _ferramentas
 
 _rebuild () {
     clear
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "${GREEN}     |${NORM}      ${RED}          Menu Rebuild                ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
-    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Um arquivo ou Todos ${NORM}%s\n\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Arquivos Principais ${NORM}%s\n\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-    printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-    read -r OPCAO1
-    case $OPCAO1 in
+     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
+     printf "${GREEN}     |${NORM}      ${RED}          Menu Rebuild                ${GREEN}|${NORM}%s\n"
+     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
+     printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n"
+     printf "     ${GREEN}1${NORM} - ${WHITE}Um arquivo ou Todos ${NORM}%s\n\n"
+     printf "     ${GREEN}2${NORM} - ${WHITE}Arquivos Principais ${NORM}%s\n\n"
+     printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
+     printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
+     read -r OPCAO1
+     case $OPCAO1 in
         1) _rebuild1 ;;
         2) _rebuildlista ;;
         9) clear ; _ferramentas ;;
         *) Opcao Invalida ; printf ; _ferramentas ;;
-    esac
+     esac
 }
 
 ###################################################
@@ -1343,7 +1345,7 @@ _rebuild1 () {
         ou enter para todos os arquivos do diretorio: ${NORM} %s\n"
         read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
 
-        if [[ -z "$PEDARQ" ]]; then
+     if [[ -z "$PEDARQ" ]]; then
          printf "
          \033c\033[10;10H${RED}Voce nao informou o arquivo a ser recuperado:${NORM}%s\n"
     jut="$SAVISC""$JUTIL"
@@ -1359,15 +1361,15 @@ _rebuild1 () {
         fi
         done 
         cd "$tools"/ || exit
-        else
-    while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
+     else
+     while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
 
      printf "
      \033c\033[10;10H${RED}Voce nao informou o nome do arquivo em minusculo ${NORM}%s\n" 
     cd "$tools"/ || exit
 _press
 _ferramentas
-    done
+     done
 
         cd "$DIR" || exit 
     local ARQUIVO="$PEDARQ.???.dat"
@@ -1377,7 +1379,7 @@ _ferramentas
         done
  
        cd "$tools"/ || exit
-       fi
+     fi
 
 #             Arquivo(s) recuperado(s)...
      _linha
@@ -1390,17 +1392,17 @@ else
          \033c\033[10;10H${RED}Recuperacao Isam :${NORM}%s\n"
     cd "$DIR"/ || exit
 
-for i in $DIR/{*.ARQ,*.DAT,*.LOG,*.PAN}
-do
+     for i in $DIR/{*.ARQ,*.DAT,*.LOG,*.PAN}
+     do
 # grava tamanho do arquivo em variavel
     TAMANHO=$(du "$i" | awk '{print $1}')
 # executa rebuild se tamanho for maior que zero
-    if [[ "$TAMANHO" -gt 0 ]]; then
-     rebuild -e "$i"
-    else
-    rebuild -d -e "$i"
-    fi
-done
+     if [[ "$TAMANHO" -gt 0 ]]; then
+      rebuild -e "$i"
+     else
+     rebuild -d -e "$i"
+     fi
+    done
 fi
 _press
 _rebuild 
