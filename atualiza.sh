@@ -1271,7 +1271,7 @@ _ferramentas () {
 clear
 
 _temps () {
-     if [ "$sistema" = "iscobol" ]; then
+#     if [ "$sistema" = "iscobol" ]; then
      cd "$tools"/ || exit
      local arqs=""
      line=" "
@@ -1297,13 +1297,13 @@ _temps () {
          _linha
 
     cd "$tools"/ || exit
-     else
+ #    else
     #              Sistema nao e IsCOBOL
-         _linha
-         printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M05}+COLUMNS)/2)) "$M05" ;printf "%*s""${NORM}"
-         _linha
+ #        _linha
+ #        printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M05}+COLUMNS)/2)) "$M05" ;printf "%*s""${NORM}"
+ #        _linha
  
-     fi
+ #    fi
 
 _press
 _ferramentas
