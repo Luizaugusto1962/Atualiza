@@ -5,7 +5,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 06/12/2023                                                                                              #  
+## UPDATE 10/01/2024                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #
@@ -171,6 +171,10 @@ M29="Informe a senha do usuario do SCP"
 M33="Voltando Backup anterior  ..."
 #M34="O arquivo ""$VARQUIVO"
 M35="Deseja voltar todos os ARQUIVOS do Backup ? (N/s):"
+M36="<< ... Pressione qualquer tecla para continuar ... >>"
+M37="Deseja informar mais algum programa para ser atualizado? sS/nN"
+M38="Deseja continuar a atualizacao? (n/S):"
+M39="Continuando a atualizacao...:"
 
 
 ## Mensagens em RED
@@ -185,22 +189,38 @@ M46="Backup da Biblioteca nao encontrado no diretorio"
 M47="Backup Abortado!"
 M48="Atualizacao nao encontrado ou incompleta."
 M49="Arquivo nao encontrado no diretorio"
-#M50="Informe o nome do programa a ser atualizado:"
+#M50=""
 M51="Verificando e/ou excluido arquivos com mais de 30 dias criado."
 M52="Informe de qual o Backup que deseja enviar."
 M53="Informe de qual o Backup que deseja voltara o(s) arquivo(s)."
 #M54="Programa na versao 9 digitos nao encontrada baixar da class20"
-
+M55="Informe versao a da Biblioteca a ser atualizada: "
+M56="*+* < <- Versao a ser atualizada nao foi informada: -> > *+*"
+M57="Informe somente o numeral da versao : "
+M58="Voltando todos os programas."
+M59="Informe o nome do programa a ser atualizado:"
+M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
+M61="Informe o nome do programa a ser desatualizado:" 
+M62="Informe a ultima versao que foi feita a atualizacao da biblioteca para voltar todos os programas."
+#M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
+M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
+M65="Recuperado todos os arquivos:"
+M66="Voce nao informou o nome do arquivo em minusculo"
+M67="Recuperacao Isam :"
+M68="Enviar backup para a SAV."
+M69="Voce nao informou o nome do diretorio a ser enviado, saindo... "
+M70="* * * < < Nome do Backup nao foi informada > > * * * "
+M71="ERRO: Voce informou o nome do arquivo em minusculo "
 ## Mensagens em cyan
 
-M60="..Checando estrutura dos diretorios do atualiza.sh.." 
-M61="..Encontrado o diretorio do sistema .." 
+M80="..Checando estrutura dos diretorios do atualiza.sh.." 
+M81="..Encontrado o diretorio do sistema .." 
 #M62="<<   Pressione qualquer tecla para continuar... >>"
 
 ## Mensagens em verde
 
-M71="Atualizar este sistema"
-M72="ao termino da atualizacao sair e entrar novamente"
+M91="Atualizar este sistema"
+M92="ao termino da atualizacao sair e entrar novamente"
 
 ### Variavel para identificar o programa ou versao a atualizada ###
 #-----------------------------------------------------------------#
@@ -246,15 +266,17 @@ if [ -z "$VVERSAO" ]; then
 fi
 
 tools=$destino$pasta
-        if [[ -d $tools ]]; then
+        if [ -d "$tools" ]; then
             printf " Diretorio ... ok \n"
             else
+            printf " Diretorio da destino nao encotrado...  \n"
             exit
         fi
 DIR=$destino$base
-        if [[ -d $DIR ]]; then
+        if [ -d "$DIR" ]; then
             printf " Diretorio ... ok \n"
             else
+            printf " Diretorio da base nao encotrado...  \n"
             exit
         fi
 
@@ -271,14 +293,14 @@ UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 # Variaveis de cores          #
 ###############################
 ESC=$(printf '\033') 
-RED="${ESC}[31m"
-GREEN="${ESC}[32m" 
-YELLOW="${ESC}[33m" 
-BLUE="${ESC}[34m"
-PURPLE="${ESC}[35m"
-CYAN="${ESC}[36m" 
-WHITE="${ESC}[37m"
-NORM="${ESC}[39m"
+RED="${ESC}[1;31m"
+GREEN="${ESC}[1;32m" 
+YELLOW="${ESC}[1;33m" 
+BLUE="${ESC}[1;34m"
+PURPLE="${ESC}[1;35m"
+CYAN="${ESC}[1;36m" 
+WHITE="${ESC}[1;37m"
+NORM="${ESC}[1;39m"
 
 COLUMNS=$(tput cols)
 #----------------------------- TESTE de CONFIGURACOES--------------------#
@@ -320,8 +342,9 @@ read_sleep () {
 # Funcao teclar qualquer tecla                    #
 ###################################################
 _press () {
-    printf "\n"
-    read -t 15 -n 1 -s -r -p  "${YELLOW}""          <<   Pressione qualquer tecla para continuar... >>""${NORM}"
+#message="$M36"
+   printf "%*s""${BLUE}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
+   read -t 15 -n 1 -s -r -p  ""
     clear
 }
 
@@ -335,15 +358,23 @@ _linha () {
     linhas=${Espacos// /$Traco}
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
 }
- 
+
+###################################################
+# Centro da tela                                  #
+###################################################
+
+_meiodatela () {
+printf "\033c\033[10;10H\n"
+}
+
 ###############################################
 # Verificacoes de parametro e diretorio       #
 ###############################################
  clear
-    if [[ -d "$exec" ]]; then
+    if [ -d "$exec" ]; then
 # "..Encontrado o diretorio do sistema .."
 _linha
-printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M61}+COLUMNS)/2)) "$M61" ;printf "%*s""${NORM}"
+printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M81}+COLUMNS)/2)) "$M81" ;printf "%*s""${NORM}"
 _linha
     read_sleep 1
     else
@@ -355,36 +386,36 @@ _linha
     exit
     fi
 
-if [[ -d "$tools" ]]; then
-_linha
-printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}"
-_linha
-        OLDS=$tools$olds
-        if [[ -d $OLDS ]]; then
+if [ -d "$tools" ]; then
+     _linha
+     printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#M80}+COLUMNS)/2)) "$M80" ;printf "%*s""${NORM}"
+     _linha
+         OLDS=$tools$olds
+         if [ -d "$OLDS" ]; then
             printf " Diretorio olds ... ok \n"
-            else
+         else
             mkdir -p "$OLDS"
-        fi
-		PROGS=$tools$progs
-        if [[ -d $PROGS ]]; then
+         fi
+		 PROGS=$tools$progs
+         if [ -d "$PROGS" ]; then
             printf " Diretorio progs ... ok \n"
-            else
+         else
             mkdir -p "$PROGS"
-        fi
-		LOGS=$tools$logs
-        if [[ -d $LOGS ]]; then
+         fi
+	     LOGS=$tools$logs
+         if [ -d "$LOGS" ]; then
             printf " Diretorio logs ... ok \n"
-            else
+         else
             mkdir -p "$LOGS"
-        fi
-		BACKUP=$tools$backup
-        if [[ -d $BACKUP ]]; then
+         fi
+		 BACKUP=$tools$backup
+         if [ -d "$BACKUP" ]; then
             printf " Diretorio backups ... ok \n"
-            else
+         else
             mkdir -p "$BACKUP"
-        fi
-    else
-    exit
+         fi
+else
+     exit
 fi
 clear
 
@@ -445,23 +476,23 @@ _atualizacao () {
 }
 
 _qualprograma () {
-    clear
-     printf "
-      \033c\033[10;10H${RED}Informe o nome do programa a ser atualizado: ${NORM}
-%s\n"
-   _linha
-   read -rp "${YELLOW}""        Informe o programa em maiuculo: ""${NORM}" prog
-   _linha
+     clear
+     _meiodatela
+     #M59 Informe o nome do programa a ser atualizado:
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M59}+COLUMNS)/2)) "$M59" ;printf "%*s""${NORM}"
+     _linha
+     read -rp "${YELLOW}""       Informe o programa em maiuculo: ""${NORM}" prog
+     _linha
 
-   while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
-   clear
-   printf "
-     \033c\033[10;10H${RED}Voce nao informou o nome do programa a ser atualizado
-      ou o nome do programa esta em minusculo ${NORM}
-%s\n" 
-_press
-_principal
-    done
+     while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
+     clear
+
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}""\n"
+     _linha
+     _press
+     _principal
+     done
 }
    
 ###############################
@@ -510,14 +541,15 @@ M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
 
 NOMEPROG="$prog""$class".zip
 
-    if  [[ ! -f "$NOMEPROG" ]] ; then
+     if  [[ ! -f "$NOMEPROG" ]] ; then
         clear
 M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
-    _linha
-    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M42}+COLUMNS)/2)) "$M42" ;printf "%*s""${NORM}"
-    _linha
-    exit
-    fi
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M42}+COLUMNS)/2)) "$M42" ;printf "%*s""${NORM}"
+     _linha
+     _press 
+     _principal
+     fi
 
 ## Descompactando o programa baixado
     "$cmd_unzip" -o "$prog""$class".zip >> "$LOG_ATU"
@@ -585,9 +617,10 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 ##########################################
 #       Escolha de multi programas       # 
 ##########################################
-    printf "
-      \033c\033[10;10H${YELLOW}Deseja informar mais algum programa para ser atualizado? (N/s): ${NORM}%s\n"
-    read -r -n1 CONT 
+#M37Deseja informar mais algum programa para ser atualizado?
+     _meiodatela
+     printf "%*s""${YELLOW}" ;printf "%*s" $(((${#M37}+COLUMNS)/2)) "$M37" ;printf "%*s""${NORM}"
+     read -r -n1 CONT 
     printf "\n\n"
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 _principal
@@ -636,23 +669,24 @@ _desatualizado () {
 #       Procedimento da desatualizacao de programas          # 
 ##############################################################
 _voltaprog () {
-    clear
-     printf "
-      \033c\033[10;10H${RED}Informe o nome do programa a ser desatualizado: ${NORM}
-%s\n"
-    read -rp "${YELLOW}""         Informe o programa em maiusculo: ""${NORM}" prog
-    while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
+     clear
+#M61    
+     _meiodatela
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M61}+COLUMNS)/2)) "$M61" ;printf "%*s""${NORM}"
+     printf "\n"
+     read -rp "${YELLOW}""         Informe o programa em maiusculo: ""${NORM}" prog
+     while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
 
-     printf "
-     \033c\033[10;10H${RED}Voce nao informou o nome do programa 
-      ou o nome do programa esta em minusculo ${NORM}
-%s\n" 
-_press
-_principal
-    done
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M60}+COLUMNS)/2)) "$M60" ;printf "%*s""${NORM}"
+     _linha
+     _press
+     _principal
+     done
 
-    if [[ ! -r "$tools$olds"/"$prog"-"$ANTERIOR".zip ]]; then
-        clear
+     if [[ ! -r "$tools$olds"/"$prog"-"$ANTERIOR".zip ]]; then
+     clear
 M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
     _linha
     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M43}+COLUMNS)/2)) "$M43" ;printf "%*s""${NORM}"
@@ -682,30 +716,27 @@ _principal
 ####################################################################
 
 _voltabibli () {
-    clear
-     printf "
-      \033c\033[10;10H${RED}Informe de qual a ultima versao que foi feita a atualizacao da
-     biblioteca para voltar todos os programas.${NORM}
-%s\n"
-    read -rp "${YELLOW}""         1- Informe apos qual versao da BIBLIOTECA: ""${NORM}" VVERSAO
-    while [[ "$VVERSAO" = [0-9] || -z "$VVERSAO" ]]; do 
-    clear
-    printf "
-     \033c\033[10;18H${RED}* * * < < Versao nao foi informada > > * * *${NORM}
-%s\n"
-    _linha 
-_press
-_desatualizado
-    done
+     clear
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M62}+COLUMNS)/2)) "$M62" ;printf "%*s""${NORM}"
 
-    if [[ ! -r "$tools""$olds"/"$INI-$VVERSAO".zip ]]; then
+     read -rp "${YELLOW}""         1- Informe apos qual versao da BIBLIOTECA: ""${NORM}" VVERSAO
+     while [[ "$VVERSAO" = [0-9] || -z "$VVERSAO" ]]; do 
+     clear
+     printf "\033c\033[10;18H\n"
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M56}+COLUMNS)/2)) "$M56" ;printf "%*s""${NORM}"
+     _linha 
+     _press
+     _desatualizado
+     done
 
-#    Backup da Biblioteca nao encontrado no diretorio
+     if [[ ! -r "$tools""$olds"/"$INI-$VVERSAO".zip ]]; then
+#Backup da Biblioteca nao encontrado no diretorio
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M46}+COLUMNS)/2)) "$M46" ;printf "%*s""${NORM}"
     _linha
-    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M46}+COLUMNS)/2)) "$M46" ;printf "%*s""${NORM}"
-    _linha
-_press
-_desatualizado
+    _press
+    _desatualizado
     fi
 
     printf "\n"
@@ -735,161 +766,158 @@ _desatualizado
 ##  VOLTA PROGRAMA ESPECIFICO   ##
 ##################################
 _volta_progx () {
-    read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
-    while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; do
+     read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
 
-     printf "
-     \033c\033[10;10H${RED}ERRO: Voce informou o nome do programa esta em minusculo ${NORM}
-	 %s\n"
-_press
- _desatualizado
-    done
+     while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; do
+
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M71}+COLUMNS)/2)) "$M71" ;printf "%*s""${NORM}"
+     _linha
+     _press
+     _desatualizado
+     done
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"   
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M30}+COLUMNS)/2)) "$M30" ;printf "%*s""${NORM}"
-    _linha
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M30}+COLUMNS)/2)) "$M30" ;printf "%*s""${NORM}"
+     _linha
 
-    cd "$tools""$olds"/ || exit
-    "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
-_volta_progy
+     cd "$tools""$olds"/ || exit
+     "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
+     _volta_progy
 }
 
 _volta_progz () {
-    printf "\n"
-    printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
-    read -r -n1 CONT 
-    printf "\n\n"
-    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
-_press
+     printf "\n"
+     printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
+     read -r -n1 CONT 
+     printf "\n\n"
+     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+     _press
 ### limpando diretorio 
         local DIR1="$tools""$olds"/
         for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}
         do
 		"$cmd_find" "$DIR1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
         done
+     _desatualizado
+     fi
 
-_desatualizado
-    fi
-	local Vprog=" "
-    if [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
-    read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
-       if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
+	 local Vprog=" "
+     if [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
+         if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
 
-     printf " \033c\033[10;10H${RED}ERRO: Voce informou o nome do programa esta em minusculo ${NORM}%s\n" 
-#	 done
-_press	 
-_desatualizado
-       else
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M71}+COLUMNS)/2)) "$M71" ;printf "%*s""${NORM}"
+     _linha
+     _press	 
+     _desatualizado
+         else
      _volta_progy
-        fi
-_press
-_desatualizado
-    fi 
+         fi
+     _press
+     _desatualizado
+     fi 
 } 
 
 _volta_progy () {
-
-             if [ "$sistema" = "iscobol" ]; then
-                "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
-
-                "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
-
-                "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
-                clear
-             else
-                "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-
-                "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
-             fi
+     if [ "$sistema" = "iscobol" ]; then
+     "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
+ 
+     "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
+ 
+     "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+     clear
+     else
+     "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
+ 
+     "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
+     fi
 
 #                VOLTA DE PROGRAMAS CONCLUIDA
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M03}+COLUMNS)/2)) "$M03" ;printf "%*s""${NORM}"
-    _linha
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M03}+COLUMNS)/2)) "$M03" ;printf "%*s""${NORM}"
+     _linha
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M30}+COLUMNS)/2)) "$M30" ;printf "%*s""${NORM}"
-    _linha
-_press
-_volta_progz
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M30}+COLUMNS)/2)) "$M30" ;printf "%*s""${NORM}"
+     _linha
+     _press
+     _volta_progz
 
 }
-# volta todos os programas da biblioteca
 
+# volta todos os programas da biblioteca
 _volta_bibli () {
 #          VOLTA DOS ARQUIVOS ANTERIORES...
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M03}+COLUMNS)/2)) "$M01" ;printf "%*s""${NORM}"
      _linha
 
-    read_sleep 1
-	if [ "$sistema" = "iscobol" ]; then
+     read_sleep 1
+     if [ "$sistema" = "iscobol" ]; then
 
-    cd "$tools""$olds" || exit
+     cd "$tools""$olds" || exit
 
-	"$cmd_find" "$tools""$olds" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
-	"$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+     "$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
-    cd "$xml"/ || exit
-	"$cmd_find" "$tools""$olds" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
+     cd "$xml"/ || exit
+	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
 
-    cd "$tools"/ || exit
-    clear
+     cd "$tools"/ || exit
+     clear
  
-    else
-    cd "$tools""$olds"/ || exit
-	"$cmd_find" "$tools""$olds" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+     else
+     cd "$tools""$olds"/ || exit
+	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
-    cd "$tools""$olds"/ || exit
-	"$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+     cd "$tools""$olds"/ || exit
+	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
-    cd "$tools"/ || exit     
-    clear
+     cd "$tools"/ || exit     
+     clear
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M30}+COLUMNS)/2)) "$M30" ;printf "%*s""${NORM}"
-    _linha
-    fi
-_press
-_principal
-
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M30}+COLUMNS)/2)) "$M30" ;printf "%*s""${NORM}"
+     _linha
+     fi
+     _press
+     _principal
 }
+
  ### volta total dos programas ###
 _volta_geral () { 
-   
-     printf "
-      \033c\033[10;10H${RED}Voltando todos os programas. ${NORM}%s\n"
+# M58=Voltando todos os programas.
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M58}+COLUMNS)/2)) "$M58" ;printf "%*s""${NORM}"
+     _linha
+ 
+#M31="O programas da versao:"$VVERSAO"
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M31}+COLUMNS)/2)) "$M31" ;printf "%*s""${NORM}"
+     _linha
 
-#               ---- Voltando versao anterior  ...
-#M31="O programas da versao: ${NORM}${RED} ""$VVERSAO"
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M25}+COLUMNS)/2)) "$M25" ;printf "%*s""${NORM}"
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M31}+COLUMNS)/2)) "$M31" ;printf "%*s""${NORM}"
-    _linha
-
-    cd "$tools""$olds"/ || exit
-#    while true 
-#    do
-    "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds"
-#    done
-    cd "$tools" || exit
-    clear
+     cd "$tools""$olds"/ || exit
+     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds"
+     cd "$tools" || exit
+     clear
 
 #                  VOLTA DOS PROGRAMAS CONCLUIDA
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M03}+COLUMNS)/2)) "$M03" ;printf "%*s""${NORM}"
-    _linha
-
-_volta_bibli
-_press
-_principal  
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M03}+COLUMNS)/2)) "$M03" ;printf "%*s""${NORM}"
+     _linha
+     _volta_bibli
+     _press
+     _principal  
 }
 
 ########################################
@@ -897,54 +925,57 @@ _principal
 ########################################
 _biblioteca () {
     clear
-     printf "
-      \033c\033[10;10H${RED}Informe versao a ser atualizar: ${NORM}
-%s\n"
+ #   M55=Informe versao a ser atualizar: "
+     printf "\n\n\n"
+     printf "%*s""${RED}";printf "%*s\n" $(((${#M55}+COLUMNS)/2)) "$M55" ;printf "%*s""${NORM}"
      _linha 
-	  read -rp "         Informe somente o numeral da versao : " VERSAO
- 
-      if [ -z "$VERSAO" ]; then
-     printf "
-     \033c\033[10;10H${RED}Voce nao informou o a versao a ser atualizado :${NORM}
-%s\n"
-    _linha
-	read_sleep 2
-    _principal
-    fi
-    clear
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "${GREEN}     |${NORM}      ${RED}          Menu Biblioteca             ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
-    printf "    ${PURPLE}Escolha o local da Biblioteca: ${NORM}%s\n\n"
-    printf "    ${GREEN}1${NORM} - ${WHITE}Atualizacao do Transpc ${NORM}%s\n\n"
-    printf "    ${GREEN}2${NORM} - ${WHITE}Atualizacao do Savatu ${NORM}%s\n\n"
-    printf "    ${GREEN}3${NORM} - ${WHITE}Atualizacao OFF-Line${NORM}%s\n\n"
-    printf "    ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-    printf "    ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-    read -r OPCAO1
-    printf "\n\n"
-    case $OPCAO1 in
+#    M57=Informe somente o numeral da versao :
+     printf "%*s""${YELLOW}";printf "%*s\n""$M57" ;printf "%*s""${NORM}"
+    read -rp "" VERSAO 
+
+     if [ -z "$VERSAO" ]; then
+ #    M56=Versao a ser atualizada nao foi informada :
+     printf "%*s""${RED}";printf "%*s\n" $(((${#M56}+COLUMNS)/2)) "$M56" ;printf "%*s""${NORM}"   
+     _linha
+     read_sleep 2
+     _principal
+     fi
+     clear
+     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
+     printf "${GREEN}     |${NORM}      ${RED}          Menu Biblioteca             ${GREEN}|${NORM}%s\n"
+     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
+     printf "${GREEN}     |${NORM} ${RED}           Versao Informada - ${NORM}${YELLOW}${VERSAO}${NORM}         ${GREEN}|${NORM}%s\n"
+     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n"
+     printf "    ${PURPLE}Escolha o local da Biblioteca: ${NORM}%s\n\n"
+     printf "    ${GREEN}1${NORM} - ${WHITE}Atualizacao do Transpc ${NORM}%s\n\n"
+     printf "    ${GREEN}2${NORM} - ${WHITE}Atualizacao do Savatu ${NORM}%s\n\n"
+     printf "    ${GREEN}3${NORM} - ${WHITE}Atualizacao OFF-Line${NORM}%s\n\n"
+     printf "    ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
+     printf "    ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
+     read -r OPCAO1
+     printf "\n\n"
+     case $OPCAO1 in
         1) _transpc ;;
         2) _savatu ;;
         3) _salva ;;
         9) clear ; _principal ;;
         *) Opcao Invalida ; printf ; _biblioteca ;;
-    esac
+     esac
 }
 
 #### Processo de recepcao de biblioteca ##
 _scp_biblioteca () {
-	if [ "$sistema" = "iscobol" ]; then
-    for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-    _run_scp2
-	done
-_salva
-	else
+	 if [ "$sistema" = "iscobol" ]; then
+     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+     _run_scp2
+	 done
+     _salva
+	 else
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do	
 	 _run_scp2
-	done 
-	fi
-_salva
+	 done 
+	 fi
+     _salva
 }
 
 ##############################################################
@@ -959,7 +990,6 @@ _transpc () {
      _linha
      DESTINO2="$DESTINO2TRANSPC"
      _scp_biblioteca
-
 }
 
 ##############################################################
@@ -971,13 +1001,13 @@ _savatu () {
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M29}+COLUMNS)/2)) "$M29" ;printf "%*s""${NORM}"
      _linha
-	if [ "$sistema" = "iscobol" ]; then 
- 	DESTINO2="$DESTINO2SAVATUISC"
-    _scp_biblioteca
-	else 
-	DESTINO2="$DESTINO2SAVATUMF"
-	_scp_biblioteca
-	fi
+     if [ "$sistema" = "iscobol" ]; then 
+ 	 DESTINO2="$DESTINO2SAVATUISC"
+     _scp_biblioteca
+	 else 
+	 DESTINO2="$DESTINO2SAVATUMF"
+	 _scp_biblioteca
+	 fi
 }
 
 ##############################################################
@@ -991,38 +1021,38 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _linha
      if [ "$sistema" = "iscobol" ]; then
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-        if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+         if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear
 #          Atualizacao nao encontrado no diretorio
-    _linha
-    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M48}+COLUMNS)/2)) "$M48" ;printf "%*s""${NORM}"
-    _linha
-	_press
-	clear
-    _principal
-        fi
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M48}+COLUMNS)/2)) "$M48" ;printf "%*s""${NORM}"
+     _linha
+	 _press
+	 clear
+     _principal
+         fi
      done 
-_processo
+     _processo
 #          Atualizacao nao encontrado no diretorio
-    _linha
-    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M48}+COLUMNS)/2)) "$M48" ;printf "%*s""${NORM}"
-    _linha
-_press
-_principal
-    else
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M48}+COLUMNS)/2)) "$M48" ;printf "%*s""${NORM}"
+     _linha
+     _press
+     _principal
+     else
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
            if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear 
 #          Atualizacao nao encontrado no diretorio
-    _linha
-    printf "%*s""${RED}" ;printf "%*s\n" $(((${#M48}+COLUMNS)/2)) "$M48" ;printf "%*s""${NORM}"
-    _linha
-_press
-_principal
+     _linha
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M48}+COLUMNS)/2)) "$M48" ;printf "%*s""${NORM}"
+     _linha
+     _press
+     _principal
            fi
-	done
-	fi
-_processo
+	 done
+	 fi
+     _processo
 }
  
 ##############################################################
@@ -1075,18 +1105,16 @@ _processo () {
 #  procedimento caso nao exista o diretorio a ser atualizado # 
 ##############################################################
     read_sleep 2    
-     printf "
-      \033c\033[10;10H${YELLOW}Deseja continuar a atualizacao? (n/S): ${NORM}
-%s\n"
-    read -r -n1 CONT 
-    printf "\n\n"
-        if [[ "$CONT" = N ]] || [[ "$CONT" = n ]]; then
-_principal
-        elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] || [[ "$CONT" = "" ]]; then
-     printf "
-      \033c\033[10;10H${YELLOW}Continuando a atualizacao...: ${NORM}
-%s\n"
-        else
+     _meiodatela
+     printf "%*s""${YELLOW}" ;"$M38"; printf "%*s""${NORM}"
+     read -r -n1 CONT 
+     printf "\n\n"
+         if [[ "$CONT" = N ]] || [[ "$CONT" = n ]]; then
+         _principal
+         elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] || [[ "$CONT" = "" ]]; then
+     _meiodatela
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M39}+COLUMNS)/2)) "$M39" ;printf "%*s""${NORM}"
+         else
 #            Opcao Invalida 
     _linha
     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M08}+COLUMNS)/2)) "$M08" ;printf "%*s""${NORM}"
@@ -1140,7 +1168,7 @@ _iscobol () {
 	 _linha
           "$SAVISC""$ISCCLIENT" -v
      _linha
-
+     printf "\n\n"
      else
 #             Sistema nao e IsCOBOL
      _linha
@@ -1168,7 +1196,7 @@ _linux () {
 # identificando OS
 if [[ -f /etc/os-release ]]; then
     # freedesktop.org and systemd
-    . /etc/os-release
+    .k /etc/os-release
     OS=$NAME
     VER=$VERSION_ID
     UPSTREAM_ID=${ID_LIKE,,}
@@ -1282,9 +1310,11 @@ _temps () {
      ETIQUETATEMPO="$(date +'%d-%m-%Y')"
      DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
          if [[ "$DAYS" ]] ; then
-             printf "%*s""\033c\033[10;10H${RED}"Existe um backup no \
-             Diretorio """$DIRDEST"" "antigo sera excluido."${NORM}"
+         M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
+             _meiodatela
+             printf "%*s""${RED}" ;printf "%*s\n" $(((${#M63}+COLUMNS)/2)) "$M63" ;printf "%*s""${NORM}"
          fi 
+
          while read -r line;
          do
             printf "${GREEN}""$line""${NORM}%s\n"
@@ -1340,45 +1370,47 @@ _rebuild () {
 
 _rebuild1 () {
  if [ "$sistema" = "iscobol" ]; then
-         printf "
-         \033c\033[10;10H${RED}Informe o nome do arquivo ser recuperado
-        ou enter para todos os arquivos do diretorio: ${NORM} %s\n"
-        read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
+         _meiodatela
+#M64   
+         printf "%*s""${RED}""$M64""${NORM}\n"
+         read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
 
      if [[ -z "$PEDARQ" ]]; then
-         printf "
-         \033c\033[10;10H${RED}Voce nao informou o arquivo a ser recuperado:${NORM}%s\n"
-    jut="$SAVISC""$JUTIL"
-    cd "$DIR"/ || exit
+         _meiodatela
+#M65
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M65}+COLUMNS)/2)) "$M65" ;printf "%*s""${NORM}"    
+     _linha
+     jut="$SAVISC""$JUTIL"
+     cd "$DIR"/ || exit
 
-        for i in $DIR/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
-        do
+     for i in $DIR/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
+     do
 ## grava tamanho do arquivo em variavel
-    TAMANHO=$(du "$i" | awk '{print $1}')
+     TAMANHO=$(du "$i" | awk '{print $1}')
 ## executa rebuild se tamanho for maior que zero
-        if [[ "$TAMANHO" -gt 0 ]] ; then
+         if [[ "$TAMANHO" -gt 0 ]] ; then
         "$SAVISC""$JUTIL" -rebuild "$i" -a -f
         fi
-        done 
+     done 
         cd "$tools"/ || exit
      else
-     while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
+         while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
 
-     printf "
-     \033c\033[10;10H${RED}Voce nao informou o nome do arquivo em minusculo ${NORM}%s\n" 
-    cd "$tools"/ || exit
-_press
-_ferramentas
-     done
+         _meiodatela
+         printf "%*s""${RED}" ;printf "%*s\n" $(((${#M66}+COLUMNS)/2)) "$M66" ;printf "%*s""${NORM}"
+         cd "$tools"/ || exit
+         _press
+         _ferramentas
+         done
 
-        cd "$DIR" || exit 
-    local ARQUIVO="$PEDARQ.???.dat"
-        for i in $ARQUIVO
-        do 
-        "$SAVISC""$JUTIL" -rebuild "$i" -a -f 
-        done
+     cd "$DIR" || exit 
+     local ARQUIVO="$PEDARQ.???.dat"
+         for i in $ARQUIVO
+         do 
+         "$SAVISC""$JUTIL" -rebuild "$i" -a -f 
+         done
  
-       cd "$tools"/ || exit
+     cd "$tools"/ || exit
      fi
 
 #             Arquivo(s) recuperado(s)...
@@ -1388,9 +1420,10 @@ _ferramentas
 
 cd "$tools"/ || exit
 else
-     printf "
-         \033c\033[10;10H${RED}Recuperacao Isam :${NORM}%s\n"
-    cd "$DIR"/ || exit
+#m67
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M67}+COLUMNS)/2)) "$M67" ;printf "%*s""${NORM}"
+     cd "$DIR"/ || exit
 
      for i in $DIR/{*.ARQ,*.DAT,*.LOG,*.PAN}
      do
@@ -1456,7 +1489,7 @@ _rebuild
 _backup () {
 clear
 local DIRDEST="$tools""$backup"
-    if [[ ! -d "$DIRDEST" ]]; then
+    if [ ! -d "$DIRDEST" ]; then
 M23=".. Criando o diretorio dos backups em $DIRDEST.."
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M23}+COLUMNS)/2)) "$M23" ;printf "%*s""${NORM}"
@@ -1577,12 +1610,14 @@ M10="O backup de nome \"""$ARQ""\""
      _ferramentas
      elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
-     printf "
-      \033c\033[10;10H${RED}Enviar backup para a SAV. ${NORM}%s\n"
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M68}+COLUMNS)/2)) "$M68" ;printf "%*s""${NORM}"
      read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
      while [[ "$ENVBASE" =~ [0-9] || -z "$ENVBASE" ]] ;do
-     printf "
-     \033c\033[10;10H${RED}Voce nao informou o nome do diretorio a enviado, saindo... ${NORM}%s\n" 
+     _meiodatela
+#M69    ${RED}Voce nao informou o nome do diretorio a enviado, saindo...   
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M69}+COLUMNS)/2)) "$M69" ;printf "%*s""${NORM}"
+ 
 _press    
      _ferramentas 
      done
@@ -1642,26 +1677,26 @@ _ferramentas
           \033c\033[10;10H
           *****************************************************
              ${YELLOW}""O backup \"""$VBACKUP""\" ${NORM}
-          *****************************************************
-%s\n"
-    printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
-    read -r -n1 CONT 
-    printf "\n\n"
+          *****************************************************%s\n"
 
-    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
-    _ferramentas
-    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
+     read -r -n1 CONT 
+     printf "\n\n"
+
+     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
+     _ferramentas
+     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
      printf "
       \033c\033[10;10H${RED}Enviar backup para a SAV. ${NORM}%s\n"
-    read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
-    while [[ "$ENVBASE" =~ [0-9] || -f "$ENVBASE" ]] ;do
-     printf "
-     \033c\033[10;10H${RED}Voce nao informou o nome do diretorio a enviado, saindo... ${NORM}%s\n" 
-
-_press    
-    _ferramentas 
-    done
+     read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
+     while [[ "$ENVBASE" =~ [0-9] || -f "$ENVBASE" ]] ;do
+     _meiodatela
+#M69  
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M69}+COLUMNS)/2)) "$M69" ;printf "%*s""${NORM}"
+     _press    
+     _ferramentas 
+     done
 
 #    Informe a senha do usuario do scp
      _linha
@@ -1691,7 +1726,7 @@ _unbackup () {
 local DIRDEST="$tools""$backup"/
 local DIRBACK="$tools""$backup"/dados
 
-    if [[ ! -d "$DIRBACK" ]]; then
+    if [ ! -d "$DIRBACK" ]; then
 
 M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
      _linha
@@ -1706,40 +1741,39 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      _linha
      read -rp "${YELLOW}""         1- Informe somente a data do BACKUP: ""${NORM}" VBACK
 local VBACKUP="$EMPRESA"_"$VBACK"
-    while [[ -f "$VBACKUP".zip ]] ;do 
-    clear
-    printf "
-     \033c\033[10;10H${RED}* * * < < Nome do Backup nao foi informada > > * * *${NORM}%s\n" 
-_press
-_ferramentas
-    done
-    if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]] ; then
+     while [[ -f "$VBACKUP".zip ]] ;do 
+     clear
+     _meiodatela
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M70}+COLUMNS)/2)) "$M70" ;printf "%*s""${NORM}"
+     _press
+     _ferramentas
+     done
+     if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]] ; then
 #   Backup nao encontrado no diretorio
      _linha
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#M45}+COLUMNS)/2)) "$M45" ;printf "%*s""${NORM}"
      _linha
-   
-_press
-_ferramentas
-    fi
-    printf "\n" 
+     _press
+     _ferramentas
+     fi
+     printf "\n" 
 #   "Deseja volta todos os ARQUIVOS do Backup ? (N/s):"
-    _linha
-    printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M35}+COLUMNS)/2)) "$M35" ;printf "%*s""${NORM}"
-    _linha
-    read -r -n1 CONT 
-    printf "\n\n"
-    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+     _linha
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M35}+COLUMNS)/2)) "$M35" ;printf "%*s""${NORM}"
+     _linha
+     read -r -n1 CONT 
+     printf "\n\n"
+     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 
-    read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
-    while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
-    do
- 
-    printf "
-     \033c\033[10;10H${RED}ERRO: Voce informou o nome do arquivo em minusculo ${NORM}%s\n" 
-_press
-_ferramentas
-    done
+     read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
+     while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
+     do
+ #M71
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#M71}+COLUMNS)/2)) "$M71" ;printf "%*s""${NORM}"
+     _linha
+     _press
+     _ferramentas
+     done
 
 #   ---- Voltando Backup anterior  ... ----
 
@@ -1750,37 +1784,35 @@ M34="O arquivo ""$VARQUIVO"
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M34}+COLUMNS)/2)) "$M34" ;printf "%*s""${NORM}"
      _linha
 
-    cd "$DIRBACK" || exit
-    "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
-    read_sleep 1
+     cd "$DIRBACK" || exit
+     "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
+     read_sleep 1
 
-    if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
+     if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
 #   Arquivo encontrado no diretorio$
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M28}+COLUMNS)/2)) "$M28" ;printf "%*s""${NORM}"
      _linha
    
-    else
+     else
 #   Arquivo nao encontrado no diretorio
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M49}+COLUMNS)/2)) "$M49" ;printf "%*s""${NORM}"
      _linha
-   
-_press 
-_ferramentas   
-    fi
+     _press 
+     _ferramentas   
+     fi
 
-    mv -f "$VARQUIVO"*.* "$DIR" >> "$LOG_ATU" 
-    cd "$tools"/ || exit
-    clear
+     mv -f "$VARQUIVO"*.* "$DIR" >> "$LOG_ATU" 
+     cd "$tools"/ || exit
+     clear
 #   VOLTA DO ARQUIVO CONCLUIDA$
      _linha
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M04}+COLUMNS)/2)) "$M04" ;printf "%*s""${NORM}"
      _linha
-   
-_press
-_ferramentas
-    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     _press
+     _ferramentas
+     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
 #    ---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
@@ -1817,17 +1849,17 @@ _ferramentas
 _expurgador () {
     clear
 ### apagar Biblioteca### 
-     local DIR1="$tools""$backup"/
+     local DIR1="$tools""$backup""/"
      for seq1 in {*.bkp,*.zip,*.tgz}
      do
      "$cmd_find" "$DIR1" -name "$seq1" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
      done
 #### apagar olds###
-     local DIR2="$tools""$olds"/
+     local DIR2="$tools""$olds""/"
      "$cmd_find" "$DIR2" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
 
 #### apagar progs###
-     local DIR3="$tools""$progs"/
+     local DIR3="$tools""$progs""/"
      "$cmd_find" "$DIR3" -name "*.bkp" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
      printf "\n"
 
@@ -1846,8 +1878,8 @@ _update () {
      clear
      printf "\n\n"
      _linha
-     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M71}+COLUMNS)/2)) "$M71" ;printf "%*s""${NORM}"
-     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M72}+COLUMNS)/2)) "$M72" ;printf "%*s""${NORM}"
+     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M91}+COLUMNS)/2)) "$M91" ;printf "%*s""${NORM}"
+     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#M92}+COLUMNS)/2)) "$M92" ;printf "%*s""${NORM}"
      _linha
     cp atualiza.sh "$tools""$backup"
     
