@@ -5,7 +5,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 10/01/2024                                                                                              #  
+## UPDATE 12/01/2024                                                                                              #  
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #
@@ -215,7 +215,7 @@ M71="ERRO: Voce informou o nome do arquivo em minusculo "
 
 M80="..Checando estrutura dos diretorios do atualiza.sh.." 
 M81="..Encontrado o diretorio do sistema .." 
-#M62="<<   Pressione qualquer tecla para continuar... >>"
+#M83="<< ... >>"
 
 ## Mensagens em verde
 
@@ -353,11 +353,18 @@ _press () {
 
 _linha () {
     printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
-    printf -v Traco "*"
+    printf -v Traco "-"
     linhas=${Espacos// /$Traco}
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
 }
 
+_linham () {  # Escolha qual o tipo de traco
+    Traco="$1"
+    printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
+    #printf -v "$Traco" 
+    linhas=${Espacos// /$Traco}
+	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
+}
 
 ###################################################
 # Centro da tela                                  #
@@ -384,6 +391,10 @@ elif [ "$CCC" == "YELLOW" ]; then
 printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 elif [ "$CCC" == "CYAN" ]; then
 printf "%*s""${CYAN}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
+elif [ "$CCC" == "PURPLE" ]; then
+printf "%*s""${PURPLE}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
+else
+printf "%*s""${BLUE}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 fi
 
 }
@@ -442,26 +453,49 @@ clear
 
 _principal () {
     clear
-    printf "${GREEN}     +-----------------------------------------------+${NORM}%s\n" 
-    printf "${GREEN}     |${NORM}      ${RED}       Menu de Opcoes                    ${GREEN}|${NORM}%s\n" 
-    printf "${GREEN}     +-----------------------------------------------+${NORM}%s\n"
-    printf "${GREEN}     |${NORM}   ${BLUE}.. Sistema: ""$sistema"" ..Empresa: ""$EMPRESA"" ..  ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +-----------------------------------------------+${NORM}%s\n"
-    printf "\n"
-    printf " ${PURPLE}    Escolha a opcao: ${NORM}%s\n\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Atualizacao de Programas ${NORM}%s\n\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Atualizacao de Biblioteca ${NORM}%s\n\n"
-    printf "     ${GREEN}3${NORM} - ${WHITE}Desatualizando ${NORM}%s\n\n"
+	printf "\n"
+###  100-mensagens do Menu Principal.	
+	M101="Menu de Opçoes"
+	M102=".. Sistema: ""$sistema"" .. = ..Empresa: ""$EMPRESA"" .."
+	M103="Escolha a opcao:"
+	M104="1${NORM} - ${WHITE}Atualizacao de Programas "
+    M105="2${NORM} - ${WHITE}Atualizacao de Biblioteca" 
+    M106="3${NORM} - ${WHITE}Desatualizando           "
+	M111="4${NORM} - ${WHITE}Versao do Iscobol        "
+	M112="4${NORM} - ${WHITE}Funcao nao disponivel    "
+	M107="5${NORM} - ${WHITE}Versao do Linux          "
+    M108="6${NORM} - ${WHITE}Ferramentas              "
+    M109="9${NORM} - ${RED}Sair                      "
+    M110="Digite a opcao desejada -> "
+	
+	_linham -
+	_messagec RED "$M101"
+	_linham "="
+	_messagec BLUE "$M102"
+	_linham -
+	_messagec PURPLE "$M103"
+	printf "\n"
+	_messagec GREEN "$M104"
+	printf "\n"
+	_messagec GREEN "$M105"
+	printf "\n"
+	_messagec GREEN "$M106"
+	printf "\n"
          if [ "$sistema" = "iscobol" ]; then
-              printf "     ${GREEN}4${NORM} - ${WHITE}Versao do Iscobol ${NORM}%s\n\n"
+		 _messagec GREEN "$M111"
          else
-               printf "     ${GREEN}4${NORM} - ${NORM}%s\n\n"
+		 _messagec GREEN "$M112"
          fi
-    printf "     ${GREEN}5${NORM} - ${WHITE}Versao do Linux ${NORM}%s\n\n"
-    printf "     ${GREEN}6${NORM} - ${WHITE}Ferramentas ${NORM}%s\n\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Sair${NORM}%s\n\n"
-    printf " ${YELLOW}    Digita a opcao desejada -> ${NORM}%s"
-    read -r OPCAO
+	printf "\n"
+	_messagec GREEN "$M107"
+	printf "\n"
+	_messagec GREEN "$M108"
+	printf "\n"
+	_messagec GREEN "$M109"
+	printf "\n"
+    _linham -
+    read -rp "${YELLOW}""$M110""${NORM}" OPCAO
+
     case $OPCAO in
         1) _atualizacao ;;
         2) _biblioteca ;;
@@ -479,15 +513,28 @@ _principal () {
 ##############################################################
 _atualizacao () {
     clear
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "${GREEN}     |${NORM}      ${RED}       Menu de Programas              ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n"
-    printf "     ${PURPLE}Escolha o tipo de Atualizacao: ${NORM}%s\n\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Programa ou Pacote ON-Line${NORM}%s\n\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line${NORM}%s\n\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-    printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-    read -r OPCAO
+	###   200-mensagens do Menu Programas.	
+	M201="Menu de Programas"
+	M202="Escolha o tipo de Atualizacao:"
+	M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
+	M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
+    M205="9${NORM} - ${RED}Menu Anterior                 "
+    M206="Digite o numero da OPCAO desejada -> "
+	printf "\n"
+	_linham -
+	_messagec RED "$M201"
+	_linham -
+	printf "\n"
+	_messagec PURPLE "$M202"
+	printf "\n"
+	_messagec GREEN "$M203"
+	printf "\n"
+	_messagec GREEN "$M204"
+	printf "\n"
+	_messagec GREEN "$M205"
+	printf "\n"
+	_linham -
+    read -rp "${YELLOW}""$M206""${NORM}" OPCAO
     case $OPCAO in
 		1) _pacoteon ;;
 		2) _pacoteoff ;;
@@ -669,16 +716,29 @@ _principal
 ##########################################
 _desatualizado () {
     clear
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "${GREEN}     |${NORM}      ${RED}      Menu Desatualizacao             ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
-    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Voltar programa Atualizado ${NORM}%s\n\n"
-    printf "     ${GREEN}2${NORM} - ${WHITE}Voltar antes da Biblioteca  ${NORM}%s\n\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-    printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-    read -r OPCAO1
-    case $OPCAO1 in
+###   300-mensagens do Menu desatualizacao.	
+	M301="Menu de Desatualizacao"
+	M302="Escolha o tipo de Desatualizacao:"	   
+	M303="1${NORM} - ${WHITE}Voltar programa Atualizado "
+	M304="2${NORM} - ${WHITE}Voltar antes da Biblioteca "
+    M305="9${NORM} - ${RED}Menu Anterior               "
+    M306="Digite o numero da OPCAO desejada -> "
+	printf "\n"
+	_linham -
+	_messagec RED "$M301"
+	_linham -
+	printf "\n"
+	_messagec PURPLE "$M302"
+	printf "\n"
+	_messagec GREEN "$M303"
+	printf "\n"
+	_messagec GREEN "$M304"
+	printf "\n"
+	_messagec GREEN "$M305"
+	printf "\n"
+	_linham -
+    read -rp "${YELLOW}""$M306""${NORM}" OPCAO	
+    case $OPCAO in
         1) _voltaprog ;;
         2) _voltabibli ;;
         9) clear ; _principal ;;
@@ -767,11 +827,9 @@ _voltabibli () {
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 	    _linha
 _volta_progx
-#
     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
 	    _linha
 _volta_geral
-#
     else
 #            Opcao Invalida
     _linha
@@ -961,20 +1019,35 @@ _biblioteca () {
      _principal
      fi
      clear
-     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-     printf "${GREEN}     |${NORM}      ${RED}          Menu Biblioteca             ${GREEN}|${NORM}%s\n"
-     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-     printf "${GREEN}     |${NORM} ${RED}           Versao Informada - ${NORM}${YELLOW}${VERSAO}${NORM}         ${GREEN}|${NORM}%s\n"
-     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n"
-     printf "    ${PURPLE}Escolha o local da Biblioteca: ${NORM}%s\n\n"
-     printf "    ${GREEN}1${NORM} - ${WHITE}Atualizacao do Transpc ${NORM}%s\n\n"
-     printf "    ${GREEN}2${NORM} - ${WHITE}Atualizacao do Savatu ${NORM}%s\n\n"
-     printf "    ${GREEN}3${NORM} - ${WHITE}Atualizacao OFF-Line${NORM}%s\n\n"
-     printf "    ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-     printf "    ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-     read -r OPCAO1
-     printf "\n\n"
-     case $OPCAO1 in
+###   400-mensagens do Menu Biblioteca.	
+	M401="Menu da Biblioteca"									
+	M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
+	M403="Escolha o local da Biblioteca:"
+	M404="1${NORM} - ${WHITE}Atualizacao do Transpc"
+	M405="2${NORM} - ${WHITE}Atualizacao do Savatu "
+	M406="3${NORM} - ${WHITE}Atualizacao OFF-Line  "
+    M407="9${NORM} - ${RED}Menu Anterior         "
+    M408="Digite o numero da OPCAO desejada -> "
+	printf "\n"
+	_linham -
+	_messagec RED "$M401"
+	_linham "="
+	_messagec RED "$M402"
+	_linham -
+	printf "\n"
+	_messagec PURPLE "$M403"
+	printf "\n"
+	_messagec GREEN "$M404"
+	printf "\n"
+	_messagec GREEN "$M405"
+	printf "\n"
+	_messagec GREEN "$M406"
+	printf "\n"
+	_messagec GREEN "$M407"
+	printf "\n"
+	_linham -
+    read -rp "${YELLOW}""$M408""${NORM}" OPCAO	
+    case $OPCAO in
         1) _transpc ;;
         2) _savatu ;;
         3) _salva ;;
@@ -1262,49 +1335,7 @@ _principal
 
 _ferramentas () {
     clear
-    printf "\n\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-    printf "${GREEN}     |${NORM}      ${RED}          Menu Ferramentas            ${GREEN}|${NORM}%s\n"
-    printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
-    printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n\n"
-    printf "     ${GREEN}1${NORM} - ${WHITE}Limpar Temporarios ${NORM}%s\n\n"
-        if [[ "$BANCO" = "s" ]]; then
-    printf " "
-        else
-    printf "     ${GREEN}2${NORM} - ${WHITE}Recuperar arquivos ${NORM}%s\n"
-        fi
-    printf "\n"
-        if [[ "$BANCO" = "s" ]]; then
-    printf " "
-        else
-    printf "     ${GREEN}3${NORM} - ${WHITE}Backup da base de dados ${NORM}%s\n"
-        fi
-    printf "\n"
-        if [[ "$BANCO" = "s" ]]; then
-    printf " "
-        else
-    printf "     ${GREEN}4${NORM} - ${WHITE}Restaurar Backup da base de dados ${NORM}%s\n"
-        fi
-    printf "\n"
-    printf "     ${GREEN}5${NORM} - ${WHITE}Enviar Backup${NORM}%s\n\n"
-    printf "     ${GREEN}6${NORM} - ${WHITE}Expurgar ${NORM}%s\n\n"
-    printf "     ${GREEN}7${NORM} - ${WHITE}Update ${NORM}%s\n\n"
-    printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-    printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-    read -r OPCAO1
-    case $OPCAO1 in
-        1) _temps        ;;
-        2) _rebuild      ;;
-        3) _backup       ;;
-        4) _unbackup     ;;
-        5) _backupavulso ;;
-        6) _expurgador   ;;
-        7) _update       ;;
-        9) clear ; _principal ;;
-        *) Opcao Invalida ; printf ; _ferramentas ;;
-    esac
-}
-
+ 
 ##############################################################
 #   Le a lista "atualizat" que contem os arquivos a serem    # 
 #   excluidas da base do sistema                             # 
@@ -1317,7 +1348,71 @@ _ferramentas () {
 #------------------------------------------------------------------------#
 ### Rotina para excluir arquivo temporarios###
 clear
+###  500-mensagens do Menu Ferramentas.	
+	M501="Menu das Ferramentas"
+	M502="Escolha a opcao:"
+	M503="1${NORM} - ${WHITE}Limpar Temporarios               "
+    M512="2${NORM} - ${WHITE}Expurgar                         "
+    M513="3${NORM} - ${WHITE}Update                           "	
+ 	M503="1${NORM} - ${WHITE}Limpar Temporarios               "
+    M504="2${NORM} - ${WHITE}Recuperar arquivos               "
+    M505="3${NORM} - ${WHITE}Backup da base de dados          "
+    M506="4${NORM} - ${WHITE}Restaurar Backup da base de dados"
+	M507="5${NORM} - ${WHITE}Enviar Backup                    "
+    M508="6${NORM} - ${WHITE}Expurgar                         "
+    M509="7${NORM} - ${WHITE}Update                           "	
+	M510="9${NORM} - ${RED}Menu Anterior                     "
+    M511="Digite a opcao desejada -> "
+	_linham -
+	_messagec RED "$M501"
+	_linham -
+	printf "\n"
+	_messagec PURPLE "$M502"
+	printf "\n"
+	if [[ "$BANCO" = "s" ]]; then
+	_messagec GREEN "$M503"
+	_messagec GREEN "$M512"
+    _messagec GREEN "$M513"
+	_messagec GREEN "$M510"
+	printf "\n"
+	_linham -
+    read -rp "${YELLOW}""$M511""${NORM}" OPCAOB
+	    case $OPCAOB in
+        1) _temps        ;;
+        2) _expurgador   ;;
+        3) _update       ;;
+        9) clear ; _principal ;;
+        *) Opcao Invalida ; printf ; _ferramentas ;;
+        esac
+	else
+	_messagec GREEN "$M503"
+	_messagec GREEN "$M504"
+    _messagec GREEN "$M505"
+	_messagec GREEN "$M506"
+	_messagec GREEN "$M507"
+	_messagec GREEN "$M508"
+	_messagec GREEN "$M509"
+	printf "\n\n"
+    fi
+	_messagec GREEN "$M510"
+	printf "\n"
+	_linham -
+    read -rp "${YELLOW}""$M511""${NORM}" OPCAO
+    case $OPCAO in
+        1) _temps        ;;
+        2) _rebuild      ;;
+        3) _backup       ;;
+        4) _unbackup     ;;
+        5) _backupavulso ;;
+        6) _expurgador   ;;
+        7) _update       ;;
+        9) clear ; _principal ;;
+        *) Opcao Invalida ; printf ; _ferramentas ;;
+    esac
+}
 
+### Rotina para excluir arquivo temporarios###
+clear   
 _temps () {
 #     if [ "$sistema" = "iscobol" ]; then
      cd "$tools"/ || exit
@@ -1348,13 +1443,11 @@ _temps () {
 
     cd "$tools"/ || exit
  #    else
-    #              Sistema nao e IsCOBOL
+ #              Sistema nao e IsCOBOL
  #        _linha
-#          _messagec YELLOW "$M05"
+ #          _messagec YELLOW "$M05"
  #        _linha
- 
  #    fi
-
 _press
 _ferramentas
 
@@ -1366,16 +1459,29 @@ _ferramentas
 
 _rebuild () {
     clear
-     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n"
-     printf "${GREEN}     |${NORM}      ${RED}          Menu Rebuild                ${GREEN}|${NORM}%s\n"
-     printf "${GREEN}     +--------------------------------------------+${NORM}%s\n\n\n"
-     printf "     ${PURPLE}Escolha opcao: ${NORM}%s\n\n"
-     printf "     ${GREEN}1${NORM} - ${WHITE}Um arquivo ou Todos ${NORM}%s\n\n"
-     printf "     ${GREEN}2${NORM} - ${WHITE}Arquivos Principais ${NORM}%s\n\n"
-     printf "     ${GREEN}9${NORM} - ${RED}Menu Anterior${NORM}%s\n\n"
-     printf "     ${YELLOW}Digite o numero da OPCAO desejada -> ${NORM}%s"
-     read -r OPCAO1
-     case $OPCAO1 in
+###   600-mensagens do Menu Rebuild.	
+	M601="Menu de Recuperacao de Arquivo(s)."
+	M602="Escolha a opcao:"		
+	M603="1${NORM} - ${WHITE}Um arquivo ou Todos "
+	M604="2${NORM} - ${WHITE}Arquivos Principais "
+    M605="9${NORM} - ${RED}Menu Anterior       "
+    M606="Digite o numero da OPCAO desejada -> "
+	printf "\n"
+	_linham -
+	_messagec RED "$M601"
+	_linham -
+	printf "\n"
+	_messagec PURPLE "$M602"
+	printf "\n"
+	_messagec GREEN "$M603"
+	printf "\n"
+	_messagec GREEN "$M604"
+	printf "\n"
+	_messagec GREEN "$M605"
+	printf "\n"
+	_linham -
+    read -rp "${YELLOW}""$M606""${NORM}" OPCAO	
+     case $OPCAO in
         1) _rebuild1 ;;
         2) _rebuildlista ;;
         9) clear ; _ferramentas ;;
@@ -1864,6 +1970,7 @@ _press
     fi
 _ferramentas
 }
+
 ########################################################
 # Limpando arquivos de atualizacao com mais de 30 dias #
 ########################################################
@@ -1894,7 +2001,9 @@ cd "$tools"/ || exit
 _press
 _ferramentas
 }
-
+############################
+Atualizacao online
+############################
 _update () {
      clear
      printf "\n\n"
@@ -1924,4 +2033,7 @@ exit
 }
 
 _principal
+tput clear
 tput sgr0
+tput cup "$( tput lines )" 0
+clear
