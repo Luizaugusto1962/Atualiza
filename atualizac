@@ -11,8 +11,8 @@ DIG9=n
 destino="/u"
 ### DIRETORIO DA BASE DE DADOS"""
 base=/sav/dados_jisam
-#BASE2=
-#BASE3=
+#base2=
+#base3=
 
 ### CONFIGURACAO PARA O SISTEMA EM ISCOBOL ###
 sistema=iscobol
@@ -41,8 +41,8 @@ xml=/u/sav/xml
 ###
 #### DIRETORIO DA BASE DE DADOS###
 #base="/sav/dados"
-#BASE2=""
-#BASE3=""
+#base2=""
+#base3=""
 ####################################################################
 ### Diretorio de trabalho para o atualizador ###
 pasta="/sav/tools"

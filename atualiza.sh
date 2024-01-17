@@ -96,6 +96,8 @@
 destino=""
 pasta=""
 base=""
+base2=""
+base3=""
 logs=""
 exec=""
 class=""
@@ -340,7 +342,7 @@ _press () {
 
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
 _linha () {  
-    Traco="$1"
+    local Traco=${1:-'-'}
     printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
     linhas=${Espacos// /$Traco}
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
@@ -378,23 +380,23 @@ fi
  clear
     if [ -d "$exec" ]; then
 #-Encontrado o diretorio do sistema 
-_linha "-"
+_linha "*"
 _messagec CYAN "$M81"
-_linha "-"
+_linha "*"
     read_sleep 1
     else
 M44="Nao foi encontrado o diretorio ""$exec"
-_linha "-"
+_linha "*"
 _messagec RED "$M44"
-_linha "-"
+_linha "*"
     read_sleep 2
     exit
     fi
 
 if [ -d "$tools" ]; then
-     _linha "-"
+     _linha "*"
      _messagec CYAN "$M80"
-     _linha "-"
+     _linha "*"
          OLDS=$tools$olds
          if [ -d "$OLDS" ]; then
             printf " Diretorio olds ... ok \n"
@@ -444,7 +446,7 @@ _principal () { while true
 	
 	_linha "="
 	_messagec RED "$M101"
-	_linha "-"
+	_linha
 	_messagec BLUE "$M102"
 	_linha "="
 	_messagec PURPLE "$M103"
@@ -497,7 +499,7 @@ _atualizacao () { while true
 	printf "\n"
 	_linha "="
 	_messagec RED "$M201"
-	_linha "-"
+	_linha 
 	printf "\n"
 	_messagec PURPLE "$M202"
 	printf "\n"
@@ -524,16 +526,16 @@ _qualprograma () {
      _meiodatela
      #-Informe o nome do programa a ser atualizado:
     _messagec RED "$M59"
-     _linha "-"
+     _linha 
      read -rp "${YELLOW}""       Informe o programa em maiuculo: ""${NORM}" prog
-     _linha "-"
+     _linha 
 
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      clear
 
      _meiodatela
      _messagec RED "$M60"
-     _linha "-"
+     _linha 
      _press
      _principal
      done
@@ -543,9 +545,9 @@ _qualprograma () {
 _pacoteon () {
      _qualprograma
      #-Informe a senha do usuario do scp 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M29"
-     _linha "-"
+     _linha 
      _run_scp
      _atupacote 
      _press 
@@ -557,9 +559,9 @@ _pacoteon () {
 _pacoteoff () {          
      #-O programa tem que estar no diretorio
      _qualprograma
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M09"
-     _linha "-"
+     _linha 
 
 
 local NOMEPROG="$prog""$class".zip
@@ -575,9 +577,9 @@ _atupacote () {
     if [[ -f "$tools$olds"/"$prog"-"$ANTERIOR".zip ]] ; then
         clear
 M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
-    _linha "-"
+    _linha 
     _messagec RED "$M43"
-    _linha "-"
+    _linha 
     mv -f -- "$tools$olds"/"$prog"-"$ANTERIOR".zip "$tools$olds"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
     fi
 
@@ -586,9 +588,9 @@ NOMEPROG="$prog""$class".zip
      if  [[ ! -f "$NOMEPROG" ]] ; then
         clear
 M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
-     _linha "-"
+     _linha 
      _messagec RED "$M42"
-     _linha "-"
+     _linha 
      _press 
      _principal
      fi
@@ -626,31 +628,31 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
             done
         fi
 #..   BACKUP do programa efetuado   ..
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M24"
-     _linha "-"
+     _linha 
       read_sleep 1
  #-Atualizando o novo programa.--------------------------------------#
  M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M26"
      _messagec YELLOW "$M07"
-     _linha "-"
+     _linha 
  
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO... De *.zip para *.bkp
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M20"
      _messagec YELLOW "$M13"
-     _linha "-"
+     _linha 
 
      for f in *"$prog""$class".zip; do
          mv -f -- "$f" "${f%.zip}.bkp"
      done
      read_sleep 1
 #-Atualizacao COMPLETA
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M17"
-     _linha "-"
+     _linha 
  
      mv -f -- "$prog""$class".bkp "$tools""$progs"
      mv -f -- "$prog"-$ANTERIOR.zip "$tools""$olds"
@@ -676,9 +678,9 @@ _principal
 _atupacote
     else
 #            Opcao Invalida
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M08"
-    _linha "-"
+    _linha 
 _press
 _principal
     fi
@@ -699,7 +701,7 @@ _desatualizado () { while true
 	printf "\n"
 	_linha "="
 	_messagec RED "$M301"
-	_linha "-"
+	_linha 
 	printf "\n"
 	_messagec PURPLE "$M302"
 	printf "\n"
@@ -727,7 +729,7 @@ _voltaprog () {
      clear
 #M61    
      _meiodatela
-     _linha "-"
+     _linha 
      _messagec RED "$M61"
      printf "\n"
      read -rp "${YELLOW}""         Informe o programa em maiusculo: ""${NORM}" prog
@@ -735,7 +737,7 @@ _voltaprog () {
 
      _meiodatela
      _messagec RED "$M60"
-     _linha "-"
+     _linha 
      _press
      _principal
      done
@@ -743,25 +745,25 @@ _voltaprog () {
      if [[ ! -r "$tools$olds"/"$prog"-"$ANTERIOR".zip ]]; then
      clear
 M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
-    _linha "-"
+    _linha 
     _messagec RED "$M43"
-    _linha "-"
+    _linha 
 _press
 _principal
     fi
 
 M02="Voltando a versao anterior do programa ""$prog"
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M02"
-    _linha "-"
+    _linha 
 
     "$cmd_unzip" -o "$tools$olds"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
     read_sleep 2
         clear
 #-VOLTA DE PROGRAMA CONCLUIDA
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M03"
-    _linha "-"
+    _linha 
 _press
 _principal
 }
@@ -776,16 +778,16 @@ _voltabibli () {
      clear
      printf "\033c\033[10;18H\n"
      _messagec RED "$M56"
-     _linha "-" 
+     _linha  
      _press
      _desatualizado
      done
 
      if [[ ! -r "$tools""$olds"/"$INI-$VVERSAO".zip ]]; then
 #-Backup da Biblioteca nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec RED "$M46"
-    _linha "-"
+    _linha 
     _press
     _desatualizado
     fi
@@ -796,16 +798,16 @@ _voltabibli () {
     printf "\n\n"
 
     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
-	    _linha "-"
+	    _linha 
 _volta_progx
     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
-	    _linha "-"
+	    _linha 
 _volta_geral
     else
 #-Opcao Invalida
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M08"
-    _linha "-"
+    _linha 
 _press	
 _desatualizado
     fi	
@@ -820,16 +822,16 @@ _volta_progx () {
 
      _meiodatela
      _messagec RED "$M71"
-     _linha "-"
+     _linha 
      _press
      _desatualizado
      done
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"   
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M25"
      _messagec YELLOW "$M30"
-     _linha "-"
+     _linha 
 
      cd "$tools""$olds"/ || exit
      "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
@@ -859,7 +861,7 @@ _volta_progz () {
 
      _meiodatela
      _messagec RED "$M71"
-     _linha "-"
+     _linha 
      _press	 
      _desatualizado
          else
@@ -885,15 +887,15 @@ _volta_progy () {
      fi
 
 #-VOLTA DE PROGRAMAS CONCLUIDA
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M03"
-     _linha "-"
+     _linha 
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M25"
      _messagec YELLOW "$M30"
-     _linha "-"
+     _linha 
      _press
      _volta_progz
 }
@@ -901,9 +903,9 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
 _volta_bibli () {
 #-VOLTA DOS ARQUIVOS ANTERIORES...
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M03"
-     _linha "-"
+     _linha 
 
      read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
@@ -931,10 +933,10 @@ _volta_bibli () {
      clear
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M25"
      _messagec YELLOW "$M30"
-     _linha "-"
+     _linha 
      fi
      _press
      _principal
@@ -943,15 +945,15 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
 #-Volta total dos programas------------------------------------------------------------------------#
 _volta_geral () { 
 #-M58=Voltando todos os programas.
-     _linha "-"
+     _linha 
      _messagec RED "$M58"
-     _linha "-"
+     _linha 
  
 #-M31="O programas da versao:"$VVERSAO"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M25"
      _messagec YELLOW "$M31"
-     _linha "-"
+     _linha 
 
      cd "$tools""$olds"/ || exit
      "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds"
@@ -959,9 +961,9 @@ _volta_geral () {
      clear
 
 #-VOLTA DOS PROGRAMAS CONCLUIDA
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M03"
-     _linha "-"
+     _linha 
      _volta_bibli
      _press
      _principal  
@@ -974,7 +976,7 @@ _biblioteca () { while true
  #-M55=Informe versao a ser atualizar: "
      printf "\n\n\n"
      _messagec RED "$M55"
-     _linha "-" 
+     _linha  
  #-M57=Informe somente o numeral da versao :
      printf "%*s""${YELLOW}";printf "%*s\n""$M57" ;printf "%*s""${NORM}"
     read -rp "" VERSAO 
@@ -982,7 +984,7 @@ _biblioteca () { while true
      if [ -z "$VERSAO" ]; then
  #-M56=Versao a ser atualizada nao foi informada :
      _messagec RED "$M56"
-     _linha "-"
+     _linha 
      read_sleep 2
      _principal
      fi
@@ -999,7 +1001,7 @@ _biblioteca () { while true
 	printf "\n"
 	_linha "="
 	_messagec RED "$M401"
-	_linha "-"
+	_linha 
 	_messagec RED "$M402"
 	_linha "="
 	printf "\n"
@@ -1044,9 +1046,9 @@ _scp_biblioteca () {
 _transpc () {
 
 #-Informe a senha do usuario do scp
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M29"
-     _linha "-"
+     _linha 
      DESTINO2="$DESTINO2TRANSPC"
      _scp_biblioteca
 }
@@ -1054,9 +1056,9 @@ _transpc () {
 #-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
 _savatu () {
 #-Informe a senha do usuario do scp 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M29"
-     _linha "-"
+     _linha 
      if [ "$sistema" = "iscobol" ]; then 
  	 DESTINO2="$DESTINO2SAVATUISC"
      _scp_biblioteca
@@ -1070,17 +1072,17 @@ _savatu () {
 _salva () {
 
 M21="A atualizacao tem que esta no diretorio ""$tools"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M21"
-     _linha "-"
+     _linha 
      if [ "$sistema" = "iscobol" ]; then
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
          if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear
 #-Atualizacao nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec RED "$M48"
-     _linha "-"
+     _linha 
 	 _press
 	 clear
      _principal
@@ -1088,9 +1090,9 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      done 
      _processo
 #-Atualizacao nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec RED "$M48"
-     _linha "-"
+     _linha 
      _press
      _principal
      else
@@ -1098,9 +1100,9 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
            if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear 
 #-Atualizacao nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec RED "$M48"
-     _linha "-"
+     _linha 
      _press
      _principal
            fi
@@ -1113,9 +1115,9 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
 _processo () {
 
 #-ZIPANDO OS ARQUIVOS ANTERIORES...
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M01"
-     _linha "-"
+     _linha 
      
      read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
@@ -1135,16 +1137,16 @@ _processo () {
      fi 
 
 #-..   BACKUP COMPLETO   ..
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M27"
-     _linha "-"
+     _linha 
     read_sleep 1
     
     if [[ ! -r "$tools"/"$INI-$VERSAO".zip ]]; then
 #-Backup nao encontrado no diretorio
-    _linha "-"
+    _linha 
     _messagec RED "$M45"
-    _linha "-"
+    _linha 
 
 #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
      read_sleep 2    
@@ -1159,9 +1161,9 @@ _processo () {
      _messagec YELLOW "$M39"
          else
 #-Opcao Invalida 
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M08"
-    _linha "-"
+    _linha 
  _principal
         fi 
     fi
@@ -1169,9 +1171,9 @@ _processo () {
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
     cd "$tools" || exit
 #-ATUALIZANDO OS PROGRAMAS...
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M19"
-    _linha "-"
+    _linha 
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
 	   printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
        "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
@@ -1179,9 +1181,9 @@ _processo () {
       clear
      done
 #-Atualizacao COMPLETA
-    _linha "-"
+    _linha 
     _messagec YELLOW "$M17"
-    _linha "-"
+    _linha 
      for f in *_"$VERSAO".zip; do
          mv -f -- "$f" "${f%.zip}.bkp"
      done
@@ -1190,11 +1192,11 @@ _processo () {
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #-Versao atualizada - $VERSAO$
 M40="Versao atualizada - ""$VERSAO"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M20"
      _messagec YELLOW "$M13"
      _messagec RED "$M40"
-     _linha "-"
+     _linha 
 _press
 _principal
 }
@@ -1203,15 +1205,15 @@ _principal
 _iscobol () {
      if [ "$sistema" = "iscobol" ]; then
      clear    
-	 _linha "-"
+	 _linha 
           "$SAVISC""$ISCCLIENT" -v
-     _linha "-"
+     _linha 
      printf "\n\n"
      else
 #-Sistema nao e IsCOBOL
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M05"
-     _linha "-"
+     _linha 
      fi
 _press
 _principal
@@ -1224,10 +1226,10 @@ _linux () {
      LM="A partir de algumas informacoes basicas o seu sistema, parece estar executando:"
      printf "\n\n"
      _messagec GREEN "$LX"
-     _linha "-"
+     _linha 
      printf "\n\n"
      _messagec YELLOW "$LM"
-     _linha "-"
+     _linha 
 
 #-identificando OS
 if [[ -f /etc/os-release ]]; then
@@ -1270,7 +1272,7 @@ fi
      printf "${GREEN}          OS:${NORM}      ${CYAN} ""$OS""   ${NORM}%s\n\n"
      printf "${GREEN}          VER:${NORM}      ${CYAN} ""$VER"" ${NORM}%s\n\n"
      printf "${GREEN}          UPSTREAM_ID:${NORM} ${CYAN} ""$UPSTREAM_ID"" ${NORM}%s\n\n" 
-_linha "-"
+_linha 
     printf "\n"
 _press
 _principal
@@ -1304,7 +1306,7 @@ clear
     M511="Digite a opcao desejada -> "
 	_linha "="
 	_messagec RED "$M501"
-	_linha "-"
+	_linha 
 	printf "\n"
 	_messagec PURPLE "$M502"
 	printf "\n"
@@ -1362,14 +1364,11 @@ printf "\n"
 
 #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
 clear   
-_temps () {
-     cd "$tools"/ || exit
-     local arqs=""
-     line=" "
-     arqs="atualizat"
-     DIRDEST="$tools""$backup"/
-     DIR="$destino""$base"/
+
+
+_limpando () {
      TEMPORARIOS="Temps"
+	 line=""	  
      ETIQUETATEMPO="$(date +'%d-%m-%Y')"
      DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
          if [[ "$DAYS" ]] ; then
@@ -1384,13 +1383,24 @@ _temps () {
          done < "$arqs"
   
 #-Movendo arquivos Temporarios
- _linha "-"
+ _linha 
  _messagec YELLOW "$M11"
- _linha "-"
+ _linha 
  cd "$tools"/ || exit
- _press
- _ferramentas
+ 
+}
 
+_temps () {
+     cd "$tools"/ || exit
+     local arqs=""
+     arqs="atualizat"
+     DIRDEST="$tools""$backup"/
+     for i in $base $base2 $base3 ;do
+     DIR="$destino""$i""/"
+	 _limpando
+	 done	 
+     _press
+     _ferramentas
 }
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
@@ -1405,9 +1415,9 @@ _rebuild () { while true
     M605="9${NORM} - ${RED}Menu Anterior "
     M606="Digite o numero da OPCAO desejada -> "
 	printf "\n"
-	_linha "-"
+	_linha "="
 	_messagec RED "$M601"
-	_linha "-"
+	_linha 
 	printf "\n"
 	_messagec PURPLE "$M602"
 	printf "\n"
@@ -1417,7 +1427,7 @@ _rebuild () { while true
 	printf "\n"
 	_messagec GREEN "$M605"
 	printf "\n"
-	_linha "-"
+	_linha "="
     read -rp "${YELLOW}""$M606""${NORM}" OPCAO	
      case $OPCAO in
         1) _rebuild1 ;;
@@ -1441,7 +1451,7 @@ _rebuild1 () {
          _meiodatela
 #-M65
      _messagec RED "$M65"
-     _linha "-"
+     _linha 
      jut="$SAVISC""$JUTIL"
      cd "$DIR"/ || exit
 
@@ -1476,9 +1486,9 @@ _rebuild1 () {
      fi
 
 #-Arquivo(s) recuperado(s)...
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M18"
-     _linha "-"
+     _linha 
 
 cd "$tools"/ || exit
 else
@@ -1528,9 +1538,9 @@ cd "$DIR"/ || exit
     fi
     done 
 #-Lista de Arquivo(s) recuperado(s)... 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M12"
-     _linha "-"
+     _linha 
    
 _press
 else
@@ -1549,9 +1559,9 @@ clear
 local DIRDEST="$tools""$backup"
     if [ ! -d "$DIRDEST" ]; then
 M23=".. Criando o diretorio dos backups em $DIRDEST.."
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M23"
-     _linha "-"
+     _linha 
    
     mkdir -p "$DIRDEST"
     fi
@@ -1562,9 +1572,9 @@ if [[ "$DAYS2" ]] ; then
 
 M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
     printf "\n\n"
-    _linha "-"
+    _linha 
     _messagec CYAN "$M62"
-    _linha "-"  
+    _linha   
     printf "\n" 
     printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
     read -r -n1 CONT 
@@ -1572,31 +1582,31 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
         if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
 
 #-Backup Abortado!
-     _linha "-"
+     _linha 
      _messagec RED "$M47"
-     _linha "-"        
+     _linha         
     read_sleep 3
     _ferramentas 
         elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
 
 #-Sera criado mais um backup para o periodo.
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M06"
-     _linha "-"
+     _linha 
 
         else
 #-Opcao Invalida 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M08"
-     _linha "-"
+     _linha 
 
      _ferramentas 
         fi
 fi
 #-Criando Backup..
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M14"
-     _linha "-"
+     _linha 
     
 ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 
@@ -1634,24 +1644,24 @@ kill $MYSELF >/dev/null 2>&1
 #-O backup de nome \"""$ARQ""\" foi criado em $DIRDEST$}
 M10="O backup de nome ""$ARQ"
 M32="foi criado em ""$DIRDEST"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M10"
      _messagec YELLOW "$M32"
-     _linha "-"
+     _linha 
      printf "\n"
 
 #-Backup Concluido!
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M16"
-     _linha "-"
+     _linha 
 
 #-ENVIAR PARA A SAV OU NAO-------------------------------------------#
     printf "\n"
     clear
 M10="O backup de nome \"""$ARQ""\"" 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M10"
-     _linha "-"
+     _linha 
    
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
@@ -1672,22 +1682,22 @@ _press
      _ferramentas 
      done
 #-Informe a senha do usuario do scp
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M29"
-     _linha "-"
+     _linha 
 
      "$cmd_scp" -r -P "$PORTA" "$DIRDEST/$ARQ" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M15"
-     _linha "-"
+     _linha 
      read_sleep 3 
      _ferramentas
      else
 #-Opcao Invalida
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M08"
-     _linha "-"  
+     _linha   
     _ferramentas 
      fi
 } 
@@ -1698,9 +1708,9 @@ local DIRDEST="$tools""$backup"
     ls "$DIRDEST"/"$EMPRESA"_*.zip
 
 #-Informe de qual o Backup que deseja enviar.
-     _linha "-"
+     _linha 
      _messagec RED "$M52"
-     _linha "-"     
+     _linha      
 
      read -rp "${YELLOW}""         1- Informe nome BACKUP: ""${NORM}" VBACKAV
 local VBACKUP="$EMPRESA"_"$VBACKAV"
@@ -1713,9 +1723,9 @@ _ferramentas
     done
     if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]]; then
 #-Backup nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec RED "$M45"
-     _linha "-"    
+     _linha     
      _press
      _ferramentas
     fi
@@ -1747,20 +1757,20 @@ _ferramentas
      done
 
 #-Informe a senha do usuario do scp
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M29"
-     _linha "-"
+     _linha 
      "$cmd_scp" -P "$PORTA" "$DIRDEST/$VBACKUP".zip "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M15"
-     _linha "-"
+     _linha 
     read_sleep 3 
     else
 #   Opcao Invalida
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M08"
-     _linha "-" 
+     _linha  
     _ferramentas 
    fi
 }   
@@ -1775,16 +1785,16 @@ local DIRBACK="$tools""$backup"/dados
     if [ ! -d "$DIRBACK" ]; then
 
 M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M22"
-     _linha "-"
+     _linha 
    
     mkdir -p "$DIRDEST"dados 
     fi
     ls -s "$DIRDEST""$EMPRESA"_*.zip
-     _linha "-"
+     _linha 
      _messagec RED "$M53"
-     _linha "-"
+     _linha 
      read -rp "${YELLOW}""         1- Informe somente a data do BACKUP: ""${NORM}" VBACK
 local VBACKUP="$EMPRESA"_"$VBACK"
      while [[ -f "$VBACKUP".zip ]] ;do 
@@ -1796,17 +1806,17 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      done
      if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]] ; then
 #-Backup nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec RED "$M45"
-     _linha "-"
+     _linha 
      _press
      _ferramentas
      fi
      printf "\n" 
 #-"Deseja volta todos os ARQUIVOS do Backup ? (N/s):"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M35"
-     _linha "-"
+     _linha 
      read -r -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
@@ -1816,7 +1826,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      do
  #M71
      _messagec RED "$M71"
-     _linha "-"
+     _linha 
      _press
      _ferramentas
      done
@@ -1825,10 +1835,10 @@ local VBACKUP="$EMPRESA"_"$VBACK"
 
 M34="O arquivo ""$VARQUIVO"
 
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M33"
      _messagec YELLOW "$M34"
-     _linha "-"
+     _linha 
 
      cd "$DIRBACK" || exit
      "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
@@ -1836,15 +1846,15 @@ M34="O arquivo ""$VARQUIVO"
 
      if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
 #-Arquivo encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M28"
-     _linha "-"
+     _linha 
    
      else
 #-Arquivo nao encontrado no diretorio
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M49"
-     _linha "-"
+     _linha 
      _press 
      _ferramentas   
      fi
@@ -1853,19 +1863,19 @@ M34="O arquivo ""$VARQUIVO"
      cd "$tools"/ || exit
      clear
 #-VOLTA DO ARQUIVO CONCLUIDA
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M04"
-     _linha "-"
+     _linha 
      _press
      _ferramentas
      elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
  
 #---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M33"
      _messagec YELLOW "$M34"
-     _linha "-"
+     _linha 
    
     cd "$DIRBACK" || exit
     "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip  >> "$LOG_ATU"
@@ -1875,16 +1885,16 @@ M34="O arquivo ""$VARQUIVO"
     cd "$tools"/ || exit
     clear
 #-VOLTA DOS ARQUIVOS CONCLUIDA
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M04"
-     _linha "-"
+     _linha 
    
 _press
     else
 #-Opcao Invalida
-     _linha "-"
+     _linha 
      _messagec YELLOW "$M08"
-     _linha "-"
+     _linha 
    
     fi
 _ferramentas
@@ -1909,9 +1919,9 @@ _expurgador () {
      printf "\n"
 
 #-Verificando e/ou excluido arquivos com mais de 30 dias criado.------#
-     _linha "-"
+     _linha 
      _messagec RED "$M51"
-     _linha "-"
+     _linha 
      printf "\n\n"
 cd "$tools"/ || exit
 
@@ -1924,10 +1934,10 @@ _ferramentas
 _update () {
      clear
      printf "\n\n"
-     _linha "-"
+     _linha 
      _messagec GREEN "$M91"
      _messagec GREEN "$M92"
-     _linha "-"
+     _linha 
     cp atualiza.sh "$tools""$backup"
     
     cd "$tools""$progs" || exit 
