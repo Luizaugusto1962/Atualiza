@@ -148,7 +148,7 @@ M06="Sera criado mais um backup para o periodo"
 M08="Opcao Invalida"  
 M09="O programa tem que estar no diretorio"   
 #M10="O backup de nome \"""$ARQ""\"" 
-M11="Movendo arquivos Temporarios" 
+#M11="Movendo arquivos Temporarios do diretorio =" "$DIR" 
 M12="Arquivo(s) recuperado(s)..."
 M13="De *.zip para *.bkp"
 M14="Criando Backup.."
@@ -1382,12 +1382,11 @@ _limpando () {
             "$cmd_zip" -m "$DIRDEST""$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
          done < "$arqs"
   
-#-Movendo arquivos Temporarios
+M11="Movendo arquivos Temporarios do diretorio = ""$DIR"
  _linha 
  _messagec YELLOW "$M11"
  _linha 
  cd "$tools"/ || exit
- 
 }
 
 _temps () {
@@ -1398,8 +1397,8 @@ _temps () {
      for i in $base $base2 $base3 ;do
      DIR="$destino""$i""/"
 	 _limpando
-	 done	 
-     _press
+	 _press
+     done
      _ferramentas
 }
 
