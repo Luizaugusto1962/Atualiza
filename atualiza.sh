@@ -140,11 +140,11 @@ cmd_scp="scp"
 
 M01="Compactando os arquivos Anteriores" 
 #M02="Voltando a versao anterior do programa" 
-M03="Volta do(s) programa(s) Concluida(s)" 
+M03="Volta do(s) Programa(s) Concluida(s)" 
 M04="Volta do(s) Arquivo(s) Concluida" 
 M05="Sistema nao e IsCOBOL" 
 M06="Sera criado mais um backup para o periodo"  
-#M07="Programa(s) a ser(em) atualizado(s) -"
+#M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
 M08="Opcao Invalida"  
 M09="O programa tem que estar no diretorio"   
 #M10="O backup de nome \"""$ARQ""\"" 
@@ -184,7 +184,7 @@ M39="Continuando a atualizacao...:"
 #M40="Versao atualizada - ""$VERSAO" 
 #M41="Programa nao encontrado no diretorio" 
 #M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
-M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio." 
+#M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio." 
 #M44="Nao foi encontrado o diretorio ""$exec" 
 M45="Backup nao encontrado no diretorio" 
 M46="Backup da Biblioteca nao encontrado no diretorio"
@@ -193,7 +193,7 @@ M48="Atualizacao nao encontrado ou incompleta."
 M49="Arquivo nao encontrado no diretorio"
 #M50=""
 M51="Verificando e/ou excluido arquivos com mais de 30 dias criado."
-M52="Informe de qual o Backup que deseja enviar."
+M52="Informe de qual o Backup que deseja enviar. Somente informe a data"
 M53="Informe de qual o Backup que deseja voltara o(s) arquivo(s)."
 #M54="Programa na versao 9 digitos nao encontrada baixar da class20"
 M55="Informe versao a da Biblioteca a ser atualizada: "
@@ -1765,8 +1765,8 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _linha 
      _messagec YELLOW "$M08"
      _linha  
-    _ferramentas 
    fi
+_ferramentas   
 }   
   
 #-VOLTA BACKUP TOTAL OU PARCIAL--------------------------------------------------------------------#
