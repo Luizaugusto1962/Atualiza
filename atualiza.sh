@@ -5,9 +5,9 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 12/01/2024                                                                                              #  
+## UPDATE 19/01/2024                                                                                              #
 #                                                                                                                 #
-# INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
+# INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						  #
 # incluir PACOTE de programas                                                                                     #
 #-----------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
@@ -341,7 +341,7 @@ _press () {
 }
 
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
-_linha () {  
+_linha () {
     local Traco=${1:-'-'}
     printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
     linhas=${Espacos// /$Traco}
@@ -426,8 +426,8 @@ else
 fi
 clear
 
-_principal () { while true
-     do
+_principal () { 
+     
      clear
 	printf "\n"
 #-100-mensagens do Menu Principal.-----------------------------------------------------------------#	
@@ -442,8 +442,8 @@ _principal () { while true
 	M107="5${NORM} - Versao do Linux          "
     M108="6${NORM} - Ferramentas              "
     M109="9${NORM} - ${RED}Sair              "
-    M110="Digite a opcao desejada -> "
-	
+    M110="Digite a opcao desejada ->" 
+
 	_linha "="
 	_messagec RED "$M101"
 	_linha
@@ -482,14 +482,14 @@ _principal () { while true
         9) clear; tput sgr0; exit ;;
         *) clear ; _principal ;;
     esac
-    done
+   
 }
 
 #-Procedimento da atualizacao de programas---------------------------------------------------------# 
-_atualizacao () { while true
-    do 
+_atualizacao () { 
+
     clear
-	###   200-mensagens do Menu Programas.	
+	###   200-mensagens do Menu Programas.
 	M201="Menu de Programas"
 	M202="Escolha o tipo de Atualizacao:"
 	M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
@@ -499,7 +499,7 @@ _atualizacao () { while true
 	printf "\n"
 	_linha "="
 	_messagec RED "$M201"
-	_linha 
+	_linha
 	printf "\n"
 	_messagec PURPLE "$M202"
 	printf "\n"
@@ -517,11 +517,10 @@ _atualizacao () { while true
         9) clear ; _principal ;;
         *) Opcao Invalida ; _principal ;;
     esac
-    done
 }
 
 _qualprograma () {
-    
+
      clear
      _meiodatela
      #-Informe o nome do programa a ser atualizado:
@@ -556,18 +555,18 @@ _pacoteon () {
 }
 #_Pacotes em offline-----------------------------#
 
-_pacoteoff () {          
+_pacoteoff () {
      #-O programa tem que estar no diretorio
      _qualprograma
-     _linha 
+     _linha
      _messagec YELLOW "$M09"
-     _linha 
+     _linha
 
 
 local NOMEPROG="$prog""$class".zip
     read_sleep 1
 _atupacote
-_press 
+_press
 _principal
 
 }
@@ -577,9 +576,9 @@ _atupacote () {
     if [[ -f "$tools$olds"/"$prog"-"$ANTERIOR".zip ]] ; then
         clear
 M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
-    _linha 
+    _linha
     _messagec RED "$M43"
-    _linha 
+    _linha
     mv -f -- "$tools$olds"/"$prog"-"$ANTERIOR".zip "$tools$olds"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
     fi
 
@@ -619,7 +618,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
         read_sleep 2
 	 fi
         if [[ -f "$prog".TEL ]]; then
-              
+
             for pprog in *.TEL
             do
               "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
@@ -638,7 +637,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _messagec YELLOW "$M26"
      _messagec YELLOW "$M07"
      _linha 
- 
+
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO... De *.zip para *.bkp
      _linha 
      _messagec YELLOW "$M20"
@@ -666,9 +665,9 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _messagec YELLOW "$M37"
      read -r -n1 CONT 
     printf "\n\n"
-    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+    if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
 _principal
-    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+    elif [[ "$CONT" == [Ss] ]]; then
 #    source ./atualizac
       if [[ "$OPCAO" = 1 ]] ; then
          _pacoteon
@@ -691,9 +690,9 @@ _principal
 _desatualizado () { while true
     do
     clear
-###-300-mensagens do Menu desatualizacao.	
+###-300-mensagens do Menu desatualizacao.
 	M301="Menu de Desatualizacao"
-	M302="Escolha o tipo de Desatualizacao:"	   
+	M302="Escolha o tipo de Desatualizacao:"
 	M303="1${NORM} - Voltar programa Atualizado "
 	M304="2${NORM} - Voltar antes da Biblioteca "
     M305="9${NORM} - ${RED}Menu Anterior       "
@@ -701,7 +700,7 @@ _desatualizado () { while true
 	printf "\n"
 	_linha "="
 	_messagec RED "$M301"
-	_linha 
+	_linha
 	printf "\n"
 	_messagec PURPLE "$M302"
 	printf "\n"
@@ -727,7 +726,7 @@ _desatualizado () { while true
 
 _voltaprog () {
      clear
-#M61    
+#M61
      _meiodatela
      _linha 
      _messagec RED "$M61"
@@ -778,7 +777,7 @@ _voltabibli () {
      clear
      printf "\033c\033[10;18H\n"
      _messagec RED "$M56"
-     _linha  
+     _linha
      _press
      _desatualizado
      done
@@ -797,10 +796,10 @@ _voltabibli () {
     read -r -n1 CONT 
     printf "\n\n"
 
-    if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+    if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
 	    _linha 
 _volta_progx
-    elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+    elif [[ "$CONT" == [Ss] ]] ; then
 	    _linha 
 _volta_geral
     else
@@ -808,9 +807,9 @@ _volta_geral
     _linha 
     _messagec YELLOW "$M08"
     _linha 
-_press	
+_press
 _desatualizado
-    fi	
+    fi
 }
 
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
@@ -827,11 +826,11 @@ _volta_progx () {
      _desatualizado
      done
 
-M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"   
-     _linha 
+M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
+     _linha
      _messagec YELLOW "$M25"
      _messagec YELLOW "$M30"
-     _linha 
+     _linha
 
      cd "$tools""$olds"/ || exit
      "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
@@ -843,7 +842,7 @@ _volta_progz () {
      printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
      _press
 ### limpando diretorio 
         local DIR1="$tools""$olds"/
@@ -855,34 +854,34 @@ _volta_progz () {
      fi
 
 	 local Vprog=" "
-     if [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     if [[ "$CONT" == [Ss] ]] ; then
      read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
          if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
 
      _meiodatela
      _messagec RED "$M71"
-     _linha 
-     _press	 
+     _linha
+     _press
      _desatualizado
          else
      _volta_progy
          fi
      _press
      _desatualizado
-     fi 
-} 
+     fi
+}
 
 _volta_progy () {
      if [ "$sistema" = "iscobol" ]; then
      "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
- 
+
      "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
- 
+
      "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
      clear
      else
      "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
- 
+
      "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
      fi
 
@@ -921,7 +920,7 @@ _volta_bibli () {
 
      cd "$tools"/ || exit
      clear
- 
+
      else
      cd "$tools""$olds"/ || exit
 	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
@@ -929,7 +928,7 @@ _volta_bibli () {
      cd "$tools""$olds"/ || exit
 	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
-     cd "$tools"/ || exit     
+     cd "$tools"/ || exit
      clear
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
@@ -989,15 +988,15 @@ _biblioteca () { while true
      _principal
      fi
      clear
-###-400-mensagens do Menu Biblioteca.	
-	M401="Menu da Biblioteca"									
-	M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
+###-400-mensagens do Menu Biblioteca.
+	M401="Menu da Biblioteca"
+        M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
 	M403="Escolha o local da Biblioteca:"
 	M404="1${NORM} - Atualizacao do Transpc"
 	M405="2${NORM} - Atualizacao do Savatu "
 	M406="3${NORM} - Atualizacao OFF-Line  "
-    M407="9${NORM} - ${RED}Menu Anterior  "
-    M408="Digite o numero da OPCAO desejada -> "
+        M407="9${NORM} - ${RED}Menu Anterior  "
+        M408="Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M401"
@@ -1154,9 +1153,9 @@ _processo () {
      printf "%*s""${YELLOW}" ;"$M38"; printf "%*s""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-         if [[ "$CONT" = N ]] || [[ "$CONT" = n ]]; then
+         if [[ "$CONT" == [Nn] ]] ; then
          _principal
-         elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] || [[ "$CONT" = "" ]]; then
+         elif [[ "$CONT" == [Ss] ]] || [[ "$CONT" == "" ]]; then
      _meiodatela
      _messagec YELLOW "$M39"
          else
@@ -1278,16 +1277,8 @@ _press
 _principal
     }
 
-_ferramentas () { while true
-    do 
-    clear
- 
-#-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
-#-TESTE Arquivos ----------------------------------------------------------------------------------#
-[[ ! -e "atualizat" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
-[[ ! -r "atualizat" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
-#--------------------------------------------------------------------------------------------------#
-#-Rotina para excluir arquivo temporarios----------------------------#
+_ferramentas () {
+
 clear
 ###-500-mensagens do Menu Ferramentas.	
 	M501="Menu das Ferramentas"
@@ -1359,16 +1350,11 @@ printf "\n"
         9) clear ; _principal ;;
         *) Opcao Invalida ; _ferramentas ;;
     esac
-    done
 }
-
-#-Rotina para excluir arquivo temporarios----------------------------------------------------------#
-clear   
-
-
+    clear
 _limpando () {
      TEMPORARIOS="Temps"
-	 line=""	  
+	 line=""
      ETIQUETATEMPO="$(date +'%d-%m-%Y')"
      DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
          if [[ "$DAYS" ]] ; then
@@ -1386,33 +1372,42 @@ M11="Movendo arquivos Temporarios do diretorio = ""$DIR"
  _linha 
  _messagec YELLOW "$M11"
  _linha 
- cd "$tools"/ || exit
+
 }
 
 _temps () {
-     cd "$tools"/ || exit
-     local arqs=""
-     arqs="atualizat"
-     DIRDEST="$tools""$backup"/
-     for i in $base $base2 $base3 ;do
-     DIR="$destino""$i""/"
-	 _limpando
-	 _press
-     done
-     _ferramentas
+
+#-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
+#-TESTE Arquivos ----------------------------------------------------------------------------------#
+[[ ! -e "atualizat" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
+[[ ! -r "atualizat" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
+#--------------------------------------------------------------------------------------------------#
+#-Rotina para excluir arquivo temporarios----------------------------------------------------------#
+
+ cd "$tools"/ || exit
+ local arqs=""
+ arqs="atualizat"
+ DIRDEST="$tools""$backup"/
+ for i in $base $base2 $base3 ;do
+ DIR="$destino""$i""/"
+ _limpando
+ _press
+ done
+ _ferramentas
+
 }
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 _rebuild () { while true
-    do 
+    do
     clear
-###-600-mensagens do Menu Rebuild.	
-	M601="Menu de Recuperacao de Arquivo(s)."
-	M602="Escolha a opcao:"		
+###-600-mensagens do Menu Rebuild.
+        M601="Menu de Recuperacao de Arquivo(s)."
+	M602="Escolha a opcao:"
 	M603="1${NORM} - Um arquivo ou Todos "
 	M604="2${NORM} - Arquivos Principais "
-    M605="9${NORM} - ${RED}Menu Anterior "
-    M606="Digite o numero da OPCAO desejada -> "
+        M605="9${NORM} - ${RED}Menu Anterior "
+        M606="Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M601"
@@ -1578,7 +1573,7 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
     printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
     read -r -n1 CONT 
     printf "\n"
-        if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+        if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
 
 #-Backup Abortado!
      _linha 
@@ -1586,7 +1581,7 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
      _linha         
     read_sleep 3
     _ferramentas 
-        elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+        elif [[ "$CONT" == [Ss] ]] ; then
 
 #-Sera criado mais um backup para o periodo.
      _linha 
@@ -1665,9 +1660,9 @@ M10="O backup de nome \"""$ARQ""\""
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
+     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then    
      _ferramentas
-     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     elif [[ "$CONT" == [Ss] ]] ; then
  
      _meiodatela
      _messagec RED "$M68"
@@ -1740,9 +1735,9 @@ _ferramentas
      read -r -n1 CONT 
      printf "\n\n"
 
-     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then    
+     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then    
      _ferramentas
-     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     elif [[ "$CONT" == [Ss] ]] ; then
  
      printf "
       \033c\033[10;10H${RED}Enviar backup para a SAV. ${NORM}%s\n"
@@ -1818,7 +1813,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      _linha 
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" = N ]] || [[ "$CONT" = n ]] || [[ "$CONT" = "" ]] ; then
+     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
 
      read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
      while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
@@ -1867,7 +1862,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
      _press
      _ferramentas
-     elif [[ "$CONT" = S ]] || [[ "$CONT" = s ]] ; then
+     elif [[ "$CONT" == [Ss] ]] ; then
  
 #---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
