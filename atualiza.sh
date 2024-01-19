@@ -442,7 +442,7 @@ _principal () {
 	M107="5${NORM} - Versao do Linux          "
     M108="6${NORM} - Ferramentas              "
     M109="9${NORM} - ${RED}Sair              "
-    M110="Digite a opcao desejada ->" 
+    M110=" Digite a opcao desejada -> " 
 
 	_linha "="
 	_messagec RED "$M101"
@@ -495,7 +495,7 @@ _atualizacao () {
 	M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
 	M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
     M205="9${NORM} - ${RED}Menu Anterior                 "
-    M206="Digite o numero da OPCAO desejada -> "
+    M206=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M201"
@@ -660,7 +660,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 
-#M37Deseja informar mais algum programa para ser atualizado?
+#M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
      _messagec YELLOW "$M37"
      read -r -n1 CONT 
@@ -696,7 +696,7 @@ _desatualizado () { while true
 	M303="1${NORM} - Voltar programa Atualizado "
 	M304="2${NORM} - Voltar antes da Biblioteca "
     M305="9${NORM} - ${RED}Menu Anterior       "
-    M306="Digite o numero da OPCAO desejada -> "
+    M306=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M301"
@@ -996,7 +996,7 @@ _biblioteca () { while true
 	M405="2${NORM} - Atualizacao do Savatu "
 	M406="3${NORM} - Atualizacao OFF-Line  "
         M407="9${NORM} - ${RED}Menu Anterior  "
-        M408="Digite o numero da OPCAO desejada -> "
+        M408=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M401"
@@ -1294,7 +1294,7 @@ clear
     M508="6${NORM} - Expurgar                         "
     M509="7${NORM} - Update                           "	
 	M510="9${NORM} - ${RED}Menu Anterior             "
-    M511="Digite a opcao desejada -> "
+    M511=" Digite a opcao desejada -> "
 	_linha "="
 	_messagec RED "$M501"
 	_linha 
@@ -1407,7 +1407,7 @@ _rebuild () { while true
 	M603="1${NORM} - Um arquivo ou Todos "
 	M604="2${NORM} - Arquivos Principais "
         M605="9${NORM} - ${RED}Menu Anterior "
-        M606="Digite o numero da OPCAO desejada -> "
+        M606=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M601"
