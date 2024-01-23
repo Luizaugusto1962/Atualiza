@@ -526,7 +526,7 @@ _qualprograma () {
      #-Informe o nome do programa a ser atualizado:
     _messagec RED "$M59"
      _linha 
-     read -rp "${YELLOW}""       Informe o programa em maiuculo: ""${NORM}" prog
+     read -rp "${YELLOW}""       Informe o programa em MAIUSCULO: ""${NORM}" prog
      _linha 
 
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
@@ -577,7 +577,7 @@ _atupacote () {
         clear
 M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
     _linha
-    _messagec RED "$M43"
+    _messagec CYAN "$M43"
     _linha
     mv -f -- "$tools$olds"/"$prog"-"$ANTERIOR".zip "$tools$olds"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
     fi
@@ -665,9 +665,9 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _messagec YELLOW "$M37"
      read -r -n1 CONT 
     printf "\n\n"
-    if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
+    if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
 _principal
-    elif [[ "$CONT" == [Ss] ]]; then
+    elif [[ "$CONT" =~ ^[Ss]$ ]]; then
 #    source ./atualizac
       if [[ "$OPCAO" = 1 ]] ; then
          _pacoteon
@@ -796,10 +796,10 @@ _voltabibli () {
     read -r -n1 CONT 
     printf "\n\n"
 
-    if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
+    if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
 	    _linha 
 _volta_progx
-    elif [[ "$CONT" == [Ss] ]] ; then
+    elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
 	    _linha 
 _volta_geral
     else
@@ -842,7 +842,7 @@ _volta_progz () {
      printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
      _press
 ### limpando diretorio 
         local DIR1="$tools""$olds"/
@@ -854,7 +854,7 @@ _volta_progz () {
      fi
 
 	 local Vprog=" "
-     if [[ "$CONT" == [Ss] ]] ; then
+     if [[ "$CONT" =~ ^[Ss]$ ]] ; then
      read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
          if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
 
@@ -1153,9 +1153,9 @@ _processo () {
      printf "%*s""${YELLOW}" ;"$M38"; printf "%*s""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-         if [[ "$CONT" == [Nn] ]] ; then
+         if [[ "$CONT" =~ ^[Nn]$ ]] ; then
          _principal
-         elif [[ "$CONT" == [Ss] ]] || [[ "$CONT" == "" ]]; then
+         elif [[ "$CONT" =~ ^[Ss]$ ]] || [[ "$CONT" == "" ]]; then
      _meiodatela
      _messagec YELLOW "$M39"
          else
@@ -1573,7 +1573,7 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
     printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
     read -r -n1 CONT 
     printf "\n"
-        if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
+        if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
 
 #-Backup Abortado!
      _linha 
@@ -1581,7 +1581,7 @@ M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
      _linha         
     read_sleep 3
     _ferramentas 
-        elif [[ "$CONT" == [Ss] ]] ; then
+        elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
 
 #-Sera criado mais um backup para o periodo.
      _linha 
@@ -1660,9 +1660,9 @@ M10="O backup de nome \"""$ARQ""\""
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then    
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then    
      _ferramentas
-     elif [[ "$CONT" == [Ss] ]] ; then
+     elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
  
      _meiodatela
      _messagec RED "$M68"
@@ -1735,9 +1735,9 @@ _ferramentas
      read -r -n1 CONT 
      printf "\n\n"
 
-     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then    
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then    
      _ferramentas
-     elif [[ "$CONT" == [Ss] ]] ; then
+     elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
  
      printf "
       \033c\033[10;10H${RED}Enviar backup para a SAV. ${NORM}%s\n"
@@ -1813,7 +1813,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      _linha 
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" == [Nn] ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
 
      read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
      while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
@@ -1862,7 +1862,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
      _press
      _ferramentas
-     elif [[ "$CONT" == [Ss] ]] ; then
+     elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
  
 #---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
