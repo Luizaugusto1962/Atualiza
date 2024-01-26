@@ -1362,7 +1362,7 @@ _limpando () {
              _meiodatela
              _messagec RED "$M63"
          fi 
-         while read -r line;
+         while IFS= read -r line;
          do
             printf "${GREEN}""$line""${NORM}%s\n"
             "$cmd_zip" -m "$DIRDEST""$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
