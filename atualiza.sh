@@ -115,8 +115,8 @@ SAVATU4=""
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
 #- TESTE de CONFIGURACOES--------------------------------------------------------------------------#
 
-[[ ! -e "atualizac" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
-[[ ! -r "atualizac" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
+[[ ! -e "atualizac" ]] && printf "ERRO. Arquivo atualizac, Nao existe no diretorio.\n" && exit 1
+[[ ! -r "atualizac" ]] && printf "ERRO. Arquivo atualizac, Sem acesso de leitura.\n" && exit 1
 
 "." ./atualizac
 #--------------------------------------------------------------------------------------------------#
@@ -225,7 +225,6 @@ M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
 
 #-Variavel para identificar -----------------------------------------------------------------------#
-tput bold
 VERSAO=""
 if [ -z "$VERSAO" ]; then
           VERSAO=""
@@ -290,16 +289,16 @@ LOG_LIMPA=$tools$logs/limpando.$(date +"%Y-%m-%d").log
 UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 #-Variaveis de cores-------------------------------------------------------------------------------#
-
-ESC=$(printf '\033') 
-RED="${ESC}[1;31m"
-GREEN="${ESC}[1;32m" 
-YELLOW="${ESC}[1;33m" 
-BLUE="${ESC}[1;34m"
-PURPLE="${ESC}[1;35m"
-CYAN="${ESC}[1;36m" 
-WHITE="${ESC}[1;37m"
-NORM="${ESC}[1;39m"
+export TERM=xterm-256color
+tput sgr0
+tput clear 
+		RED=$(tput bold)$(tput setaf 1)
+		GREEN=$(tput bold)$(tput setaf 2)
+		YELLOW=$(tput bold)$(tput setaf 3)
+		BLUE=$(tput bold)$(tput setaf 4)
+		PURPLE=$(tput bold)$(tput setaf 5) #MAGENTA
+		CYAN=$(tput bold)$(tput setaf 6)
+		NORM=$(tput bold)$(tput setaf 7)
 
 COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
@@ -335,7 +334,7 @@ read_sleep () {
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
 _press () {
-   printf "%*s""${BLUE}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
+   printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
    read -t 15 -n 1 -s -r -p  ""
     clear
 }
@@ -441,7 +440,7 @@ _principal () {
 	M112="4${NORM} - Funcao nao disponivel    "
 	M107="5${NORM} - Versao do Linux          "
     M108="6${NORM} - Ferramentas              "
-    M109="9${NORM} - ${RED}Sair              "
+    M109="9${NORM} - ${RED}Sair           "
     M110=" Digite a opcao desejada -> " 
 
 	_linha "="
@@ -494,7 +493,7 @@ _atualizacao () {
 	M202="Escolha o tipo de Atualizacao:"
 	M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
 	M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
-    M205="9${NORM} - ${RED}Menu Anterior                 "
+    M205="9${NORM} - ${RED}Menu Anterior        "
     M206=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
@@ -695,7 +694,7 @@ _desatualizado () { while true
 	M302="Escolha o tipo de Desatualizacao:"
 	M303="1${NORM} - Voltar programa Atualizado "
 	M304="2${NORM} - Voltar antes da Biblioteca "
-    M305="9${NORM} - ${RED}Menu Anterior       "
+    M305="9${NORM} - ${RED}Menu Anterior    "
     M306=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
@@ -995,7 +994,7 @@ _biblioteca () { while true
 	M404="1${NORM} - Atualizacao do Transpc"
 	M405="2${NORM} - Atualizacao do Savatu "
 	M406="3${NORM} - Atualizacao OFF-Line  "
-        M407="9${NORM} - ${RED}Menu Anterior  "
+        M407="9${NORM} - ${RED}Menu Anterior "
         M408=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
@@ -1293,7 +1292,7 @@ clear
 	M507="5${NORM} - Enviar Backup                    "
     M508="6${NORM} - Expurgar                         "
     M509="7${NORM} - Update                           "	
-	M510="9${NORM} - ${RED}Menu Anterior             "
+	M510="9${NORM} - ${RED}Menu Anterior          "
     M511=" Digite a opcao desejada -> "
 	_linha "="
 	_messagec RED "$M501"
@@ -1379,8 +1378,8 @@ _temps () {
 
 #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
-[[ ! -e "atualizat" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
-[[ ! -r "atualizat" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
+[[ ! -e "atualizat" ]] && printf "ERRO. Arquivo atualizat, Nao existe no diretorio.\n" && exit 1
+[[ ! -r "atualizat" ]] && printf "ERRO. Arquivo atualizat, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
 #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
 
@@ -1404,10 +1403,10 @@ _rebuild () { while true
 ###-600-mensagens do Menu Rebuild.
         M601="Menu de Recuperacao de Arquivo(s)."
 	M602="Escolha a opcao:"
-	M603="1${NORM} - Um arquivo ou Todos "
-	M604="2${NORM} - Arquivos Principais "
-        M605="9${NORM} - ${RED}Menu Anterior "
-        M606=" Digite o numero da OPCAO desejada -> "
+	M603="1${NORM} - Um arquivo ou Todos   "
+	M604="2${NORM} - Arquivos Principais   "
+    M605="9${NORM} - ${RED}Menu Anterior"
+    M606=" Digite o numero da OPCAO desejada -> "
 	printf "\n"
 	_linha "="
 	_messagec RED "$M601"
@@ -1510,8 +1509,8 @@ _rebuild
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
-[[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo nao existe."    && exit 1
-[[ ! -r "atualizaj" ]] && printf "ERRO. Sem acesso de leitura." && exit 1
+[[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
+[[ ! -r "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
 
 _rebuildlista () {
@@ -1898,29 +1897,34 @@ _ferramentas
 _expurgador () {
     clear
 #-Apagar Biblioteca--------------------------------------------------# 
-     local DIR1="$tools""$backup""/"
-     for seq1 in {*.bkp,*.zip,*.tgz}
-     do
-     "$cmd_find" "$DIR1" -name "$seq1" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-     done
+     local DIR1="$BACKUP""/"
+#     for seq1 in {*.bkp,*.zip,*.tgz}
+#     do
+#     "$cmd_find" "$DIR1" -name "$seq1" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+# Apagando todos os arquivos do diretorio #
+     "$cmd_find" "$DIR1" . -type f -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+#     done
 #-Apagar arquivos do diretorio olds----------------------------------#
-     local DIR2="$tools""$olds""/"
+     local DIR2="$OLDS""/"
      "$cmd_find" "$DIR2" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
 
 #-Apagar arquivos do diretorio progs---------------------------------#
-     local DIR3="$tools""$progs""/"
+     local DIR3="$PROGS""/"
      "$cmd_find" "$DIR3" -name "*.bkp" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+    
+#-Apagar arquivos do diretorio dos logs---------------------------------#
+     local DIR4="$LOGS""/"
+     "$cmd_find" "$DIR4" -name "*.log" -ctime +30 -exec rm -r {} \; 
      printf "\n"
-
 #-Verificando e/ou excluido arquivos com mais de 30 dias criado.------#
      _linha 
      _messagec RED "$M51"
      _linha 
      printf "\n\n"
 cd "$tools"/ || exit
-
 _press
 _ferramentas
+
 }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
@@ -1952,6 +1956,8 @@ _press
 exit   
 }
 _principal
+
+unset RED GREEN YELLOW BLUE PURPLE CYAN NORM
 tput clear
 tput sgr0
 tput cup "$( tput lines )" 0
