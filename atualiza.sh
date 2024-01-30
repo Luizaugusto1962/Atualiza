@@ -160,7 +160,7 @@ M19="ATUALIZANDO OS PROGRAMAS..."
 M20="Alterando a extensao da atualizacao"
 #M21="A atualizacao tem que esta no diretorio ""$tools"
 #M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
-#M23=".. Criando o diretorio dos backups em $DIRDEST.."
+#M23=".. Criando o diretorio dos backups em $BACKUP.."
 M24=".. BACKUP do programa efetuado .." 
 M25="... Voltando versao anterior ..." 
 M26="... Agora, ATUALIZANDO ..." 
@@ -169,7 +169,7 @@ M28="Arquivo encontrado no diretorio"
 M29="Informe a senha do usuario do SCP"
 #M30="o programas $vprog da ${NORM}${RED} ""$VVERSAO"
 #M31="o programas da versao: ${NORM}${RED} ""$VVERSAO"
-#M32="foi criado em ""$DIRDEST"
+#M32="foi criado em ""$BACKUP"
 M33="Voltando Backup anterior  ..."
 #M34="O arquivo ""$VARQUIVO"
 M35="Deseja voltar todos os ARQUIVOS do Backup ? (N/s):"
@@ -204,7 +204,7 @@ M59="Informe o nome do programa a ser atualizado:"
 M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
 M61="Informe o nome do programa a ser desatualizado:" 
 M62="Informe a ultima versao que foi feita a atualizacao da biblioteca para voltar todos os programas."
-#M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
+#M63="Existe um backup antigo sera excluido do Diretorio ""$BACKUP"
 M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
 M65="Recuperado todos os arquivos:"
 M66="Voce nao informou o nome do arquivo em minusculo"
@@ -284,8 +284,8 @@ DIR=$destino$base
 ANTERIOR="anterior"
 
 #### PARAMETRO PARA O LOGS
-LOG_ATU=$tools$logs/atualiza.$(date +"%Y-%m-%d").log
-LOG_LIMPA=$tools$logs/limpando.$(date +"%Y-%m-%d").log
+LOG_ATU=$LOGS/atualiza.$(date +"%Y-%m-%d").log
+LOG_LIMPA=$LOGS/limpando.$(date +"%Y-%m-%d").log
 UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 #-Variaveis de cores-------------------------------------------------------------------------------#
@@ -572,13 +572,13 @@ _principal
 
 _atupacote () {
 
-    if [[ -f "$tools$olds"/"$prog"-"$ANTERIOR".zip ]] ; then
+    if [[ -f "$OLDS"/"$prog"-"$ANTERIOR".zip ]] ; then
         clear
 M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
     _linha
     _messagec CYAN "$M43"
     _linha
-    mv -f -- "$tools$olds"/"$prog"-"$ANTERIOR".zip "$tools$olds"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
+    mv -f -- "$OLDS"/"$prog"-"$ANTERIOR".zip "$OLDS"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
     fi
 
 NOMEPROG="$prog""$class".zip
@@ -652,8 +652,8 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _messagec YELLOW "$M17"
      _linha 
  
-     mv -f -- "$prog""$class".bkp "$tools""$progs"
-     mv -f -- "$prog"-$ANTERIOR.zip "$tools""$olds"
+     mv -f -- "$prog""$class".bkp "$PROGS"
+     mv -f -- "$prog"-$ANTERIOR.zip "$OLDS"
      read_sleep 1
 
 
@@ -740,7 +740,7 @@ _voltaprog () {
      _principal
      done
 
-     if [[ ! -r "$tools$olds"/"$prog"-"$ANTERIOR".zip ]]; then
+     if [[ ! -r "$OLDS"/"$prog"-"$ANTERIOR".zip ]]; then
      clear
 M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
     _linha 
@@ -755,7 +755,7 @@ M02="Voltando a versao anterior do programa ""$prog"
     _messagec YELLOW "$M02"
     _linha 
 
-    "$cmd_unzip" -o "$tools$olds"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
+    "$cmd_unzip" -o "$OLDS"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
     read_sleep 2
         clear
 #-VOLTA DE PROGRAMA CONCLUIDA
@@ -781,7 +781,7 @@ _voltabibli () {
      _desatualizado
      done
 
-     if [[ ! -r "$tools""$olds"/"$INI-$VVERSAO".zip ]]; then
+     if [[ ! -r "$OLDS"/"$INI-$VVERSAO".zip ]]; then
 #-Backup da Biblioteca nao encontrado no diretorio
      _linha 
      _messagec RED "$M46"
@@ -831,7 +831,7 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
      _messagec YELLOW "$M30"
      _linha
 
-     cd "$tools""$olds"/ || exit
+     cd "$OLDS"/ || exit
      "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
      _volta_progy
 }
@@ -844,7 +844,7 @@ _volta_progz () {
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
      _press
 ### limpando diretorio 
-        local DIR1="$tools""$olds"/
+        local DIR1="$OLDS"/
         for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}
         do
 		"$cmd_find" "$DIR1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
@@ -872,16 +872,16 @@ _volta_progz () {
 
 _volta_progy () {
      if [ "$sistema" = "iscobol" ]; then
-     "$cmd_find" "$tools""$olds" -name "$Vprog.xml" -exec mv {} "$xml" \;
+     "$cmd_find" "$OLDS" -name "$Vprog.xml" -exec mv {} "$xml" \;
 
-     "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \;
+     "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \;
 
-     "$cmd_find" "$tools""$olds" -name "$Vprog*.class" -exec mv {} "$exec" \;
+     "$cmd_find" "$OLDS" -name "$Vprog*.class" -exec mv {} "$exec" \;
      clear
      else
-     "$cmd_find" "$tools""$olds" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
+     "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
 
-     "$cmd_find" "$tools""$olds" -name "$Vprog*.int" -exec mv {} "$exec" \; 
+     "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$exec" \; 
      fi
 
 #-VOLTA DE PROGRAMAS CONCLUIDA
@@ -908,24 +908,24 @@ _volta_bibli () {
      read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
 
-     cd "$tools""$olds" || exit
+     cd "$OLDS" || exit
 
-	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+	 "$cmd_find" "$OLDS" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
-     "$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+     "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
      cd "$xml"/ || exit
-	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
+	 "$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
 
      cd "$tools"/ || exit
      clear
 
      else
-     cd "$tools""$olds"/ || exit
-	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+     cd "$OLDS"/ || exit
+	 "$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
-     cd "$tools""$olds"/ || exit
-	 "$cmd_find" "$tools""$olds" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+     cd "$OLDS"/ || exit
+	 "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
      cd "$tools"/ || exit
      clear
@@ -953,8 +953,8 @@ _volta_geral () {
      _messagec YELLOW "$M31"
      _linha 
 
-     cd "$tools""$olds"/ || exit
-     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$tools$olds"
+     cd "$OLDS"/ || exit
+     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS"
      cd "$tools" || exit
      clear
 
@@ -1074,8 +1074,8 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _messagec YELLOW "$M21"
      _linha 
      if [ "$sistema" = "iscobol" ]; then
-     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-         if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+         for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+             if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1084,8 +1084,8 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
 	 _press
 	 clear
      _principal
-         fi
-     done 
+            fi
+         done 
      _processo
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1094,8 +1094,8 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _press
      _principal
      else
-     for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
-           if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+         for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
+             if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
             clear 
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1103,8 +1103,8 @@ M21="A atualizacao tem que esta no diretorio ""$tools"
      _linha 
      _press
      _principal
-           fi
-	 done
+             fi
+	     done
 	 fi
      _processo
 }
@@ -1163,7 +1163,7 @@ _processo () {
     _messagec YELLOW "$M08"
     _linha 
  _principal
-        fi 
+         fi 
     fi
     
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
@@ -1185,8 +1185,9 @@ _processo () {
      for f in *_"$VERSAO".zip; do
          mv -f -- "$f" "${f%.zip}.bkp"
      done
-         mv -f -- *_"$VERSAO".bkp "$tools""$backup"
-         mv -f -- "$INI"-"$VERSAO".zip "$tools""$olds"
+         mv -f -- *_"$VERSAO".bkp "$BACKUP"
+         mv -f -- "$INI"-"$VERSAO".zip "$OLDS"
+
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #-Versao atualizada - $VERSAO$
 M40="Versao atualizada - ""$VERSAO"
@@ -1324,13 +1325,13 @@ clear
 	_messagec GREEN "$M504"
     printf "\n"
     _messagec GREEN "$M505"
-printf "\n"
+    printf "\n"
 	_messagec GREEN "$M506"
-printf "\n"
+    printf "\n"
 	_messagec GREEN "$M507"
-printf "\n"
+    printf "\n"
 	_messagec GREEN "$M508"
-printf "\n"
+    printf "\n"
 	_messagec GREEN "$M509"
 	printf "\n"
     fi
@@ -1352,19 +1353,13 @@ printf "\n"
 }
     clear
 _limpando () {
-     TEMPORARIOS="Temps"
-	 line=""
+     local TEMPORARIOS="Temps"
+	 local line=""
      ETIQUETATEMPO="$(date +'%d-%m-%Y')"
-     DAYS=$(find "$DIRDEST" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
-         if [[ "$DAYS" ]] ; then
-         M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
-             _meiodatela
-             _messagec RED "$M63"
-         fi 
          while IFS= read -r line;
          do
-            printf "${GREEN}""$line""${NORM}%s\n"
-            "$cmd_zip" -m "$DIRDEST""$TEMPORARIOS-$ETIQUETATEMPO" "$DIR"$line  >> "$LOG_LIMPA"
+         printf "${GREEN}""$line""${NORM}%s\n"
+         "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$ETIQUETATEMPO" "$DIRB"$line  >> "$LOG_LIMPA"
          done < "$arqs"
   
 M11="Movendo arquivos Temporarios do diretorio = ""$DIR"
@@ -1384,11 +1379,11 @@ _temps () {
 #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
 
  cd "$tools"/ || exit
- local arqs=""
+ arqs=""
  arqs="atualizat"
- DIRDEST="$tools""$backup"/
+ find "$BACKUP" -type f -name "Temps*" -mtime +30 -exec rm -rf {} \;
  for i in $base $base2 $base3 ;do
- DIR="$destino""$i""/"
+ DIRB="$destino""$i""/"
  _limpando
  _press
  done
@@ -1549,21 +1544,21 @@ _rebuild
 
 _backup () {
 clear
-local DIRDEST="$tools""$backup"
-    if [ ! -d "$DIRDEST" ]; then
-M23=".. Criando o diretorio dos backups em $DIRDEST.."
+
+    if [ ! -d "$BACKUP" ]; then
+M23=".. Criando o diretorio dos backups em $BACKUP.."
      _linha 
      _messagec YELLOW "$M23"
      _linha 
    
-    mkdir -p "$DIRDEST"
+    mkdir -p "$BACKUP"
     fi
     
-DAYS2=$(find "$DIRDEST" -ctime -2 -name "$EMPRESA"\*zip)
+DAYS2=$(find "$BACKUP" -ctime -2 -name "$EMPRESA"\*zip)
     cd "$DIR" || exit
 if [[ "$DAYS2" ]] ; then
 
-M62="Ja existe um backup em ""$DIRDEST"" nos ultimos dias."
+M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
     printf "\n\n"
     _linha 
     _messagec CYAN "$M62"
@@ -1615,7 +1610,7 @@ _progresso () {
 
 _dobackup () {
     #-Backup 
-	"$cmd_zip" "$DIRDEST"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+	"$cmd_zip" "$BACKUP"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
 }
 
 #-Inicia em background-----------------------------------------------------------------------------#
@@ -1634,9 +1629,9 @@ kill $MYSELF >/dev/null 2>&1
      echo "${CYAN}""]pronto""${NORM}"
      printf "\n"
 
-#-O backup de nome \"""$ARQ""\" foi criado em $DIRDEST$}
+#-O backup de nome \"""$ARQ""\" foi criado em $BACKUP$}
 M10="O backup de nome ""$ARQ"
-M32="foi criado em ""$DIRDEST"
+M32="foi criado em ""$BACKUP"
      _linha 
      _messagec YELLOW "$M10"
      _messagec YELLOW "$M32"
@@ -1679,7 +1674,7 @@ _press
      _messagec YELLOW "$M29"
      _linha 
 
-     "$cmd_scp" -r -P "$PORTA" "$DIRDEST/$ARQ" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
+     "$cmd_scp" -r -P "$PORTA" "$BACKUP/$ARQ" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _linha 
      _messagec YELLOW "$M15"
@@ -1697,8 +1692,7 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
 _backupavulso () {
-local DIRDEST="$tools""$backup"
-    ls "$DIRDEST"/"$EMPRESA"_*.zip
+    ls "$BACKUP"/"$EMPRESA"_*.zip
 
 #-Informe de qual o Backup que deseja enviar.
      _linha 
@@ -1714,7 +1708,7 @@ local VBACKUP="$EMPRESA"_"$VBACKAV"
 _press
 _ferramentas
     done
-    if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]]; then
+    if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _messagec RED "$M45"
@@ -1753,7 +1747,7 @@ _ferramentas
      _linha 
      _messagec YELLOW "$M29"
      _linha 
-     "$cmd_scp" -P "$PORTA" "$DIRDEST/$VBACKUP".zip "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
+     "$cmd_scp" -P "$PORTA" "$BACKUP""/""$VBACKUP".zip "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _linha 
      _messagec YELLOW "$M15"
@@ -1772,8 +1766,7 @@ _ferramentas
 
 _unbackup () {
     clear
-local DIRDEST="$tools""$backup"/
-local DIRBACK="$tools""$backup"/dados
+local DIRBACK="$BACKUP"/dados
 
     if [ ! -d "$DIRBACK" ]; then
 
@@ -1782,9 +1775,9 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      _messagec YELLOW "$M22"
      _linha 
    
-    mkdir -p "$DIRDEST"dados 
+    mkdir -p "$DIRBACK"
     fi
-    ls -s "$DIRDEST""$EMPRESA"_*.zip
+    ls -s "$BACKUP""/""$EMPRESA"_*.zip
      _linha 
      _messagec RED "$M53"
      _linha 
@@ -1797,7 +1790,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      _press
      _ferramentas
      done
-     if [[ ! -r "$tools""$backup"/"$VBACKUP".zip ]] ; then
+     if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]] ; then
 #-Backup nao encontrado no diretorio
      _linha 
      _messagec RED "$M45"
@@ -1834,7 +1827,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
 
      cd "$DIRBACK" || exit
-     "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
+     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
      read_sleep 1
 
      if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
@@ -1871,7 +1864,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
    
     cd "$DIRBACK" || exit
-    "$cmd_unzip" -o "$DIRDEST""$VBACKUP".zip  >> "$LOG_ATU"
+    "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
     
     mv -f -- *.* "$DIR" >> "$LOG_ATU"
  
@@ -1936,9 +1929,9 @@ _update () {
      _messagec GREEN "$M91"
      _messagec GREEN "$M92"
      _linha 
-    cp atualiza.sh "$tools""$backup"
+    cp atualiza.sh "$BACKUP"
     
-    cd "$tools""$progs" || exit 
+    cd "$PROGS" || exit 
     wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
 #-Descompactando o programa baixado----------------------------------#
@@ -1946,8 +1939,8 @@ _update () {
 atualizagit="atualiza.zip"
      "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
      read_sleep 1
-     "$cmd_find" "$tools""$progs" -name "$atualizagit" -exec rm -r {} \; 
-     cd "$tools""$progs"/Atualiza-main || exit
+     "$cmd_find" "$PROGS" -name "$atualizagit" -exec rm -r {} \; 
+     cd "$PROGS"/Atualiza-main || exit
 #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "atualiza.sh"
      mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
