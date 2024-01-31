@@ -158,7 +158,7 @@ M17="Atualizacao Completa"
 M18="Arquivo(s) recuperado(s)..."
 M19="ATUALIZANDO OS PROGRAMAS..."
 M20="Alterando a extensao da atualizacao"
-#M21="A atualizacao tem que esta no diretorio ""$tools"
+#M21="A atualizacao tem que esta no diretorio ""$TOOLS"
 #M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
 #M23=".. Criando o diretorio dos backups em $BACKUP.."
 M24=".. BACKUP do programa efetuado .." 
@@ -265,15 +265,15 @@ if [ -z "$VVERSAO" ]; then
           VVERSAO=""
 fi
 
-tools=$destino$pasta
-        if [ -d "$tools" ]; then
+TOOLS=$destino$pasta
+        if [ -d "$TOOLS" ]; then
             printf " Diretorio ... ok \n"
             else
             printf " Diretorio da destino nao encotrado...  \n"
             exit
         fi
-DIR=$destino$base
-        if [ -d "$DIR" ]; then
+BASE=$destino$base
+        if [ -d "$BASE" ]; then
             printf " Diretorio ... ok \n"
             else
             printf " Diretorio da base nao encotrado...  \n"
@@ -306,7 +306,7 @@ COLUMNS=$(tput cols)
 PORTA="41122"
 USUARIO="atualiza"
 IPSERVER="177.115.194.15"
-DESTINO2SERVER="/u/varejo/man/"
+DESTINO2SERVER="/u/varejo/man/"9
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
 DESTINO2TRANSPC="/u/varejo/trans_pc/"
@@ -392,29 +392,29 @@ _linha "*"
     exit
     fi
 
-if [ -d "$tools" ]; then
+if [ -d "$TOOLS" ]; then
      _linha "*"
      _messagec CYAN "$M80"
      _linha "*"
-         OLDS=$tools$olds
+         OLDS=$TOOLS$olds
          if [ -d "$OLDS" ]; then
             printf " Diretorio olds ... ok \n"
          else
             mkdir -p "$OLDS"
          fi
-		 PROGS=$tools$progs
+		 PROGS=$TOOLS$progs
          if [ -d "$PROGS" ]; then
             printf " Diretorio progs ... ok \n"
          else
             mkdir -p "$PROGS"
          fi
-	     LOGS=$tools$logs
+	     LOGS=$TOOLS$logs
          if [ -d "$LOGS" ]; then
             printf " Diretorio logs ... ok \n"
          else
             mkdir -p "$LOGS"
          fi
-		 BACKUP=$tools$backup
+		 BACKUP=$TOOLS$backup
          if [ -d "$BACKUP" ]; then
             printf " Diretorio backups ... ok \n"
          else
@@ -844,10 +844,10 @@ _volta_progz () {
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
      _press
 ### limpando diretorio 
-        local DIR1="$OLDS"/
+        local OLDS1="$OLDS"/
         for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}
         do
-		"$cmd_find" "$DIR1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
+		"$cmd_find" "$OLDS1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
         done
      _desatualizado
      fi
@@ -917,7 +917,7 @@ _volta_bibli () {
      cd "$xml"/ || exit
 	 "$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
 
-     cd "$tools"/ || exit
+     cd "$TOOLS"/ || exit
      clear
 
      else
@@ -927,7 +927,7 @@ _volta_bibli () {
      cd "$OLDS"/ || exit
 	 "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
-     cd "$tools"/ || exit
+     cd "$TOOLS"/ || exit
      clear
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
@@ -955,7 +955,7 @@ _volta_geral () {
 
      cd "$OLDS"/ || exit
      "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS"
-     cd "$tools" || exit
+     cd "$TOOLS" || exit
      clear
 
 #-VOLTA DOS PROGRAMAS CONCLUIDA
@@ -1069,7 +1069,7 @@ _savatu () {
 #-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
 _salva () {
 
-M21="A atualizacao tem que esta no diretorio ""$tools"
+M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _linha 
      _messagec YELLOW "$M21"
      _linha 
@@ -1120,18 +1120,18 @@ _processo () {
      read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
         cd "$exec"/ || exit
-        "$cmd_find" "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+        "$cmd_find" "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
         cd "$telas"/ || exit
-        "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+        "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
         cd "$xml"/ || exit
-        "$cmd_find" "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
-        cd "$tools"/ || exit
+        "$cmd_find" "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+        cd "$TOOLS"/ || exit
         clear
      else
         cd "$exec"/ || exit
-	    "$cmd_find" "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	    "$cmd_find" "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
         cd "$telas"/ || exit
-	    "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$tools"/"$INI"-"$VERSAO" "{}" +;
+	    "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
      fi 
 
 #-..   BACKUP COMPLETO   ..
@@ -1140,7 +1140,7 @@ _processo () {
      _linha 
     read_sleep 1
     
-    if [[ ! -r "$tools"/"$INI-$VERSAO".zip ]]; then
+    if [[ ! -r "$TOOLS"/"$INI-$VERSAO".zip ]]; then
 #-Backup nao encontrado no diretorio
     _linha 
     _messagec RED "$M45"
@@ -1167,7 +1167,7 @@ _processo () {
     fi
     
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
-    cd "$tools" || exit
+    cd "$TOOLS" || exit
 #-ATUALIZANDO OS PROGRAMAS...
     _linha 
     _messagec YELLOW "$M19"
@@ -1378,7 +1378,7 @@ _temps () {
 #--------------------------------------------------------------------------------------------------#
 #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
 
- cd "$tools"/ || exit
+ cd "$TOOLS"/ || exit
  arqs=""
  arqs="atualizat"
  find "$BACKUP" -type f -name "Temps*" -mtime +30 -exec rm -rf {} \;
@@ -1441,37 +1441,29 @@ _rebuild1 () {
 #-M65
      _messagec RED "$M65"
      _linha 
-     jut="$SAVISC""$JUTIL"
-     cd "$DIR"/ || exit
-
-     for i in $DIR/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
+     local jut="$SAVISC""$JUTIL"
+#     cd "$BASE"/ || exit
+     for i in $BASE/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
      do
-##- grava tamanho do arquivo em variavel
-     TAMANHO=$(du "$i" | awk '{print $1}')
-##- executa rebuild se tamanho for maior que zero
-         if [[ "$TAMANHO" -gt 0 ]] ; then
-        "$SAVISC""$JUTIL" -rebuild "$i" -a -f
+     TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
+         if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
+         $jut -rebuild "$i" -a -f
         fi
      done 
-        cd "$tools"/ || exit
+        cd "$TOOLS"/ || exit
      else
          while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
-
          _meiodatela
          _messagec RED "$M66"
-         cd "$tools"/ || exit
+         cd "$TOOLS"/ || exit
          _press
          _ferramentas
          done
-
-     cd "$DIR" || exit 
      local ARQUIVO="$PEDARQ.???.dat"
          for i in $ARQUIVO
          do 
-         "$SAVISC""$JUTIL" -rebuild "$i" -a -f 
+         $jut -rebuild "$i" -a -f
          done
- 
-     cd "$tools"/ || exit
      fi
 
 #-Arquivo(s) recuperado(s)...
@@ -1479,23 +1471,21 @@ _rebuild1 () {
      _messagec YELLOW "$M18"
      _linha 
 
-cd "$tools"/ || exit
+cd "$TOOLS"/ || exit
 else
 #-m67
      _meiodatela
      _messagec RED "$M67"
-     cd "$DIR"/ || exit
+     cd "$BASE"/ || exit
 
-     for i in $DIR/{*.ARQ,*.DAT,*.LOG,*.PAN}
+     for i in $BASE/{*.ARQ,*.DAT,*.LOG,*.PAN}
      do
-#-grava tamanho do arquivo em variavel
-    TAMANHO=$(du "$i" | awk '{print $1}')
-#-executa rebuild se tamanho for maior que zero
-     if [[ "$TAMANHO" -gt 0 ]]; then
-      rebuild -e "$i"
-     else
-     rebuild -d -e "$i"
-     fi
+    TAMANHO=$(du "$i" | awk '{print $1}') #-grava tamanho do arquivo em variavel
+         if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
+         rebuild -e "$i"
+         else
+         rebuild -d -e "$i"
+         fi
     done
 fi
 _press
@@ -1504,6 +1494,7 @@ _rebuild
 
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
+
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
 [[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
@@ -1512,20 +1503,18 @@ _rebuild
 _rebuildlista () {
 clear
 if [ "$sistema" = "iscobol" ]; then
-cd "$tools"/ || exit
+cd "$TOOLS"/ || exit
 local arqs=""
-arqs=$(cat atualizaj)
+arqs="atualizaj"
 local jut="$SAVISC""$JUTIL"
-cd "$DIR"/ || exit
-    for line in $arqs
-    do
-#-Grava tamanho do arquivo em variavel
-    TAMANHO=$(du "$line" | awk '{print $1}')
-#-Executa rebuild se tamanho for maior que zero
-    if [[ "$TAMANHO" -gt 0 ]] ; then
-    $jut -rebuild "$line" -a -f
+while read -r line;
+do
+    TAMANHO=$(du "$BASE""/""$line" | awk '{print $1}') #-Grava tamanho do arquivo em variavel
+    if [[ "$TAMANHO" -gt 0 ]] ; then #-Executa rebuild se tamanho for maior que zero
+    $jut -rebuild "$BASE""/""$line" -a -f
     fi
-    done 
+done < "atualizaj"
+
 #-Lista de Arquivo(s) recuperado(s)... 
      _linha 
      _messagec YELLOW "$M12"
@@ -1556,7 +1545,7 @@ M23=".. Criando o diretorio dos backups em $BACKUP.."
     fi
     
 DAYS2=$(find "$BACKUP" -ctime -2 -name "$EMPRESA"\*zip)
-    cd "$DIR" || exit
+    cd "$BASE" || exit
 if [[ "$DAYS2" ]] ; then
 
 M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
@@ -1846,8 +1835,8 @@ M34="O arquivo ""$VARQUIVO"
      _ferramentas   
      fi
 
-     mv -f "$VARQUIVO"*.* "$DIR" >> "$LOG_ATU" 
-     cd "$tools"/ || exit
+     mv -f "$VARQUIVO"*.* "$BASE" >> "$LOG_ATU" 
+     cd "$TOOLS"/ || exit
      clear
 #-VOLTA DO ARQUIVO CONCLUIDA
      _linha 
@@ -1867,9 +1856,9 @@ M34="O arquivo ""$VARQUIVO"
     cd "$DIRBACK" || exit
     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
     
-    mv -f -- *.* "$DIR" >> "$LOG_ATU"
+    mv -f -- *.* "$BASE" >> "$LOG_ATU"
  
-    cd "$tools"/ || exit
+    cd "$TOOLS"/ || exit
     clear
 #-VOLTA DOS ARQUIVOS CONCLUIDA
      _linha 
@@ -1915,7 +1904,7 @@ _expurgador () {
      _messagec RED "$M51"
      _linha 
      printf "\n\n"
-cd "$tools"/ || exit
+cd "$TOOLS"/ || exit
 _press
 _ferramentas
 
@@ -1944,7 +1933,7 @@ atualizagit="atualiza.zip"
      cd "$PROGS"/Atualiza-main || exit
 #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "atualiza.sh"
-     mv -f -- "atualiza.sh" "$tools" >> "$LOG_ATU"
+     mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
     
 _press
 exit   
@@ -1952,6 +1941,9 @@ exit
 _principal
 
 unset RED GREEN YELLOW BLUE PURPLE CYAN NORM
+unset BASE BASE2 BASE3 tools
+unset destino pasta base base2 base3 logs exec class telas xml
+unset olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 tput clear
 tput sgr0
 tput cup "$( tput lines )" 0
