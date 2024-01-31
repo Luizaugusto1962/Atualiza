@@ -296,7 +296,7 @@ tput clear
 		GREEN=$(tput bold)$(tput setaf 2)
 		YELLOW=$(tput bold)$(tput setaf 3)
 		BLUE=$(tput bold)$(tput setaf 4)
-		PURPLE=$(tput bold)$(tput setaf 5) #MAGENTA
+		PURPLE=$(tput bold)$(tput setaf 5) 
 		CYAN=$(tput bold)$(tput setaf 6)
 		NORM=$(tput bold)$(tput setaf 7)
 
@@ -1355,14 +1355,14 @@ clear
 _limpando () {
      local TEMPORARIOS="Temps"
 	 local line=""
-     ETIQUETATEMPO="$(date +'%d-%m-%Y')"
+     ETIQUETATEMPO="$(date +'%d-%m-%Y-%M')"
          while IFS= read -r line;
          do
          printf "${GREEN}""$line""${NORM}%s\n"
          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$ETIQUETATEMPO" "$DIRB"$line  >> "$LOG_LIMPA"
          done < "$arqs"
   
-M11="Movendo arquivos Temporarios do diretorio = ""$DIR"
+M11="Movendo arquivos Temporarios do diretorio = ""$i"
  _linha 
  _messagec YELLOW "$M11"
  _linha 
@@ -1382,6 +1382,7 @@ _temps () {
  arqs=""
  arqs="atualizat"
  find "$BACKUP" -type f -name "Temps*" -mtime +30 -exec rm -rf {} \;
+
  for i in $base $base2 $base3 ;do
  DIRB="$destino""$i""/"
  _limpando
