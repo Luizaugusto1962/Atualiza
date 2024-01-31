@@ -306,7 +306,7 @@ COLUMNS=$(tput cols)
 PORTA="41122"
 USUARIO="atualiza"
 IPSERVER="177.115.194.15"
-DESTINO2SERVER="/u/varejo/man/"9
+DESTINO2SERVER="/u/varejo/man/"
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
 DESTINO2TRANSPC="/u/varejo/trans_pc/"
@@ -816,8 +816,8 @@ _desatualizado
 _volta_progx () {
      read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
 
-     while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; do
-
+     while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; 
+	 do
      _meiodatela
      _messagec RED "$M71"
      _linha 
