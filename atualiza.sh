@@ -1,6 +1,6 @@
 #!/bin/bash
 # set -xv
-#set -e
+set -e
 #-----------------------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
@@ -527,8 +527,8 @@ _atualizacao () {
      case $OPCAO in
 	     1) _pacoteon ;;
 	     2) _pacoteoff ;;
-         9) clear ; _principal ;;
-         *) Opcao Invalida ; _principal ;;
+          9) clear ; _principal ;;
+          *) _atualizacao ;;
      esac
 }
 
@@ -721,7 +721,7 @@ _desatualizado () { while true
          1) _voltaprog ;;
          2) _voltabibli ;;
          9) clear ; _principal ;;
-         *) Opcao Invalida ; _desatualizado ;;
+         *) _desatualizado ;;
      esac
      done
 }
@@ -1021,7 +1021,7 @@ _biblioteca () { while true
          2) _savatu ;;
          3) _salva ;;
          9) clear ; _principal ;;
-         *) Opcao Invalida ; _biblioteca ;;
+         *) _biblioteca ;;
      esac
      done
 }
@@ -1318,7 +1318,7 @@ clear
          2) _expurgador   ;;
          3) _update       ;;
          9) clear ; _principal ;;
-         *) Opcao Invalida ; _ferramentas ;;
+         *) _ferramentas ;;
          esac
 	 else
 	 _messagec GREEN "$M503"
@@ -1348,7 +1348,7 @@ clear
            5) _expurgador   ;;
            8) _update       ;;
            9) clear ; _principal ;;
-           *) Opcao Invalida ; _ferramentas ;;
+           *) _ferramentas ;;
      esac
 }
     clear
@@ -1421,7 +1421,7 @@ _rebuild () {
            1) _rebuild1 ;;
            2) _rebuildlista ;;
            9) clear ; _ferramentas ;;
-           *) Opcao Invalida ; _ferramentas ;;
+           *) _ferramentas ;;
       esac
  
  }
@@ -1532,7 +1532,7 @@ _rebuild
 _menubackup () { while true
     do
     clear
-###-600-mensagens do Menu Backup.
+###-700-mensagens do Menu Backup.
      M700="Menu de Backup(s)."
      M701="Escolha a opcao:"
      M702="1${NORM} - Backup da base de dados          "
@@ -1562,7 +1562,7 @@ _menubackup () { while true
            2) _unbackup     ;;
            3) _backupavulso ;;
            9) clear ; _ferramentas ;;
-           *) Opcao Invalida ; _menubackup ;;
+           *) _menubackup ;;
      esac
      done
 }
@@ -1912,10 +1912,9 @@ _ferramentas
 }
 
 #-Envia e receber arquivos-------------------------------------------------------------------------#
-_envrecarq () { while true
-    do
+_envrecarq () { 
     clear
-###-800-mensagens do Menu Backup.
+###-800-mensagens do Menu Envio e Retorno.
      M800="Menu de Enviar e Receber Arquivo(s)."
      M801="Escolha a opcao:"
      M802="1${NORM} - Enviar arquivo(s)     "
@@ -1949,24 +1948,38 @@ _envrecarq () { while true
            1) _envia_avulso    ;;
            2) _recebe_avulso   ;;
            9) clear ; _ferramentas ;;
-           *) Opcao Invalida ; _envrecarq ;;
+           *) _ferramentas ;;
      esac
-     done
 }
 
 ###---envia_avulso-------------
 _envia_avulso () {
      clear
+     printf "\n\n\n"
 ### Pedir diretorio origem do arquivo    
       _linha 
- M991="     1- Informe em que diretorio esta o arquivo a ser enviado :"   
+ M991="1- Informe em que diretorio esta o arquivo a ser enviado :"   
       _messagec YELLOW "$M991"  
       read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
       _linha 
+      local VERDIR=$DIRENVIA
+      if [[ -d "$VERDIR" ]]; then
+      printf "\n"
+      else
+      clear
+      _meiodatela
+M995="Diretorio não foi encontrado no servidor"
+      _linha 
+      _messagec RED "$M995"  
+      _linha 
+       _press
+      _envrecarq
+      fi
       if [[ -z "$DIRENVIA" ]] ; then # testa variavel vazia
       local DIRENVIA=$ENVIA
            if ls -s "$DIRENVIA"/*.* ; then
 #-Arquivo encontrado no diretorio
+      printf "\n"
       _linha
       _messagec YELLOW "$M28"
       _linha
@@ -1980,10 +1993,10 @@ _envia_avulso () {
            fi
       fi
       _linha 
-      _messagec RED "$M72" #Informe o arquivo(s) que deseja enviar.
+      _messagec CYAN "$M72" #Informe o arquivo(s) que deseja enviar.
       _linha      
       local EENVIA=" "
-      read -rp "${YELLOW}""     2- Informe nome do ARQUIVO: ""${NORM}" EENVIA
+      read -rp "${YELLOW}""2- Informe nome do ARQUIVO: -> ""${NORM}" EENVIA
       if [[ -z "$EENVIA" ]] ;then 
   #   clear
       _meiodatela
@@ -2000,8 +2013,11 @@ _envia_avulso () {
       _press 
       _envrecarq  
       fi
+      printf "\n"
       _linha 
-      read -rp "${YELLOW}""     3- Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
+ M992="3- Informe para qual diretorio no servidor:"   
+      _messagec YELLOW "$M992"  
+      read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
       _linha 
       if [[ -z "$ENVBASE" ]] ;then
       _meiodatela
@@ -2028,8 +2044,8 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
 _recebe_avulso () {
       clear
       _linha 
- M992="1- Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
-      _messagec YELLOW "$M992"  
+ M993="1- Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
+      _messagec YELLOW "$M993"  
       read -rp "${YELLOW}"" -> ""${NORM}" RECBASE
       _linha 
       _linha 
@@ -2043,14 +2059,28 @@ _recebe_avulso () {
       _envrecarq
       fi
       _linha 
-       M993="3- Informe diretorio do servidor que vai receber arquivo: " 
-      _messagec YELLOW "$M993"  
+       M994="3- Informe diretorio do servidor que vai receber arquivo: " 
+      _messagec YELLOW "$M994"  
+     
      read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
       if [[ -z "$EDESTINO" ]] ; then # testa variavel vazia
       local EDESTINO=$RECEBE
       fi
       _linha 
-
+      local VERDIR="$EDESTINO"
+      if [[ -d "$VERDIR" ]]; then
+      printf "\n"
+      else
+      clear
+      _meiodatela
+M995="Diretorio não foi encontrado no servidor"
+      _linha 
+      _messagec RED "$M995"  
+      _linha 
+      _press
+      _envrecarq
+      fi
+      
 #-Informe a senha do usuario do scp
       _linha 
       _messagec YELLOW "$M29"
