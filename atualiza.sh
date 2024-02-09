@@ -438,6 +438,7 @@ if [ -d "$TOOLS" ]; then
 else
      exit
 fi
+
 clear
 
 _principal () { 
@@ -528,7 +529,7 @@ _atualizacao () {
 	     1) _pacoteon ;;
 	     2) _pacoteoff ;;
           9) clear ; _principal ;;
-          *) _atualizacao ;;
+          *) _principal ;;
      esac
 }
 
@@ -1562,7 +1563,7 @@ _menubackup () { while true
            2) _unbackup     ;;
            3) _backupavulso ;;
            9) clear ; _ferramentas ;;
-           *) _menubackup ;;
+           *) _ferramentas ;;
      esac
      done
 }
@@ -2120,7 +2121,7 @@ _expurgador () {
      _linha 
      printf "\n\n"
 cd "$TOOLS"/ || exit
-_press
+#_press
 _ferramentas
 
 }
@@ -2153,6 +2154,7 @@ atualizagit="atualiza.zip"
 _press
 exit   
 }
+
 _principal
 
 unset RED GREEN YELLOW BLUE PURPLE CYAN NORM
