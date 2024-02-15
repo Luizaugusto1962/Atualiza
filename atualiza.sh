@@ -337,7 +337,6 @@ _read_sleep () {
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
 _press () {
-
       printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
       read -rt 15 || :
       #clear
@@ -443,8 +442,7 @@ fi
 clear
 
 _principal () { 
-     
-     clear
+     tput clear
 	 printf "\n"
 #-100-mensagens do Menu Principal.-----------------------------------------------------------------#	
 	 M101="Menu de Opcoes"
@@ -489,12 +487,12 @@ _principal () {
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO
 
      case $OPCAO in
-         1) _atualizacao ;;
-         2) _biblioteca ;;
+         1) _atualizacao   ;;
+         2) _biblioteca    ;;
          3) _desatualizado ;;
-         4) _iscobol ;;
-         5) _linux ;;
-         6) _ferramentas ;;
+         4) _iscobol       ;;
+         5) _linux         ;;
+         6) _ferramentas   ;;
          9) clear; tput sgr0; exit ;;
          *) clear ; _principal ;;
      esac
@@ -976,7 +974,8 @@ _biblioteca () { while true
     do
     clear
  #-M55=Informe versao a ser atualizar: "
-     printf "\n\n\n"
+     #printf "\n\n\n"
+     _meiodatela
      _mensagec RED "$M55"
      _linha  
  #-M57=Informe somente o numeral da versao :
@@ -985,9 +984,11 @@ _biblioteca () { while true
 
      if [ -z "$VERSAO" ]; then
  #-M56=Versao a ser atualizada nao foi informada :
+     printf "\n"
+     _linha
      _mensagec RED "$M56"
      _linha 
-     _read_sleep 2
+     _press
      _principal
      fi
      clear
