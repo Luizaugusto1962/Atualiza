@@ -1,12 +1,12 @@
-  Atualiza
- Shell Script para atualizar o sistema da SAV
+ # Atualiza
+ ## Shell Script para atualizar o sistema da SAV
 
 - Atualiza programas avulsos
 - Atualiza Biblioteca
 - Volta de programa ou biblioteca
 - Limpa arquivos Temporários
 - Recupera arquivos avulso ou os principais
-  ------------------------------------------------------------------------------------------------- 
+  --- 
     Rotina para atualizar programas e bibliotecas da SAV                                            
     Feito por Luiz Augusto   email luizaugusto@sav.com.br                                           
     Versão do atualiza.sh                                                                           
