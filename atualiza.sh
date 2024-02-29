@@ -286,11 +286,6 @@ BASE=$destino$base
 #-EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.----#
 ANTERIOR="anterior"
 
-#### PARAMETRO PARA O LOGS
-LOG_ATU=$LOGS/atualiza.$(date +"%Y-%m-%d").log
-LOG_LIMPA=$LOGS/limpando.$(date +"%Y-%m-%d").log
-UMADATA=$(date +"%d-%m-%Y_%H%M%S")
-
 #-Variaveis de cores-------------------------------------------------------------------------------#
 export TERM=xterm-256color
 tput sgr0
@@ -440,6 +435,11 @@ if [ -d "$TOOLS" ]; then
 else
      exit
 fi
+
+#### PARAMETRO PARA O LOGS
+LOG_ATU=$LOGS/atualiza.$(date +"%Y-%m-%d").log
+LOG_LIMPA=$LOGS/limpando.$(date +"%Y-%m-%d").log
+UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 clear
 
