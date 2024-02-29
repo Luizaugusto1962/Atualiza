@@ -302,7 +302,7 @@ tput clear
       PURPLE=$(tput bold)$(tput setaf 5) 
 	 CYAN=$(tput bold)$(tput setaf 6)
 	 NORM=$(tput bold)$(tput setaf 7)
-
+      BYELLOW=$(tput bold)$(tput setaf 3)$(tput blink) # amarelo piscante
 COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------#
@@ -319,6 +319,7 @@ if [ -z "$DESTINO2" ]; then
 fi
 
 #-Processo do scp----------------------------------------------------------------------------------#
+
 _run_scp () {
       "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
 }
@@ -337,8 +338,9 @@ _read_sleep () {
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
 _press () {
-      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
+      printf "%*s""${BYELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
       read -rt 15 || :
+      tput sgr0
       #clear
 }
 
