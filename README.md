@@ -8,7 +8,7 @@
 - Recupera arquivos avulso ou os principais
 
 
-#-----------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
@@ -16,7 +16,7 @@
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						                      # 
 # incluir PACOTE de programas                                                                                     #
-#-----------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
 # "atualizac" = Contem a configuracao de diretorios e de qual tipo de                                             #
 #               sistema esta sendo utilizado pela a Empresa.                                                      #
@@ -97,4 +97,4 @@
 #               Atualizacao do programa atualiza.sh                                                               #
 #                                                                                                                 #
 #                                                                                                                 #
-#-----------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
