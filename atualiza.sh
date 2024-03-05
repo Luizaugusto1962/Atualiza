@@ -297,8 +297,7 @@ tput clear
       PURPLE=$(tput bold)$(tput setaf 5) 
 	 CYAN=$(tput bold)$(tput setaf 6)
 	 NORM=$(tput bold)$(tput setaf 7)
-      BYELLOW=$(tput bold)$(tput setaf 3)$(tput blink) # amarelo piscante
-COLUMNS=$(tput cols)
+      COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------#
 PORTA="41122"
@@ -316,12 +315,12 @@ fi
 #-Processo do scp----------------------------------------------------------------------------------#
 
 _run_scp () {
-      "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
+      "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
 }
 
 #-Processo do scp2---------------------------------------------------------------------------------#
 _run_scp2 () {     # programas da biblioteca
-      "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""$atu""$VERSAO".zip . 
+      "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""$atu""$VERSAO".zip . 
 }
 
 #-Funcao de sleep----------------------------------------------------------------------------------#
@@ -333,7 +332,7 @@ _read_sleep () {
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
 _press () {
-      printf "%*s""${BYELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
+      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
       read -rt 15 || :
       tput sgr0
       #clear
