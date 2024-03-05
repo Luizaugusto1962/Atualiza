@@ -1,6 +1,5 @@
 #!/bin/bash
-# set -xv
-#set -e
+
 #-----------------------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
