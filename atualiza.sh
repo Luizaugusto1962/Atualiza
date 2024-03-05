@@ -4,7 +4,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-## UPDATE 19/01/2024                                                                                              #
+## UPDATE 05/03/2024                                                                                              #
 #                                                                                                                 #
 # INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL 9DIG 						  #
 # incluir PACOTE de programas                                                                                     #
@@ -293,10 +293,10 @@ tput clear
 	 GREEN=$(tput bold)$(tput setaf 2)
 	 YELLOW=$(tput bold)$(tput setaf 3)
 	 BLUE=$(tput bold)$(tput setaf 4)
-      PURPLE=$(tput bold)$(tput setaf 5) 
+     PURPLE=$(tput bold)$(tput setaf 5) 
 	 CYAN=$(tput bold)$(tput setaf 6)
 	 NORM=$(tput bold)$(tput setaf 7)
-      COLUMNS=$(tput cols)
+     COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------#
 PORTA="41122"
@@ -371,6 +371,13 @@ else
 fi
 
 }
+
+#   Opção Invalida
+_opinvalida () {  
+      _linha 
+      _mensagec YELLOW "$M08"
+      _linha  
+}      
 
 #-Verificacoes de parametro e diretorio------------------------------------------------------------#
 
@@ -508,7 +515,6 @@ _atualizacao () {
      M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
      M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
      M205="9${NORM} - ${RED}Menu Anterior        "
-     M206=" Digite o numero da OPCAO desejada -> "
      printf "\n"
 	 _linha "="
 	 _mensagec RED "$M201"
@@ -523,7 +529,7 @@ _atualizacao () {
 	 _mensagec GREEN "$M205"
 	 printf "\n"
 	 _linha "="
-     read -rp "${YELLOW}""$M206""${NORM}" OPCAO
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
      case $OPCAO in
 	     1) _pacoteon ;;
 	     2) _pacoteoff ;;
@@ -673,7 +679,6 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
          _principal
      elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-#    source ./atualizac
          if [[ "$OPCAO" = 1 ]] ; then
          _pacoteon
          else
@@ -681,10 +686,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
         fi
      _atupacote
      else
-# Opcao Invalida
-     _linha 
-     _mensagec YELLOW "$M08"
-     _linha 
+     _opinvalida	 
      _press
      _principal
      fi
@@ -701,7 +703,6 @@ _desatualizado () { while true
      M303="1${NORM} - Voltar programa Atualizado "
      M304="2${NORM} - Voltar antes da Biblioteca "
      M305="9${NORM} - ${RED}Menu Anterior    "
-     M306=" Digite o numero da OPCAO desejada -> "
 	 printf "\n"
 	 _linha "="
 	 _mensagec RED "$M301"
@@ -716,7 +717,7 @@ _desatualizado () { while true
 	 _mensagec GREEN "$M305"
 	 printf "\n"
 	 _linha "="
-     read -rp "${YELLOW}""$M306""${NORM}" OPCAO	
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
          1) _voltaprog ;;
          2) _voltabibli ;;
@@ -805,10 +806,7 @@ _voltabibli () {
 	     _linha 
          _volta_geral
      else
-#-Opcao Invalida
-     _linha 
-     _mensagec YELLOW "$M08"
-     _linha 
+	 _opinvalida
      _press
      _desatualizado
      fi
@@ -970,11 +968,8 @@ _volta_geral () {
 }
 
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
-_biblioteca () { while true
-    do
+_biblioteca () { 
     clear
- #-M55=Informe versao a ser atualizar: "
-     #printf "\n\n\n"
      _meiodatela
      _mensagec RED "$M55"
      _linha  
@@ -1000,7 +995,6 @@ _biblioteca () { while true
      M405="2${NORM} - Atualizacao do Savatu "
      M406="3${NORM} - Atualizacao OFF-Line  "
      M407="9${NORM} - ${RED}Menu Anterior "
-     M408=" Digite o numero da OPCAO desejada -> "
 	 printf "\n"
 	 _linha "="
 	 _mensagec RED "$M401"
@@ -1019,7 +1013,7 @@ _biblioteca () { while true
 	 _mensagec GREEN "$M407"
 	 printf "\n"
 	 _linha "="
-     read -rp "${YELLOW}""$M408""${NORM}" OPCAO	
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
          1) _transpc ;;
          2) _savatu ;;
@@ -1027,7 +1021,6 @@ _biblioteca () { while true
          9) clear ; _principal ;;
          *) _biblioteca ;;
      esac
-     done
 }
 
 #-Processo de recepcao da biblioteca---------------------------------------------------------------#
@@ -1163,10 +1156,7 @@ _processo () {
          _meiodatela
          _mensagec YELLOW "$M39"
          else
-#-Opcao Invalida 
-         _linha 
-         _mensagec YELLOW "$M08"
-         _linha 
+         _opinvalida
          _principal
          fi 
     fi
@@ -1287,7 +1277,6 @@ _ferramentas () {
 clear
 ###-500-mensagens do Menu Ferramentas.	
      M501="Menu das Ferramentas"
-     M502="Escolha a opcao:"
      M503="1${NORM} - Limpar Temporarios               "
      M512="2${NORM} - Expurgar                         "
      M513="3${NORM} - Update                           "	
@@ -1296,15 +1285,13 @@ clear
      M505="3${NORM} - Fazer ou Restaurar Backup        "
      M506="4${NORM} - Envia e Recebe Arquivos          "
      M508="5${NORM} - Expurgar                         "
-#    M507="6${NORM} - ""                    "
      M509="8${NORM} - Update                           "	
      M510="9${NORM} - ${RED}Menu Anterior          "
-     M511=" Digite a opcao desejada -> "
      _linha "="
      _mensagec RED "$M501"
      _linha 
      printf "\n"
-     _mensagec PURPLE "$M502"
+     _mensagec PURPLE "$M103"
      printf "\n"
      if [[ "$BANCO" = "s" ]]; then
      _mensagec GREEN "$M503"
@@ -1316,7 +1303,7 @@ clear
      _mensagec GREEN "$M510"
 	 printf "\n"
 	 _linha "="
-     read -rp "${YELLOW}""$M511""${NORM}" OPCAOB
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAOB
          case $OPCAOB in
          1) _temps        ;;
          2) _expurgador   ;;
@@ -1333,8 +1320,6 @@ clear
      printf "\n"
 	 _mensagec GREEN "$M506"
      printf "\n"
-#	 _mensagec GREEN "$M507"
-#     printf "\n"
 	 _mensagec GREEN "$M508"
      printf "\n"
 	 _mensagec GREEN "$M509"
@@ -1343,7 +1328,7 @@ clear
 	 _mensagec GREEN "$M510"
 	 printf "\n"
 	 _linha "="
-     read -rp "${YELLOW}""$M511""${NORM}" OPCAO
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
      case $OPCAO in
            1) _temps        ;;
            2) _rebuild      ;;
@@ -1406,18 +1391,16 @@ _temps () {
 _rebuild () { 
      clear
 ###-600-mensagens do Menu Rebuild.
-      M601="Menu de Recuperacao de Arquivo(s)."
-	 M602="Escolha a opcao:"
+     M601="Menu de Recuperacao de Arquivo(s)."
 	 M603="1${NORM} - Um arquivo ou Todos   "
 	 M604="2${NORM} - Arquivos Principais   "
-      M605="9${NORM} - ${RED}Menu Anterior"
-      M606=" Digite o numero da OPCAO desejada -> "
+     M605="9${NORM} - ${RED}Menu Anterior"
 	 printf "\n"
 	 _linha "="
 	 _mensagec RED "$M601"
 	 _linha 
 	 printf "\n"
-	 _mensagec PURPLE "$M602"
+	 _mensagec PURPLE "$M103"
 	 printf "\n"
 	 _mensagec GREEN "$M603"
 	 printf "\n"
@@ -1426,7 +1409,7 @@ _rebuild () {
 	 _mensagec GREEN "$M605"
 	 printf "\n"
 	 _linha "="
-      read -rp "${YELLOW}""$M606""${NORM}" OPCAO	
+      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
       case $OPCAO in
            1) _rebuild1 ;;
            2) _rebuildlista ;;
@@ -1543,18 +1526,16 @@ _menubackup () { while true
     clear
 ###-700-mensagens do Menu Backup.
      M700="Menu de Backup(s)."
-     M701="Escolha a opcao:"
      M702="1${NORM} - Backup da base de dados          "
      M703="2${NORM} - Restaurar Backup da base de dados"
      M704="3${NORM} - Enviar Backup                    "
      M705="9${NORM} - ${RED}Menu Anterior          "
-     M706=" Digite o numero da OPCAO desejada -> "
 	 printf "\n"
 	 _linha "="
 	 _mensagec RED "$M700"
 	 _linha 
 	 printf "\n"
-	 _mensagec PURPLE "$M701"
+	 _mensagec PURPLE "$M103"
 	 printf "\n"
 	 _mensagec GREEN "$M702"
 	 printf "\n"
@@ -1565,7 +1546,7 @@ _menubackup () { while true
 	 _mensagec GREEN "$M705"
        printf "\n"       
 	 _linha "="
-     read -rp "${YELLOW}""$M706""${NORM}" OPCAO	
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
            1) _backup       ;;
            2) _unbackup     ;;
@@ -1619,12 +1600,8 @@ M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
      _linha 
 
         else
-#-Opcao Invalida 
-     _linha 
-     _mensagec YELLOW "$M08"
-     _linha 
-
-     _ferramentas 
+     _opinvalida
+     _ferramentas
         fi
 fi
 #-Criando Backup..
@@ -1718,10 +1695,7 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _read_sleep 3 
      _ferramentas
 else
-#-Opcao Invalida
-     _linha 
-     _mensagec YELLOW "$M08"
-     _linha   
+    _opinvalida
     _ferramentas 
 fi
 } 
@@ -1788,12 +1762,9 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
       _linha 
       _read_sleep 3 
 else
-#   Opcao Invalida
-      _linha 
-      _mensagec YELLOW "$M08"
-      _linha  
-fi
-_ferramentas   
+     _opinvalida
+     _ferramentas   
+fi	 
 }   
   
 #-VOLTA BACKUP TOTAL OU PARCIAL--------------------------------------------------------------------#
@@ -1911,11 +1882,7 @@ M34="O arquivo ""$VARQUIVO"
    
 _press
     else
-#-Opcao Invalida
-     _linha 
-     _mensagec YELLOW "$M08"
-     _linha 
-   
+	 _opinvalida
     fi
 _ferramentas
 }
@@ -1925,35 +1892,25 @@ _envrecarq () {
     clear
 ###-800-mensagens do Menu Envio e Retorno.
      M800="Menu de Enviar e Receber Arquivo(s)."
-     M801="Escolha a opcao:"
      M802="1${NORM} - Enviar arquivo(s)     "
      M803="2${NORM} - Receber arquivo(s)    "
-#     M804="3${NORM} - Enviar Avulso         "
-#     M805="4${NORM} - Receber Avulso        "
      M806="9${NORM} - ${RED}Menu Anterior "
-     M807=" Digite o numero da OPCAO desejada -> "
 	 printf "\n"
 	 _linha "="
 	 _mensagec RED "$M800"
 	 _linha 
 	 printf "\n"
-	 _mensagec PURPLE "$M801"
+	 _mensagec PURPLE "$M103"
 	 printf "\n"
 	 _mensagec GREEN "$M802"
 	 printf "\n"
 	 _mensagec GREEN "$M803"
 	 printf "\n"
-#	 _mensagec GREEN "$M804"
-#       printf "\n"
-#	 _mensagec GREEN "$M805"
-#        printf "\n"
 	 _mensagec GREEN "$M806"
        printf "\n"       
 	 _linha "="
-     read -rp "${YELLOW}""$M807""${NORM}" OPCAO	
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
- #          1) _envia_arq       ;;
- #          2) _recebe_arq      ;;
            1) _envia_avulso    ;;
            2) _recebe_avulso   ;;
            9) clear ; _ferramentas ;;
@@ -1977,7 +1934,7 @@ _envia_avulso () {
       else
       clear
       _meiodatela
-M995="Diretorio não foi encontrado no servidor"
+M995="Diretorio nao foi encontrado no servidor"
       _linha 
       _mensagec RED "$M995"  
       _linha 
@@ -2082,7 +2039,7 @@ _recebe_avulso () {
       else
       clear
       _meiodatela
-M995="Diretorio não foi encontrado no servidor"
+M995="Diretorio nao foi encontrado no servidor"
       _linha 
       _mensagec RED "$M995"  
       _linha 
