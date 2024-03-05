@@ -1968,7 +1968,7 @@ _envia_avulso () {
      printf "\n\n\n"
 ### Pedir diretorio origem do arquivo    
       _linha 
- M991="1- Informe em que diretorio esta o arquivo a ser enviado :"   
+ M991="1- Origuem: Informe em que diretorio esta o arquivo a ser enviado :"   
       _mensagec YELLOW "$M991"  
       read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
       _linha 
@@ -2025,7 +2025,7 @@ M995="Diretorio não foi encontrado no servidor"
       fi
       printf "\n"
       _linha 
- M992="3- Informe para qual diretorio no servidor:"   
+ M992="3- Destino: Informe para qual diretorio no servidor:"   
       _mensagec YELLOW "$M992"  
       read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
       _linha 
@@ -2054,7 +2054,7 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
 _recebe_avulso () {
       clear
       _linha 
- M993="1- Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
+      M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
       _mensagec YELLOW "$M993"  
       read -rp "${YELLOW}"" -> ""${NORM}" RECBASE
       _linha 
@@ -2069,7 +2069,7 @@ _recebe_avulso () {
       _envrecarq
       fi
       _linha 
-       M994="3- Informe diretorio do servidor que vai receber arquivo: " 
+       M994="3- Destino:Informe diretorio do servidor que vai receber arquivo: " 
       _mensagec YELLOW "$M994"  
      
      read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
