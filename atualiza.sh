@@ -55,8 +55,8 @@
 #                                                                                                                 #
 #            2 - Voltar antes da Biblioteca                                                                       #
 #      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com nome ("backcup-versao da biblioteca".zip)  #
-#      na pasta dos programas.                                                                                    #
-#                                                                                                                 #
+#      na pasta dos programas.                                                                                #
+#                                                                                   #
 #      4 - Versao do Iscobol                                                                                      #
 #            Verifica qual a versao do iscobol que esta sendo usada.                                              #
 #                                                                                                                 #
@@ -1451,9 +1451,10 @@ _rebuild1 () {
          _ferramentas
          done
      local ARQUIVO="$PEDARQ.???.dat"
+     local jut="$SAVISC""$JUTIL"
          for i in $ARQUIVO
          do 
-         $jut -rebuild "$i" -a -f
+         $jut -rebuild "$BASE""/""$i" -a -f
          done
      fi
 

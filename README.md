@@ -81,7 +81,7 @@
                     "*.ARQ.dat" "*.DAT.dat" "*.LOG.dat" "*.PAN.dat"                                                
                                                                                                                    
                 2 - Arquivos Principais                                                                            
-                    Roda o Jtuil somente nos arquivos que estao na lista "atualizaj"                               
+                    Roda o Jutil somente nos arquivos que estao na lista "atualizaj"                               
                                                                                                                    
             3 - Backup da base de dados                                                                            
                 Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                                
