@@ -1391,10 +1391,10 @@ _temps () {
 _rebuild () { 
      clear
 ###-600-mensagens do Menu Rebuild.
-     M601="Menu de Recuperacao de Arquivo(s)."
+      M601="Menu de Recuperacao de Arquivo(s)."
 	 M603="1${NORM} - Um arquivo ou Todos   "
 	 M604="2${NORM} - Arquivos Principais   "
-     M605="9${NORM} - ${RED}Menu Anterior"
+      M605="9${NORM} - ${RED}Menu Anterior"
 	 printf "\n"
 	 _linha "="
 	 _mensagec RED "$M601"
@@ -1434,7 +1434,6 @@ _rebuild1 () {
      _mensagec RED "$M65"
      _linha 
      local jut="$SAVISC""$JUTIL"
-#     cd "$BASE"/ || exit
      for i in $BASE/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
      do
      TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
