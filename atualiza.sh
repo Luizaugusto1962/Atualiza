@@ -2064,9 +2064,10 @@ _expurgador () {
     clear
 #-Apagar Biblioteca--------------------------------------------------# 
      local DIR1="$BACKUP""/"
-# Apagando todos os arquivos do diretorio #
-     "$cmd_find" "$DIR1" . -type f -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-#     done
+# Apagando todos os arquivos dos diretorios abaixo no periodo de 30 dias #
+     "$cmd_find" "$DIR1" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+#    "$cmd_find" "$DIR2" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+
 #-Apagar arquivos do diretorio olds----------------------------------#
      local DIR2="$OLDS""/"
      "$cmd_find" "$DIR2" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
