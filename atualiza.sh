@@ -1094,7 +1094,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      else
          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
              if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
-            clear 
+     clear 
 #-Atualizacao nao encontrado no diretorio
      _linha 
      _mensagec RED "$M48"
@@ -1371,12 +1371,12 @@ _temps () {
 
   cd "$TOOLS"/ || exit
   arqs="atualizat"
-             DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
-         if [[ "$DAYS" ]] ; then
-               M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
-             _meiodatela
-             _messagec RED "$M63"
-         fi 
+      DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
+      if [[ "$DAYS" ]] ; then
+      M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
+      _meiodatela
+      _messagec RED "$M63"
+      fi 
 
  for i in $base $base2 $base3 ;do
  DIRB="$destino""$i""/"
@@ -1511,8 +1511,7 @@ done < "atualizaj"
      _linha 
      _mensagec YELLOW "$M12"
      _linha 
-   
-_press
+     _press
 else
 M996="Recuperacao em desenvolvimento :"
 _mensagec RED "$M996"
