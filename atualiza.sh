@@ -1,4 +1,11 @@
 #!/bin/bash
+#    
+#   ,---.  ,--.        ,--.                                                         
+#  '   .-' `--' ,---.,-'  '-. ,---. ,--,--,--. ,--,--.     ,---.  ,--,--.,--.  ,--. 
+#  `.  `-. ,--.(  .-''-.  .-'| .-. :|        |' ,-.  |    (  .-' ' ,-.  | \  `'  /  
+#  .-'    ||  |.-'  `) |  |  \   --.|  |  |  |\ '-'  |    .-'  `)\ '-'  |  \    /   
+#  `-----' `--'`----'  `--'   `----'`--`--`--' `--`--'    `----'  `--`--'   `--'    
+#                                                                                   
 
 #-----------------------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
@@ -293,10 +300,10 @@ tput clear
 	 GREEN=$(tput bold)$(tput setaf 2)
 	 YELLOW=$(tput bold)$(tput setaf 3)
 	 BLUE=$(tput bold)$(tput setaf 4)
-     PURPLE=$(tput bold)$(tput setaf 5) 
+      PURPLE=$(tput bold)$(tput setaf 5) 
 	 CYAN=$(tput bold)$(tput setaf 6)
 	 NORM=$(tput bold)$(tput setaf 7)
-     COLUMNS=$(tput cols)
+      COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------#
 PORTA="41122"
@@ -479,9 +486,9 @@ _principal () {
 	 _mensagec GREEN "$M106"
 	 printf "\n"
          if [ "$sistema" = "iscobol" ]; then
-		 _mensagec GREEN "$M111"
+	    _mensagec GREEN "$M111"
          else
-		 _mensagec GREEN "$M112"
+         _mensagec GREEN "$M112"
          fi
 	 printf "\n"
 	 _mensagec GREEN "$M107"
@@ -510,12 +517,12 @@ _atualizacao () {
 
      clear
 ###   200-mensagens do Menu Programas.
-     M201="Menu de Programas"
-     M202="Escolha o tipo de Atualizacao:"
-     M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
-     M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
-     M205="9${NORM} - ${RED}Menu Anterior        "
-     printf "\n"
+      M201="Menu de Programas"
+      M202="Escolha o tipo de Atualizacao:"
+      M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
+      M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
+      M205="9${NORM} - ${RED}Menu Anterior        "
+      printf "\n"
 	 _linha "="
 	 _mensagec RED "$M201"
 	 _linha
@@ -529,13 +536,13 @@ _atualizacao () {
 	 _mensagec GREEN "$M205"
 	 printf "\n"
 	 _linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
-     case $OPCAO in
-	     1) _pacoteon ;;
-	     2) _pacoteoff ;;
+      read -rp "${YELLOW}""$M110""${NORM}" OPCAO
+      case $OPCAO in
+          1) _pacoteon ;;
+          2) _pacoteoff ;;
           9) clear ; _principal ;;
           *) _principal ;;
-     esac
+      esac
 }
 
 _qualprograma () {
@@ -608,7 +615,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      fi
 
 #-Descompactando o programa baixado----------------------------------#
-    "$cmd_unzip" -o "$prog""$class".zip >> "$LOG_ATU"
+     "$cmd_unzip" -o "$prog""$class".zip >> "$LOG_ATU"
      _read_sleep 1
      clear
 
@@ -1343,14 +1350,14 @@ clear
     clear
 _limpando () {
       TEMPORARIOS="Temps"
-      ETIQUETATEMPO="$(date +'%d-%m-%Y-%M')"
+      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
          while read -r line;
          do
          "$cmd_find" "$DIRB" -name "$line" -exec ls -l {} \;
         # sleep 1
          #printf "${GREEN}""$line""${NORM}\n"
-         "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$ETIQUETATEMPO" "$DIRB"$line {} \; >> "$LOG_LIMPA"
+         "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB"$line {} \; >> "$LOG_LIMPA"
          done < "$arqs"
   
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
@@ -1563,13 +1570,11 @@ clear
 
     if [ ! -d "$BACKUP" ]; then
 M23=".. Criando o diretorio dos backups em $BACKUP.."
-     _linha 
-     _mensagec YELLOW "$M23"
-     _linha 
-   
+      _linha 
+      _mensagec YELLOW "$M23"
+      _linha 
     mkdir -p "$BACKUP"
     fi
-    
 DAYS2=$(find "$BACKUP" -ctime -2 -name "$EMPRESA"\*zip)
     cd "$BASE" || exit
 if [[ "$DAYS2" ]] ; then
@@ -1586,21 +1591,20 @@ M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
         if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
 
 #-Backup Abortado!
-     _linha 
-     _mensagec RED "$M47"
-     _linha         
+    _linha 
+    _mensagec RED "$M47"
+    _linha         
     _read_sleep 3
     _ferramentas 
         elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
 
 #-Sera criado mais um backup para o periodo.
-     _linha 
-     _mensagec YELLOW "$M06"
-     _linha 
-
+      _linha 
+      _mensagec YELLOW "$M06"
+      _linha 
         else
-     _opinvalida
-     _ferramentas
+      _opinvalida
+      _ferramentas
         fi
 fi
 #-Criando Backup..
@@ -1622,7 +1626,7 @@ _progresso () {
 
 _dobackup () {
     #-Backup 
-	"$cmd_zip" "$BACKUP"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+    "$cmd_zip" "$BACKUP"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
 }
 
 #-Inicia em background-----------------------------------------------------------------------------#
