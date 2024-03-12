@@ -6,14 +6,15 @@
 - Volta de programa ou biblioteca
 - Limpa arquivos Temporários
 - Recupera arquivos avulso ou os principais
- ---
+
+    
     Rotina para atualizar programas e bibliotecas da SAV                                                           
     Feito por Luiz Augusto   
     email luizaugusto@sav.com.br                                                          
     Versao do atualiza.sh                                                                                          
+      INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL  9DIG  incluir PACOTE de programas
  
-     INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL  9DIG  incluir PACOTE de programas
- ---
+ 
   Arquivos de trabalho:  
 
   "atualizac" = Contem a configuracao de diretorios e de qual tipo de                                              
@@ -85,11 +86,15 @@
                                                                                                                    
             3 - Backup da base de dados                                                                            
                 Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                                
-            4 - Restaurar Backup da base de dados                                                                  
-                Volta o backup feito pela opcao acima                                                              
-            5 - Enviar Backup                                                                                      
-                Enviar ZIP feito pela opcao 3                                                                      
-            6 - Expurgar                                                                                           
+            
+            4 - Restaurar Backup da base de dados         
+                Volta o backup feito pela opcao acima
+                
+            5 - Enviar Backup    
+                Enviar ZIP feito pela opcao 3
+                
+            6 - Expurgar                                           
                 Excluir, zips e bkps com mais de 30 dias processado                                                
-            7 - Update                                                                                             
+            
+            7 - Update 
                 Atualizacao do programa atualiza.sh                                                              
