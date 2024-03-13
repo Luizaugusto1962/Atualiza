@@ -1,17 +1,19 @@
 #!/bin/bash
-#    
-#   ,---.  ,--.        ,--.                                                         
-#  '   .-' `--' ,---.,-'  '-. ,---. ,--,--,--. ,--,--.     ,---.  ,--,--.,--.  ,--. 
-#  `.  `-. ,--.(  .-''-.  .-'| .-. :|        |' ,-.  |    (  .-' ' ,-.  | \  `'  /  
-#  .-'    ||  |.-'  `) |  |  \   --.|  |  |  |\ '-'  |    .-'  `)\ '-'  |  \    /   
-#  `-----' `--'`----'  `--'   `----'`--`--`--' `--`--'    `----'  `--`--'   `--'    
-#                                                                                   
 
+#                                                               
+#    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___ 
+#   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  |
+#  (:   \___/ ||  |  (:   \___/  )__/  \\__/(: ______) \   \  //   |    /    \        (:   \___/   /    \\   \  //  / 
+#   \___  \   |:  |   \___  \       \\_ /    \/    |   /\\  \/.    |   /' /\  \        \___  \    /' /\  \\\  \/. ./  
+#    __/  \\  |.  |    __/  \\      |.  |    // ___)_ |: \.        |  //  __'  \        __/  \\  //  __'  \\.    //   
+#   /" \   :) /\  |\  /" \   :)     \:  |   (:      "||.  \    /:  | /   /  \\  \      /" \   :)/   /  \\  \\\   /    
+#  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/     
+#                                                                                                                     
 #-----------------------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-##  UPDATE 12/03/2024                                                                                              #
+##  UPDATE 13/03/2024                                                                                             #
 #                                                                                                                 #
 #-----------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
@@ -1286,13 +1288,9 @@ clear
 ###-500-mensagens do Menu Ferramentas.	
      M501="Menu das Ferramentas"
      M503="1${NORM} - Limpar Temporarios               "
-     M512="2${NORM} - Expurgar                         "
-     M513="3${NORM} - Update                           "	
-     M503="1${NORM} - Limpar Temporarios               "
      M504="2${NORM} - Recuperar arquivos               "
      M505="3${NORM} - Fazer ou Restaurar Backup        "
      M506="4${NORM} - Envia e Recebe Arquivos          "
-     M508="5${NORM} - Expurgar                         "
      M509="8${NORM} - Update                           "	
      M510="9${NORM} - ${RED}Menu Anterior          "
      _linha "="
@@ -1304,9 +1302,7 @@ clear
      if [[ "$BANCO" = "s" ]]; then
      _mensagec GREEN "$M503"
      printf "\n"
-     _mensagec GREEN "$M512"
-     printf "\n"
-     _mensagec GREEN "$M513"
+     _mensagec GREEN "$M509"
      printf "\n"
      _mensagec GREEN "$M510"
 	 printf "\n"
@@ -1314,8 +1310,7 @@ clear
      read -rp "${YELLOW}""$M110""${NORM}" OPCAOB
          case $OPCAOB in
          1) _temps        ;;
-         2) _expurgador   ;;
-         3) _update       ;;
+         8) _update       ;;
          9) clear ; _principal ;;
          *) _ferramentas ;;
          esac
@@ -1327,8 +1322,6 @@ clear
      _mensagec GREEN "$M505"
      printf "\n"
 	 _mensagec GREEN "$M506"
-     printf "\n"
-	 _mensagec GREEN "$M508"
      printf "\n"
 	 _mensagec GREEN "$M509"
 	 printf "\n"
@@ -1342,7 +1335,6 @@ clear
            2) _rebuild      ;;
            3) _menubackup   ;;
            4) _envrecarq    ;; 
-           5) _expurgador   ;;
            8) _update       ;;
            9) clear ; _principal ;;
            *) _ferramentas ;;
@@ -2062,38 +2054,6 @@ M15="Arquivo enviado para a pasta, \"""$EDESTINO""\"."
       _linha 
       _read_sleep 3
 _envrecarq      
-}
-
-#-Limpando arquivos de atualizacao com mais de 30 dias --------------------------------------------#
-_expurgador () {
-    clear
-#-Apagar Biblioteca--------------------------------------------------# 
-     local DIR1="$BACKUP""/"
-# Apagando todos os arquivos dos diretorios abaixo no periodo de 30 dias #
-     "$cmd_find" "$DIR1" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-#    "$cmd_find" "$DIR2" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-
-#-Apagar arquivos do diretorio olds----------------------------------#
-     local DIR2="$OLDS""/"
-     "$cmd_find" "$DIR2" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-
-#-Apagar arquivos do diretorio progs---------------------------------#
-     local DIR3="$PROGS""/"
-     "$cmd_find" "$DIR3" -name "*.bkp" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-    
-#-Apagar arquivos do diretorio dos logs---------------------------------#
-     local DIR4="$LOGS""/"
-     "$cmd_find" "$DIR4" -name "*.log" -ctime +30 -exec rm -r {} \; 
-     printf "\n"
-#-Verificando e/ou excluido arquivos com mais de 30 dias criado.------#
-     _linha 
-     _mensagec RED "$M51"
-     _linha 
-     printf "\n\n"
-cd "$TOOLS"/ || exit
-#_press
-_ferramentas
-
 }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
