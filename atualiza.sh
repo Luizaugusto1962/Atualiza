@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#                                                               
-#    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___ 
-#   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  |
-#  (:   \___/ ||  |  (:   \___/  )__/  \\__/(: ______) \   \  //   |    /    \        (:   \___/   /    \\   \  //  / 
-#   \___  \   |:  |   \___  \       \\_ /    \/    |   /\\  \/.    |   /' /\  \        \___  \    /' /\  \\\  \/. ./  
-#    __/  \\  |.  |    __/  \\      |.  |    // ___)_ |: \.        |  //  __'  \        __/  \\  //  __'  \\.    //   
-#   /" \   :) /\  |\  /" \   :)     \:  |   (:      "||.  \    /:  | /   /  \\  \      /" \   :)/   /  \\  \\\   /    
-#  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/     
-#                                                                                                                     
+#                                                                                                                      #                                                               
+#    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
+#   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
+#  (:   \___/ ||  |  (:   \___/  )__/  \\__/(: ______) \   \  //   |    /    \        (:   \___/   /    \\   \  //  /  #
+#   \___  \   |:  |   \___  \       \\_ /    \/    |   /\\  \/.    |   /' /\  \        \___  \    /' /\  \\\  \/. ./   #
+#    __/  \\  |.  |    __/  \\      |.  |    // ___)_ |: \.        |  //  __'  \        __/  \\  //  __'  \\.    //    #
+#   /" \   :) /\  |\  /" \   :)     \:  |   (:      "||.  \    /:  | /   /  \\  \      /" \   :)/   /  \\  \\\   /     #
+#  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/      #
+#                                                                                                                      #
 #-----------------------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
@@ -200,8 +200,8 @@ M46="Backup da Biblioteca nao encontrado no diretorio"
 M47="Backup Abortado!"
 M48="Atualizacao nao encontrado ou incompleta."
 M49="Arquivo nao encontrado no diretorio"
-#M50=""
-M51="Verificando e/ou excluido arquivos com mais de 30 dias criado."
+# M50=""
+# M51="Verificando e/ou excluido arquivos com mais de 30 dias criado."
 M52="Informe de qual o Backup que deseja enviar. Somente informe a data"
 M53="Informe de qual o Backup que deseja voltara o(s) arquivo(s)."
 #M54=""
@@ -279,17 +279,17 @@ fi
 
 TOOLS=$destino$pasta
      if [ -d "$TOOLS" ]; then
-         printf " Diretorio ... ok \n"
+     printf " Diretorio ... ok \n"
      else
-         printf " Diretorio da destino nao encotrado...  \n"
-         exit
+     printf " Diretorio da destino nao encotrado...  \n"
+     exit
      fi
 BASE=$destino$base
      if [ -d "$BASE" ]; then
-         printf " Diretorio ... ok \n"
+     printf " Diretorio ... ok \n"
      else
-         printf " Diretorio da base nao encotrado...  \n"
-         exit
+     printf " Diretorio da base nao encotrado...  \n"
+     exit
      fi
 
 #-EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.----#
@@ -299,14 +299,14 @@ ANTERIOR="anterior"
 export TERM=xterm-256color
 tput sgr0
 tput clear 
-	 RED=$(tput bold)$(tput setaf 1)
-	 GREEN=$(tput bold)$(tput setaf 2)
-	 YELLOW=$(tput bold)$(tput setaf 3)
-	 BLUE=$(tput bold)$(tput setaf 4)
-      PURPLE=$(tput bold)$(tput setaf 5) 
-	 CYAN=$(tput bold)$(tput setaf 6)
-	 NORM=$(tput bold)$(tput setaf 7)
-      COLUMNS=$(tput cols)
+	RED=$(tput bold)$(tput setaf 1)
+	GREEN=$(tput bold)$(tput setaf 2)
+	YELLOW=$(tput bold)$(tput setaf 3)
+	BLUE=$(tput bold)$(tput setaf 4)
+     PURPLE=$(tput bold)$(tput setaf 5) 
+	CYAN=$(tput bold)$(tput setaf 6)
+	NORM=$(tput bold)$(tput setaf 7)
+     COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------#
 PORTA="41122"
@@ -324,35 +324,35 @@ fi
 #-Processo do scp----------------------------------------------------------------------------------#
 
 _run_scp () {
-      "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
+     "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
 }
 
 #-Processo do scp2---------------------------------------------------------------------------------#
 _run_scp2 () {     # programas da biblioteca
-      "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""$atu""$VERSAO".zip . 
+     "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""$atu""$VERSAO".zip . 
 }
 
 #-Funcao de sleep----------------------------------------------------------------------------------#
 _read_sleep () {
-    # Usage: _read_sleep 1
-    #        _read_sleep 0.2
+# Usage: _read_sleep 1
+#        _read_sleep 0.2
      read -rt "$1" <> <(:) || :
 }
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
 _press () {
-      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
-      read -rt 15 || :
-      tput sgr0
-      #clear
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
+     read -rt 15 || :
+     tput sgr0
+
 }
 
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
 _linha () {
-      local Traco=${1:-'-'}
-      printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
-      linhas=${Espacos// /$Traco}
-	 printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
+     local Traco=${1:-'-'}
+     printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
+     linhas=${Espacos// /$Traco}
+	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
 }
 
 #-Centro da tela-----------------------------------------------------------------------------------#
@@ -369,7 +369,7 @@ local MXX=$2
 if [ "$CCC" == "RED" ]; then
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 elif [ "$CCC" == "GREEN" ]; then
-    printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
+     printf "%*s""${GREEN}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 elif [ "$CCC" == "YELLOW" ]; then
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 elif [ "$CCC" == "CYAN" ]; then
@@ -384,9 +384,9 @@ fi
 
 #   Opção Invalida
 _opinvalida () {  
-      _linha 
-      _mensagec YELLOW "$M08"
-      _linha  
+     _linha 
+     _mensagec YELLOW "$M08"
+     _linha  
 }      
 
 #-Verificacoes de parametro e diretorio------------------------------------------------------------#
@@ -411,42 +411,42 @@ if [ -d "$TOOLS" ]; then
      _linha "*"
      _mensagec CYAN "$M80"
      _linha "*"
-         OLDS=$TOOLS$olds
-         if [ -d "$OLDS" ]; then
-             printf " Diretorio olds ... ok \n"
-         else
-             mkdir -p "$OLDS"
-         fi
-		 PROGS=$TOOLS$progs
-         if [ -d "$PROGS" ]; then
-             printf " Diretorio progs ... ok \n"
-         else
-             mkdir -p "$PROGS"
-         fi
-	     LOGS=$TOOLS$logs
-         if [ -d "$LOGS" ]; then
-             printf " Diretorio logs ... ok \n"
-         else
-             mkdir -p "$LOGS"
-         fi
-		 BACKUP=$TOOLS$backup
-         if [ -d "$BACKUP" ]; then
-             printf " Diretorio backups ... ok \n"
-         else
-             mkdir -p "$BACKUP"
-         fi
-	     ENVIA=$TOOLS"/envia"
-         if [ -d "$ENVIA" ]; then
-             printf " Diretorio envia ... ok \n"
-         else
-             mkdir -p "$ENVIA"
-         fi
-		 RECEBE=$TOOLS"/recebe"
-         if [ -d "$RECEBE" ]; then
-             printf " Diretorio recebe ... ok \n"
-         else
-             mkdir -p "$RECEBE"
-         fi
+          OLDS=$TOOLS$olds
+          if [ -d "$OLDS" ]; then
+          printf " Diretorio olds ... ok \n"
+          else
+               mkdir -p "$OLDS"
+          fi
+		PROGS=$TOOLS$progs
+          if [ -d "$PROGS" ]; then
+          printf " Diretorio progs ... ok \n"
+          else
+               mkdir -p "$PROGS"
+          fi
+          LOGS=$TOOLS$logs
+          if [ -d "$LOGS" ]; then
+          printf " Diretorio logs ... ok \n"
+          else
+               mkdir -p "$LOGS"
+          fi
+		BACKUP=$TOOLS$backup
+          if [ -d "$BACKUP" ]; then
+          printf " Diretorio backups ... ok \n"
+          else
+               mkdir -p "$BACKUP"
+          fi
+          ENVIA=$TOOLS"/envia"
+          if [ -d "$ENVIA" ]; then
+          printf " Diretorio envia ... ok \n"
+          else
+               mkdir -p "$ENVIA"
+          fi
+		RECEBE=$TOOLS"/recebe"
+          if [ -d "$RECEBE" ]; then
+          printf " Diretorio recebe ... ok \n"
+          else
+               mkdir -p "$RECEBE"
+          fi
 else
      exit
 fi
@@ -460,58 +460,58 @@ clear
 
 _principal () { 
      tput clear
-	 printf "\n"
+	printf "\n"
 #-100-mensagens do Menu Principal.-----------------------------------------------------------------#	
-	 M101="Menu de Opcoes"
-	 M102=".. Sistema: ""$sistema"" .. = ..Empresa: ""$EMPRESA"" .."
-	 M103="Escolha a opcao:"
-	 M104="1${NORM} - Atualizacao de Programas "
-      M105="2${NORM} - Atualizacao de Biblioteca" 
-      M106="3${NORM} - Desatualizando           "
-	 M111="4${NORM} - Versao do Iscobol        "
-	 M112="4${NORM} - Funcao nao disponivel    "
-	 M107="5${NORM} - Versao do Linux          "
-      M108="6${NORM} - Ferramentas              "
-      M109="9${NORM} - ${RED}Sair           "
-      M110=" Digite a opcao desejada -> " 
+	M101="Menu de Opcoes"
+	M102=".. Sistema: ""$sistema"" .. = ..Empresa: ""$EMPRESA"" .."
+	M103="Escolha a opcao:"
+	M104="1${NORM} - Atualizacao de Programas "
+     M105="2${NORM} - Atualizacao de Biblioteca" 
+     M106="3${NORM} - Desatualizando           "
+	M111="4${NORM} - Versao do Iscobol        "
+	M112="4${NORM} - Funcao nao disponivel    "
+	M107="5${NORM} - Versao do Linux          "
+     M108="6${NORM} - Ferramentas              "
+     M109="9${NORM} - ${RED}Sair           "
+     M110=" Digite a opcao desejada -> " 
 
-	 _linha "="
-	 _mensagec RED "$M101"
-	 _linha
-	 _mensagec BLUE "$M102"
-	 _linha "="
-	 _mensagec PURPLE "$M103"
-	 printf "\n"
-	 _mensagec GREEN "$M104"
-	 printf "\n"
-	 _mensagec GREEN "$M105"
-	 printf "\n"
-	 _mensagec GREEN "$M106"
-	 printf "\n"
-         if [ "$sistema" = "iscobol" ]; then
-	    _mensagec GREEN "$M111"
-         else
-         _mensagec GREEN "$M112"
-         fi
-	 printf "\n"
-	 _mensagec GREEN "$M107"
-	 printf "\n"
-	 _mensagec GREEN "$M108"
-	 printf "\n"
-	 _mensagec GREEN "$M109"
-	 printf "\n"
+	_linha "="
+	_mensagec RED "$M101"
+	_linha
+	_mensagec BLUE "$M102"
+	_linha "="
+	_mensagec PURPLE "$M103"
+	printf "\n"
+	_mensagec GREEN "$M104"
+	printf "\n"
+	_mensagec GREEN "$M105"
+	printf "\n"
+	_mensagec GREEN "$M106"
+	printf "\n"
+          if [ "$sistema" = "iscobol" ]; then
+          _mensagec GREEN "$M111"
+          else
+          _mensagec GREEN "$M112"
+          fi
+	printf "\n"
+	_mensagec GREEN "$M107"
+	printf "\n"
+	_mensagec GREEN "$M108"
+	printf "\n"
+	_mensagec GREEN "$M109"
+     printf "\n"
      _linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO
 
      case $OPCAO in
-         1) _atualizacao   ;;
-         2) _biblioteca    ;;
-         3) _desatualizado ;;
-         4) _iscobol       ;;
-         5) _linux         ;;
-         6) _ferramentas   ;;
-         9) clear; tput sgr0; exit ;;
-         *) clear ; _principal ;;
+          1) _atualizacao   ;;
+          2) _biblioteca    ;;
+          3) _desatualizado ;;
+          4) _iscobol       ;;
+          5) _linux         ;;
+          6) _ferramentas   ;;
+          9) clear; tput sgr0; exit ;;
+          *) clear ; _principal ;;
      esac
 }
 
@@ -520,32 +520,32 @@ _atualizacao () {
 
      clear
 ###   200-mensagens do Menu Programas.
-      M201="Menu de Programas"
-      M202="Escolha o tipo de Atualizacao:"
-      M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
-      M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
-      M205="9${NORM} - ${RED}Menu Anterior        "
-      printf "\n"
-	 _linha "="
-	 _mensagec RED "$M201"
-	 _linha
-	 printf "\n"
-	 _mensagec PURPLE "$M202"
-	 printf "\n"
-	 _mensagec GREEN "$M203"
-	 printf "\n"
-	 _mensagec GREEN "$M204"
-	 printf "\n"
-	 _mensagec GREEN "$M205"
-	 printf "\n"
-	 _linha "="
-      read -rp "${YELLOW}""$M110""${NORM}" OPCAO
-      case $OPCAO in
+     M201="Menu de Programas"
+     M202="Escolha o tipo de Atualizacao:"
+     M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
+     M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
+     M205="9${NORM} - ${RED}Menu Anterior        "
+     printf "\n"
+	_linha "="
+	_mensagec RED "$M201"
+	_linha
+	printf "\n"
+	_mensagec PURPLE "$M202"
+	printf "\n"
+	_mensagec GREEN "$M203"
+	printf "\n"
+	_mensagec GREEN "$M204"
+	printf "\n"
+	_mensagec GREEN "$M205"
+	printf "\n"
+	_linha "="
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
+     case $OPCAO in
           1) _pacoteon ;;
           2) _pacoteoff ;;
           9) clear ; _principal ;;
           *) _principal ;;
-      esac
+     esac
 }
 
 _qualprograma () {
@@ -554,10 +554,9 @@ _qualprograma () {
      _meiodatela
      #-Informe o nome do programa a ser atualizado:
      _mensagec RED "$M59"
-     _linha 
+     _linha
      read -rp "${YELLOW}""       Informe o programa em MAIUSCULO: ""${NORM}" prog
      _linha 
-
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      clear
      _meiodatela
@@ -626,29 +625,29 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 
      if [ "$sistema" = "iscobol" ]; then 
          for pprog in *.class
-         do
-         "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
-         _read_sleep 2 
-         mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
-		 done
+          do
+          "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
+          _read_sleep 2 
+          mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
+		done
      else 
-         for pprog in *.int
-         do
+          for pprog in *.int
+          do
           "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"
           _read_sleep 2 
-         mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
-         done
-         _read_sleep 2
-	 fi
-         if [[ -f "$prog".TEL ]]; then
+          mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
+          done
+          _read_sleep 2
+	fi
+          if [[ -f "$prog".TEL ]]; then
 
-             for pprog in *.TEL
-             do
-              "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
+               for pprog in *.TEL
+               do
+               "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
                _read_sleep 2 
                mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
-             done
-         fi
+               done
+          fi
 #..   BACKUP do programa efetuado   ..
      _linha 
      _mensagec YELLOW "$M24"
@@ -668,7 +667,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _linha 
 
      for f in *"$prog""$class".zip; do
-         mv -f -- "$f" "${f%.zip}.bkp"
+          mv -f -- "$f" "${f%.zip}.bkp"
      done
      _read_sleep 1
 #-Atualizacao COMPLETA
@@ -687,13 +686,13 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      read -r -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
-         _principal
+          _principal
      elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-         if [[ "$OPCAO" = 1 ]] ; then
-         _pacoteon
-         else
-        _pacoteoff
-        fi
+          if [[ "$OPCAO" = 1 ]] ; then
+          _pacoteon
+          else
+          _pacoteoff
+          fi
      _atupacote
      else
      _opinvalida	 
@@ -713,26 +712,26 @@ _desatualizado () { while true
      M303="1${NORM} - Voltar programa Atualizado "
      M304="2${NORM} - Voltar antes da Biblioteca "
      M305="9${NORM} - ${RED}Menu Anterior    "
-	 printf "\n"
-	 _linha "="
-	 _mensagec RED "$M301"
-	 _linha
-	 printf "\n"
-	 _mensagec PURPLE "$M302"
-	 printf "\n"
-	 _mensagec GREEN "$M303"
-	 printf "\n"
-	 _mensagec GREEN "$M304"
-	 printf "\n"
-	 _mensagec GREEN "$M305"
-	 printf "\n"
-	 _linha "="
+	printf "\n"
+	_linha "="
+	_mensagec RED "$M301"
+	_linha
+	printf "\n"
+	_mensagec PURPLE "$M302"
+	printf "\n"
+	_mensagec GREEN "$M303"
+	printf "\n"
+	_mensagec GREEN "$M304"
+	printf "\n"
+	_mensagec GREEN "$M305"
+	printf "\n"
+	_linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
-         1) _voltaprog ;;
-         2) _voltabibli ;;
-         9) clear ; _principal ;;
-         *) _desatualizado ;;
+          1) _voltaprog ;;
+          2) _voltabibli ;;
+          9) clear ; _principal ;;
+          *) _desatualizado ;;
      esac
      done
 }
@@ -745,6 +744,7 @@ _voltaprog () {
      _linha 
      _mensagec RED "$M61"
      printf "\n"
+     
      read -rp "${YELLOW}""     Informe o nome do programa em maiusculo: ""${NORM}" prog
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      _meiodatela
@@ -810,13 +810,13 @@ _voltabibli () {
      printf "\n\n"
 
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
-	     _linha 
-         _volta_progx
+	_linha 
+     _volta_progx
      elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
-	     _linha 
-         _volta_geral
+	_linha 
+     _volta_geral
      else
-	 _opinvalida
+	_opinvalida
      _press
      _desatualizado
      fi
@@ -825,10 +825,11 @@ _voltabibli () {
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
 
 _volta_progx () {
+
      read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
 
      while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; 
-	 do
+	do
      _meiodatela
      _mensagec RED "$M71"
      _linha 
@@ -856,42 +857,43 @@ _volta_progz () {
      _press
 ### limpando diretorio 
      local OLDS1="$OLDS"/
-         for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}
-         do
-		 "$cmd_find" "$OLDS1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
-         done
+          for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}
+          do
+          "$cmd_find" "$OLDS1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
+          done
      _desatualizado
      fi
 
-	 local Vprog=" "
+	local Vprog=" "
+
      if [[ "$CONT" =~ ^[Ss]$ ]] ; then
      read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
-         if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
-         _meiodatela
-         _mensagec RED "$M71"
-         _linha
-         _press
-         _desatualizado
-         else
-         _volta_progy
-         fi
-         _press
-         _desatualizado
+          if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
+          _meiodatela
+          _mensagec RED "$M71"
+          _linha
+          _press
+          _desatualizado
+          else
+          _volta_progy
+          fi
+          _press
+          _desatualizado
      fi
 }
 
 _volta_progy () {
      if [ "$sistema" = "iscobol" ]; then
-         "$cmd_find" "$OLDS" -name "$Vprog.xml" -exec mv {} "$xml" \;
+          "$cmd_find" "$OLDS" -name "$Vprog.xml" -exec mv {} "$xml" \;
 
-         "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \;
+          "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \;
 
-         "$cmd_find" "$OLDS" -name "$Vprog*.class" -exec mv {} "$exec" \;
-         clear
+          "$cmd_find" "$OLDS" -name "$Vprog*.class" -exec mv {} "$exec" \;
+          clear
      else
-         "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
+          "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
 
-        "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$exec" \; 
+          "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$exec" \; 
      fi
 
 #-VOLTA DE PROGRAMAS CONCLUIDA
@@ -920,22 +922,22 @@ _volta_bibli () {
 
      cd "$OLDS" || exit
 
-	 "$cmd_find" "$OLDS" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+	"$cmd_find" "$OLDS" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
      "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
      cd "$xml"/ || exit
-	 "$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
+	"$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
 
      else
      cd "$OLDS"/ || exit
-	 "$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+	"$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
      cd "$OLDS"/ || exit
-	 "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+	"$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
@@ -979,13 +981,13 @@ _volta_geral () {
 
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
 _biblioteca () { 
-    clear
+     clear
      _meiodatela
      _mensagec RED "$M55"
      _linha  
  #-M57=Informe somente o numeral da versao :
      printf "%*s""${YELLOW}";printf "%*s\n""$M57" ;printf "%*s""${NORM}"
-    read -rp "" VERSAO 
+     read -rp "" VERSAO 
 
      if [ -z "$VERSAO" ]; then
  #-M56=Versao a ser atualizada nao foi informada :
@@ -1005,46 +1007,46 @@ _biblioteca () {
      M405="2${NORM} - Atualizacao do Savatu "
      M406="3${NORM} - Atualizacao OFF-Line  "
      M407="9${NORM} - ${RED}Menu Anterior "
-	 printf "\n"
-	 _linha "="
-	 _mensagec RED "$M401"
-	 _linha 
-	 _mensagec RED "$M402"
-	 _linha "="
-	 printf "\n"
-	 _mensagec PURPLE "$M403"
-	 printf "\n"
-	 _mensagec GREEN "$M404"
-	 printf "\n"
-	 _mensagec GREEN "$M405"
-	 printf "\n"
-	 _mensagec GREEN "$M406"
-	 printf "\n"
-	 _mensagec GREEN "$M407"
-	 printf "\n"
-	 _linha "="
+	printf "\n"
+	_linha "="
+	_mensagec RED "$M401"
+	_linha 
+	_mensagec RED "$M402"
+	_linha "="
+	printf "\n"
+	_mensagec PURPLE "$M403"
+	printf "\n"
+	_mensagec GREEN "$M404"
+	printf "\n"
+	_mensagec GREEN "$M405"
+	printf "\n"
+	_mensagec GREEN "$M406"
+	printf "\n"
+	_mensagec GREEN "$M407"
+	printf "\n"
+	_linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
-         1) _transpc ;;
-         2) _savatu ;;
-         3) _salva ;;
-         9) clear ; _principal ;;
+          1) _transpc ;;
+          2) _savatu ;;
+          3) _salva ;;
+          9) clear ; _principal ;;
          *) _biblioteca ;;
      esac
 }
 
 #-Processo de recepcao da biblioteca---------------------------------------------------------------#
 _scp_biblioteca () {
-	 if [ "$sistema" = "iscobol" ]; then
+	if [ "$sistema" = "iscobol" ]; then
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
      _run_scp2
-	 done
+	done
      _salva
-	 else
+	else
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do	
-	 _run_scp2
-	 done 
-	 fi
+	_run_scp2
+	done 
+	fi
      _salva
 }
 
@@ -1066,12 +1068,12 @@ _savatu () {
      _mensagec YELLOW "$M29"
      _linha 
      if [ "$sistema" = "iscobol" ]; then 
- 	 DESTINO2="$DESTINO2SAVATUISC"
+     DESTINO2="$DESTINO2SAVATUISC"
      _scp_biblioteca
-	 else 
-	 DESTINO2="$DESTINO2SAVATUMF"
-	 _scp_biblioteca
-	 fi
+	else 
+	DESTINO2="$DESTINO2SAVATUMF"
+	_scp_biblioteca
+	fi
 }
 
 #-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
@@ -1082,18 +1084,18 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _mensagec YELLOW "$M21"
      _linha 
      if [ "$sistema" = "iscobol" ]; then
-         for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-             if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
-            clear
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+          if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+          clear
 #-Atualizacao nao encontrado no diretorio
-     _linha 
-     _mensagec RED "$M48"
-     _linha 
-	 _press
-	 clear
-     _principal
-            fi
-         done 
+          _linha 
+          _mensagec RED "$M48"
+          _linha 
+          _press
+          clear
+          _principal
+          fi
+          done 
      _processo
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1102,8 +1104,8 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _press
      _principal
      else
-         for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
-             if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
+               if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
      clear 
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1111,12 +1113,12 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _linha 
      _press
      _principal
-             fi
-	     done
-	 fi
+               fi
+          done
+	fi
      _processo
 }
- 
+
 #-procedimento salvar os programas antes de atualizar----------------------------------------------# 
 _processo () {
 
@@ -1127,19 +1129,19 @@ _processo () {
      
      _read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
-         cd "$exec"/ || exit
-         "$cmd_find" "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-         cd "$telas"/ || exit
-         "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-         cd "$xml"/ || exit
-         "$cmd_find" "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-         cd "$TOOLS"/ || exit
-         clear
+          cd "$exec"/ || exit
+          "$cmd_find" "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$telas"/ || exit
+          "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$xml"/ || exit
+          "$cmd_find" "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$TOOLS"/ || exit
+          clear
      else
-         cd "$exec"/ || exit
-	     "$cmd_find" "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-         cd "$telas"/ || exit
-	     "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$exec"/ || exit
+          "$cmd_find" "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$telas"/ || exit
+          "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
      fi 
 
 #-..   BACKUP COMPLETO   ..
@@ -1147,7 +1149,7 @@ _processo () {
      _mensagec YELLOW "$M27"
      _linha 
      _read_sleep 1
-    
+
      if [[ ! -r "$TOOLS"/"$INI-$VERSAO".zip ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
@@ -1160,17 +1162,17 @@ _processo () {
      printf "%*s""${YELLOW}" ;"$M38"; printf "%*s""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-         if [[ "$CONT" =~ ^[Nn]$ ]] ; then
-         _principal
-         elif [[ "$CONT" =~ ^[Ss]$ ]] || [[ "$CONT" == "" ]]; then
-         _meiodatela
-         _mensagec YELLOW "$M39"
-         else
-         _opinvalida
-         _principal
-         fi 
-    fi
-    
+          if [[ "$CONT" =~ ^[Nn]$ ]] ; then
+          _principal
+          elif [[ "$CONT" =~ ^[Ss]$ ]] || [[ "$CONT" == "" ]]; then
+          _meiodatela
+          _mensagec YELLOW "$M39"
+          else
+          _opinvalida
+          _principal
+          fi 
+     fi
+
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
      cd "$TOOLS" || exit
 #-ATUALIZANDO OS PROGRAMAS...
@@ -1178,20 +1180,20 @@ _processo () {
      _mensagec YELLOW "$M19"
      _linha 
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-	     printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
-         "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
-         _read_sleep 2
-         clear
+          printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
+          "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
+          _read_sleep 2
+          clear
      done
 #-Atualizacao COMPLETA
      _linha 
      _mensagec YELLOW "$M17"
      _linha 
      for f in *_"$VERSAO".zip; do
-         mv -f -- "$f" "${f%.zip}.bkp"
+          mv -f -- "$f" "${f%.zip}.bkp"
      done
-         mv -f -- *_"$VERSAO".bkp "$BACKUP"
-         mv -f -- "$INI"-"$VERSAO".zip "$OLDS"
+          mv -f -- *_"$VERSAO".bkp "$BACKUP"
+          mv -f -- "$INI"-"$VERSAO".zip "$OLDS"
 
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #-Versao atualizada - $VERSAO$
@@ -1209,7 +1211,7 @@ _principal
 _iscobol () {
      if [ "$sistema" = "iscobol" ]; then
      clear    
-	 _linha 
+	_linha 
           "$SAVISC""$ISCCLIENT" -v
      _linha 
      printf "\n\n"
@@ -1225,8 +1227,8 @@ _principal
 
 #-Mostrar a versao do Linux que esta sendo usada.--------------------------------------------------# 
 _linux () {
-    clear
-     LX="Vamos descobrir qual SO / Distro voce esta executando"
+     clear
+     LX="Vamos descobrir qual S.O. / Distro voce esta executando"
      LM="A partir de algumas informacoes basicas o seu sistema, parece estar executando:"
      printf "\n\n"
      _mensagec GREEN "$LX"
@@ -1244,7 +1246,7 @@ if [[ -f /etc/os-release ]]; then
      UPSTREAM_ID=${ID_LIKE,,}
     # Fallback to ID_LIKE if ID was not 'ubuntu' or 'debian'
      if [[ "${UPSTREAM_ID}" != "debian" ]] && [[ "${UPSTREAM_ID}" != "ubuntu" ]]; then
-         UPSTREAM_ID="$(echo "${ID_LIKE,,}" | sed s/\"//g | cut -d' ' -f1)"
+          UPSTREAM_ID="$(echo "${ID_LIKE,,}" | sed s/\"//g | cut -d' ' -f1)"
      fi
 
 elif type lsb_release >/dev/null 2>&1; then
@@ -1305,59 +1307,59 @@ clear
      _mensagec GREEN "$M509"
      printf "\n"
      _mensagec GREEN "$M510"
-	 printf "\n"
-	 _linha "="
+	printf "\n"
+	_linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAOB
-         case $OPCAOB in
-         1) _temps        ;;
-         8) _update       ;;
-         9) clear ; _principal ;;
+          case $OPCAOB in
+          1) _temps        ;;
+          8) _update       ;;
+          9) clear ; _principal ;;
          *) _ferramentas ;;
-         esac
-	 else
-	 _mensagec GREEN "$M503"
+     esac
+	else
+	_mensagec GREEN "$M503"
      printf "\n"
-	 _mensagec GREEN "$M504"
+	_mensagec GREEN "$M504"
      printf "\n"
      _mensagec GREEN "$M505"
      printf "\n"
-	 _mensagec GREEN "$M506"
+	_mensagec GREEN "$M506"
      printf "\n"
-	 _mensagec GREEN "$M509"
-	 printf "\n"
-    fi
-	 _mensagec GREEN "$M510"
-	 printf "\n"
-	 _linha "="
+	_mensagec GREEN "$M509"
+	printf "\n"
+     fi
+     _mensagec GREEN "$M510"
+     printf "\n"
+     _linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO
      case $OPCAO in
-           1) _temps        ;;
-           2) _rebuild      ;;
-           3) _menubackup   ;;
-           4) _envrecarq    ;; 
-           8) _update       ;;
-           9) clear ; _principal ;;
+          1) _temps        ;;
+          2) _rebuild      ;;
+          3) _menubackup   ;;
+          4) _envrecarq    ;; 
+          8) _update       ;;
+          9) clear ; _principal ;;
            *) _ferramentas ;;
      esac
 }
-    clear
+clear
+
 _limpando () {
-      TEMPORARIOS="Temps"
-      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
+     TEMPORARIOS="Temps"
+     UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
-         while read -r line;
-         do
-         "$cmd_find" "$DIRB" -name "$line" -exec ls -l {} \;
-        # sleep 1
-         #printf "${GREEN}""$line""${NORM}\n"
-         "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB"$line {} \; >> "$LOG_LIMPA"
-         done < "$arqs"
-  
+     while read -r line;
+     do
+     "$cmd_find" "$DIRB" -name "$line" -exec ls -l {} \;
+     # sleep 1
+     #printf "${GREEN}""$line""${NORM}\n"
+     "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB"$line {} \; >> "$LOG_LIMPA"
+     done < "$arqs"
+
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
- _linha 
- _mensagec YELLOW "$M11"
- _linha 
-
+_linha 
+_mensagec YELLOW "$M11"
+_linha 
 }
 
 _temps () {
@@ -1369,21 +1371,20 @@ _temps () {
 #--------------------------------------------------------------------------------------------------#
 #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
 
-  cd "$TOOLS"/ || exit
-  arqs="atualizat"
-      DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
-      if [[ "$DAYS" ]] ; then
-      M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
-      _meiodatela
-      _messagec RED "$M63"
-      fi 
-
- for i in $base $base2 $base3 ;do
- DIRB="$destino""$i""/"
- _limpando
- _press
- done 
-  _ferramentas
+cd "$TOOLS"/ || exit
+arqs="atualizat"
+DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
+     if [[ "$DAYS" ]] ; then
+     M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
+     _meiodatela
+     _messagec RED "$M63"
+     fi 
+     for i in $base $base2 $base3 ;do
+     DIRB="$destino""$i""/"
+     _limpando
+     _press
+     done 
+_ferramentas
 
 }
 
@@ -1391,45 +1392,45 @@ _temps () {
 _rebuild () { 
      clear
 ###-600-mensagens do Menu Rebuild.
-      M601="Menu de Recuperacao de Arquivo(s)."
-	 M603="1${NORM} - Um arquivo ou Todos   "
-	 M604="2${NORM} - Arquivos Principais   "
-      M605="9${NORM} - ${RED}Menu Anterior"
-	 printf "\n"
-	 _linha "="
-	 _mensagec RED "$M601"
-	 _linha 
-	 printf "\n"
-	 _mensagec PURPLE "$M103"
-	 printf "\n"
-	 _mensagec GREEN "$M603"
-	 printf "\n"
-	 _mensagec GREEN "$M604"
-	 printf "\n"
-	 _mensagec GREEN "$M605"
-	 printf "\n"
-	 _linha "="
-      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
-      case $OPCAO in
-           1) _rebuild1 ;;
-           2) _rebuildlista ;;
-           9) clear ; _ferramentas ;;
+     M601="Menu de Recuperacao de Arquivo(s)."
+	M603="1${NORM} - Um arquivo ou Todos   "
+	M604="2${NORM} - Arquivos Principais   "
+     M605="9${NORM} - ${RED}Menu Anterior"
+	printf "\n"
+	_linha "="
+	_mensagec RED "$M601"
+	_linha 
+	printf "\n"
+	_mensagec PURPLE "$M103"
+	printf "\n"
+	_mensagec GREEN "$M603"
+	printf "\n"
+	_mensagec GREEN "$M604"
+	printf "\n"
+     _mensagec GREEN "$M605"
+     printf "\n"
+     _linha "="
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     case $OPCAO in
+          1) _rebuild1 ;;
+          2) _rebuildlista ;;
+          9) clear ; _ferramentas ;;
            *) _ferramentas ;;
-      esac
- 
- }
+     esac
+
+}
 
 
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
 _rebuild1 () {
  if [ "$sistema" = "iscobol" ]; then
-         _meiodatela
+     _meiodatela
 #-M64   
-         printf "%*s""${RED}""$M64""${NORM}\n"
-         read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
-
+     printf "%*s""${RED}""$M64""${NORM}\n"
+     declare -u PEDARQ
+     read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
      if [[ -z "$PEDARQ" ]]; then
-         _meiodatela
+     _meiodatela
 #-M65
      _mensagec RED "$M65"
      _linha 
@@ -1437,25 +1438,25 @@ _rebuild1 () {
      for i in $BASE/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
      do
      TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
-         if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
-         $jut -rebuild "$i" -a -f
-         fi
+          if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
+          $jut -rebuild "$i" -a -f
+          fi
      done 
-         cd "$TOOLS"/ || exit
+          cd "$TOOLS"/ || exit
      else
-         while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
-         _meiodatela
-         _mensagec RED "$M66"
-         cd "$TOOLS"/ || exit
-         _press
-         _ferramentas
-         done
+          while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
+          _meiodatela
+          _mensagec RED "$M66"
+          cd "$TOOLS"/ || exit
+          _press
+          _ferramentas
+          done
      local ARQUIVO="$PEDARQ.???.dat"
      local jut="$SAVISC""$JUTIL"
-         for i in $ARQUIVO
-         do 
-         $jut -rebuild "$BASE""/""$i" -a -f
-         done
+          for i in $ARQUIVO
+          do 
+          $jut -rebuild "$BASE""/""$i" -a -f
+          done
      fi
 
 #-Arquivo(s) recuperado(s)...
@@ -1473,11 +1474,11 @@ else
      for i in $BASE/{*.ARQ,*.DAT,*.LOG,*.PAN}
      do
      TAMANHO=$(du "$i" | awk '{print $1}') #-grava tamanho do arquivo em variavel
-         if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
-         rebuild -e "$i"
-         else
-         rebuild -d -e "$i"
-         fi
+          if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
+          rebuild -e "$i"
+          else
+          rebuild -d -e "$i"
+          fi
      done
 fi
 _press
@@ -1521,37 +1522,37 @@ _rebuild
 }
 
 _menubackup () { while true
-    do
-    clear
+     do
+     clear
 ###-700-mensagens do Menu Backup.
      M700="Menu de Backup(s)."
      M702="1${NORM} - Backup da base de dados          "
      M703="2${NORM} - Restaurar Backup da base de dados"
      M704="3${NORM} - Enviar Backup                    "
      M705="9${NORM} - ${RED}Menu Anterior          "
-	 printf "\n"
-	 _linha "="
-	 _mensagec RED "$M700"
-	 _linha 
-	 printf "\n"
-	 _mensagec PURPLE "$M103"
-	 printf "\n"
-	 _mensagec GREEN "$M702"
-	 printf "\n"
-	 _mensagec GREEN "$M703"
-	 printf "\n"
-	 _mensagec GREEN "$M704"
-       printf "\n"
-	 _mensagec GREEN "$M705"
-       printf "\n"       
-	 _linha "="
+	printf "\n"
+	_linha "="
+	_mensagec RED "$M700"
+	_linha 
+	printf "\n"
+	_mensagec PURPLE "$M103"
+	printf "\n"
+	_mensagec GREEN "$M702"
+	printf "\n"
+	_mensagec GREEN "$M703"
+	printf "\n"
+	_mensagec GREEN "$M704"
+     printf "\n"
+	_mensagec GREEN "$M705"
+     printf "\n"       
+	_linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
-           1) _backup       ;;
-           2) _unbackup     ;;
-           3) _backupavulso ;;
-           9) clear ; _ferramentas ;;
-           *) _ferramentas ;;
+          1) _backup       ;;
+          2) _unbackup     ;;
+          3) _backupavulso ;;
+          9) clear ; _ferramentas ;;
+          *) _ferramentas ;;
      esac
      done
 }
@@ -1561,65 +1562,64 @@ _menubackup () { while true
 _backup () {
 clear
 
-    if [ ! -d "$BACKUP" ]; then
+     if [ ! -d "$BACKUP" ]; then
 M23=".. Criando o diretorio dos backups em $BACKUP.."
-      _linha 
-      _mensagec YELLOW "$M23"
-      _linha 
-    mkdir -p "$BACKUP"
-    fi
+     _linha 
+     _mensagec YELLOW "$M23"
+     _linha 
+     mkdir -p "$BACKUP"
+     fi
 DAYS2=$(find "$BACKUP" -ctime -2 -name "$EMPRESA"\*zip)
-    cd "$BASE" || exit
+     cd "$BASE" || exit
 if [[ "$DAYS2" ]] ; then
 
 M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
-    printf "\n\n"
-    _linha 
-    _mensagec CYAN "$M62"
-    _linha   
-    printf "\n" 
-    printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
-    read -r -n1 CONT 
-    printf "\n"
-        if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
-
+     printf "\n\n"
+     _linha 
+     _mensagec CYAN "$M62"
+     _linha   
+     printf "\n" 
+     printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
+     read -r -n1 CONT 
+     printf "\n"
+          if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
 #-Backup Abortado!
-    _linha 
-    _mensagec RED "$M47"
-    _linha         
-    _read_sleep 3
-    _ferramentas 
-        elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
+          _linha 
+          _mensagec RED "$M47"
+          _linha         
+          _read_sleep 3
+          _ferramentas 
+          elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
 
 #-Sera criado mais um backup para o periodo.
-      _linha 
-      _mensagec YELLOW "$M06"
-      _linha 
-        else
-      _opinvalida
-      _ferramentas
-        fi
+          _linha 
+          _mensagec YELLOW "$M06"
+          _linha 
+          else
+          _opinvalida
+          _ferramentas
+          fi
 fi
 #-Criando Backup..
      _linha 
      _mensagec YELLOW "$M14"
      _linha 
-    
+
 ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
 _progresso () { 
-  echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
-  while true
-  do
-    echo -n "${YELLOW}""#""${NORM}"
-    _read_sleep 5
-  done
+     echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
+     while true
+     do
+     echo -n "${YELLOW}""#""${NORM}"
+     _read_sleep 5
+     done
 }
 
 _dobackup () {
-    #-Backup 
-    "$cmd_zip" "$BACKUP"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+     #-Backup 
+     "$cmd_zip" "$BACKUP"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
 }
 
 #-Inicia em background-----------------------------------------------------------------------------#
@@ -1653,20 +1653,20 @@ M32="foi criado em ""$BACKUP"
      _linha 
 
 #-ENVIAR PARA A SAV OU NAO-------------------------------------------#
-    printf "\n"
-    clear
+     printf "\n"
+     clear
 M10="O backup de nome \"""$ARQ""\"" 
      _linha 
      _mensagec YELLOW "$M10"
      _linha 
-   
+
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
      printf "\n\n"
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then    
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
- 
+
      _meiodatela
      _mensagec RED "$M68"
      read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
@@ -1674,7 +1674,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
      _meiodatela
 #-M69 Voce nao informou o nome do diretorio a enviado, saindo...   
      _mensagec RED "$M69"
- 
+
 _press    
      _ferramentas 
      done
@@ -1691,14 +1691,14 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _read_sleep 3 
      _ferramentas
 else
-    _opinvalida
-    _ferramentas 
+     _opinvalida
+     _ferramentas 
 fi
 } 
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
 _backupavulso () {
-    ls "$BACKUP"/"$EMPRESA"_*.zip
+     ls "$BACKUP"/"$EMPRESA"_*.zip
 
 #-Informe de qual o Backup que deseja enviar.
      _linha 
@@ -1709,36 +1709,36 @@ _backupavulso () {
 local VBACKUP="$EMPRESA"_"$VBACKAV"
      while [[ -f "$VBACKUP".zip ]] ;do 
      clear
-      _meiodatela
-      _mensagec RED "$M70"
-      _press
+     _meiodatela
+     _mensagec RED "$M70"
+     _press
 _ferramentas
-    done
-    if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
+     done
+     if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _mensagec RED "$M45"
      _linha     
      _press
      _ferramentas
-    fi
-    printf "\n"
-    clear
-      _meiodatela
+     fi
+     printf "\n"
+     clear
+     _meiodatela
 MA1="O backup \"""$VBACKUP""\""     
-      _linha
-      _mensagec YELLOW "$MA1"
-      _linha 
-      printf "${YELLOW}""      Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
-      read -r -n1 CONT 
-      printf "\n\n"
+     _linha
+     _mensagec YELLOW "$MA1"
+     _linha 
+     printf "${YELLOW}""      Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
+     read -r -n1 CONT 
+     printf "\n\n"
 
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then    
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
-      _meiodatela
-      _mensagec RED "$M68"
-      read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
+     _meiodatela
+     _mensagec RED "$M68"
+     read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
      while [[ "$ENVBASE" =~ [0-9] || -f "$ENVBASE" ]] ;do
      _meiodatela
 #M69  
@@ -1748,37 +1748,37 @@ elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
      done
 
 #-Informe a senha do usuario do scp
-      _linha 
-      _mensagec YELLOW "$M29"
-      _linha 
-      "$cmd_scp" -r -P "$PORTA" "$BACKUP""/""$VBACKUP".zip "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
+     _linha 
+     _mensagec YELLOW "$M29"
+     _linha 
+     "$cmd_scp" -r -P "$PORTA" "$BACKUP""/""$VBACKUP".zip "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
-      _linha 
-      _mensagec YELLOW "$M15"
-      _linha 
-      _read_sleep 3 
+     _linha 
+     _mensagec YELLOW "$M15"
+     _linha 
+     _read_sleep 3 
 else
      _opinvalida
      _ferramentas   
 fi	 
 }   
-  
+
 #-VOLTA BACKUP TOTAL OU PARCIAL--------------------------------------------------------------------#
 
 _unbackup () {
-    clear
+clear
 local DIRBACK="$BACKUP"/dados
 
-    if [ ! -d "$DIRBACK" ]; then
+     if [ ! -d "$DIRBACK" ]; then
 
 M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
      _linha 
      _mensagec YELLOW "$M22"
      _linha 
-   
-    mkdir -p "$DIRBACK"
-    fi
-    ls -s "$BACKUP""/""$EMPRESA"_*.zip
+
+     mkdir -p "$DIRBACK"
+     fi
+     ls -s "$BACKUP""/""$EMPRESA"_*.zip
      _linha 
      _mensagec RED "$M53"
      _linha 
@@ -1807,7 +1807,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      read -r -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
-
+     
      read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
      while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
      do
@@ -1836,7 +1836,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
      _mensagec YELLOW "$M28"
      _linha 
-   
+
      else
 #-Arquivo nao encontrado no diretorio
      _linha 
@@ -1856,61 +1856,60 @@ M34="O arquivo ""$VARQUIVO"
      _press
      _menubackup
      elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
- 
+
 #---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
      _linha 
      _mensagec YELLOW "$M33"
      _mensagec YELLOW "$M34"
      _linha 
-   
-    cd "$DIRBACK" || exit
-    "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
-    
+
+     cd "$DIRBACK" || exit
+     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
+
     mv -f -- *.* "$BASE" >> "$LOG_ATU"
- 
-    cd "$TOOLS"/ || exit
-    clear
+
+     cd "$TOOLS"/ || exit
+     clear
 #-VOLTA DOS ARQUIVOS CONCLUIDA
      _linha 
      _mensagec YELLOW "$M04"
      _linha 
-   
-_press
-    else
-	 _opinvalida
-    fi
+     _press
+     else
+	_opinvalida
+     fi
 _ferramentas
 }
 
 #-Envia e receber arquivos-------------------------------------------------------------------------#
 _envrecarq () { 
-    clear
+     clear
 ###-800-mensagens do Menu Envio e Retorno.
      M800="Menu de Enviar e Receber Arquivo(s)."
      M802="1${NORM} - Enviar arquivo(s)     "
      M803="2${NORM} - Receber arquivo(s)    "
      M806="9${NORM} - ${RED}Menu Anterior "
-	 printf "\n"
-	 _linha "="
-	 _mensagec RED "$M800"
-	 _linha 
-	 printf "\n"
-	 _mensagec PURPLE "$M103"
-	 printf "\n"
-	 _mensagec GREEN "$M802"
-	 printf "\n"
-	 _mensagec GREEN "$M803"
-	 printf "\n"
-	 _mensagec GREEN "$M806"
-       printf "\n"       
-	 _linha "="
+	printf "\n"
+	_linha "="
+	_mensagec RED "$M800"
+	_linha 
+	printf "\n"
+	_mensagec PURPLE "$M103"
+	printf "\n"
+	_mensagec GREEN "$M802"
+	printf "\n"
+	_mensagec GREEN "$M803"
+	printf "\n"
+	_mensagec GREEN "$M806"
+     printf "\n"       
+	_linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
      case $OPCAO in
-           1) _envia_avulso    ;;
-           2) _recebe_avulso   ;;
-           9) clear ; _ferramentas ;;
-           *) _ferramentas ;;
+          1) _envia_avulso    ;;
+          2) _recebe_avulso   ;;
+          9) clear ; _ferramentas ;;
+          *) _ferramentas ;;
      esac
 }
 
@@ -1919,140 +1918,140 @@ _envia_avulso () {
      clear
      printf "\n\n\n"
 ### Pedir diretorio origem do arquivo    
-      _linha 
+     _linha 
  M991="1- Origuem: Informe em que diretorio esta o arquivo a ser enviado :"   
-      _mensagec YELLOW "$M991"  
-      read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
-      _linha 
-      local VERDIR=$DIRENVIA
-      if [[ -d "$VERDIR" ]]; then
-      printf "\n"
-      else
-      clear
-      _meiodatela
+     _mensagec YELLOW "$M991"  
+     read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
+     _linha 
+     local VERDIR=$DIRENVIA
+     if [[ -d "$VERDIR" ]]; then
+     printf "\n"
+     else
+     clear
+     _meiodatela
 M995="Diretorio nao foi encontrado no servidor"
-      _linha 
-      _mensagec RED "$M995"  
-      _linha 
-       _press
-      _envrecarq
-      fi
-      if [[ -z "$DIRENVIA" ]] ; then # testa variavel vazia
-      local DIRENVIA=$ENVIA
-           if ls -s "$DIRENVIA"/*.* ; then
+     _linha 
+     _mensagec RED "$M995"  
+     _linha 
+     _press
+     _envrecarq
+     fi
+     if [[ -z "$DIRENVIA" ]] ; then # testa variavel vazia
+     local DIRENVIA=$ENVIA
+          if ls -s "$DIRENVIA"/*.* ; then
 #-Arquivo encontrado no diretorio
-      printf "\n"
-      _linha
-      _mensagec YELLOW "$M28"
-      _linha
-           else
-      M49="Arquivo nao encontrado no diretorio"
-      _linha 
-      _mensagec YELLOW "$M49"  
-      _linha 
+          printf "\n"
+          _linha
+          _mensagec YELLOW "$M28"
+          _linha
+          else
+M49="Arquivo nao encontrado no diretorio"
+     _linha 
+     _mensagec YELLOW "$M49"  
+     _linha 
 #      _press 
-      _ferramentas  
-           fi
-      fi
-      _linha 
-      _mensagec CYAN "$M72" #Informe o arquivo(s) que deseja enviar.
-      _linha      
-      local EENVIA=" "
-      read -rp "${YELLOW}""2- Informe nome do ARQUIVO: -> ""${NORM}" EENVIA
-      if [[ -z "$EENVIA" ]] ;then 
-  #   clear
-      _meiodatela
-      _mensagec RED "$M74"
-      _press
-      _envrecarq
-      fi
+     _ferramentas  
+          fi
+     fi
+     _linha 
+     _mensagec CYAN "$M72" #Informe o arquivo(s) que deseja enviar.
+     _linha      
+     local EENVIA=" "
+     read -rp "${YELLOW}""2- Informe nome do ARQUIVO: -> ""${NORM}" EENVIA
+     if [[ -z "$EENVIA" ]] ;then 
+#   clear
+     _meiodatela
+     _mensagec RED "$M74"
+     _press
+     _envrecarq
+     fi
      if [[ ! -e "$DIRENVIA""/""$EENVIA" ]];then
-      _linha
-       M49="$EENVIA Arquivo nao encontrado no diretorio"
-      _linha 
-      _mensagec YELLOW "$M49"  
-      _linha 
-      _press 
-      _envrecarq  
-      fi
-      printf "\n"
-      _linha 
- M992="3- Destino: Informe para qual diretorio no servidor:"   
-      _mensagec YELLOW "$M992"  
-      read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
-      _linha 
-      if [[ -z "$ENVBASE" ]] ;then
-      _meiodatela
+     _linha
+M49="$EENVIA Arquivo nao encontrado no diretorio"
+     _linha 
+     _mensagec YELLOW "$M49"  
+     _linha 
+     _press 
+     _envrecarq  
+     fi
+     printf "\n"
+     _linha 
+M992="3- Destino: Informe para qual diretorio no servidor:"   
+     _mensagec YELLOW "$M992"  
+     read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
+     _linha 
+     if [[ -z "$ENVBASE" ]] ;then
+     _meiodatela
 #M69  
-      _mensagec RED "$M69"
-      _press    
-      _envrecarq 
-      fi
-	 
+     _mensagec RED "$M69"
+     _press    
+     _envrecarq 
+     fi
+
 #-Informe a senha do usuario do scp
-      _linha 
-      _mensagec YELLOW "$M29"
-      _linha 
-      "$cmd_scp" -r -P "$PORTA" "$DIRENVIA"/"$EENVIA" "$USUARIO"@"$IPSERVER":"$ENVBASE" 
+     _linha 
+     _mensagec YELLOW "$M29"
+     _linha 
+     "$cmd_scp" -r -P "$PORTA" "$DIRENVIA"/"$EENVIA" "$USUARIO"@"$IPSERVER":"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
-      _linha 
-      _mensagec YELLOW "$M15"
-      _linha 
-      _read_sleep 3
-      _envrecarq
+     _linha 
+     _mensagec YELLOW "$M15"
+     _linha 
+     _read_sleep 3
+     _envrecarq
 }
 
 ##---recebe_avulso-------------------------------------
 _recebe_avulso () {
-      clear
-      _linha 
-      M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
-      _mensagec YELLOW "$M993"  
-      read -rp "${YELLOW}"" -> ""${NORM}" RECBASE
-      _linha 
-      _linha 
-      _mensagec RED "$M73"
-      _linha      
-      read -rp "${YELLOW}""    2- Informe nome do ARQUIVO: ""${NORM}" RRECEBE
-      if [[ -z "$RRECEBE" ]] ;then 
-      _meiodatela
-      _mensagec RED "$M74"
-      _press
-      _envrecarq
-      fi
-      _linha 
-       M994="3- Destino:Informe diretorio do servidor que vai receber arquivo: " 
-      _mensagec YELLOW "$M994"  
+     clear
+     _linha 
+M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
+     _mensagec YELLOW "$M993"  
+     read -rp "${YELLOW}"" -> ""${NORM}" RECBASE
+     _linha 
+     _linha 
+     _mensagec RED "$M73"
+     _linha      
+     read -rp "${YELLOW}""    2- Informe nome do ARQUIVO: ""${NORM}" RRECEBE
+     if [[ -z "$RRECEBE" ]] ;then 
+     _meiodatela
+     _mensagec RED "$M74"
+     _press
+     _envrecarq
+     fi
+     _linha 
+M994="3- Destino:Informe diretorio do servidor que vai receber arquivo: " 
+     _mensagec YELLOW "$M994"  
      
      read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
-      if [[ -z "$EDESTINO" ]] ; then # testa variavel vazia
-      local EDESTINO=$RECEBE
-      fi
-      _linha 
-      local VERDIR="$EDESTINO"
-      if [[ -d "$VERDIR" ]]; then
-      printf "\n"
-      else
-      clear
-      _meiodatela
+     if [[ -z "$EDESTINO" ]] ; then # testa variavel vazia
+     local EDESTINO=$RECEBE
+     fi
+     _linha 
+     local VERDIR="$EDESTINO"
+     if [[ -d "$VERDIR" ]]; then
+     printf "\n"
+     else
+     clear
+     _meiodatela
 M995="Diretorio nao foi encontrado no servidor"
-      _linha 
-      _mensagec RED "$M995"  
-      _linha 
-      _press
-      _envrecarq
-      fi
-      
+     _linha 
+     _mensagec RED "$M995"  
+     _linha 
+     _press
+     _envrecarq
+     fi
+
 #-Informe a senha do usuario do scp
-      _linha 
-      _mensagec YELLOW "$M29"
-      _linha 
-      "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$RECBASE""/""$RRECEBE" "$EDESTINO""/". 
+     _linha 
+     _mensagec YELLOW "$M29"
+     _linha 
+     "$cmd_scp" -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$RECBASE""/""$RRECEBE" "$EDESTINO""/". 
 M15="Arquivo enviado para a pasta, \"""$EDESTINO""\"."
-      _linha 
-      _mensagec YELLOW "$M15"
-      _linha 
-      _read_sleep 3
+     _linha 
+     _mensagec YELLOW "$M15"
+     _linha 
+     _read_sleep 3
 _envrecarq      
 }
 
@@ -2065,10 +2064,10 @@ _update () {
      _mensagec GREEN "$M91"
      _mensagec GREEN "$M92"
      _linha 
-    cp atualiza.sh "$BACKUP"
-    
-    cd "$PROGS" || exit 
-    wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
+     cp atualiza.sh "$BACKUP"
+
+     cd "$PROGS" || exit 
+     wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
 #-Descompactando o programa baixado----------------------------------#
 
