@@ -12,8 +12,6 @@
     Feito por Luiz Augusto   
     email luizaugusto@sav.com.br                                                          
     Versao do atualiza.sh                                                                                          
-      INCLUIR PROCEDIMENTO PARA ATUALIZA PROGRAMA CLASS9 , VARIAVEL  9DIG  incluir PACOTE de programas
- 
  
   Arquivos de trabalho:  
 
