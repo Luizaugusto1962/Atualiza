@@ -5,9 +5,6 @@
 EMPRESA=
 ### USA BANCO (S/N) ###
 BANCO=n 
-### - NOTA 9 DIGITOS (S/N) - ###
-DIG9=n
-### PASTA DO SISTEMA ###
 destino="/u"
 ### DIRETORIO DA BASE DE DADOS"""
 base=/sav/dados_jisam
