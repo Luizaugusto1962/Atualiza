@@ -2079,8 +2079,6 @@ atualizagit="atualiza.zip"
 #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "atualiza.sh"
      mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
-     rm -r -- *
-     rm -r -- .*
 _press
 exit   
 }
