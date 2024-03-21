@@ -2085,10 +2085,10 @@ exit
 
 _principal
 
-unset RED GREEN YELLOW BLUE PURPLE CYAN NORM
-unset BASE BASE2 BASE3 tools
-unset destino pasta base base2 base3 logs exec class telas xml
-unset olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
+unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
+unset -v BASE BASE2 BASE3 tools
+unset -v destino pasta base base2 base3 logs exec class telas xml
+unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 tput clear
 tput sgr0
 tput cup "$( tput lines )" 0
