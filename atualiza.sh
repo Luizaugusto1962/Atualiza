@@ -299,6 +299,8 @@ ANTERIOR="anterior"
 export TERM=xterm-256color
 tput sgr0
 tput clear 
+tput bold
+tput setaf 7
 	RED=$(tput bold)$(tput setaf 1)
 	GREEN=$(tput bold)$(tput setaf 2)
 	YELLOW=$(tput bold)$(tput setaf 3)
@@ -1348,13 +1350,12 @@ _limpando () {
      TEMPORARIOS="Temps"
      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
-     while read -r line;
-     do
-     "$cmd_find" "$DIRB" -name "$line" -exec ls -l {} \;
+     while read -r line; do
+     "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
      # sleep 1
      #printf "${GREEN}""$line""${NORM}\n"
-     "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB"$line {} \; >> "$LOG_LIMPA"
-     done < "$arqs"
+     "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"${line} >> "$LOG_LIMPA"
+     done < "${arqs}"
 
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
 _linha 
