@@ -1352,7 +1352,7 @@ _limpando () {
 
      while read -r line; do
      "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
-     printf "${GREEN}""$line""${NORM}\n"
+     printf "%*s""${RED}""$line""${NORM}\n" 
      "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"${line} >> "$LOG_LIMPA"
      done < "${arqs}"
 
