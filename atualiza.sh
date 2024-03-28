@@ -281,14 +281,14 @@ TOOLS=$destino$pasta
      if [ -d "$TOOLS" ]; then
      printf " Diretorio ... ok \n"
      else
-     printf " Diretorio da destino nao encotrado...  \n"
+     printf " Diretorio da destino nao encontrado...  \n"
      exit
      fi
-BASE=$destino$base
-     if [ -d "$BASE" ]; then
+BASE1=$destino$base
+     if [ -d "$BASE1" ]; then
      printf " Diretorio ... ok \n"
      else
-     printf " Diretorio da base nao encotrado...  \n"
+     printf " Diretorio da base nao encontrado...  \n"
      exit
      fi
 
@@ -474,7 +474,7 @@ _principal () {
 	M112="4${NORM} - Funcao nao disponivel    "
 	M107="5${NORM} - Versao do Linux          "
      M108="6${NORM} - Ferramentas              "
-     M109="9${NORM} - ${RED}Sair           "
+     M109="9${NORM} - ${RED}Sair            "
      M110=" Digite a opcao desejada -> " 
 
 	_linha "="
@@ -713,7 +713,7 @@ _desatualizado () { while true
      M302="Escolha o tipo de Desatualizacao:"
      M303="1${NORM} - Voltar programa Atualizado "
      M304="2${NORM} - Voltar antes da Biblioteca "
-     M305="9${NORM} - ${RED}Menu Anterior    "
+     M305="9${NORM} - ${RED}Menu Anterior     "
 	printf "\n"
 	_linha "="
 	_mensagec RED "$M301"
@@ -1008,7 +1008,7 @@ _biblioteca () {
      M404="1${NORM} - Atualizacao do Transpc"
      M405="2${NORM} - Atualizacao do Savatu "
      M406="3${NORM} - Atualizacao OFF-Line  "
-     M407="9${NORM} - ${RED}Menu Anterior "
+     M407="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
 	_mensagec RED "$M401"
@@ -1296,7 +1296,7 @@ clear
      M505="3${NORM} - Fazer ou Restaurar Backup        "
      M506="4${NORM} - Envia e Recebe Arquivos          "
      M509="8${NORM} - Update                           "	
-     M510="9${NORM} - ${RED}Menu Anterior          "
+     M510="9${NORM} - ${RED}Menu Anterior            "
      _linha "="
      _mensagec RED "$M501"
      _linha 
@@ -1351,9 +1351,9 @@ _limpando () {
      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
      while read -r line; do
-     "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
-     printf "%*s""${RED}""$line""${NORM}\n" 
-     "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"${line} >> "$LOG_LIMPA"
+          "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
+          printf "%*s""${RED}""$line""${NORM}\n" 
+          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"$line >> "$LOG_LIMPA"
      done < "${arqs}"
 
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
@@ -1420,22 +1420,70 @@ _rebuild () {
 
 }
 
+_escolhe_base () {
+     clear
+###-600-mensagens do Menu Rebuild.
+     M900="Escolha a Base"
+	M901="1${NORM} - Base em ${destino}${base}"
+	M902="2${NORM} - Base em ${destino}${base2}"
+     M903="3${NORM} - Base em ${destino}${base3}"
+	printf "\n"
+	_linha "="
+	_mensagec RED "$M900"
+	_linha 
+	printf "\n"
+	_mensagec PURPLE "$M103"
+	printf "\n"
+	_mensagec GREEN "$M901"
+	printf "\n"
+	_mensagec GREEN "$M902"
+	printf "\n"
+     _mensagec GREEN "$M903"
+     printf "\n"
+     _linha "="
+     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     case $OPCAO in
+          1)  _dbase1 ;;
+          2)  _dbase2 ;;
+          3)  _dbase3 ;;
+          *) _ferramentas ;;
+     esac    
+}
+
+_dbase1 () {
+     BASE1="${destino}""${base}"
+}
+
+_dbase2 () {
+     BASE1="${destino}""${base2}"  
+}
+
+_dbase3 () {
+     BASE1="${destino}""${base3}" 
+}
+
 
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
 _rebuild1 () {
- if [ "$sistema" = "iscobol" ]; then
-     _meiodatela
-#-M64   
-     printf "%*s""${RED}""$M64""${NORM}\n"
+
+if [ "$base2" ]; then
+     _escolhe_base
+fi
+if [ "$sistema" = "iscobol" ]; then          
+#    _meiodatela
+     _mensagec CYAN "$M64" 
+     _linha  
+     #printf "%*s""${RED}""$M64""${NORM}\n"
      declare -u PEDARQ
      read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
+     _linha
      if [[ -z "$PEDARQ" ]]; then
-     _meiodatela
+#     _meiodatela
 #-M65
      _mensagec RED "$M65"
      _linha 
      local jut="$SAVISC""$JUTIL"
-     for i in $BASE/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
+     for i in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
      do
      TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
           if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
@@ -1451,11 +1499,11 @@ _rebuild1 () {
           _press
           _ferramentas
           done
-     local ARQUIVO="$PEDARQ.???.dat"
-     local jut="$SAVISC""$JUTIL"
+          local ARQUIVO="$PEDARQ.???.dat"
+          local jut="$SAVISC""$JUTIL"
           for i in $ARQUIVO
           do 
-          $jut -rebuild "$BASE""/""$i" -a -f
+          $jut -rebuild "$BASE1""/""$i" -a -f
           done
      fi
 
@@ -1469,9 +1517,9 @@ else
 #-m67
      _meiodatela
      _mensagec RED "$M67"
-     cd "$BASE"/ || exit
+     cd "$BASE1"/ || exit
 
-     for i in $BASE/{*.ARQ,*.DAT,*.LOG,*.PAN}
+     for i in $BASE1/{*.ARQ,*.DAT,*.LOG,*.PAN}
      do
      TAMANHO=$(du "$i" | awk '{print $1}') #-grava tamanho do arquivo em variavel
           if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
@@ -1485,7 +1533,6 @@ _press
 _rebuild 
 }
 
-
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
 
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
@@ -1495,6 +1542,9 @@ _rebuild
 
 _rebuildlista () {
 clear
+if [ "$base2" ]; then
+     _escolhe_base
+fi
 if [ "$sistema" = "iscobol" ]; then
 cd "$TOOLS"/ || exit
 local arqs=""
@@ -1502,9 +1552,9 @@ arqs="atualizaj"
 local jut="$SAVISC""$JUTIL"
 while read -r line;
 do
-     TAMANHO=$(du "$BASE""/""$line" | awk '{print $1}') #-Grava tamanho do arquivo em variavel
+     TAMANHO=$(du "$BASE1""/""$line" | awk '{print $1}') #-Grava tamanho do arquivo em variavel
      if [[ "$TAMANHO" -gt 0 ]] ; then #-Executa rebuild se tamanho for maior que zero
-     $jut -rebuild "$BASE""/""$line" -a -f
+     $jut -rebuild "$BASE1""/""$line" -a -f
      fi
 done < "atualizaj"
 
@@ -1529,7 +1579,7 @@ _menubackup () { while true
      M702="1${NORM} - Backup da base de dados          "
      M703="2${NORM} - Restaurar Backup da base de dados"
      M704="3${NORM} - Enviar Backup                    "
-     M705="9${NORM} - ${RED}Menu Anterior          "
+     M705="9${NORM} - ${RED}Menu Anterior           "
 	printf "\n"
 	_linha "="
 	_mensagec RED "$M700"
@@ -1558,10 +1608,11 @@ _menubackup () { while true
 }
 
 #-Rotina de backup com opcao de envio da a SAV-----------------------------------------------------#
-
 _backup () {
 clear
-
+if [ "$base2" ]; then
+     _escolhe_base
+fi
      if [ ! -d "$BACKUP" ]; then
 M23=".. Criando o diretorio dos backups em $BACKUP.."
      _linha 
@@ -1570,7 +1621,7 @@ M23=".. Criando o diretorio dos backups em $BACKUP.."
      mkdir -p "$BACKUP"
      fi
 DAYS2=$(find "$BACKUP" -ctime -2 -name "$EMPRESA"\*zip)
-     cd "$BASE" || exit
+     cd "$BASE1" || exit
 if [[ "$DAYS2" ]] ; then
 
 M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
@@ -1624,7 +1675,6 @@ _dobackup () {
 
 #-Inicia em background-----------------------------------------------------------------------------#
 _progresso &
-
 #-Save o progresso () PID
 #-Você precisa usar o PID para matar a função
 MYSELF=$!
@@ -1767,6 +1817,9 @@ fi
 
 _unbackup () {
 clear
+if [ "$base2" ]; then
+     _escolhe_base
+fi
 local DIRBACK="$BACKUP"/dados
 
      if [ ! -d "$DIRBACK" ]; then
@@ -1846,7 +1899,7 @@ M34="O arquivo ""$VARQUIVO"
      _menubackup  
      fi
 
-     mv -f "$VARQUIVO"*.* "$BASE" >> "$LOG_ATU" 
+     mv -f "$VARQUIVO"*.* "$BASE1" >> "$LOG_ATU" 
      cd "$TOOLS"/ || exit
      clear
 #-VOLTA DO ARQUIVO CONCLUIDA
@@ -1867,7 +1920,7 @@ M34="O arquivo ""$VARQUIVO"
      cd "$DIRBACK" || exit
      "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
 
-    mv -f -- *.* "$BASE" >> "$LOG_ATU"
+    mv -f -- *.* "$BASE1" >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
@@ -1887,8 +1940,8 @@ _envrecarq () {
      clear
 ###-800-mensagens do Menu Envio e Retorno.
      M800="Menu de Enviar e Receber Arquivo(s)."
-     M802="1${NORM} - Enviar arquivo(s)     "
-     M803="2${NORM} - Receber arquivo(s)    "
+     M802="1${NORM} - Enviar arquivo(s)      "
+     M803="2${NORM} - Receber arquivo(s)     "
      M806="9${NORM} - ${RED}Menu Anterior "
 	printf "\n"
 	_linha "="
@@ -2086,7 +2139,7 @@ exit
 _principal
 
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
-unset -v BASE BASE2 BASE3 tools
+unset -v BASE1 tools 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 tput clear
