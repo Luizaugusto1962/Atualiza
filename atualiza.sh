@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 #                                                                                                                      #                                                               
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -13,7 +13,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-##  UPDATE 13/03/2024                                                                                             #
+##  UPDATE 01/04/2024                                                                                             #
 #                                                                                                                 #
 #-----------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
@@ -131,18 +131,29 @@ SAVATU4=""
 #--------------------------------------------------------------------------------------------------#
 
 #-Comandos#----------------------------------------------------------------------------------------#
-cmd_unzip=""
-cmd_unzip="unzip"
-##
-cmd_zip=""
-cmd_zip="zip"
-##
-cmd_find=""
-cmd_find="find"
-##
-cmd_scp=""
-cmd_scp="scp"
-##
+DEFAULT_UNZIP="unzip"
+if [ -z "$cmd_unzip" ]; then
+          cmd_unzip="$DEFAULT_UNZIP"
+fi
+###
+
+DEFAULT_ZIP="zip"
+if [ -z "$cmd_zip" ]; then
+          cmd_zip="$DEFAULT_ZIP"
+fi
+###
+
+DEFAULT_FIND="find"
+if [ -z "$cmd_find" ]; then
+          cmd_find="$DEFAULT_FIND"
+fi
+###
+
+DEFAULT_SCP="scp"
+if [ -z "$cmd_scp" ]; then
+          cmd_scp="$DEFAULT_SCP"
+fi
+###
 
 #-Lista de mensagens #-----------------------------------------------------------------------------#
 ### Mensagens em YELLOW
@@ -237,44 +248,45 @@ M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
 
 #-Variavel para identificar -----------------------------------------------------------------------#
-VERSAO=""
+##
+DEFAULT_VERSAO=""
 if [ -z "$VERSAO" ]; then
-          VERSAO=""
+          VERSAO="$DEFAULT_VERSAO"
 fi
 
 SAVISCC="$destino""/sav/savisc/iscobol/bin/"
 if [ -n "$SAVISCC" ]; then
-          SAVISC="$SAVISCC"
+          SAVISC=$SAVISCC
 fi
 
 JUTILL="jutil"
 if [ -n "$JUTILL" ]; then
-          JUTIL="$JUTILL"
+          JUTIL=$JUTILL
 fi
 
 ISCCLIENTT="iscclient"
 if [ -n "$ISCCLIENTT" ]; then
-          ISCCLIENT="$ISCCLIENTT"
+          ISCCLIENT=$ISCCLIENTT
 fi
 
-ARQUIVO=""
+DEFAULT_ARQUIVO=""
 if [ -z "$ARQUIVO" ]; then
-          ARQUIVO=""
+          ARQUIVO="$DEFAULT_ARQUIVO"
 fi
 
-PEDARQ=""
+DEFAULT_PEDARQ=""
 if [ -z "$PEDARQ" ]; then
-          PEDARQ=""
+          PEDARQ="$DEFAULT_PEDARQ"
 fi
 
-prog=""
+DEFAULT_PROG=""
 if [ -z "$prog" ]; then
-          prog=""
+          prog="$DEFAULT_PROG"
 fi
 
-VVERSAO=""
+DEFAULT_VVERSAO=""
 if [ -z "$VVERSAO" ]; then
-          VVERSAO=""
+          VVERSAO="$DEFAULT_VVERSAO"
 fi
 
 TOOLS=$destino$pasta
@@ -310,48 +322,45 @@ tput setaf 7
 	NORM=$(tput bold)$(tput setaf 7)
      COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
-#-Configuracao para acesso ao scp------------------------------------#
+#-Configuracao para acesso ao scp------------------------------------------------------------------#
 DEFAULT_PORTA="41122"
 if [ -z "$PORTA" ]; then
-        PORTA="$DEFAULT_PORTA"
+     PORTA="$DEFAULT_PORTA"
 fi
 
 DEFAULT_USUARIO="atualiza"
 if [ -z "$USUARIO" ]; then
-        USUARIO="$DEFAULT_USUARIO"
+     USUARIO="$DEFAULT_USUARIO"
 fi
-#PORTA="41122"
 
-#USUARIO="atualiza"
 DEFAULT_IPSERVER="177.115.194.15"
 if [ -z "$IPSERVER" ]; then
-        IPSERVER="$DEFAULT_IPSERVER"
+     IPSERVER="$DEFAULT_IPSERVER"
 fi
-#IPSERVER="177.115.194.15"
 
 DEFAULT_DESTINO2SERVER="/u/varejo/man/"
 if [ -z "$DESTINO2SERVER" ]; then
-        DESTINO2SERVER="$DEFAULT_DESTINO2SERVER"
+     DESTINO2SERVER="$DEFAULT_DESTINO2SERVER"
 fi
 
 DEFAULT_DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 if [ -z "$DESTINO2SAVATUISC" ]; then
-        DESTINO2SAVATUISC="$DEFAULT_DESTINO2SAVATUISC"
+     DESTINO2SAVATUISC="$DEFAULT_DESTINO2SAVATUISC"
 fi
 
 DEFAULT_DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
 if [ -z "$DESTINO2SAVATUMF" ]; then
-        DESTINO2SAVATUMF="$DEFAULT_DESTINO2SAVATUMF"
+     DESTINO2SAVATUMF="$DEFAULT_DESTINO2SAVATUMF"
 fi
 
 DEFAULT_DESTINO2TRANSPC="/u/varejo/trans_pc/"
 if [ -z "$DESTINO2TRANSPC" ]; then
-        DESTINO2TRANSPC="$DEFAULT_DESTINO2TRANSPC"
+     DESTINO2TRANSPC="$DEFAULT_DESTINO2TRANSPC"
 fi
 
-DESTINO2=""
+DEFAULT_DESTINO2=""
 if [ -z "$DESTINO2" ]; then
-     DESTINO2=""
+     DESTINO2="$DEFAULT_DESTINO2"
 fi
 
 #-Processo do scp----------------------------------------------------------------------------------#
@@ -395,9 +404,8 @@ _meiodatela () {
 
 #-Mensagem centralizada-----------------------------------------------------------------------------#
 _mensagec () {
-
-local CCC=$1
-local MXX=$2
+local CCC="$1"
+local MXX="$2"
 
 if [ "$CCC" == "RED" ]; then
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
@@ -412,7 +420,6 @@ elif [ "$CCC" == "PURPLE" ]; then
 else
      printf "%*s""${BLUE}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 fi
-
 }
 
 #   Opção Invalida
@@ -1383,9 +1390,9 @@ _limpando () {
 
      while read -r line; do
           "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
-          printf "%*s""${RED}""$line""${NORM}\n" 
-          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"$line >> "$LOG_LIMPA"
-     done < "${arqs}"
+#          printf "%*s""${RED}""$line""${NORM}\n" 
+          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}""$line" >> "$LOG_LIMPA"
+     done < "$arqs"
 
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
 _linha 
@@ -1501,7 +1508,7 @@ if [ "$base2" ]; then
      _escolhe_base
 fi
 if [ "$sistema" = "iscobol" ]; then          
-#    _meiodatela
+     _meiodatela
      _mensagec CYAN "$M64" 
      _linha  
      #printf "%*s""${RED}""$M64""${NORM}\n"
@@ -1509,7 +1516,7 @@ if [ "$sistema" = "iscobol" ]; then
      read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
      _linha
      if [[ -z "$PEDARQ" ]]; then
-#     _meiodatela
+     _meiodatela
 #-M65
      _mensagec RED "$M65"
      _linha 
@@ -1534,7 +1541,7 @@ if [ "$sistema" = "iscobol" ]; then
           local jut="$SAVISC""$JUTIL"
           for i in $ARQUIVO
           do 
-          $jut -rebuild "$BASE1""/""$i" -a -f
+          "$jut" -rebuild "$BASE1""/""$i" -a -f
           done
      fi
 
