@@ -244,17 +244,17 @@ fi
 
 SAVISCC="$destino""/sav/savisc/iscobol/bin/"
 if [ -n "$SAVISCC" ]; then
-          SAVISC=$SAVISCC
+          SAVISC="$SAVISCC"
 fi
 
 JUTILL="jutil"
 if [ -n "$JUTILL" ]; then
-          JUTIL=$JUTILL
+          JUTIL="$JUTILL"
 fi
 
 ISCCLIENTT="iscclient"
 if [ -n "$ISCCLIENTT" ]; then
-          ISCCLIENT=$ISCCLIENTT
+          ISCCLIENT="$ISCCLIENTT"
 fi
 
 ARQUIVO=""
@@ -311,13 +311,44 @@ tput setaf 7
      COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------#
-PORTA="41122"
-USUARIO="atualiza"
-IPSERVER="177.115.194.15"
-DESTINO2SERVER="/u/varejo/man/"
-DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
-DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
-DESTINO2TRANSPC="/u/varejo/trans_pc/"
+DEFAULT_PORTA="41122"
+if [ -z "$PORTA" ]; then
+        PORTA="$DEFAULT_PORTA"
+fi
+
+DEFAULT_USUARIO="atualiza"
+if [ -z "$USUARIO" ]; then
+        USUARIO="$DEFAULT_USUARIO"
+fi
+#PORTA="41122"
+
+#USUARIO="atualiza"
+DEFAULT_IPSERVER="177.115.194.15"
+if [ -z "$IPSERVER" ]; then
+        IPSERVER="$DEFAULT_IPSERVER"
+fi
+#IPSERVER="177.115.194.15"
+
+DEFAULT_DESTINO2SERVER="/u/varejo/man/"
+if [ -z "$DESTINO2SERVER" ]; then
+        DESTINO2SERVER="$DEFAULT_DESTINO2SERVER"
+fi
+
+DEFAULT_DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
+if [ -z "$DESTINO2SAVATUISC" ]; then
+        DESTINO2SAVATUISC="$DEFAULT_DESTINO2SAVATUISC"
+fi
+
+DEFAULT_DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
+if [ -z "$DESTINO2SAVATUMF" ]; then
+        DESTINO2SAVATUMF="$DEFAULT_DESTINO2SAVATUMF"
+fi
+
+DEFAULT_DESTINO2TRANSPC="/u/varejo/trans_pc/"
+if [ -z "$DESTINO2TRANSPC" ]; then
+        DESTINO2TRANSPC="$DEFAULT_DESTINO2TRANSPC"
+fi
+
 DESTINO2=""
 if [ -z "$DESTINO2" ]; then
      DESTINO2=""
@@ -2123,8 +2154,12 @@ _update () {
      wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
 #-Descompactando o programa baixado----------------------------------#
+DEFAULT_ATUALIZAGIT="atualiza.zip"
+if [ -z "$atualizagit" ]; then
+        atualizagit="$DEFAULT_ATUALIZAGIT"
+fi
 
-atualizagit="atualiza.zip"
+#atualizagit="atualiza.zip"
      "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
      _read_sleep 1
      "$cmd_find" "$PROGS" -name "$atualizagit" -exec rm -r {} \; 
