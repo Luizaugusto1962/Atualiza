@@ -1448,8 +1448,12 @@ _escolhe_base () {
      M900="Escolha a Base"
 	M901="1${NORM} - Base em ${destino}${base}"
 	M902="2${NORM} - Base em ${destino}${base2}"
-     M903="3${NORM} - Base em ${destino}${base3}"
-	printf "\n"
+     if [ ! "$base3" ]; then
+          M903=""
+     else
+          M903="3${NORM} - Base em ${destino}${base3}"
+	fi
+     printf "\n"
 	_linha "="
 	_mensagec RED "$M900"
 	_linha 
@@ -1464,12 +1468,20 @@ _escolhe_base () {
      printf "\n"
      _linha "="
      read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     if [ ! "$base3" ]; then
+      case $OPCAO in
+          1)  _dbase1 ;;
+          2)  _dbase2 ;;
+          *) _ferramentas ;;
+     esac    
+     else
      case $OPCAO in
           1)  _dbase1 ;;
           2)  _dbase2 ;;
           3)  _dbase3 ;;
           *) _ferramentas ;;
-     esac    
+     esac
+     fi    
 }
 
 _dbase1 () {
