@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 #                                                                                                                      #                                                               
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -1319,7 +1318,7 @@ clear
      M505="3${NORM} - Fazer ou Restaurar Backup        "
      M506="4${NORM} - Envia e Recebe Arquivos          "
      M509="8${NORM} - Update                           "	
-     M510="9${NORM} - ${RED}Menu Anterior            "
+     M510="9${NORM} - ${RED}Menu Anterior           "
      _linha "="
      _mensagec RED "$M501"
      _linha 
@@ -1376,7 +1375,7 @@ _limpando () {
      while read -r line; do
           "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
 #          printf "%*s""${RED}""$line""${NORM}\n" 
-          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}""$line" >> "$LOG_LIMPA"
+          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"$line >> "$LOG_LIMPA"
      done < "$arqs"
 
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
