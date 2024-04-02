@@ -13,7 +13,7 @@ set -e
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                          #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                         #
 ##  Versao do atualiza.sh                                                                                         #
-##  UPDATE 01/04/2024                                                                                             #
+##  UPDATE 02/04/2024                                                                                             #
 #                                                                                                                 #
 #-----------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                           #
@@ -338,30 +338,15 @@ if [ -z "$IPSERVER" ]; then
      IPSERVER="$DEFAULT_IPSERVER"
 fi
 
-DEFAULT_DESTINO2SERVER="/u/varejo/man/"
-if [ -z "$DESTINO2SERVER" ]; then
-     DESTINO2SERVER="$DEFAULT_DESTINO2SERVER"
-fi
-
-DEFAULT_DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
-if [ -z "$DESTINO2SAVATUISC" ]; then
-     DESTINO2SAVATUISC="$DEFAULT_DESTINO2SAVATUISC"
-fi
-
-DEFAULT_DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
-if [ -z "$DESTINO2SAVATUMF" ]; then
-     DESTINO2SAVATUMF="$DEFAULT_DESTINO2SAVATUMF"
-fi
-
-DEFAULT_DESTINO2TRANSPC="/u/varejo/trans_pc/"
-if [ -z "$DESTINO2TRANSPC" ]; then
-     DESTINO2TRANSPC="$DEFAULT_DESTINO2TRANSPC"
-fi
-
 DEFAULT_DESTINO2=""
 if [ -z "$DESTINO2" ]; then
      DESTINO2="$DEFAULT_DESTINO2"
 fi
+
+DESTINO2SERVER="/u/varejo/man/"
+DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
+DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
+DESTINO2TRANSPC="/u/varejo/trans_pc/"
 
 #-Processo do scp----------------------------------------------------------------------------------#
 
