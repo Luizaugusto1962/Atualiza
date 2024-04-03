@@ -2006,7 +2006,7 @@ _envia_avulso () {
      printf "\n\n\n"
 ### Pedir diretorio origem do arquivo    
      _linha 
- M991="1- Origuem: Informe em que diretorio esta o arquivo a ser enviado :"   
+ M991="1- Origem: Informe em que diretorio esta o arquivo a ser enviado :"   
      _mensagec YELLOW "$M991"  
      read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
      _linha 
