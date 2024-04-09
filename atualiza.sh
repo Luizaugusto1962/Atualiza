@@ -222,7 +222,7 @@ M58="Voltando todos os programas."
 M59="Informe o nome do programa a ser atualizado:"
 M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
 M61="Informe o nome do programa a ser desatualizado:" 
-M62="Informe a ultima versao que foi feita a atualizacao da biblioteca para voltar todos os programas."
+M62="Informe a ultima versao que foi feita a atualizacao da biblioteca."
 #M63="Existe um backup antigo sera excluido do Diretorio ""$BACKUP"
 M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
 M65="Recuperado todos os arquivos:"
@@ -235,14 +235,13 @@ M71="ERRO: Voce informou o nome do arquivo em minusculo "
 M72="Informe o(s) arquivo(s) que deseja enviar."
 M73="Informe o(s) arquivo(s) que deseja receber."
 M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
-## Mensagens em cyan
 
+## Mensagens em cyan
 M80="..Checando estrutura dos diretorios do atualiza.sh.." 
 M81="..Encontrado o diretorio do sistema .." 
 #M83="<< ... >>"
 
 ## Mensagens em VERDE
-
 M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
 
@@ -400,7 +399,7 @@ _opinvalida () {
      _linha  
 }      
 
-#-Verificacoes de parametro e diretorio------------------------------------------------------------#
+#-Verificacoes de parametro e diretorios------------------------------------------------------------#
 
 clear
 if [ -d "$exec" ]; then
@@ -690,7 +689,6 @@ M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
      _read_sleep 1
 
 #-Escolha de multi programas-----------------------------------------------------------------------# 
-
 #M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
      _mensagec "$YELLOW" "$M37"
@@ -787,7 +785,25 @@ M02="Voltando a versao anterior do programa ""$prog"
      _mensagec "$YELLOW" "$M03"
      _linha 
      _press
+#-Escolha de multi programas-----------------------------------------------------------------------# 
+#M37 Deseja informar mais algum programa para ser atualizado?
+     _meiodatela
+     _mensagec "$YELLOW" "$M37"
+     read -r -n1 CONT 
+     printf "\n\n"
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+          _principal
+     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+          if [[ "$OPCAO" = 1 ]] ; then
+          _voltaprog
+          fi
+     else
+     _opinvalida	 
+     _press
      _principal
+     fi
+_principal    
+
 }
 
 #-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
@@ -854,7 +870,7 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
      _linha
 
      cd "$OLDS"/ || exit
-     "$cmd_unzip" -j "$INI"-"$VVERSAO".zip 
+     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS" >> "$LOG_ATU"
      _volta_progy
 }
 
@@ -893,16 +909,14 @@ _volta_progz () {
 }
 
 _volta_progy () {
-     if [ "$sistema" = "iscobol" ]; then
+     _read_sleep 1
+     cd "$OLDS" || exit 
+          if [ "$sistema" = "iscobol" ]; then
           "$cmd_find" "$OLDS" -name "$Vprog.xml" -exec mv {} "$xml" \;
-
           "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \;
-
           "$cmd_find" "$OLDS" -name "$Vprog*.class" -exec mv {} "$exec" \;
-          clear
      else
           "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-
           "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$exec" \; 
      fi
 
@@ -911,7 +925,7 @@ _volta_progy () {
      _mensagec "$YELLOW" "$M03"
      _linha 
 
-M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
+M30="O(s) programa(s) ""$Vprog""  da ${NORM}${RED} ""$VVERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M30"
@@ -923,21 +937,18 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
 _volta_bibli () {
 #-VOLTA DOS ARQUIVOS ANTERIORES...
-     _linha 
-     _mensagec "$YELLOW" "$M03"
-     _linha 
-
      _read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
 
      cd "$OLDS" || exit
+          for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll}
+          do
+          "$cmd_find" "$OLDS" -type f \( -iname "$Ext" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+          done
 
-	"$cmd_find" "$OLDS" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+          "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
-     "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
-
-     cd "$xml"/ || exit
-	"$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
+          "$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
@@ -946,11 +957,13 @@ _volta_bibli () {
      cd "$OLDS"/ || exit
 	"$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
 
-     cd "$OLDS"/ || exit
-	"$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+     "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
+     _linha 
+     _mensagec "$YELLOW" "$M03"
+     _linha 
 
 M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
      _linha 
@@ -968,14 +981,15 @@ _volta_geral () {
      _linha 
      _mensagec "$RED" "$M58"
      _linha 
-#-M31="O programas da versao:"$VVERSAO"
+M31="o programas da versao: ${NORM}${RED} ""$VVERSAO"
+#M31="O programas da versao:""$VVERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M31"
      _linha 
 
      cd "$OLDS"/ || exit
-     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS"
+     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS" >> "$LOG_ATU"
      cd "$TOOLS" || exit
      clear
 
@@ -1358,6 +1372,7 @@ clear
 clear
 
 _limpando () {
+clear
      TEMPORARIOS="Temps"
      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
@@ -1372,6 +1387,7 @@ _linha
 _mensagec "$YELLOW" "$M11"
 _linha 
 }
+
 
 _temps () {
 
@@ -1941,8 +1957,7 @@ M34="O arquivo ""$VARQUIVO"
 
      cd "$DIRBACK" || exit
      "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
-
-    mv -f -- *.* "$BASE1" >> "$LOG_ATU"
+     mv -f -- *.* "$BASE1" >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
