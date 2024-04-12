@@ -227,7 +227,7 @@ M62="Informe a ultima versao que foi feita a atualizacao da biblioteca."
 M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
 M65="Recuperado todos os arquivos:"
 M66="Voce nao informou o nome do arquivo em minusculo"
-M67="Recuperacao Isam :"
+#M67=""
 M68="Enviar backup para a SAV."
 M69="Voce nao informou o nome do diretorio a ser enviado, saindo... "
 M70="* * * < < Nome do Backup nao foi informada > > * * * "
@@ -1522,13 +1522,13 @@ if [ "$sistema" = "iscobol" ]; then
      _mensagec "$RED" "$M65"
      _linha 
      local jut="$SAVISC""$JUTIL"
-     for i in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
-     do
-     TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
-          if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
-          $jut -rebuild "$i" -a -f
+          for i in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
+          do
+          TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
+               if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
+               "$jut" -rebuild "$i" -a -f
           fi
-     done 
+          done 
           cd "$TOOLS"/ || exit
      else
           while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
@@ -1538,7 +1538,7 @@ if [ "$sistema" = "iscobol" ]; then
           _press
           _ferramentas
           done
-          local ARQUIVO="$PEDARQ.???.dat"
+          local ARQUIVO="$PEDARQ.???.???"
           local jut="$SAVISC""$JUTIL"
           for i in $ARQUIVO
           do 
@@ -1553,23 +1553,27 @@ if [ "$sistema" = "iscobol" ]; then
 
 cd "$TOOLS"/ || exit
 else
-#-m67
      _meiodatela
-     _mensagec "$RED" "$M67"
-     cd "$BASE1"/ || exit
-
-     for i in $BASE1/{*.ARQ,*.DAT,*.LOG,*.PAN}
-     do
-     TAMANHO=$(du "$i" | awk '{print $1}') #-grava tamanho do arquivo em variavel
-          if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
-          rebuild -e "$i"
-          else
-          rebuild -d -e "$i"
-          fi
-     done
+     M996="Recuperacao em desenvolvimento :"
+     _mensagec "$RED" "$M996"
 fi
 _press
-_rebuild 
+_rebuild
+
+#-m67$
+
+#     _mensagec "$RED" "$M67"
+#     cd "$BASE1"/ || exit
+#
+#     for i in $BASE1/{*.ARQ,*.DAT,*.LOG,*.PAN}
+#     do
+#     TAMANHO=$(du "$i" | awk '{print $1}') #-grava tamanho do arquivo em variavel
+#          if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
+#          rebuild -e "$i"
+#          else
+#          rebuild -d -e "$i"
+#          fi
+#     done
 }
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
@@ -1603,7 +1607,8 @@ done < "atualizaj"
      _linha 
      _press
 else
-M996="Recuperacao em desenvolvimento :"
+_meiodatela
+#M996="Recuperacao em desenvolvimento :"
 _mensagec "$RED" "$M996"
 fi
 _press
