@@ -120,6 +120,22 @@ SAVATU2=""
 SAVATU3=""
 SAVATU4=""
 
+#-Variaveis de cores-------------------------------------------------------------------------------#
+export TERM=xterm-256color
+tput sgr0
+tput clear 
+tput bold
+tput setaf 7
+	RED=$(tput bold)$(tput setaf 1)
+	GREEN=$(tput bold)$(tput setaf 2)
+	YELLOW=$(tput bold)$(tput setaf 3)
+	BLUE=$(tput bold)$(tput setaf 4)
+     PURPLE=$(tput bold)$(tput setaf 5) 
+	CYAN=$(tput bold)$(tput setaf 6)
+	NORM=$(tput bold)$(tput setaf 7)
+     COLUMNS=$(tput cols)
+#-Conectores---------------------------------------------------------------------------------------#
+
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
 #- TESTE de CONFIGURACOES------------------------------------------------------------------------------------------------#
 
@@ -128,6 +144,19 @@ SAVATU4=""
 
 "." ./atualizac
 #------------------------------------------------------------------------------------------------------------------------#
+# Function to check if jq is installed
+check_zip_instalado() {
+Z1="Aparentemente o programa zip nao esta instalado neste ditribuicao."
+     if ! command -v zip &> /dev/null; then
+     printf "\n"
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "$Z1" ;printf "%*s""${NORM}"
+     printf "\n"
+     exit 1
+     fi
+}
+
+# Checando se o zip esta na base
+check_zip_instalado
 
 #-Comandos#--------------------------------------------------------------------------------------------------------------#
 DEFAULT_UNZIP="unzip"
@@ -305,21 +334,6 @@ BASE1=$destino$base
 #-EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.----#
 ANTERIOR="anterior"
 
-#-Variaveis de cores-------------------------------------------------------------------------------#
-export TERM=xterm-256color
-tput sgr0
-tput clear 
-tput bold
-tput setaf 7
-	RED=$(tput bold)$(tput setaf 1)
-	GREEN=$(tput bold)$(tput setaf 2)
-	YELLOW=$(tput bold)$(tput setaf 3)
-	BLUE=$(tput bold)$(tput setaf 4)
-     PURPLE=$(tput bold)$(tput setaf 5) 
-	CYAN=$(tput bold)$(tput setaf 6)
-	NORM=$(tput bold)$(tput setaf 7)
-     COLUMNS=$(tput cols)
-#-Conectores---------------------------------------------------------------------------------------#
 #-Configuracao para acesso ao scp------------------------------------------------------------------#
 DEFAULT_PORTA="41122"
 if [ -z "$PORTA" ]; then
@@ -369,7 +383,6 @@ _press () {
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
      read -rt 15 || :
      tput sgr0
-
 }
 
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
@@ -1768,15 +1781,13 @@ elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
      _meiodatela
 #-M69 Voce nao informou o nome do diretorio a enviado, saindo...   
      _mensagec "$RED" "$M69"
-
-_press    
+     _press    
      _ferramentas 
      done
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
      _linha 
-
      "$cmd_scp" -r -P "$PORTA" "$BACKUP/$ARQ" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _linha 
@@ -1798,7 +1809,6 @@ _backupavulso () {
      _linha 
      _mensagec "$RED" "$M52"
      _linha      
-
      read -rp "${YELLOW}""         1- Informe nome BACKUP: ""${NORM}" VBACKAV
 local VBACKUP="$EMPRESA"_"$VBACKAV"
      while [[ -f "$VBACKUP".zip ]] ;do 
@@ -1840,7 +1850,6 @@ elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
      _press    
      _ferramentas 
      done
-
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -1872,7 +1881,6 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      _linha 
      _mensagec "$YELLOW" "$M22"
      _linha 
-
      mkdir -p "$DIRBACK"
      fi
      ls -s "$BACKUP""/""$EMPRESA"_*.zip
@@ -2162,7 +2170,7 @@ clear
      _linha 
      sleep 3s
      printf "\n\n"
-# Apagando todos os arquivos do diretorio #
+# Apagando todos os arquivos do diretorio backup#
      local DIR1="$BACKUP""/"
      for arq in $DIR1{*.zip,*.bkp,*tgz,*.sh}
      do
@@ -2176,13 +2184,11 @@ clear
 
 #-Apagar arquivos do diretorio dos logs---------------------------------#
      "$cmd_find" "$LOGS""/" -name "*.log" -ctime +30 -exec rm -r {} \; 
-
 cd "$TOOLS"/ || exit
-
 _ferramentas
 }
-#-Atualizacao online-------------------------------------------------------------------------------#
 
+#-Atualizacao online-------------------------------------------------------------------------------#
 _update () {
      clear
      printf "\n\n"
@@ -2216,7 +2222,7 @@ exit
 _principal
 
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
-unset -v BASE1 tools 
+unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 tput clear
