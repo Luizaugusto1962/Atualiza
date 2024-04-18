@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-##  UPDATE 04/04/2024                                                                                                  #
+##  UPDATE 18/04/2024                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -99,7 +99,7 @@
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
-
+#Zerando variaves utilizadas 
 resetando () {
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
@@ -133,14 +133,15 @@ tput sgr0
 tput clear 
 tput bold
 tput setaf 7
-	RED=$(tput bold)$(tput setaf 1)
-	GREEN=$(tput bold)$(tput setaf 2)
-	YELLOW=$(tput bold)$(tput setaf 3)
-	BLUE=$(tput bold)$(tput setaf 4)
-     PURPLE=$(tput bold)$(tput setaf 5) 
-	CYAN=$(tput bold)$(tput setaf 6)
-	NORM=$(tput bold)$(tput setaf 7)
-     COLUMNS=$(tput cols)
+RED=$(tput bold)$(tput setaf 1)
+GREEN=$(tput bold)$(tput setaf 2)
+YELLOW=$(tput bold)$(tput setaf 3)
+BLUE=$(tput bold)$(tput setaf 4)
+PURPLE=$(tput bold)$(tput setaf 5) 
+CYAN=$(tput bold)$(tput setaf 6)
+NORM=$(tput bold)$(tput setaf 7)
+COLUMNS=$(tput cols)
+
 #-Conectores---------------------------------------------------------------------------------------#
 
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
@@ -151,7 +152,7 @@ tput setaf 7
 
 "." ./atualizac
 #------------------------------------------------------------------------------------------------------------------------#
-# Function to check if jq is installed
+# Funcao para checar se o zip esta instalado
 check_zip_instalado() {
 Z1="Aparentemente o programa zip nao esta instalado neste ditribuicao."
      if ! command -v zip &> /dev/null; then
