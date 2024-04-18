@@ -100,6 +100,13 @@
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 
+resetando () {
+unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
+unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
+unset -v destino pasta base base2 base3 logs exec class telas xml
+unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
+}
+
 #-VARIAVEIS que devem vir do atualizac --------------------------------------------------------------------------------#
 destino=""
 pasta=""
@@ -533,7 +540,7 @@ _principal () {
           4) _iscobol       ;;
           5) _linux         ;;
           6) _ferramentas   ;;
-          9) clear; tput sgr0; exit ;;
+          9) clear ;resetando ; tput sgr0; exit ;;
           *) clear ; _principal ;;
      esac
 }
@@ -2221,10 +2228,6 @@ exit
 
 _principal
 
-unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
-unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
-unset -v destino pasta base base2 base3 logs exec class telas xml
-unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 tput clear
 tput sgr0
 tput cup "$( tput lines )" 0
