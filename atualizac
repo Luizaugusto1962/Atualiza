@@ -6,11 +6,22 @@ EMPRESA=
 ### USA BANCO (S/N) ###
 BANCO=n 
 destino="/u"
+####################################################################
 ### DIRETORIO DA BASE DE DADOS"""
 base=/sav/dados_jisam
 #base2=
 #base3=
-
+####################################################################
+### Diretorio de trabalho para o atualizador ###
+pasta="/sav/tools"
+progs=/progs
+olds=/olds
+logs=/logs
+backup=/backup
+####################################################################
+### Nome de arquivo de trabalho ###
+INI="backup"
+####################################################################
 ### CONFIGURACAO PARA O SISTEMA EM ISCOBOL ###
 sistema=iscobol
 ### Versao do iscobol class para iscobol ate 2019, class20 apos 2020 #
@@ -22,11 +33,19 @@ class=-class20
 VERCLASS=IS2020
 #class=-class23
 #VERCLASS=IS2023
-###
+####################################################################
 ### Diretorio para o iscobol
 exec=/u/sav/classes
 telas=/u/sav/tel_isc
 xml=/u/sav/xml
+##############( TRANSPC )###########################################
+### Nome de arquivo de atualizacao ###
+SAVATU1=tempSAV_"$VERCLASS"_classA_
+SAVATU2=tempSAV_"$VERCLASS"_classB_
+SAVATU3=tempSAV_"$VERCLASS"_tel_isc_
+SAVATU4=tempSAV_"$VERCLASS"_xml_ 
+####################################################################
+##############                                        ##############                                   
 ####################################################################
 # # CONFIGURACAO PARA O SISTEMA EM MICROFOCUS ###
 #sistema=cobol
@@ -36,31 +55,8 @@ xml=/u/sav/xml
 #exec=/u/sav/int
 #telas=/u/sav/tel
 ###
-#### DIRETORIO DA BASE DE DADOS###
-#base="/sav/dados"
-#base2=""
-#base3=""
-####################################################################
-### Diretorio de trabalho para o atualizador ###
-pasta="/sav/tools"
-progs=/progs
-olds=/olds
-logs=/logs
-backup=/backup
-####################################################################
-### Nome de arquivo de trabalho ###
-INI="backup"
-
-##############( TRANSPC )###########################################
-### Nome de arquivo de atualizacao ###
-SAVATU1=tempSAV_"$VERCLASS"_classA_
-SAVATU2=tempSAV_"$VERCLASS"_classB_
-SAVATU3=tempSAV_"$VERCLASS"_tel_isc_
-SAVATU4=tempSAV_"$VERCLASS"_xml_ 
-#
-####################################################################
 #### ISAM #####
 #SAVATU1=tempSAVintA_
 #SAVATU2=tempSAVintB_
 #SAVATU3=tempSAVtel_ 
-#
+####################################################################
