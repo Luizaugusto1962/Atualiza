@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-##  UPDATE 18/04/2024                                                                                                  #
+##  UPDATE 22/04/2024                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -658,7 +658,7 @@ fi
          for pprog in *.class
           do
           "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
-          _read_sleep 2 
+          _read_sleep 2s 
           mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
 		done
      else 
@@ -1391,16 +1391,13 @@ clear
      esac
 }
 clear
-
 _limpando () {
 clear
      TEMPORARIOS="Temps"
      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
      while read -r line; do
-          "$cmd_find" "${DIRB}" -name "${line}" -exec ls -l {} \;
-#          printf "%*s""${RED}""$line""${NORM}\n" 
-          "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "${DIRB}"${line} >> "$LOG_LIMPA"
+     "$cmd_find" "${DIRB}" -name "${line}" -exec "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB$line" {} \;  >> "$LOG_LIMPA"
      done < "$arqs"
 
 M11="Movendo arquivos Temporarios do diretorio = ""$i"
