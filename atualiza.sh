@@ -1397,6 +1397,7 @@ clear
      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
      while read -r line; do
+     printf "${GREEN}""$line""${NORM}%s\n"
      "$cmd_find" "${DIRB}" -name "${line}" -exec "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB$line" {} \;  >> "$LOG_LIMPA"
      done < "$arqs"
 
@@ -1544,8 +1545,9 @@ if [ "$sistema" = "iscobol" ]; then
           do
           TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
                if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
-               "$jut" -rebuild "$i" -a -f
-          fi
+               "$jut" -rebuild "$BASE1""/""$i" -a -f
+#               "$jut" -rebuild "$i" -a -f
+               fi
           done 
           cd "$TOOLS"/ || exit
      else
@@ -1556,7 +1558,7 @@ if [ "$sistema" = "iscobol" ]; then
           _press
           _ferramentas
           done
-          local ARQUIVO="$PEDARQ.???.???"
+          local ARQUIVO="$PEDARQ.???.dat"
           local jut="$SAVISC""$JUTIL"
           for i in $ARQUIVO
           do 
