@@ -1527,11 +1527,12 @@ _rebuild1 () {
 if [ "$base2" ]; then
      _escolhe_base
 fi
+clear
 if [ "$sistema" = "iscobol" ]; then          
      _meiodatela
      _mensagec "$CYAN" "$M64" 
      _linha  
-     #printf "%*s""${RED}""$M64""${NORM}\n"
+#printf "%*s""${RED}""$M64""${NORM}\n"
      declare -u PEDARQ
      read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
      _linha
