@@ -652,62 +652,72 @@ fi
      _read_sleep 1
      clear
 
+_mens_atualiza () {
+     #..   BACKUP do programa efetuado   ..
+     _linha 
+     _mensagec "$YELLOW" "$M24"
+     _linha 
+     _read_sleep 1
+}
 #-Verificando nome do arquivo com a extensao .class ou .int----------#
-
+     local pprog=""   
      if [ "$sistema" = "iscobol" ]; then 
-         for pprog in *.class
+          for pprog in *.class
           do
+          if [ -f "$exec"/"$pprog" ]; then
           "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
-          _read_sleep 2s 
+          _mens_atualiza
+          fi
           mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
 		done
      else 
           for pprog in *.int
           do
+          if [ -f "$exec"/"$pprog" ]; then
           "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"
-          _read_sleep 2 
+          _mens_atualiza
+          fi
           mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
           done
-          _read_sleep 2
+          _read_sleep 1
 	fi
           if [[ -f "$prog".TEL ]]; then
-
-               for pprog in *.TEL
-               do
+          for pprog in *.TEL
+          do
+               if [ -f "$telas"/"$pprog" ]; then
                "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
-               _read_sleep 2 
-               mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
-               done
+               _mens_atualiza
+               fi
+          mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
+          done
           fi
-#..   BACKUP do programa efetuado   ..
-     _linha 
-     _mensagec "$YELLOW" "$M24"
-     _linha 
-     _read_sleep 1
+
 #-Atualizando o novo programa.--------------------------------------#
 M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
      _linha 
      _mensagec "$YELLOW" "$M26"
-     _mensagec "$YELLOW" "$M07"
+     _mensagec "$GREEN" "$M07"
      _linha 
+     _read_sleep 
 
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO... De *.zip para *.bkp
      _linha 
      _mensagec "$YELLOW" "$M20"
      _mensagec "$YELLOW" "$M13"
      _linha 
+     _read_sleep 
 
      for f in *"$prog""$class".zip; do
           mv -f -- "$f" "${f%.zip}.bkp"
      done
      _read_sleep 1
 #-Atualizacao COMPLETA
-     _linha 
-     _mensagec "$YELLOW" "$M17"
-     _linha 
      mv -f -- "$prog""$class".bkp "$PROGS"
      mv -f -- "$prog"-$ANTERIOR.zip "$OLDS"
      _read_sleep 1
+     _linha 
+     _mensagec "$YELLOW" "$M17"
+     _linha 
 
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
