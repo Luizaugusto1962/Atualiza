@@ -1337,7 +1337,7 @@ clear
      M504="2${NORM} - Recuperar arquivos               "
      M505="3${NORM} - Fazer ou Restaurar Backup        "
      M506="4${NORM} - Envia e Recebe Arquivos          "
-     M507="7${NORM} - Expurgador de arquivos           "
+     M507="5${NORM} - Expurgador de arquivos           "
      M509="8${NORM} - Update                           "	
      M510="9${NORM} - ${RED}Menu Anterior           "
      _linha "="
@@ -1384,7 +1384,7 @@ clear
           2) _rebuild      ;;
           3) _menubackup   ;;
           4) _envrecarq    ;;
-          7) _expurgador   ;; 
+          5) _expurgador   ;; 
           8) _update       ;;
           9) clear ; _principal ;;
           *) _ferramentas ;;
@@ -1461,7 +1461,7 @@ _rebuild () {
           1) _rebuild1 ;;
           2) _rebuildlista ;;
           9) clear ; _ferramentas ;;
-           *) _ferramentas ;;
+          *) _ferramentas ;;
      esac
 
 }
