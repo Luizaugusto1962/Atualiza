@@ -1,30 +1,36 @@
-######################################################################
-## Parametros para serem usados no atualiza.sh                      ##
-######################################################################
-### NOME DA EMPRESA  ###
-EMPRESA=
-### USA BANCO (S/N) ###
-BANCO=n 
+####################################################################
+###      ( Parametros para serem usados no atualiza.sh )         ###
+####################################################################
+###              ( PASTA DO SISTEMA )                            ###
 destino="/u"
-####################################################################
-### DIRETORIO DA BASE DE DADOS"""
-base=/sav/dados_jisam
-#base2=
-#base3=
-####################################################################
-### Diretorio de trabalho para o atualizador ###
+#-------------------------------------------------------------------
+###            ( Diretorio de trabalho para o atualizador )      ###
 pasta="/sav/tools"
 progs=/progs
 olds=/olds
 logs=/logs
 backup=/backup
-####################################################################
-### Nome de arquivo de trabalho ###
+#-------------------------------------------------------------------
+###           ( USA BANCO (S/N) )                                ###
+BANCO=n 
+destino="/u"
+#-------------------------------------------------------------------
+###           ( Nome de arquivo de trabalho )                    ###
 INI="backup"
+#-------------------------------------------------------------------
+###           ( NOME DA EMPRESA )            ###
+EMPRESA=
+#-------------------------------------------------------------------
+###           ( DIRETORIO DA BASE DE DADOS )                    ###
+#-------------------------------------------------------------------
+base=/sav/dados_jisam
+#base2=
+#base3=
 ####################################################################
-### CONFIGURACAO PARA O SISTEMA EM ISCOBOL ###
+###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###
+####################################################################
 sistema=iscobol
-### Versao do iscobol class para iscobol ate 2019, class20 apos 2020 #
+#-------------------------------------------------------------------
 #class=-class
 #VERCLASS=IS2018
 #class=-class9
@@ -33,7 +39,7 @@ class=-class20
 VERCLASS=IS2020
 #class=-class23
 #VERCLASS=IS2023
-####################################################################
+#-------------------------------------------------------------------
 ### Diretorio para o iscobol
 exec=/u/sav/classes
 telas=/u/sav/tel_isc
@@ -44,18 +50,19 @@ SAVATU1=tempSAV_"$VERCLASS"_classA_
 SAVATU2=tempSAV_"$VERCLASS"_classB_
 SAVATU3=tempSAV_"$VERCLASS"_tel_isc_
 SAVATU4=tempSAV_"$VERCLASS"_xml_ 
+
 ####################################################################
-##############                                        ##############                                   
+##############                COBOL                   ##############                                   
 ####################################################################
 # # CONFIGURACAO PARA O SISTEMA EM MICROFOCUS ###
 #sistema=cobol
 #class=-6
-###
+#-------------------------------------------------------------------
 ### Diretorio para o Microfocus###
 #exec=/u/sav/int
 #telas=/u/sav/tel
-###
-#### ISAM #####
+##################( ISAM )##########################################
+### Nome de arquivo de atualizacao ###
 #SAVATU1=tempSAVintA_
 #SAVATU2=tempSAVintB_
 #SAVATU3=tempSAVtel_ 
