@@ -1556,7 +1556,7 @@ if [ "$sistema" = "iscobol" ]; then
           do
           TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
                if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
-               "$jut" -rebuild "$BASE1""/""$i" -a -f
+               "$jut" -rebuild "$i" -a -f
 #               "$jut" -rebuild "$i" -a -f
                fi
           done 
