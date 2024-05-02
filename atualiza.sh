@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-##  UPDATE 22/04/2024                                                                                                  #
+##  UPDATE 30/04/2024                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -188,6 +188,11 @@ fi
 DEFAULT_SCP="scp"
 if [ -z "$cmd_scp" ]; then
           cmd_scp="$DEFAULT_SCP"
+fi
+
+DEFAULT_WHO="who"
+if [ -z "$cmd_who" ]; then
+          cmd_who="$DEFAULT_WHO"
 fi
 ###
 
@@ -485,6 +490,7 @@ fi
 #### PARAMETRO PARA O LOGS
 LOG_ATU=$LOGS/atualiza.$(date +"%Y-%m-%d").log
 LOG_LIMPA=$LOGS/limpando.$(date +"%Y-%m-%d").log
+LOG_TMP=$LOGS/
 UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 clear
@@ -626,7 +632,7 @@ _pacoteoff () {
 }
 
 _atupacote () {
-if [[ -f "$OLDS"/"$prog"-"$ANTERIOR".zip ]] ; then
+if [[ -f "$OLDS"/"$prog"-"$ANTERIOR".zip ]]; then
      clear
      M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
      _linha
@@ -637,7 +643,7 @@ fi
 
 NOMEPROG="$prog""$class".zip
 
-if  [[ ! -f "$NOMEPROG" ]] ; then
+if  [[ ! -f "$NOMEPROG" ]]; then
      clear
 M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
      _linha 
@@ -725,10 +731,10 @@ M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
      _mensagec "$YELLOW" "$M37"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
           _principal
      elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-          if [[ "$OPCAO" = 1 ]] ; then
+          if [[ "$OPCAO" = 1 ]]; then
           _pacoteon
           else
           _pacoteoff
@@ -822,10 +828,10 @@ M02="Voltando a versao anterior do programa ""$prog"
      _mensagec "$YELLOW" "$M37"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
           _principal
      elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-          if [[ "$OPCAO" = 1 ]] ; then
+          if [[ "$OPCAO" = 1 ]]; then
           _voltaprog
           fi
      else
@@ -866,10 +872,10 @@ _voltabibli () {
      read -r -n1 CONT 
      printf "\n\n"
 
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
 	_linha 
      _volta_progx
-     elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
+     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
 	_linha 
      _volta_geral
      else
@@ -910,7 +916,7 @@ _volta_progz () {
      printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _press
 ### limpando diretorio 
      local OLDS1="$OLDS"/
@@ -923,7 +929,7 @@ _volta_progz () {
 
 	local Vprog=" "
 
-     if [[ "$CONT" =~ ^[Ss]$ ]] ; then
+     if [[ "$CONT" =~ ^[Ss]$ ]]; then
      read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
           if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
           _meiodatela
@@ -1139,7 +1145,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _linha 
      if [ "$sistema" = "iscobol" ]; then
           for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-          if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+          if  [[ ! -r "$atu""$VERSAO"".zip" ]]; then
           clear
 #-Atualizacao nao encontrado no diretorio
           _linha 
@@ -1159,7 +1165,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _principal
      else
           for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
-               if  [[ ! -r "$atu""$VERSAO"".zip" ]] ; then
+               if  [[ ! -r "$atu""$VERSAO"".zip" ]]; then
      clear 
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1216,7 +1222,7 @@ _processo () {
      printf "%*s""${YELLOW}" ;"$M38"; printf "%*s""${NORM}"
      read -r -n1 CONT 
      printf "\n\n"
-          if [[ "$CONT" =~ ^[Nn]$ ]] ; then
+          if [[ "$CONT" =~ ^[Nn]$ ]]; then
           _principal
           elif [[ "$CONT" =~ ^[Ss]$ ]] || [[ "$CONT" == "" ]]; then
           _meiodatela
@@ -1291,47 +1297,64 @@ _linux () {
      _mensagec "$YELLOW" "$LM"
      _linha 
 
-#-identificando OS
-if [[ -f /etc/os-release ]]; then
-# freedesktop.org and systemd
-     . /etc/os-release
-     OS=$NAME
-     VER=$VERSION_ID
-     UPSTREAM_ID=${ID_LIKE,,}
-     # Fallback to ID_LIKE if ID was not 'ubuntu' or 'debian'
-     if [[ "${UPSTREAM_ID}" != "debian" ]] && [[ "${UPSTREAM_ID}" != "ubuntu" ]]; then
-          UPSTREAM_ID="$(echo "${ID_LIKE,,}" | sed s/\"//g | cut -d' ' -f1)"
-     fi
+# Checando se conecta com a internet ou nao 
+ping -c 1 google.com &> /dev/null && printf "${GREEN}"" Internet:""${NORM}""Conectada""%*s\n"||printf "${GREEN}"" Internet:""${NORM}""Desconectada""%*s\n"
+#echo -e '\E[32m'"Internet: "${NORM}" Connected" || echo -e '\E[32m'"Internet: "${NORM}" Disconnected"
 
-elif type lsb_release >/dev/null 2>&1; then
-     # linuxbase.org
-     OS=$(lsb_release -si)
-     VER=$(lsb_release -sr)
-elif [[ -f /etc/lsb-release ]]; then
-     #-Para algumas versões do Debian/Ubuntu sem o comando lsb_release
-     . /etc/lsb-release
-     OS=$DISTRIB_ID
-     VER=$DISTRIB_RELEASE
-elif [[ -f /etc/debian_version ]]; then
-     #-Velhas distros Debian/Ubuntu/etc.
-     OS=Debian
-     VER=$(cat /etc/debian_version)
-elif [[ -f /etc/SuSe-release ]]; then
-     #-Velhas distros SuSE/etc.
-     OS=SuSE
-     VER=$(cat /etc/SuSe-release)
-elif [[ -f /etc/redhat-release ]]; then
-     #-Velhas distros Red Hat, CentOS, etc.
-     OS=RedHat
-     VER=$(cat /etc/redhat-release)
-else
-     #-Para uname, e.x. "Linux <version>", também funciona para o BSD, etc.
-     OS=$(uname -s)
-     VER=$(uname -r)
-fi
-     printf "${GREEN}          OS:${NORM}      ${CYAN} ""$OS""   ${NORM}%s\n\n"
-     printf "${GREEN}          VER:${NORM}      ${CYAN} ""$VER"" ${NORM}%s\n\n"
-     printf "${GREEN}          UPSTREAM_ID:${NORM} ${CYAN} ""$UPSTREAM_ID"" ${NORM}%s\n\n" 
+# Checando tipo de OS
+os=$(uname -o)
+printf "${GREEN}""Sistema Operacional :""${NORM}""$os""%*s\n"
+
+# Checando  OS Versao e nome 
+cat < '/etc/os-release' | grep 'NAME\|VERSION' | grep -v 'VERSION_ID' | grep -v 'PRETTY_NAME' > "$LOG_TMP""osrelease"
+printf "${GREEN}""OS Nome :""${NORM}""%*s\n" && cat < "$LOG_TMP""osrelease" | grep -v "VERSION" | cut -f2 -d\"
+printf "${GREEN}""OS Versao :""${NORM}""%*s\n" && cat < "$LOG_TMP""osrelease" | grep -v "NAME" | cut -f2 -d\"
+printf "\n"
+# Checando hostname
+printf "${GREEN}""Nome do Servidor :""${NORM}""$HOSTNAME""%*s\n"
+printf "\n"
+# Checando Interno IP
+internalip=$(hostname -I | awk '{print $1}')
+printf "${GREEN}""IP Interno :""${NORM}""$internalip""%*s\n"
+printf "\n"
+# Checando Externo IP
+externalip=$(curl -s ipecho.net/plain;echo)
+printf "${GREEN}""IP Externo :""${NORM}""$externalip""%*s\n"
+
+_linha 
+_press 5
+clear
+_linha 
+# Checando os usuarios logados 
+_run_who () {
+     "$cmd_who">"$LOG_TMP"who 
+}
+_run_who
+printf "${GREEN}""Usuario Logado :""${NORM}""$cmd_who""%*s\n" && cat "$LOG_TMP"who 
+printf "\n"
+# Checando uso de memoria RAM e SWAP
+free -h | grep -v + > "$LOG_TMP"ramcache
+printf "${GREEN}""Uso de Memoria Ram :""${NORM}""%*s\n"
+cat < "$LOG_TMP""ramcache" | grep -v "Swap"
+printf "${GREEN}""Uso de Swap :""${NORM}""%*s\n"
+cat < "$LOG_TMP""ramcache" | grep -v "Mem"
+printf "\n"
+# Checando uso de disco
+df -h| grep 'Filesystem\|/dev/sda*' > "$LOG_TMP"diskusage
+printf "${GREEN}""Espaco em Disco :""${NORM}""%*s\n" 
+cat < "$LOG_TMP""diskusage"
+printf "\n"
+# Checando o Sistema Uptime
+tecuptime=$(uptime | awk '{print $3,$4}' | cut -f1 -d,)
+printf "${GREEN}""Sistema em uso Dias/(HH:MM) : ""${NORM}""$tecuptime""%*s\n"
+
+
+# Unset Variables
+unset tecreset os architecture kernelrelease internalip externalip nameserver loadaverage
+
+# Removendo temporarios arquivos 
+rm "$LOG_TMP""osrelease" "$LOG_TMP""who" "$LOG_TMP""ramcache" "$LOG_TMP""diskusage"     
+
 _linha 
 printf "\n"
 _press
@@ -1430,7 +1453,7 @@ _temps () {
 cd "$TOOLS"/ || exit
 arqs="atualizat"
 DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
-     if [[ "$DAYS" ]] ; then
+     if [[ "$DAYS" ]]; then
      M63="Existe um backup antigo sera excluido do Diretorio ""$DIRDEST"
      _meiodatela
      _messagec RED "$M63"
@@ -1555,7 +1578,7 @@ if [ "$sistema" = "iscobol" ]; then
           for i in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
           do
           TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
-               if [[ "$TAMANHO" -gt 0 ]] ; then  ##- executa rebuild se tamanho for maior que zero
+               if [[ "$TAMANHO" -gt 0 ]]; then  ##- executa rebuild se tamanho for maior que zero
                "$jut" -rebuild "$i" -a -f
 #               "$jut" -rebuild "$i" -a -f
                fi
@@ -1591,20 +1614,6 @@ fi
 _press
 _rebuild
 
-#-m67$
-
-#     _mensagec "$RED" "$M67"
-#     cd "$BASE1"/ || exit
-#
-#     for i in $BASE1/{*.ARQ,*.DAT,*.LOG,*.PAN}
-#     do
-#     TAMANHO=$(du "$i" | awk '{print $1}') #-grava tamanho do arquivo em variavel
-#          if [[ "$TAMANHO" -gt 0 ]]; then #-executa rebuild se tamanho for maior que zero
-#          rebuild -e "$i"
-#          else
-#          rebuild -d -e "$i"
-#          fi
-#     done
 }
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
@@ -1627,7 +1636,7 @@ local jut="$SAVISC""$JUTIL"
 while read -r line;
 do
      TAMANHO=$(du "$BASE1""/""$line" | awk '{print $1}') #-Grava tamanho do arquivo em variavel
-     if [[ "$TAMANHO" -gt 0 ]] ; then #-Executa rebuild se tamanho for maior que zero
+     if [[ "$TAMANHO" -gt 0 ]]; then #-Executa rebuild se tamanho for maior que zero
      $jut -rebuild "$BASE1""/""$line" -a -f
      fi
 done < "atualizaj"
@@ -1697,7 +1706,7 @@ M23=".. Criando o diretorio dos backups em $BACKUP.."
      fi
 DAYS2=$(find "$BACKUP" -ctime -2 -name "$EMPRESA"\*zip)
      cd "$BASE1" || exit
-if [[ "$DAYS2" ]] ; then
+if [[ "$DAYS2" ]]; then
 
 M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
      printf "\n\n"
@@ -1708,14 +1717,14 @@ M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
      printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
      read -r -n1 CONT 
      printf "\n"
-          if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+          if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
 #-Backup Abortado!
           _linha 
           _mensagec "$RED" "$M47"
           _linha         
           _read_sleep 3
           _ferramentas 
-          elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
+          elif [[ "$CONT" =~ ^[Ss]$ ]]; then
 
 #-Sera criado mais um backup para o periodo.
           _linha 
@@ -1788,9 +1797,9 @@ M10="O backup de nome \"""$ARQ""\""
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
      printf "\n\n"
-if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then    
+if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
-elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
+elif [[ "$CONT" =~ ^[Ss]$ ]]; then
 
      _meiodatela
      _mensagec "$RED" "$M68"
@@ -1855,9 +1864,9 @@ MA1="O backup \"""$VBACKUP""\""
      read -r -n1 CONT 
      printf "\n\n"
 
-if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then    
+if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
-elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
+elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _meiodatela
      _mensagec "$RED" "$M68"
      read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
@@ -1907,14 +1916,14 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      _linha 
      read -rp "${YELLOW}""         1- Informe somente a data do BACKUP: ""${NORM}" VBACK
 local VBACKUP="$EMPRESA"_"$VBACK"
-     while [[ -f "$VBACKUP".zip ]] ;do 
+     while [[ -f "$VBACKUP".zip ]]; do 
      clear
      _meiodatela
      _mensagec "$RED" "$M70"
      _press
      _menubackup
      done
-     if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]] ; then
+     if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _mensagec "$RED" "$M45"
@@ -1929,7 +1938,7 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      _linha 
      read -r -n1 CONT 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]] ; then
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      
      read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
      while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
@@ -1977,7 +1986,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
      _press
      _menubackup
-     elif [[ "$CONT" =~ ^[Ss]$ ]] ; then
+     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
 
 #---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
@@ -2057,7 +2066,7 @@ M995="Diretorio nao foi encontrado no servidor"
      _press
      _envrecarq
      fi
-     if [[ -z "$DIRENVIA" ]] ; then # testa variavel vazia
+     if [[ -z "$DIRENVIA" ]]; then # testa variavel vazia
      local DIRENVIA=$ENVIA
           if ls -s "$DIRENVIA"/*.* ; then
 #-Arquivo encontrado no diretorio
@@ -2079,14 +2088,14 @@ M49="Arquivo nao encontrado no diretorio"
      _linha      
      local EENVIA=" "
      read -rp "${YELLOW}""2- Informe nome do ARQUIVO: -> ""${NORM}" EENVIA
-     if [[ -z "$EENVIA" ]] ;then 
+     if [[ -z "$EENVIA" ]]; then 
 #   clear
      _meiodatela
      _mensagec "$RED" "$M74"
      _press
      _envrecarq
      fi
-     if [[ ! -e "$DIRENVIA""/""$EENVIA" ]];then
+     if [[ ! -e "$DIRENVIA""/""$EENVIA" ]]; then
      _linha
 M49="$EENVIA Arquivo nao encontrado no diretorio"
      _linha 
@@ -2101,7 +2110,7 @@ M992="3- Destino: Informe para qual diretorio no servidor:"
      _mensagec "$YELLOW" "$M992"  
      read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
      _linha 
-     if [[ -z "$ENVBASE" ]] ;then
+     if [[ -z "$ENVBASE" ]]; then
      _meiodatela
 #M69  
      _mensagec "$RED" "$M69"
@@ -2134,7 +2143,7 @@ M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"
      _mensagec "$RED" "$M73"
      _linha      
      read -rp "${YELLOW}""    2- Informe nome do ARQUIVO: ""${NORM}" RRECEBE
-     if [[ -z "$RRECEBE" ]] ;then 
+     if [[ -z "$RRECEBE" ]]; then 
      _meiodatela
      _mensagec "$RED" "$M74"
      _press
@@ -2145,7 +2154,7 @@ M994="3- Destino:Informe diretorio do servidor que vai receber arquivo: "
      _mensagec "$YELLOW" "$M994"  
      
      read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
-     if [[ -z "$EDESTINO" ]] ; then # testa variavel vazia
+     if [[ -z "$EDESTINO" ]]; then # testa variavel vazia
      local EDESTINO=$RECEBE
      fi
      _linha 
