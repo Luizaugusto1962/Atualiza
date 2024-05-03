@@ -1299,7 +1299,6 @@ _linux () {
 
 # Checando se conecta com a internet ou nao 
 ping -c 1 google.com &> /dev/null && printf "${GREEN}"" Internet:""${NORM}""Conectada""%*s\n"||printf "${GREEN}"" Internet:""${NORM}""Desconectada""%*s\n"
-#echo -e '\E[32m'"Internet: "${NORM}" Connected" || echo -e '\E[32m'"Internet: "${NORM}" Disconnected"
 
 # Checando tipo de OS
 os=$(uname -o)
@@ -1311,10 +1310,11 @@ printf "${GREEN}""OS Nome :""${NORM}""%*s\n" && cat < "$LOG_TMP""osrelease" | gr
 printf "${GREEN}""OS Versao :""${NORM}""%*s\n" && cat < "$LOG_TMP""osrelease" | grep -v "NAME" | cut -f2 -d\"
 printf "\n"
 # Checando hostname
-printf "${GREEN}""Nome do Servidor :""${NORM}""$HOSTNAME""%*s\n"
+nameservers=$(hostname)
+printf "${GREEN}""Nome do Servidor :""${NORM}""$nameservers""%*s\n"
 printf "\n"
 # Checando Interno IP
-internalip=$(hostname -I | awk '{print $1}')
+internalip=$(ip route | grep default | awk '{print $3}')
 printf "${GREEN}""IP Interno :""${NORM}""$internalip""%*s\n"
 printf "\n"
 # Checando Externo IP
@@ -1333,7 +1333,7 @@ _run_who
 printf "${GREEN}""Usuario Logado :""${NORM}""$cmd_who""%*s\n" && cat "$LOG_TMP"who 
 printf "\n"
 # Checando uso de memoria RAM e SWAP
-free -h | grep -v + > "$LOG_TMP"ramcache
+free | grep -v + > "$LOG_TMP"ramcache
 printf "${GREEN}""Uso de Memoria Ram :""${NORM}""%*s\n"
 cat < "$LOG_TMP""ramcache" | grep -v "Swap"
 printf "${GREEN}""Uso de Swap :""${NORM}""%*s\n"
