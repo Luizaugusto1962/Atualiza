@@ -126,7 +126,7 @@ SAVATU1=""
 SAVATU2=""
 SAVATU3=""
 SAVATU4=""
-
+ENVIABACK=""
 #-Variaveis de cores-------------------------------------------------------------------------------#
 export TERM=xterm-256color
 tput sgr0
@@ -366,6 +366,11 @@ fi
 DEFAULT_DESTINO2=""
 if [ -z "$DESTINO2" ]; then
      DESTINO2="$DEFAULT_DESTINO2"
+fi
+
+DEFAULT_ENVIABACK=""
+if [ -z "$ENVIABACK" ]; then
+     ENVIABACK="$DEFAULT_ENVIABACK"
 fi
 
 DESTINO2SERVER="/u/varejo/man/"
@@ -1426,18 +1431,21 @@ clear
 clear
 _limpando () {
 clear
-     TEMPORARIOS="Temps"
+     TEMPS="Temps"
      UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
      while read -r line; do
      printf "${GREEN}""$line""${NORM}%s\n"
-     "$cmd_find" "${DIRB}" -name "${line}" -exec "$cmd_zip" -m "$BACKUP""/""$TEMPORARIOS-$UMADATA" "$DIRB$line" {} \;  >> "$LOG_LIMPA"
+     LINE=$line
+#     "$cmd_find" "${DIRB}" -name "${line}" -exec mv -f {} "$DL" \; 
+     "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
      done < "$arqs"
 
-M11="Movendo arquivos Temporarios do diretorio = ""$i"
+M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
 _mensagec "$YELLOW" "$M11"
 _linha 
+ 
 }
 
 
@@ -1801,6 +1809,9 @@ if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
 
+     if [ "$ENVIABACK" != "" ]; then
+        ENVBASE="$ENVIABACK"
+     else
      _meiodatela
      _mensagec "$RED" "$M68"
      read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
@@ -1811,6 +1822,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _press    
      _ferramentas 
      done
+     fi
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
