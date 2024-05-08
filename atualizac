@@ -13,10 +13,12 @@ backup=/backup
 #-------------------------------------------------------------------
 ###           ( USA BANCO (S/N) )                                ###
 BANCO=n 
-destino="/u"
 #-------------------------------------------------------------------
 ###           ( Nome de arquivo de trabalho )                    ###
 INI="backup"
+#-------------------------------------------------------------------
+###          ( Nome de pasta no servidor da SAV )                ###
+#ENVIABACK=cliente/nome da pasta"
 #-------------------------------------------------------------------
 ###           ( NOME DA EMPRESA )            ###
 EMPRESA=
@@ -44,7 +46,7 @@ VERCLASS=IS2020
 exec=/u/sav/classes
 telas=/u/sav/tel_isc
 xml=/u/sav/xml
-##############( TRANSPC )###########################################
+##############( BIBLIOTECAS )########################################
 ### Nome de arquivo de atualizacao ###
 SAVATU1=tempSAV_"$VERCLASS"_classA_
 SAVATU2=tempSAV_"$VERCLASS"_classB_
