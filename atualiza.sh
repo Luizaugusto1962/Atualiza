@@ -105,6 +105,7 @@ unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
+unset -v TEMPS UMADATA DIRB ENVIABACK
 }
 
 #-VARIAVEIS que devem vir do atualizac --------------------------------------------------------------------------------#
