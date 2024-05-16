@@ -5,7 +5,7 @@
 destino="/u"
 #-------------------------------------------------------------------
 ###            ( Diretorio de trabalho para o atualizador )      ###
-pasta="/sav/tools"
+pasta=/sav/tools
 progs=/progs
 olds=/olds
 logs=/logs
@@ -18,7 +18,7 @@ BANCO=n
 INI="backup"
 #-------------------------------------------------------------------
 ###          ( Nome de pasta no servidor da SAV )                ###
-#ENVIABACK=cliente/nome da pasta"
+#ENVIABACK=cliente/nome da pasta
 #-------------------------------------------------------------------
 ###           ( NOME DA EMPRESA )            ###
 EMPRESA=
