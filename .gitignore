@@ -6,3 +6,7 @@ gitkraken_rsa
 *.un~
 
 *.sh~
+
+*.json
+
+*.gitattributes
