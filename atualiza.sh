@@ -471,11 +471,7 @@ _opinvalida () {
 
 clear
 if [ -d "$exec" ]; then
-#-Encontrado o diretorio do sistema 
-     _linha "*"
      _mensagec "$CYAN" "$M81"
-     _linha "*"
-     _read_sleep 1
 else
 M44="Nao foi encontrado o diretorio ""$exec"
      _linha "*"
@@ -484,6 +480,30 @@ M44="Nao foi encontrado o diretorio ""$exec"
      _read_sleep 2
      exit
 fi
+##
+if [ -d "$telas" ]; then
+     _mensagec "$CYAN" "$M81"
+else
+M44="Nao foi encontrado o diretorio ""$telas"
+     _linha "*"
+     _mensagec "$RED" "$M44"
+     _linha "*"
+     _read_sleep 2
+     exit
+fi
+
+if [ -d "$xml" ]; then
+#-Encontrado o diretorio do sistema 
+     _mensagec "$CYAN" "$M81"
+else
+M44="Nao foi encontrado o diretorio ""$xml"
+     _linha "*"
+     _mensagec "$RED" "$M44"
+     _linha "*"
+     _read_sleep 2
+     exit
+fi
+##
 
 if [ -d "$TOOLS" ]; then
      _linha "*"
