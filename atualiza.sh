@@ -329,6 +329,42 @@ DEFAULT_VVERSAO=""
 if [ -z "$VVERSAO" ]; then
           VVERSAO="$DEFAULT_VVERSAO"
 fi
+## Testa se as pastas do atualizac estao configuradas
+     if [ -n "$pasta" ]; then
+     printf " Diretorio ... ok \n"
+     else
+     printf " Diretorio do Tools, nao esta configurado...  \n"
+     exit
+     fi
+
+     if [ -n "$base" ]; then
+     printf " Diretorio ... ok \n"
+     else
+     printf " Diretorio da Base de dados, nao esta configurado...  \n"
+     exit
+     fi    
+
+     if [ -n "$exec" ]; then
+     printf " Diretorio ... ok \n"
+     else
+     printf " Diretorio dos programas, nao esta configurado...  \n"
+     exit
+     fi    
+
+     if [ -n "$telas" ]; then
+     printf " Diretorio ... ok \n"
+     else
+     printf " Diretorio das Telas, nao esta configurado...  \n"
+     exit
+     fi    
+if [ "$sistema" = "iscobol" ]; then
+     if [ -n "$xml" ]; then
+     printf " Diretorio ... ok \n"
+     else
+     printf " Diretorio dos Xmls do sistema, nao esta configurado...  \n"
+     exit
+     fi 
+fi     
 
 TOOLS=$destino$pasta
      if [ -d "$TOOLS" ]; then
