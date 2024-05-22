@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-##  UPDATE 30/04/2024                                                                                                  #
+UPDATE="20/05/2024"                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -282,11 +282,25 @@ M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
 ## Mensagens em cyan
 M80="..Checando estrutura dos diretorios do atualiza.sh.." 
 M81="..Encontrado o diretorio do sistema .." 
-#M83="<< ... >>"
+#M83=""
 
 ## Mensagens em VERDE
 M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
+
+
+#-Centro da tela-----------------------------------------------------------------------------------#
+_meiodatela () {
+     printf "\033c\033[10;10H\n"
+}
+
+#-Mensagem centralizada-----------------------------------------------------------------------------#
+_mensagec () {
+local CCC="$1"
+local MXX="$2"
+     printf "%*s""${CCC} " ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
+}
+
 
 #-Variavel para identificar -----------------------------------------------------------------------#
 ##
@@ -331,53 +345,53 @@ if [ -z "$VVERSAO" ]; then
 fi
 ## Testa se as pastas do atualizac estao configuradas
      if [ -n "$pasta" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio do Tools, nao esta configurado...  \n"
+     printf "Diretorio do Tools, nao esta configurado  \n"
      exit
      fi
 
      if [ -n "$base" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio da Base de dados, nao esta configurado...  \n"
+     printf "Diretorio da Base de dados, nao esta configurado  \n"
      exit
      fi    
 
      if [ -n "$exec" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio dos programas, nao esta configurado...  \n"
+     printf "Diretorio dos programas, nao esta configurado  \n"
      exit
      fi    
 
      if [ -n "$telas" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio das Telas, nao esta configurado...  \n"
+     printf "Diretorio das Telas, nao esta configurado \n"
      exit
      fi    
 if [ "$sistema" = "iscobol" ]; then
      if [ -n "$xml" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio dos Xmls do sistema, nao esta configurado...  \n"
+     printf "Diretorio dos Xmls do sistema, nao esta configurado  \n"
      exit
      fi 
 fi     
 
 TOOLS=$destino$pasta
      if [ -d "$TOOLS" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio da destino nao encontrado...  \n"
+     printf "%*s""Diretorio da destino nao encontrado ""$TOOLS""...  \n"
      exit
      fi
 BASE1=$destino$base
      if [ -d "$BASE1" ]; then
-     printf " Diretorio ... ok \n"
+     _mensagec "$CYAN" "$M81"
      else
-     printf " Diretorio da base nao encontrado...  \n"
+     printf "%*s""Diretorio da base nao encontrado""$BASE1""...  \n"
      exit
      fi
 
@@ -448,18 +462,6 @@ _linha () {
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
 }
 
-#-Centro da tela-----------------------------------------------------------------------------------#
-_meiodatela () {
-     printf "\033c\033[10;10H\n"
-}
-
-#-Mensagem centralizada-----------------------------------------------------------------------------#
-_mensagec () {
-local CCC="$1"
-local MXX="$2"
-     printf "%*s""${CCC} " ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
-}
-
 #   Opção Invalida
 _opinvalida () {  
      _linha 
@@ -480,7 +482,7 @@ M44="Nao foi encontrado o diretorio ""$exec"
      _read_sleep 2
      exit
 fi
-##
+
 if [ -d "$telas" ]; then
      _mensagec "$CYAN" "$M81"
 else
@@ -492,16 +494,17 @@ M44="Nao foi encontrado o diretorio ""$telas"
      exit
 fi
 
-if [ -d "$xml" ]; then
-#-Encontrado o diretorio do sistema 
+if [ "$sistema" = "iscobol" ]; then 
+     if [ -d "$xml" ]; then
      _mensagec "$CYAN" "$M81"
-else
-M44="Nao foi encontrado o diretorio ""$xml"
+     else
+     M44="Nao foi encontrado o diretorio ""$xml"
      _linha "*"
      _mensagec "$RED" "$M44"
      _linha "*"
      _read_sleep 2
      exit
+     fi
 fi
 ##
 
@@ -561,8 +564,8 @@ _principal () {
      tput clear
 	printf "\n"
 #-100-mensagens do Menu Principal.-----------------------------------------------------------------#	
-	M101="Menu de Opcoes"
-	M102=".. Sistema: ""$sistema"" .. = ..Empresa: ""$EMPRESA"" .."
+	M101="Menu de Opcoes""   -   Versao: ""${BLUE}""$UPDATE""${NORM}"
+	M102=".. Sistema: ""$sistema"" ..  =  ..Empresa: ""$EMPRESA"" .."
 	M103="Escolha a opcao:"
 	M104="1${NORM} - Atualizacao de Programas "
      M105="2${NORM} - Atualizacao de Biblioteca" 
@@ -577,7 +580,7 @@ _principal () {
 	_linha "="
 	_mensagec "$RED" "$M101"
 	_linha
-	_mensagec "$BLUE" "$M102"
+	_mensagec "$CYAN" "$M102"
 	_linha "="
 	_mensagec "$PURPLE" "$M103"
 	printf "\n"
@@ -1498,7 +1501,7 @@ clear
      "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
      done < "$arqs"
 
-M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
+M11="%*s""Movendo arquivos Temporarios do diretorio = ""$DIRB" "\n"
 _linha 
 _mensagec "$YELLOW" "$M11"
 _linha 
