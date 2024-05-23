@@ -1501,7 +1501,7 @@ clear
      "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
      done < "$arqs"
 
-M11="%*s""Movendo arquivos Temporarios do diretorio = ""$DIRB" "\n"
+M11="Movendo arquivos Temporarios do diretorio = ""$DIRB" "\n"
 _linha 
 _mensagec "$YELLOW" "$M11"
 _linha 
