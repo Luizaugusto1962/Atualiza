@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/05/2024"                                                                                                  #
+UPDATE="24/05/2024"                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -1501,7 +1501,7 @@ clear
      "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
      done < "$arqs"
 
-M11="Movendo arquivos Temporarios do diretorio = ""$DIRB" "\n"
+M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
 _mensagec "$YELLOW" "$M11"
 _linha 
@@ -1939,6 +1939,9 @@ MA1="O backup \"""$VBACKUP""\""
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+     if [ "$ENVIABACK" != "" ]; then
+     ENVBASE="$ENVIABACK"
+     else
      _meiodatela
      _mensagec "$RED" "$M68"
      read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
@@ -1949,6 +1952,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _press    
      _ferramentas 
      done
+     fi
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
