@@ -1433,7 +1433,7 @@ clear
      M501="Menu das Ferramentas"
      M503="1${NORM} - Limpar Temporarios               "
      M504="2${NORM} - Recuperar arquivos               "
-     M505="3${NORM} - Fazer ou Restaurar Backup        "
+     M505="3${NORM} - Rotina de Backup                 "
      M506="4${NORM} - Envia e Recebe Arquivos          "
      M507="5${NORM} - Expurgador de arquivos           "
      M509="8${NORM} - Update                           "	
