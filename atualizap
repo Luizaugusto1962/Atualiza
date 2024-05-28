@@ -1,0 +1,34 @@
+####################################################################
+###      ( Parametros para serem usados no atualiza.sh )         ###
+####################################################################
+
+###            ( Diretorio de trabalho para o atualizador )      ###
+pasta=/sav/tools
+progs=/progs
+olds=/olds
+logs=/logs
+backup=/backup
+#-------------------------------------------------------------------
+### Diretorio para o iscobol
+exec=/sav/classes
+telas=/sav/tel_isc
+xml=/sav/xml
+##############( BIBLIOTECAS )########################################
+### Nome de arquivo de atualizacao ###
+SAVATU1=tempSAV_"$VERCLASS"_classA_
+SAVATU2=tempSAV_"$VERCLASS"_classB_
+SAVATU3=tempSAV_"$VERCLASS"_tel_isc_
+SAVATU4=tempSAV_"$VERCLASS"_xml_ 
+
+####################################################################
+##############                COBOL                   ##############                                   
+####################################################################
+### Diretorio para o Microfocus###
+#exec=/sav/int
+#telas=/sav/tel
+##################( ISAM )##########################################
+### Nome de arquivo de atualizacao ###
+#SAVATU1=tempSAVintA_
+#SAVATU2=tempSAVintB_
+#SAVATU3=tempSAVtel_ 
+####################################################################
