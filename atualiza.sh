@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="24/05/2024"                                                                                                  #
+UPDATE="28/05/2024"                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -106,6 +106,7 @@ unset -v BASE1 tools DIR1 OLDS PROGS BACKUP
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK
+unset -v E_EXEC T_TELAS X_XML
 }
 
 #-VARIAVEIS que devem vir do atualizac --------------------------------------------------------------------------------#
@@ -128,6 +129,7 @@ SAVATU2=""
 SAVATU3=""
 SAVATU4=""
 ENVIABACK=""
+INI="backup"
 #-Variaveis de cores-------------------------------------------------------------------------------#
 export TERM=xterm-256color
 tput sgr0
@@ -151,7 +153,13 @@ COLUMNS=$(tput cols)
 [[ ! -e "atualizac" ]] && printf "ERRO. Arquivo atualizac, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizac" ]] && printf "ERRO. Arquivo atualizac, Sem acesso de leitura.\n" && exit 1
 
+[[ ! -e "atualizap" ]] && printf "ERRO. Arquivo atualizap, Nao existe no diretorio.\n" && exit 1
+[[ ! -r "atualizap" ]] && printf "ERRO. Arquivo atualizap, Sem acesso de leitura.\n" && exit 1
+
+# Arquivo de configuracao para a empresa
 "." ./atualizac
+# Arquivo de configuracao para o atualiza.sh
+"." ./atualizap
 #------------------------------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
 check_zip_instalado() {
@@ -247,7 +255,7 @@ MA1="O backup \"""$VBACKUP""\""
 #M41="Programa nao encontrado no diretorio" 
 #M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
 #M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio." 
-#M44="Nao foi encontrado o diretorio ""$exec" 
+#M44="Nao foi encontrado o diretorio ""$E_EXEC" 
 M45="Backup nao encontrado no diretorio" 
 M46="Backup da Biblioteca nao encontrado no diretorio"
 M47="Backup Abortado!"
@@ -343,7 +351,7 @@ DEFAULT_VVERSAO=""
 if [ -z "$VVERSAO" ]; then
           VVERSAO="$DEFAULT_VVERSAO"
 fi
-## Testa se as pastas do atualizac estao configuradas
+## Testa se as pastas do atualizac e dp atualizap estao configuradas
      if [ -n "$pasta" ]; then
      _mensagec "$CYAN" "$M81"
      else
@@ -380,6 +388,30 @@ if [ "$sistema" = "iscobol" ]; then
      fi 
 fi     
 
+E_EXEC=$destino$exec
+     if [ -d "$E_EXEC" ]; then
+     _mensagec "$CYAN" "$M81"
+     else
+     printf "%*s""Diretorio da destino nao encontrado ""$E_EXEC""...  \n"
+     exit
+     fi
+
+T_TELAS=$destino$telas
+     if [ -d "$T_TELAS" ]; then
+     _mensagec "$CYAN" "$M81"
+     else
+     printf "%*s""Diretorio da destino nao encontrado ""$T_TELAS""...  \n"
+     exit
+     fi
+
+X_XML=$destino$xml
+     if [ -d "$X_XML" ]; then
+     _mensagec "$CYAN" "$M81"
+     else
+     printf "%*s""Diretorio da destino nao encontrado ""$X_XML""...  \n"
+     exit
+     fi     
+
 TOOLS=$destino$pasta
      if [ -d "$TOOLS" ]; then
      _mensagec "$CYAN" "$M81"
@@ -387,6 +419,7 @@ TOOLS=$destino$pasta
      printf "%*s""Diretorio da destino nao encontrado ""$TOOLS""...  \n"
      exit
      fi
+
 BASE1=$destino$base
      if [ -d "$BASE1" ]; then
      _mensagec "$CYAN" "$M81"
@@ -472,10 +505,10 @@ _opinvalida () {
 #-Verificacoes de parametro e diretorios------------------------------------------------------------#
 
 clear
-if [ -d "$exec" ]; then
+if [ -d "$E_EXEC" ]; then
      _mensagec "$CYAN" "$M81"
 else
-M44="Nao foi encontrado o diretorio ""$exec"
+M44="Nao foi encontrado o diretorio ""$E_EXEC"
      _linha "*"
      _mensagec "$RED" "$M44"
      _linha "*"
@@ -483,10 +516,10 @@ M44="Nao foi encontrado o diretorio ""$exec"
      exit
 fi
 
-if [ -d "$telas" ]; then
+if [ -d "$T_TELAS" ]; then
      _mensagec "$CYAN" "$M81"
 else
-M44="Nao foi encontrado o diretorio ""$telas"
+M44="Nao foi encontrado o diretorio ""$T_TELAS"
      _linha "*"
      _mensagec "$RED" "$M44"
      _linha "*"
@@ -495,10 +528,10 @@ M44="Nao foi encontrado o diretorio ""$telas"
 fi
 
 if [ "$sistema" = "iscobol" ]; then 
-     if [ -d "$xml" ]; then
+     if [ -d "$X_XML" ]; then
      _mensagec "$CYAN" "$M81"
      else
-     M44="Nao foi encontrado o diretorio ""$xml"
+     M44="Nao foi encontrado o diretorio ""$X_XML"
      _linha "*"
      _mensagec "$RED" "$M44"
      _linha "*"
@@ -735,31 +768,31 @@ _mens_atualiza () {
      if [ "$sistema" = "iscobol" ]; then 
           for pprog in *.class
           do
-          if [ -f "$exec"/"$pprog" ]; then
-          "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"   
+          if [ -f "$E_EXEC"/"$pprog" ]; then
+          "$cmd_zip" "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"   
           _mens_atualiza
           fi
-          mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
+          mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
 		done
      else 
           for pprog in *.int
           do
-          if [ -f "$exec"/"$pprog" ]; then
-          "$cmd_zip" "$prog"-$ANTERIOR "$exec"/"$pprog"
+          if [ -f "$E_EXEC"/"$pprog" ]; then
+          "$cmd_zip" "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"
           _mens_atualiza
           fi
-          mv -f -- "$pprog" "$exec" >> "$LOG_ATU"
+          mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
           done
           _read_sleep 1
 	fi
           if [[ -f "$prog".TEL ]]; then
           for pprog in *.TEL
           do
-               if [ -f "$telas"/"$pprog" ]; then
-               "$cmd_zip" -r "$prog"-$ANTERIOR "$telas"/"$pprog"
+               if [ -f "$T_TELAS"/"$pprog" ]; then
+               "$cmd_zip" -r "$prog"-$ANTERIOR "$T_TELAS"/"$pprog"
                _mens_atualiza
                fi
-          mv -f -- "$pprog" "$telas" >> "$LOG_ATU"
+          mv -f -- "$pprog" "$T_TELAS" >> "$LOG_ATU"
           done
           fi
 
@@ -1014,12 +1047,12 @@ _volta_progy () {
      _read_sleep 1
      cd "$OLDS" || exit 
           if [ "$sistema" = "iscobol" ]; then
-          "$cmd_find" "$OLDS" -name "$Vprog.xml" -exec mv {} "$xml" \;
-          "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \;
-          "$cmd_find" "$OLDS" -name "$Vprog*.class" -exec mv {} "$exec" \;
+          "$cmd_find" "$OLDS" -name "$Vprog.xml" -exec mv {} "$X_XML" \;
+          "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$T_TELAS" \;
+          "$cmd_find" "$OLDS" -name "$Vprog*.class" -exec mv {} "$E_EXEC" \;
      else
-          "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$telas" \; 
-          "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$exec" \; 
+          "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$T_TELAS" \; 
+          "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$E_EXEC" \; 
      fi
 
 #-VOLTA DE PROGRAMAS CONCLUIDA
@@ -1045,21 +1078,21 @@ _volta_bibli () {
      cd "$OLDS" || exit
           for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll}
           do
-          "$cmd_find" "$OLDS" -type f \( -iname "$Ext" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+          "$cmd_find" "$OLDS" -type f \( -iname "$Ext" \) -exec mv "{}" "$E_EXEC" \; >> "$LOG_ATU"
           done
 
-          "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+          "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$T_TELAS" \; >> "$LOG_ATU"
 
-          "$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$xml" \; >> "$LOG_ATU"
+          "$cmd_find" "$OLDS" -type f \( -iname "*.xml" \) -exec mv "{}" "$X_XML" \; >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
 
      else
      cd "$OLDS"/ || exit
-	"$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$exec" \; >> "$LOG_ATU"
+	"$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$E_EXEC" \; >> "$LOG_ATU"
 
-     "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$telas" \; >> "$LOG_ATU"
+     "$cmd_find" "$OLDS" -type f \( -iname "*.TEL" \) -exec mv "{}" "$T_TELAS" \; >> "$LOG_ATU"
 
      cd "$TOOLS"/ || exit
      clear
@@ -1254,19 +1287,19 @@ _processo () {
      
      _read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
-          cd "$exec"/ || exit
-          "$cmd_find" "$exec"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-          cd "$telas"/ || exit
-          "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-          cd "$xml"/ || exit
-          "$cmd_find" "$xml"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$E_EXEC"/ || exit
+          "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$T_TELAS"/ || exit
+          "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$X_XML"/ || exit
+          "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
           cd "$TOOLS"/ || exit
           clear
      else
-          cd "$exec"/ || exit
-          "$cmd_find" "$exec"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
-          cd "$telas"/ || exit
-          "$cmd_find" "$telas"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$E_EXEC"/ || exit
+          "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          cd "$T_TELAS"/ || exit
+          "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
      fi 
 
 #-..   BACKUP COMPLETO   ..
