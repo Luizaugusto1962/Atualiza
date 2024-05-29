@@ -9,7 +9,7 @@ olds=/olds
 logs=/logs
 backup=/backup
 #-------------------------------------------------------------------
-### Diretorio para o iscobol
+### Diretorio para o IsCobol
 exec=/sav/classes
 telas=/sav/tel_isc
 xml=/sav/xml
