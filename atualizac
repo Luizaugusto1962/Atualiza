@@ -8,7 +8,7 @@ destino="/u"
 BANCO=n 
 #-------------------------------------------------------------------
 ###          ( Nome de pasta no servidor da SAV )                ###
-#ENVIABACK=cliente/nome da pasta
+#ENVIABACK=cliente/nome_da_pasta
 #-------------------------------------------------------------------
 ###           ( NOME DA EMPRESA )            ###
 EMPRESA=

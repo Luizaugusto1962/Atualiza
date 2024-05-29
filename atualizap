@@ -2,7 +2,7 @@
 ###      ( Parametros para serem usados no atualiza.sh )         ###
 ####################################################################
 
-###            ( Diretorio de trabalho para o atualizador )      ###
+###            ( Diretorio de trabalho do atualizador )          ###
 pasta=/sav/tools
 progs=/progs
 olds=/olds
