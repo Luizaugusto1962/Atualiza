@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="29/05/2024"                                                                                                  #
+UPDATE="06/06/2024"                                                                                                  #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -547,19 +547,19 @@ if [ -d "$TOOLS" ]; then
      _linha "*"
           OLDS=$TOOLS$olds
           if [ -d "$OLDS" ]; then
-          printf " Diretorio olds ... ok \n"
+               printf " Diretorio olds ... ok \n"
           else
                mkdir -p "$OLDS"
           fi
 		PROGS=$TOOLS$progs
           if [ -d "$PROGS" ]; then
-          printf " Diretorio progs ... ok \n"
+               printf " Diretorio progs ... ok \n"
           else
                mkdir -p "$PROGS"
           fi
           LOGS=$TOOLS$logs
           if [ -d "$LOGS" ]; then
-          printf " Diretorio logs ... ok \n"
+               printf " Diretorio logs ... ok \n"
           else
                mkdir -p "$LOGS"
           fi
@@ -571,13 +571,13 @@ if [ -d "$TOOLS" ]; then
           fi
           ENVIA=$TOOLS"/envia"
           if [ -d "$ENVIA" ]; then
-          printf " Diretorio envia ... ok \n"
+               printf " Diretorio envia ... ok \n"
           else
                mkdir -p "$ENVIA"
           fi
 		RECEBE=$TOOLS"/recebe"
           if [ -d "$RECEBE" ]; then
-          printf " Diretorio recebe ... ok \n"
+               printf " Diretorio recebe ... ok \n"
           else
                mkdir -p "$RECEBE"
           fi
@@ -1446,7 +1446,6 @@ printf "\n"
 tecuptime=$(uptime | awk '{print $3,$4}' | cut -f1 -d,)
 printf "${GREEN}""Sistema em uso Dias/(HH:MM) : ""${NORM}""$tecuptime""%*s\n"
 
-
 # Unset Variables
 unset tecreset os architecture kernelrelease internalip externalip nameserver loadaverage
 
@@ -1460,7 +1459,6 @@ _principal
 }
 
 _ferramentas () {
-
 clear
 ###-500-mensagens do Menu Ferramentas.	
      M501="Menu das Ferramentas"
@@ -1525,8 +1523,6 @@ clear
 _limpando () {
 clear
      TEMPS="Temps"
-     UMADATA=$(date +"%d-%m-%Y_%H%M%S")
-
      while read -r line; do
      printf "${GREEN}""$line""${NORM}%s\n"
      LINE=$line
@@ -1538,9 +1534,7 @@ M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
 _mensagec "$YELLOW" "$M11"
 _linha 
- 
 }
-
 
 _temps () {
 
@@ -1565,7 +1559,6 @@ DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
      _press
      done 
 _ferramentas
-
 }
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
@@ -1597,7 +1590,6 @@ _rebuild () {
           9) clear ; _ferramentas ;;
           *) _ferramentas ;;
      esac
-
 }
 
 _escolhe_base () {
