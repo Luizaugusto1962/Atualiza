@@ -131,12 +131,12 @@ SAVATU4=""
 ENVIABACK=""
 INI="backup"
 #-Variaveis de cores-------------------------------------------------------------------------------#
-export TERM=xterm-256color
+# TERM=xterm-256color
 tput sgr0
 tput clear 
 tput bold
 tput setaf 7
-RED=$(tput bold)$(tput setaf 1)
+RED=$(tput bold)$(tput setaf 1) 
 GREEN=$(tput bold)$(tput setaf 2)
 YELLOW=$(tput bold)$(tput setaf 3)
 BLUE=$(tput bold)$(tput setaf 4)
@@ -207,41 +207,28 @@ fi
 
 #-Lista de mensagens #---------------------------------------------------------------------------------------------------#
 ### Mensagens em AMARELO
-
 M01="Compactando os arquivos Anteriores" 
-#M02="Voltando a versao anterior do programa" 
 M03="Volta do(s) Programa(s) Concluida(s)" 
 M04="Volta do(s) Arquivo(s) Concluida" 
 M05="Sistema nao e IsCOBOL" 
 M06="Sera criado mais um backup para o periodo"  
-#M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
 M08="Opcao Invalida"  
 M09="O programa tem que estar no diretorio"   
-#M10="O backup de nome \"""$ARQ""\"" 
-#M11="Movendo arquivos Temporarios do diretorio =" "$DIR" 
 M12="Arquivo(s) recuperado(s)..."
 M13="De *.zip para *.bkp"
 M14="Criando Backup.."
-#M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
 M16="Backup Concluido!"
 M17="Atualizacao Completa"
 M18="Arquivo(s) recuperado(s)..."
 M19="ATUALIZANDO OS PROGRAMAS..."
 M20="Alterando a extensao da atualizacao"
-#M21="A atualizacao tem que esta no diretorio ""$TOOLS"
-#M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
-#M23=".. Criando o diretorio dos backups em $BACKUP.."
 M24=".. BACKUP do programa efetuado .." 
 M25="... Voltando versao anterior ..." 
 M26="... Agora, ATUALIZANDO ..." 
 M27=" .. Backup Completo .." 
 M28="Arquivo encontrado no diretorio" 
 M29="Informe a senha do usuario do SCP"
-#M30="o programas $vprog da ${NORM}${RED} ""$VVERSAO"
-#M31="o programas da versao: ${NORM}${RED} ""$VVERSAO"
-#M32="foi criado em ""$BACKUP"
 M33="Voltando Backup anterior  ..."
-#M34="O arquivo ""$VARQUIVO"
 M35="Deseja voltar todos os ARQUIVOS do Backup ? (N/s):"
 M36="<< ... Pressione qualquer tecla para continuar ... >>"
 M37="Deseja informar mais algum programa para ser atualizado? sS/nN"
@@ -250,22 +237,14 @@ M39="Continuando a atualizacao...:"
 MA1="O backup \"""$VBACKUP""\""
 
 ## Mensagens em VERMELHO
-
-#M40="Versao atualizada - ""$VERSAO" 
-#M41="Programa nao encontrado no diretorio" 
-#M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
-#M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio." 
-#M44="Nao foi encontrado o diretorio ""$E_EXEC" 
 M45="Backup nao encontrado no diretorio" 
 M46="Backup da Biblioteca nao encontrado no diretorio"
 M47="Backup Abortado!"
 M48="Atualizacao nao encontrado ou incompleta."
 M49="Arquivo nao encontrado no diretorio"
-# M50=""
 M51="Verificando e/ou excluido arquivos com mais de 30 dias criado."
 M52="Informe de qual o Backup que deseja enviar. Somente informe a data"
 M53="Informe de qual o Backup que deseja voltara o(s) arquivo(s)."
-#M54=""
 M55="Informe versao a da Biblioteca a ser atualizada: "
 M56="*+* < <- Versao a ser atualizada nao foi informada: -> > *+*"
 M57="Informe somente o numeral da versao : "
@@ -274,11 +253,9 @@ M59="Informe o nome do programa a ser atualizado:"
 M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
 M61="Informe o nome do programa a ser desatualizado:" 
 M62="Informe a ultima versao que foi feita a atualizacao da biblioteca."
-#M63="Existe um backup antigo sera excluido do Diretorio ""$BACKUP"
 M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
 M65="Recuperado todos os arquivos:"
 M66="Voce nao informou o nome do arquivo em minusculo"
-#M67=""
 M68="Enviar backup para a SAV."
 M69="Voce nao informou o nome do diretorio a ser enviado, saindo... "
 M70="* * * < < Nome do Backup nao foi informada > > * * * "
@@ -290,12 +267,10 @@ M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
 ## Mensagens em cyan
 M80="..Checando estrutura dos diretorios do atualiza.sh.." 
 M81="..Encontrado o diretorio do sistema .." 
-#M83=""
 
 ## Mensagens em VERDE
 M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
-
 
 #-Centro da tela-----------------------------------------------------------------------------------#
 _meiodatela () {
