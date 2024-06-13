@@ -12,12 +12,12 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="06/06/2024"                                                                                                  #
+UPDATE="13/06/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
-# "atualizac" = Contem a configuracao de diretorios e de qual tipo de                                                  #
-#               sistema esta sendo utilizado pela a Empresa.                                                           #
+# "atualizac" = Contem a configuracao referente a empresa           e                                                  #
+# "atualizap" = Configuracao do parametro do sistema                                                                   #
 # "atualizaj" = Lista de arquivos principais para dar rebuild.                                                         #
 # "atualizat  = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                       #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
@@ -105,8 +105,9 @@ unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
-unset -v TEMPS UMADATA DIRB ENVIABACK
+unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE
 unset -v E_EXEC T_TELAS X_XML
+tput sgr0; exit 
 }
 
 #-VARIAVEIS que devem vir do atualizac --------------------------------------------------------------------------------#
@@ -620,7 +621,7 @@ _principal () {
           4) _iscobol       ;;
           5) _linux         ;;
           6) _ferramentas   ;;
-          9) clear ;resetando ; tput sgr0; exit ;;
+          9) clear ;resetando ;;
           *) clear ; _principal ;;
      esac
 }
@@ -1513,14 +1514,14 @@ _linha
 
 _temps () {
 
+cd "$TOOLS"/ || exit
 #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
 [[ ! -e "atualizat" ]] && printf "ERRO. Arquivo atualizat, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizat" ]] && printf "ERRO. Arquivo atualizat, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
 #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
-
-cd "$TOOLS"/ || exit
+local arqs=""
 arqs="atualizat"
 DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
      if [[ "$DAYS" ]]; then
@@ -1685,7 +1686,7 @@ _rebuild
 }
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
-
+cd "$TOOLS"/ || exit
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
 [[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
@@ -1697,7 +1698,6 @@ if [ "$base2" ]; then
      _escolhe_base
 fi
 if [ "$sistema" = "iscobol" ]; then
-cd "$TOOLS"/ || exit
 local arqs=""
 arqs="atualizaj"
 local jut="$SAVISC""$JUTIL"
@@ -1808,7 +1808,7 @@ fi
      _mensagec "$YELLOW" "$M14"
      _linha 
 
-ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
+local ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
 _progresso () { 
@@ -1868,9 +1868,8 @@ M10="O backup de nome \"""$ARQ""\""
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-
      if [ "$ENVIABACK" != "" ]; then
-        ENVBASE="$ENVIABACK"
+          ENVBASE="$ENVIABACK"
      else
      _meiodatela
      _mensagec "$RED" "$M68"
