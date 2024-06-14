@@ -1807,15 +1807,15 @@ fi
      _linha 
      _mensagec "$YELLOW" "$M14"
      _linha 
-
-local ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
+local ARQ=""
+ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
 _progresso () { 
-     echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
+     echo -n "${YELLOW}"" Favor aguardar |""${NORM}"
      while true
      do
-     echo -n "${YELLOW}""#""${NORM}"
+     echo -n "${GREEN}""░""${NORM}"
      _read_sleep 5
      done
 }
@@ -1837,7 +1837,7 @@ _dobackup
 #- Matar progresso
 kill $MYSELF >/dev/null 2>&1
 
-     echo "${CYAN}""]pronto""${NORM}"
+     echo "${YELLOW}""|pronto""${NORM}"
      printf "\n"
 
 #-O backup de nome \"""$ARQ""\" foi criado em $BACKUP$}
@@ -1853,15 +1853,6 @@ M32="foi criado em ""$BACKUP"
      _linha 
      _mensagec "$YELLOW" "$M16"
      _linha 
-
-#-ENVIAR PARA A SAV OU NAO-------------------------------------------#
-     printf "\n"
-     clear
-M10="O backup de nome \"""$ARQ""\"" 
-     _linha 
-     _mensagec "$YELLOW" "$M10"
-     _linha 
-
      printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
      read -r -n1 CONT 
      printf "\n\n"
