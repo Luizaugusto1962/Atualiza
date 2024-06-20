@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/06/2024"                                                                                                    #
+UPDATE="20/06/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -172,7 +172,6 @@ Z1="Aparentemente o programa zip nao esta instalado neste ditribuicao."
      exit 1
      fi
 }
-
 # Checando se o zip esta na base
 check_zip_instalado
 
@@ -235,10 +234,14 @@ M36="<< ... Pressione qualquer tecla para continuar ... >>"
 M37="Deseja informar mais algum programa para ser atualizado? sS/nN"
 M38="Deseja continuar a atualizacao? (n/S):"
 M39="Continuando a atualizacao...:"
+M40="      Deseja enviar para o servidor da SAV ? (N/s):"
+M41="         Informe para qual diretorio no servidor: "
+M42="         1- Informe nome BACKUP: "
+M43=" "
 MA1="O backup \"""$VBACKUP""\""
-
+MA2="         1- Informe apos qual versao da BIBLIOTECA: "
 ## Mensagens em VERMELHO
-M45="Backup nao encontrado no diretorio" 
+M45="Backup nao encontrado no diretorio ou nao foi informado os dados" 
 M46="Backup da Biblioteca nao encontrado no diretorio"
 M47="Backup Abortado!"
 M48="Atualizacao nao encontrado ou incompleta."
@@ -260,7 +263,7 @@ M66="Voce nao informou o nome do arquivo em minusculo"
 M68="Enviar backup para a SAV."
 M69="Voce nao informou o nome do diretorio a ser enviado, saindo... "
 M70="* * * < < Nome do Backup nao foi informada > > * * * "
-M71="ERRO: Voce informou o nome do arquivo em minusculo "
+M71="ERRO: Voce informou o nome do arquivo em minusculo ou em branco "
 M72="Informe o(s) arquivo(s) que deseja enviar."
 M73="Informe o(s) arquivo(s) que deseja receber."
 M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
@@ -612,7 +615,7 @@ _principal () {
 	_mensagec "$GREEN" "$M109"
      printf "\n"
      _linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO
 
      case $OPCAO in
           1) _atualizacao   ;;
@@ -650,7 +653,7 @@ _atualizacao () {
 	_mensagec "$GREEN" "$M205"
 	printf "\n"
 	_linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO
      case $OPCAO in
           1) _pacoteon ;;
           2) _pacoteoff ;;
@@ -666,7 +669,8 @@ _qualprograma () {
      #-Informe o nome do programa a ser atualizado:
      _mensagec "$RED" "$M59"
      _linha
-     read -rp "${YELLOW}""       Informe o programa em MAIUSCULO: ""${NORM}" prog
+     MB4="       Informe o programa em MAIUSCULO: "
+     read -rp "${YELLOW}""${MB4}""${NORM}" prog
      _linha 
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      clear
@@ -745,7 +749,7 @@ _mens_atualiza () {
           for pprog in *.class
           do
           if [ -f "$E_EXEC"/"$pprog" ]; then
-          "$cmd_zip" "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"   
+          "$cmd_zip" -m "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"   
           _mens_atualiza
           fi
           mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
@@ -754,7 +758,7 @@ _mens_atualiza () {
           for pprog in *.int
           do
           if [ -f "$E_EXEC"/"$pprog" ]; then
-          "$cmd_zip" "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"
+          "$cmd_zip" -m "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"
           _mens_atualiza
           fi
           mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
@@ -765,7 +769,7 @@ _mens_atualiza () {
           for pprog in *.TEL
           do
                if [ -f "$T_TELAS"/"$pprog" ]; then
-               "$cmd_zip" -r "$prog"-$ANTERIOR "$T_TELAS"/"$pprog"
+               "$cmd_zip" -m "$prog"-$ANTERIOR "$T_TELAS"/"$pprog"
                _mens_atualiza
                fi
           mv -f -- "$pprog" "$T_TELAS" >> "$LOG_ATU"
@@ -802,8 +806,7 @@ M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
-     _mensagec "$YELLOW" "$M37"
-     read -r -n1 CONT 
+     read -rp "${YELLOW}""${M37}""${NORM}" -n1 CONT
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
           _principal
@@ -845,7 +848,7 @@ _desatualizado () { while true ;do
 	_mensagec "$GREEN" "$M305"
 	printf "\n"
 	_linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
           1) _voltaprog ;;
           2) _voltabibli ;;
@@ -863,8 +866,8 @@ _voltaprog () {
      _linha 
      _mensagec "$RED" "$M61"
      printf "\n"
-     
-     read -rp "${YELLOW}""     Informe o nome do programa em maiusculo: ""${NORM}" prog
+     MA7="     Informe o nome do programa em maiusculo: "
+     read -rp "${YELLOW}""${MA7}""${NORM}" prog
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      _meiodatela
      _mensagec "$RED" "$M60"
@@ -899,8 +902,7 @@ M02="Voltando a versao anterior do programa ""$prog"
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
-     _mensagec "$YELLOW" "$M37"
-     read -r -n1 CONT 
+    read -rp "${YELLOW}""${M37}""${NORM}" -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
           _principal
@@ -923,7 +925,7 @@ _voltabibli () {
      _meiodatela
      _mensagec "$RED" "$M62"
      _linha
-     read -rp "${YELLOW}""         1- Informe apos qual versao da BIBLIOTECA: ""${NORM}" VVERSAO
+     read -rp "${YELLOW}""${MA2}""${NORM}" VVERSAO
      while [[ "$VVERSAO" = [0-9] || -z "$VVERSAO" ]]; do 
      clear
      _meiodatela
@@ -941,11 +943,10 @@ _voltabibli () {
      _press
      _desatualizado
      fi
+     MA3="Deseja volta todos os programas para antes da atualizacao? (N/s):"
      printf "\n"
-     printf "%*s\n""${YELLOW}""Deseja volta todos os programas para antes da atualizacao? (N/s):""${NORM}"
-     read -r -n1 CONT 
+     read -rp "${YELLOW}""${MA3}""${NORM}" -n1 CONT 
      printf "\n\n"
-
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
 	_linha 
      _volta_progx
@@ -962,8 +963,8 @@ _voltabibli () {
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
 
 _volta_progx () {
-
-     read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
+     MA4="       2- Informe o nome do programa em MAIUSCULO: "
+     read -rp "${YELLOW}""${MA4}""${NORM}" Vprog
 
      while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; 
 	do
@@ -987,8 +988,8 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
 
 _volta_progz () {
      printf "\n"
-     printf "%*s\n""${YELLOW}""Deseja volta mais algum programa ? (N/s):""${NORM}"
-     read -r -n1 CONT 
+     MA5="Deseja volta mais algum programa ? (N/s):"
+     read -rp "${YELLOW}""${MA5}""${NORM}" -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _press
@@ -1002,9 +1003,9 @@ _volta_progz () {
      fi
 
 	local Vprog=" "
-
+     MA6="       2- Informe o nome do programa em maiusculo: "
      if [[ "$CONT" =~ ^[Ss]$ ]]; then
-     read -rp "${YELLOW}""       2- Informe o nome do programa em maiusculo: ""${NORM}" Vprog
+     read -rp "${YELLOW}""${MA6}""${NORM}" Vprog
           if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
           _meiodatela
           _mensagec "$RED" "$M71"
@@ -1120,8 +1121,7 @@ _biblioteca () {
      _mensagec "$RED" "$M55"
      _linha  
 #-M57=Informe somente o numeral da versao :
-     printf "%*s""${YELLOW}";printf "%*s\n""$M57" ;printf "%*s""${NORM}"
-     read -rp "" VERSAO 
+     read -rp "${YELLOW}""${M57}""${NORM}" VERSAO 
 
      if [ -z "$VERSAO" ]; then
 #-M56=Versao a ser atualizada nao foi informada :
@@ -1159,7 +1159,7 @@ _biblioteca () {
 	_mensagec "$GREEN" "$M407"
 	printf "\n"
 	_linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
           1) _transpc ;;
           2) _savatu ;;
@@ -1293,8 +1293,7 @@ _processo () {
 #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
      _read_sleep 2    
      _meiodatela
-     printf "%*s""${YELLOW}" ;"$M38"; printf "%*s""${NORM}"
-     read -r -n1 CONT 
+     read -rp "${YELLOW}""${M38}""${NORM}" CONT 
      printf "\n\n"
           if [[ "$CONT" =~ ^[Nn]$ ]]; then
           _principal
@@ -1459,7 +1458,7 @@ clear
      _mensagec "$GREEN" "$M510"
 	printf "\n"
 	_linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAOB
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAOB
           case $OPCAOB in
           1) _temps        ;;
           8) _update       ;;
@@ -1483,7 +1482,7 @@ clear
      _mensagec "$GREEN" "$M510"
      printf "\n"
      _linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO
      case $OPCAO in
           1) _temps        ;;
           2) _rebuild      ;;
@@ -1502,7 +1501,6 @@ clear
      while read -r line; do
      printf "${GREEN}""$line""${NORM}%s\n"
      LINE=$line
-#     "$cmd_find" "${DIRB}" -name "${line}" -exec mv -f {} "$DL" \; 
      "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
      done < "$arqs"
 
@@ -1559,7 +1557,7 @@ _rebuild () {
      _mensagec "$GREEN" "$M605"
      printf "\n"
      _linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
           1) _rebuild1 ;;
           2) _rebuildlista ;;
@@ -1593,7 +1591,7 @@ _escolhe_base () {
      _mensagec "$GREEN" "$M903"
      printf "\n"
      _linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      if [ ! "$base3" ]; then
      case $OPCAO in
           1)  _dbase1 ;;
@@ -1636,7 +1634,8 @@ if [ "$sistema" = "iscobol" ]; then
      _linha  
 #printf "%*s""${RED}""$M64""${NORM}\n"
      declare -u PEDARQ
-     read -rp "${YELLOW}""         Informe o nome maiusculo: ""${NORM}" PEDARQ
+     MA8="         Informe o nome maiusculo: "
+     read -rp "${YELLOW}""${MA8}""${NORM}" PEDARQ
      _linha
      if [[ -z "$PEDARQ" ]]; then
      _meiodatela
@@ -1649,7 +1648,6 @@ if [ "$sistema" = "iscobol" ]; then
           TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
                if [[ "$TAMANHO" -gt 0 ]]; then  ##- executa rebuild se tamanho for maior que zero
                "$jut" -rebuild "$i" -a -f
-#               "$jut" -rebuild "$i" -a -f
                fi
           done 
           cd "$TOOLS"/ || exit
@@ -1701,11 +1699,11 @@ if [ "$sistema" = "iscobol" ]; then
 local arqs=""
 arqs="atualizaj"
 local jut="$SAVISC""$JUTIL"
-while read -r line;
-do
+while read -r line; do
      TAMANHO=$(du "$BASE1""/""$line" | awk '{print $1}') #-Grava tamanho do arquivo em variavel
      if [[ "$TAMANHO" -gt 0 ]]; then #-Executa rebuild se tamanho for maior que zero
      $jut -rebuild "$BASE1""/""$line" -a -f
+     _linha
      fi
 done < "atualizaj"
 
@@ -1713,7 +1711,7 @@ done < "atualizaj"
      _linha 
      _mensagec "$YELLOW" "$M12"
      _linha 
-     _press
+#     _press
 else
 _meiodatela
 #M996="Recuperacao em desenvolvimento :"
@@ -1748,7 +1746,7 @@ _menubackup () { while true
 	_mensagec "$GREEN" "$M705"
      printf "\n"       
 	_linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
           1) _backup       ;;
           2) _unbackup     ;;
@@ -1766,7 +1764,7 @@ if [ "$base2" ]; then
      _escolhe_base
 fi
      if [ ! -d "$BACKUP" ]; then
-M23=".. Criando o diretorio dos backups em $BACKUP.."
+M23=".. Criando o diretorio do backup em $BACKUP.."
      _linha 
      _mensagec "$YELLOW" "$M23"
      _linha 
@@ -1782,8 +1780,8 @@ M62="Ja existe um backup em ""$BACKUP"" nos ultimos dias."
      _mensagec "$CYAN" "$M62"
      _linha   
      printf "\n" 
-     printf "${YELLOW}""          Deseja continuar ? (N/s): ""${NORM}%s"
-     read -r -n1 CONT 
+MB1="          Deseja continuar ? (N/s): "     
+     read -rp "${YELLOW}""${MB1}""${NORM}" -n1 CONT 
      printf "\n"
           if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
 #-Backup Abortado!
@@ -1815,7 +1813,7 @@ _progresso () {
      echo -n "${YELLOW}"" Favor aguardar |""${NORM}"
      while true
      do
-     echo -n "${GREEN}""░""${NORM}"
+     echo -n "${GREEN}""#""${NORM}"
      _read_sleep 5
      done
 }
@@ -1853,8 +1851,7 @@ M32="foi criado em ""$BACKUP"
      _linha 
      _mensagec "$YELLOW" "$M16"
      _linha 
-     printf "${YELLOW}""         Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
-     read -r -n1 CONT 
+     read -rp "${YELLOW}""${M40}""${NORM}" -n1 CONT 
      printf "\n\n"
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
@@ -1864,7 +1861,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      else
      _meiodatela
      _mensagec "$RED" "$M68"
-     read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
+     read -r "${YELLOW}""${M41}""${NORM}" ENVBASE
      while [[ "$ENVBASE" =~ [0-9] || -z "$ENVBASE" ]] ;do
      _meiodatela
 #-M69 Voce nao informou o nome do diretorio a enviado, saindo...   
@@ -1892,20 +1889,21 @@ fi
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
 _backupavulso () {
+     clear 
      ls "$BACKUP"/"$EMPRESA"_*.zip
 
 #-Informe de qual o Backup que deseja enviar.
      _linha 
      _mensagec "$RED" "$M52"
      _linha      
-     read -rp "${YELLOW}""         1- Informe nome BACKUP: ""${NORM}" VBACKAV
-local VBACKUP="$EMPRESA"_"$VBACKAV"
+     read -rp "${YELLOW}""${M42}""${NORM}" VBACKAV
+     local VBACKUP="$EMPRESA"_"$VBACKAV"
      while [[ -f "$VBACKUP".zip ]] ;do 
      clear
      _meiodatela
      _mensagec "$RED" "$M70"
      _press
-_ferramentas
+     _ferramentas
      done
      if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
 #-Backup nao encontrado no diretorio
@@ -1922,8 +1920,7 @@ MA1="O backup \"""$VBACKUP""\""
      _linha
      _mensagec "$YELLOW" "$MA1"
      _linha 
-     printf "${YELLOW}""      Deseja enviar para o servidor da SAV ? (N/s):""${NORM}%s"
-     read -r -n1 CONT 
+     read -rp "${YELLOW}""${M40}""${NORM}" -n1 CONT 
      printf "\n\n"
 
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
@@ -1934,10 +1931,10 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      else
      _meiodatela
      _mensagec "$RED" "$M68"
-     read -rp "${YELLOW}""         Informe para qual diretorio no servidor: ""${NORM}" ENVBASE
+     _linha
+     read -rp "${YELLOW}""${M41}""${NORM}" ENVBASE
      while [[ "$ENVBASE" =~ [0-9] || -f "$ENVBASE" ]] ;do
      _meiodatela
-#M69  
      _mensagec "$RED" "$M69"
      _press    
      _ferramentas 
@@ -1979,9 +1976,10 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      ls -s "$BACKUP""/""$EMPRESA"_*.zip
      _linha 
      _mensagec "$RED" "$M53"
-     _linha 
-     read -rp "${YELLOW}""         1- Informe somente a data do BACKUP: ""${NORM}" VBACK
-local VBACKUP="$EMPRESA"_"$VBACK"
+     _linha
+     MA9="         1- Informe somente a data do BACKUP: " 
+     read -rp "${YELLOW}""${MA9}""${NORM}" VBACK
+     local VBACKUP="$EMPRESA"_"$VBACK"
      while [[ -f "$VBACKUP".zip ]]; do 
      clear
      _meiodatela
@@ -2000,14 +1998,13 @@ local VBACKUP="$EMPRESA"_"$VBACK"
      printf "\n" 
 #-"Deseja volta todos os ARQUIVOS do Backup ? (N/s):"
      _linha 
-     _mensagec "$YELLOW" "$M35"
-     _linha 
-     read -r -n1 CONT 
+     read -rp "${YELLOW}""${M35}""${NORM}" -n1 CONT 
+ 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
-     
-     read -rp "${YELLOW}""       2- Informe o somente nome do arquivo em maiusculo: ""${NORM}" VARQUIVO
-     while [[ "$VARQUIVO" =~ [^A-Z0-9] ]]
+     MB1="       2- Informe o somente nome do arquivo em maiusculo: "
+     read -rp "${YELLOW}""${MB1}""${NORM}" VARQUIVO
+     while [[ "$VARQUIVO" =~ [^A-Z0-9] || -z "$VARQUIVO" ]]
      do
      _mensagec "$RED" "$M71"
      _linha 
@@ -2100,7 +2097,7 @@ _envrecarq () {
 	_mensagec "$GREEN" "$M806"
      printf "\n"       
 	_linha "="
-     read -rp "${YELLOW}""$M110""${NORM}" OPCAO	
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
           1) _envia_avulso    ;;
           2) _recebe_avulso   ;;
@@ -2151,9 +2148,10 @@ M49="Arquivo nao encontrado no diretorio"
      fi
      _linha 
      _mensagec "$CYAN" "$M72" #Informe o arquivo(s) que deseja enviar.
-     _linha      
+     _linha 
+     MB3="2- Informe nome do ARQUIVO: -> "     
      local EENVIA=" "
-     read -rp "${YELLOW}""2- Informe nome do ARQUIVO: -> ""${NORM}" EENVIA
+     read -rp "${YELLOW}""${MB3}""${NORM}" EENVIA
      if [[ -z "$EENVIA" ]]; then 
 #   clear
      _meiodatela
@@ -2207,8 +2205,9 @@ M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"
      _linha 
      _linha 
      _mensagec "$RED" "$M73"
-     _linha      
-     read -rp "${YELLOW}""    2- Informe nome do ARQUIVO: ""${NORM}" RRECEBE
+     _linha
+     MB2="    2- Informe nome do ARQUIVO: "      
+     read -rp "${YELLOW}""${MB2}""${NORM}" RRECEBE
      if [[ -z "$RRECEBE" ]]; then 
      _meiodatela
      _mensagec "$RED" "$M74"
@@ -2289,7 +2288,7 @@ _update () {
      _mensagec "$GREEN" "$M91"
      _mensagec "$GREEN" "$M92"
      _linha 
-     cp atualiza.sh "$BACKUP"
+     cp -rfv atualiza.sh "$BACKUP"
 
      cd "$PROGS" || exit 
      wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
@@ -2308,6 +2307,7 @@ fi
 #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "atualiza.sh"
      mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
+     mv -f -- "atualizap" "$TOOLS" >> "$LOG_ATU"
 _press
 exit   
 }
