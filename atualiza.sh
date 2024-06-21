@@ -12,14 +12,15 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/06/2024"                                                                                                    #
+UPDATE="21/06/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
-# "atualizac" = Contem a configuracao referente a empresa           e                                                  #
-# "atualizap" = Configuracao do parametro do sistema                                                                   #
-# "atualizaj" = Lista de arquivos principais para dar rebuild.                                                         #
-# "atualizat  = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                       #
+# "atualizac"  = Contem a configuracao referente a empresa           e                                                  #
+# "atualizap"  = Configuracao do parametro do sistema                                                                   #
+# "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                         #
+# "atualizaj2" = Lista de arquivos ATE*s E NFE*s para dar rebuild.                                                         #
+# "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                       #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
 #                                                                                                                      #
 # Menus                                                                                                                #
@@ -164,7 +165,7 @@ COLUMNS=$(tput cols)
 #------------------------------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
 check_zip_instalado() {
-Z1="Aparentemente o programa zip nao esta instalado neste ditribuicao."
+Z1="Aparentemente o programa zip nao esta instalado neste distribuicao."
      if ! command -v zip &> /dev/null; then
      printf "\n"
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "$Z1" ;printf "%*s""${NORM}"
@@ -1094,12 +1095,10 @@ _volta_geral () {
      _mensagec "$RED" "$M58"
      _linha 
 M31="o programas da versao: ${NORM}${RED} ""$VVERSAO"
-#M31="O programas da versao:""$VVERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M31"
      _linha 
-
      cd "$OLDS"/ || exit
      "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS" >> "$LOG_ATU"
      cd "$TOOLS" || exit
@@ -1186,7 +1185,6 @@ _scp_biblioteca () {
 
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
 _transpc () {
-
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -1212,7 +1210,6 @@ _savatu () {
 
 #-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
 _salva () {
-
 M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _linha 
      _mensagec "$YELLOW" "$M21"
@@ -1221,7 +1218,6 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
           for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
           if  [[ ! -r "$atu""$VERSAO"".zip" ]]; then
           clear
-#-Atualizacao nao encontrado no diretorio
           _linha 
           _mensagec "$RED" "$M48"
           _linha 
@@ -1327,7 +1323,6 @@ _processo () {
      done
           mv -f -- *_"$VERSAO".bkp "$BACKUP"
           mv -f -- "$INI"-"$VERSAO".zip "$OLDS"
-
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #-Versao atualizada - $VERSAO$
 M40="Versao atualizada - ""$VERSAO"
@@ -1369,7 +1364,6 @@ _linux () {
      printf "\n\n"
      _mensagec "$YELLOW" "$LM"
      _linha 
-
 # Checando se conecta com a internet ou nao 
 ping -c 1 google.com &> /dev/null && printf "${GREEN}"" Internet:""${NORM}""Conectada""%*s\n"||printf "${GREEN}"" Internet:""${NORM}""Desconectada""%*s\n"
 
@@ -1426,7 +1420,6 @@ unset tecreset os architecture kernelrelease internalip externalip nameserver lo
 
 # Removendo temporarios arquivos 
 rm "$LOG_TMP""osrelease" "$LOG_TMP""who" "$LOG_TMP""ramcache" "$LOG_TMP""diskusage"     
-
 _linha 
 printf "\n"
 _press
@@ -1503,7 +1496,6 @@ clear
      LINE=$line
      "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
      done < "$arqs"
-
 M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
 _mensagec "$YELLOW" "$M11"
@@ -1511,7 +1503,6 @@ _linha
 }
 
 _temps () {
-
 cd "$TOOLS"/ || exit
 #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
@@ -1620,10 +1611,19 @@ _dbase3 () {
      BASE1="${destino}""${base3}" 
 }
 
-
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
-_rebuild1 () {
+##- Rotina para rodar o jutil
+jut="$SAVISC""$JUTIL"
+_jutill () {
+if [[ -s "$linee" ]]; then      
+     if [[ -e "$linee" ]]; then 
+     $jut -rebuild "$linee" -a -f
+     _linha
+     fi
+fi
+} 
 
+_rebuild1 () {
 if [ "$base2" ]; then
      _escolhe_base
 fi
@@ -1636,21 +1636,18 @@ if [ "$sistema" = "iscobol" ]; then
      declare -u PEDARQ
      MA8="         Informe o nome maiusculo: "
      read -rp "${YELLOW}""${MA8}""${NORM}" PEDARQ
+
      _linha
      if [[ -z "$PEDARQ" ]]; then
      _meiodatela
 #-M65
      _mensagec "$RED" "$M65"
      _linha 
-     local jut="$SAVISC""$JUTIL"
-          for i in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat}
-          do
-          TAMANHO=$(du "$i" | awk '{print $1}') ##- grava tamanho do arquivo em variavel
-               if [[ "$TAMANHO" -gt 0 ]]; then  ##- executa rebuild se tamanho for maior que zero
-               "$jut" -rebuild "$i" -a -f
-               fi
-          done 
-          cd "$TOOLS"/ || exit
+          for linee in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat} ;do
+          _jutill
+          done
+
+ #         cd "$TOOLS"/ || exit
      else
           while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
           _meiodatela
@@ -1660,13 +1657,11 @@ if [ "$sistema" = "iscobol" ]; then
           _ferramentas
           done
           local ARQUIVO="$PEDARQ.???.dat"
-          local jut="$SAVISC""$JUTIL"
-          for i in $ARQUIVO
-          do 
-          "$jut" -rebuild "$BASE1""/""$i" -a -f
+          for line in $ARQUIVO; do
+          $jut -rebuild "$BASE1""/""$line" -a -f
+              _linha  
           done
      fi
-
 #-Arquivo(s) recuperado(s)...
      _linha 
      _mensagec "$YELLOW" "$M18"
@@ -1680,7 +1675,6 @@ else
 fi
 _press
 _rebuild
-
 }
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
@@ -1689,24 +1683,31 @@ cd "$TOOLS"/ || exit
 [[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
-
 _rebuildlista () {
 clear
 if [ "$base2" ]; then
      _escolhe_base
 fi
 if [ "$sistema" = "iscobol" ]; then
-local arqs=""
-arqs="atualizaj"
-local jut="$SAVISC""$JUTIL"
-while read -r line; do
-     TAMANHO=$(du "$BASE1""/""$line" | awk '{print $1}') #-Grava tamanho do arquivo em variavel
-     if [[ "$TAMANHO" -gt 0 ]]; then #-Executa rebuild se tamanho for maior que zero
-     $jut -rebuild "$BASE1""/""$line" -a -f
-     _linha
-     fi
-done < "atualizaj"
+cd "$BASE1"/ || exit
+##### Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo ####
+ls ATE2*.*.dat > "$TOOLS""/""atualizaj2"
+ls NFE?2*.*.dat >> "$TOOLS""/""atualizaj2"
+sleep 1
+cd "-" || exit
 
+[[ ! -e "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
+[[ ! -r "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
+
+while read -r line; do
+linee="$BASE1""/""$line"
+_jutill   
+done < atualizaj
+
+while read -r line; do
+linee="$BASE1""/""$line"
+_jutill   
+done < atualizaj2
 #-Lista de Arquivo(s) recuperado(s)... 
      _linha 
      _mensagec "$YELLOW" "$M12"
@@ -1721,8 +1722,7 @@ _press
 _rebuild
 }
 
-_menubackup () { while true
-     do
+_menubackup () { while true ; do
      clear
 ###-700-mensagens do Menu Backup.
      M700="Menu de Backup(s)."
@@ -1791,7 +1791,6 @@ MB1="          Deseja continuar ? (N/s): "
           _read_sleep 3
           _ferramentas 
           elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-
 #-Sera criado mais um backup para o periodo.
           _linha 
           _mensagec "$YELLOW" "$M06"
@@ -1846,7 +1845,6 @@ M32="foi criado em ""$BACKUP"
      _mensagec "$YELLOW" "$M32"
      _linha 
      printf "\n"
-
 #-Backup Concluido!
      _linha 
      _mensagec "$YELLOW" "$M16"
@@ -1891,7 +1889,6 @@ fi
 _backupavulso () {
      clear 
      ls "$BACKUP"/"$EMPRESA"_*.zip
-
 #-Informe de qual o Backup que deseja enviar.
      _linha 
      _mensagec "$RED" "$M52"
@@ -1957,7 +1954,6 @@ fi
 }   
 
 #-VOLTA BACKUP TOTAL OU PARCIAL--------------------------------------------------------------------#
-
 _unbackup () {
 clear
 if [ "$base2" ]; then
@@ -1966,7 +1962,6 @@ fi
 local DIRBACK="$BACKUP"/dados
 
      if [ ! -d "$DIRBACK" ]; then
-
 M22=".. Criando o diretorio temp do backup em $DIRBACK.." 
      _linha 
      _mensagec "$YELLOW" "$M22"
@@ -1999,7 +1994,6 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
 #-"Deseja volta todos os ARQUIVOS do Backup ? (N/s):"
      _linha 
      read -rp "${YELLOW}""${M35}""${NORM}" -n1 CONT 
- 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      MB1="       2- Informe o somente nome do arquivo em maiusculo: "
@@ -2013,24 +2007,19 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      done
 
 #-Voltando Backup anterior  ...-#
-
 M34="O arquivo ""$VARQUIVO"
-
      _linha 
      _mensagec "$YELLOW" "$M33"
      _mensagec "$YELLOW" "$M34"
      _linha 
-
      cd "$DIRBACK" || exit
      "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
      _read_sleep 1
-
      if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
 #-Arquivo encontrado no diretorio
      _linha 
      _mensagec "$YELLOW" "$M28"
      _linha 
-
      else
 #-Arquivo nao encontrado no diretorio
      _linha 
@@ -2039,7 +2028,6 @@ M34="O arquivo ""$VARQUIVO"
      _press 
      _menubackup  
      fi
-
      mv -f "$VARQUIVO"*.* "$BASE1" >> "$LOG_ATU" 
      cd "$TOOLS"/ || exit
      clear
@@ -2057,11 +2045,9 @@ M34="O arquivo ""$VARQUIVO"
      _mensagec "$YELLOW" "$M33"
      _mensagec "$YELLOW" "$M34"
      _linha 
-
      cd "$DIRBACK" || exit
      "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
      mv -f -- *.* "$BASE1" >> "$LOG_ATU"
-
      cd "$TOOLS"/ || exit
      clear
 #-VOLTA DOS ARQUIVOS CONCLUIDA
@@ -2181,7 +2167,6 @@ M992="3- Destino: Informe para qual diretorio no servidor:"
      _press    
      _envrecarq 
      fi
-
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -2217,7 +2202,6 @@ M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"
      _linha 
 M994="3- Destino:Informe diretorio do servidor que vai receber arquivo: " 
      _mensagec "$YELLOW" "$M994"  
-     
      read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
      if [[ -z "$EDESTINO" ]]; then # testa variavel vazia
      local EDESTINO=$RECEBE
@@ -2270,10 +2254,8 @@ clear
      done    
 # Apagar arquivos do diretorio olds----------------------------------#
      "$cmd_find" "$OLDS""/" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-
 #-Apagar arquivos do diretorio progs---------------------------------#
      "$cmd_find" "$PROGS""/" -name "*.bkp" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
-
 #-Apagar arquivos do diretorio dos logs---------------------------------#
      "$cmd_find" "$LOGS""/" -name "*.log" -ctime +30 -exec rm -r {} \; 
 cd "$TOOLS"/ || exit
@@ -2289,7 +2271,6 @@ _update () {
      _mensagec "$GREEN" "$M92"
      _linha 
      cp -rfv atualiza.sh "$BACKUP"
-
      cd "$PROGS" || exit 
      wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
      
@@ -2298,7 +2279,6 @@ DEFAULT_ATUALIZAGIT="atualiza.zip"
 if [ -z "$atualizagit" ]; then
      atualizagit="$DEFAULT_ATUALIZAGIT"
 fi
-
 #atualizagit="atualiza.zip"
      "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
      _read_sleep 1
