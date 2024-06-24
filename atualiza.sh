@@ -286,9 +286,8 @@ _meiodatela () {
 _mensagec () {
 local CCC="$1"
 local MXX="$2"
-     printf "%*s""${CCC} " ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
+printf "%*s""${CCC}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "$MXX" ;printf "%*s""${NORM}"
 }
-
 
 #-Variavel para identificar -----------------------------------------------------------------------#
 ##
@@ -408,9 +407,6 @@ BASE1=$destino$base
      exit
      fi
 
-#-EXTENSAO QUE SERA INCLUIDA NO NOME DO PROGRAMA QUE A SER SALVO.----#
-ANTERIOR="anterior"
-
 #-Configuracao para acesso ao scp------------------------------------------------------------------#
 DEFAULT_PORTA="41122"
 if [ -z "$PORTA" ]; then
@@ -445,7 +441,7 @@ DESTINO2TRANSPC="/u/varejo/trans_pc/"
 #-Processo do scp----------------------------------------------------------------------------------#
 
 _run_scp () {
-     "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$prog""$class".zip .
+     "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$NOMEPROG" .
 }
 
 #-Processo do scp2---------------------------------------------------------------------------------#
@@ -672,6 +668,8 @@ _qualprograma () {
      _linha
      MB4="       Informe o programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MB4}""${NORM}" prog
+     NOMEPROG="$prog""$class".zip
+     OLDPROG="$prog""-""anterior.zip"
      _linha 
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      clear
@@ -679,6 +677,8 @@ _qualprograma () {
      _mensagec "$RED" "$M60"
      _linha 
      _press
+     NOMEPROG=" "
+     OLDPROG=" "
      _principal
      done
 }
@@ -703,7 +703,6 @@ _pacoteoff () {
      _linha
      _mensagec "$YELLOW" "$M09"
      _linha
-     local NOMEPROG="$prog""$class".zip
      _read_sleep 1
      _atupacote
      _press
@@ -711,16 +710,14 @@ _pacoteoff () {
 }
 
 _atupacote () {
-if [[ -f "$OLDS"/"$prog"-"$ANTERIOR".zip ]]; then
+if [[ -f "$OLDS"/"$OLDPROG" ]]; then
      clear
-     M43="Programa ""$prog""-anterior.zip encontrado no diretorio renomeando."
+     M43="Programa ""$OLDPROG"" encontrado no diretorio renomeando."
      _linha
      _mensagec "$CYAN" "$M43"
      _linha
-     mv -f -- "$OLDS"/"$prog"-"$ANTERIOR".zip "$OLDS"/"$prog"-"$ANTERIOR"-"$UMADATA".zip  >> "$LOG_ATU"
+     mv -f -- "$OLDS""/""$OLDPROG" "$OLDS""/""$UMADATA""-""$OLDPROG" >> "$LOG_ATU"
 fi
-
-NOMEPROG="$prog""$class".zip
 
 if  [[ ! -f "$NOMEPROG" ]]; then
      clear
@@ -733,7 +730,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 fi
 
 #-Descompactando o programa baixado----------------------------------#
-     "$cmd_unzip" -o "$prog""$class".zip >> "$LOG_ATU"
+     "$cmd_unzip" -o "$NOMEPROG" >> "$LOG_ATU"
      _read_sleep 1
      clear
 
@@ -750,7 +747,7 @@ _mens_atualiza () {
           for pprog in *.class
           do
           if [ -f "$E_EXEC"/"$pprog" ]; then
-          "$cmd_zip" -m "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"   
+          "$cmd_zip" -m "$OLDPROG" "$E_EXEC"/"$pprog"   
           _mens_atualiza
           fi
           mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
@@ -759,7 +756,7 @@ _mens_atualiza () {
           for pprog in *.int
           do
           if [ -f "$E_EXEC"/"$pprog" ]; then
-          "$cmd_zip" -m "$prog"-$ANTERIOR "$E_EXEC"/"$pprog"
+          "$cmd_zip" -m "$OLDPROG" "$E_EXEC"/"$pprog"
           _mens_atualiza
           fi
           mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
@@ -770,7 +767,7 @@ _mens_atualiza () {
           for pprog in *.TEL
           do
                if [ -f "$T_TELAS"/"$pprog" ]; then
-               "$cmd_zip" -m "$prog"-$ANTERIOR "$T_TELAS"/"$pprog"
+               "$cmd_zip" -m "$OLDPROG" "$T_TELAS"/"$pprog"
                _mens_atualiza
                fi
           mv -f -- "$pprog" "$T_TELAS" >> "$LOG_ATU"
@@ -792,13 +789,14 @@ M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
      _linha 
      _read_sleep 
 
-     for f in *"$prog""$class".zip; do
+     for f in *"$NOMEPROG"; do
           mv -f -- "$f" "${f%.zip}.bkp"
+#          mv -f -- "$f" "${f%.zip}.bkp"     
      done
      _read_sleep 1
 #-Atualizacao COMPLETA
      mv -f -- "$prog""$class".bkp "$PROGS"
-     mv -f -- "$prog"-$ANTERIOR.zip "$OLDS"
+     mv -f -- "$OLDPROG" "$OLDS"
      _read_sleep 1
      _linha 
      _mensagec "$YELLOW" "$M17"
@@ -869,15 +867,19 @@ _voltaprog () {
      printf "\n"
      MA7="     Informe o nome do programa em maiusculo: "
      read -rp "${YELLOW}""${MA7}""${NORM}" prog
+     NOMEPROG="$prog""$class".zip
+     OLDPROG="$prog""-""anterior.zip"
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      _meiodatela
      _mensagec "$RED" "$M60"
      _linha 
      _press
+     NOMEPROG=" "
+     OLDPROG=" "
      _principal
      done
 
-     if [[ ! -r "$OLDS"/"$prog"-"$ANTERIOR".zip ]]; then
+     if [[ ! -r "$OLDS"/"$OLDPROG" ]]; then
      clear
 M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
      _linha 
@@ -891,8 +893,7 @@ M02="Voltando a versao anterior do programa ""$prog"
      _linha 
      _mensagec "$YELLOW" "$M02"
      _linha 
-
-     "$cmd_unzip" -o "$OLDS"/"$prog"-"$ANTERIOR".zip -d /  >> "$LOG_ATU"
+     "$cmd_unzip" -o "$OLDS"/"$OLDPROG" -d /  >> "$LOG_ATU"
      _read_sleep 2
      clear
 #-VOLTA DE PROGRAMA CONCLUIDA
