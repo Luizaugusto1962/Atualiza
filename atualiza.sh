@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -i
 #                                                                                                                      #                                                               
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="21/06/2024"                                                                                                    #
+UPDATE="26/06/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -107,7 +107,7 @@ unset -v BASE1 tools DIR1 OLDS PROGS BACKUP
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE
-unset -v E_EXEC T_TELAS X_XML
+unset -v E_EXEC T_TELAS X_XML NOMEPROG NPROG OLDPROG
 tput sgr0; exit 
 }
 
@@ -131,7 +131,8 @@ SAVATU2=""
 SAVATU3=""
 SAVATU4=""
 ENVIABACK=""
-INI="backup"
+VERSAO=""
+INI=""
 #-Variaveis de cores-------------------------------------------------------------------------------#
 # TERM=xterm-256color
 tput sgr0
@@ -326,10 +327,6 @@ if [ -z "$prog" ]; then
           prog="$DEFAULT_PROG"
 fi
 
-DEFAULT_VVERSAO=""
-if [ -z "$VVERSAO" ]; then
-          VVERSAO="$DEFAULT_VVERSAO"
-fi
 ## Testa se as pastas do atualizac e dp atualizap estao configuradas
      if [ -n "$pasta" ]; then
      _mensagec "$CYAN" "$M81"
@@ -432,14 +429,13 @@ DEFAULT_ENVIABACK=""
 if [ -z "$ENVIABACK" ]; then
      ENVIABACK="$DEFAULT_ENVIABACK"
 fi
-
+## ------- Parametro para a atualizacao --------
 DESTINO2SERVER="/u/varejo/man/"
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
 DESTINO2TRANSPC="/u/varejo/trans_pc/"
 
 #-Processo do scp----------------------------------------------------------------------------------#
-
 _run_scp () {
      "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2SERVER""$NOMEPROG" .
 }
@@ -668,8 +664,9 @@ _qualprograma () {
      _linha
      MB4="       Informe o programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MB4}""${NORM}" prog
-     NOMEPROG="$prog""$class".zip
-     OLDPROG="$prog""-""anterior.zip"
+     NPROG=$prog$class
+     NOMEPROG=$NPROG".zip"
+     OLDPROG=$prog"-anterior.zip"
      _linha 
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      clear
@@ -677,6 +674,7 @@ _qualprograma () {
      _mensagec "$RED" "$M60"
      _linha 
      _press
+     NPROG=" "
      NOMEPROG=" "
      OLDPROG=" "
      _principal
@@ -791,11 +789,10 @@ M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
 
      for f in *"$NOMEPROG"; do
           mv -f -- "$f" "${f%.zip}.bkp"
-#          mv -f -- "$f" "${f%.zip}.bkp"     
      done
      _read_sleep 1
 #-Atualizacao COMPLETA
-     mv -f -- "$prog""$class".bkp "$PROGS"
+     mv -f -- "$NPROG".bkp "$PROGS"
      mv -f -- "$OLDPROG" "$OLDS"
      _read_sleep 1
      _linha 
@@ -867,13 +864,15 @@ _voltaprog () {
      printf "\n"
      MA7="     Informe o nome do programa em maiusculo: "
      read -rp "${YELLOW}""${MA7}""${NORM}" prog
-     NOMEPROG="$prog""$class".zip
-     OLDPROG="$prog""-""anterior.zip"
+     NPROG=$prog$class
+     NOMEPROG=$NPROG".zip"
+     OLDPROG=$prog"-anterior.zip"
      while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
      _meiodatela
      _mensagec "$RED" "$M60"
      _linha 
      _press
+     NPROG=" "
      NOMEPROG=" "
      OLDPROG=" "
      _principal
@@ -927,17 +926,20 @@ _voltabibli () {
      _meiodatela
      _mensagec "$RED" "$M62"
      _linha
-     read -rp "${YELLOW}""${MA2}""${NORM}" VVERSAO
-     while [[ "$VVERSAO" = [0-9] || -z "$VVERSAO" ]]; do 
+     read -rp "${YELLOW}""${MA2}""${NORM}" VERSAO
+     VVERSAO=$VERSAO".zip"
+     INI="backup-"$VVERSAO
+     while [[ "$VERSAO" = [0-9] || -z "$VERSAO" ]]; do 
      clear
      _meiodatela
      _mensagec "$RED" "$M56"
      _linha
      _press
+     VVERSAO=""
      _desatualizado
      done
 
-     if [[ ! -r "$OLDS"/"$INI-$VVERSAO".zip ]]; then
+     if [[ ! -r "$OLDS"/"$INI" ]]; then
 #-Backup da Biblioteca nao encontrado no diretorio
      _linha 
      _mensagec "$RED" "$M46"
@@ -977,14 +979,14 @@ _volta_progx () {
      _desatualizado
      done
 
-M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
+M30="O(s) programa(s) da ${NORM}${RED} ""$VERSAO"
      _linha
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M30"
      _linha
 
      cd "$OLDS"/ || exit
-     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS" >> "$LOG_ATU"
+     "$cmd_unzip" -o "$INI" -d "$OLDS" >> "$LOG_ATU"
      _volta_progy
 }
 
@@ -1039,7 +1041,7 @@ _volta_progy () {
      _mensagec "$YELLOW" "$M03"
      _linha 
 
-M30="O(s) programa(s) ""$Vprog""  da ${NORM}${RED} ""$VVERSAO"
+M30="O(s) programa(s) ""$Vprog""  da ${NORM}${RED} ""$VERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M30"
@@ -1079,7 +1081,7 @@ _volta_bibli () {
      _mensagec "$YELLOW" "$M03"
      _linha 
 
-M30="O(s) programa(s) da ${NORM}${RED} ""$VVERSAO"
+M30="O(s) programa(s) da ${NORM}${RED} ""$VERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M30"
@@ -1095,13 +1097,13 @@ _volta_geral () {
      _linha 
      _mensagec "$RED" "$M58"
      _linha 
-M31="o programas da versao: ${NORM}${RED} ""$VVERSAO"
+M31="o programas da versao: ${NORM}${RED} ""$VERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M31"
      _linha 
      cd "$OLDS"/ || exit
-     "$cmd_unzip" -o "$INI"-"$VVERSAO".zip -d "$OLDS" >> "$LOG_ATU"
+     "$cmd_unzip" -o "$INI" -d "$OLDS" >> "$LOG_ATU"
      cd "$TOOLS" || exit
      clear
 
@@ -1122,7 +1124,8 @@ _biblioteca () {
      _linha  
 #-M57=Informe somente o numeral da versao :
      read -rp "${YELLOW}""${M57}""${NORM}" VERSAO 
-
+     VVERSAO=$VERSAO".zip"
+     INI="backup-"$VVERSAO
      if [ -z "$VERSAO" ]; then
 #-M56=Versao a ser atualizada nao foi informada :
      printf "\n"
@@ -1130,6 +1133,7 @@ _biblioteca () {
      _mensagec "$RED" "$M56"
      _linha 
      _press
+     VVERSAO=""
      _principal
      fi
      clear
@@ -1217,7 +1221,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _linha 
      if [ "$sistema" = "iscobol" ]; then
           for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-          if  [[ ! -r "$atu""$VERSAO"".zip" ]]; then
+          if  [[ ! -r $atu$VVERSAO ]]; then
           clear
           _linha 
           _mensagec "$RED" "$M48"
@@ -1236,7 +1240,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _principal
      else
           for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
-               if  [[ ! -r "$atu""$VERSAO"".zip" ]]; then
+               if  [[ ! -r $atu$VERSAO ]]; then
      clear 
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -1261,18 +1265,18 @@ _processo () {
      _read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
           cd "$E_EXEC"/ || exit
-          "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "$TOOLS"/"$INI" "{}" +;
           cd "$T_TELAS"/ || exit
-          "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI" "{}" +;
           cd "$X_XML"/ || exit
-          "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r "$TOOLS"/"$INI" "{}" +;
           cd "$TOOLS"/ || exit
           clear
      else
           cd "$E_EXEC"/ || exit
-          "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r "$TOOLS"/"$INI" "{}" +;
           cd "$T_TELAS"/ || exit
-          "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI"-"$VERSAO" "{}" +;
+          "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI" "{}" +;
      fi 
 
 #-..   BACKUP COMPLETO   ..
@@ -1281,7 +1285,7 @@ _processo () {
      _linha 
      _read_sleep 1
 
-     if [[ ! -r "$TOOLS"/"$INI-$VERSAO".zip ]]; then
+     if [[ ! -r "$TOOLS"/"$INI" ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _mensagec "$RED" "$M45"
@@ -1290,7 +1294,7 @@ _processo () {
 #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
      _read_sleep 2    
      _meiodatela
-     read -rp "${YELLOW}""${M38}""${NORM}" CONT 
+     read -rp "${YELLOW}""${M38}""${NORM}" -n1 CONT 
      printf "\n\n"
           if [[ "$CONT" =~ ^[Nn]$ ]]; then
           _principal
@@ -1310,8 +1314,8 @@ _processo () {
      _mensagec "$YELLOW" "$M19"
      _linha 
      for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
-          printf "${GREEN}"" Atualizado ""$atu""$VERSAO"".zip""${NORM}""%*s\n" || printf "%*s""$M48"
-          "$cmd_unzip" -o "$atu""$VERSAO".zip -d "$destino" >> "$LOG_ATU"
+          printf "${GREEN}"" Atualizado ""$atu""$VVERSAO""${NORM}""%*s\n" || printf "%*s""$M48"
+          "$cmd_unzip" -o "$atu""$VVERSAO" -d "$destino" >> "$LOG_ATU"
           _read_sleep 2
           clear
      done
@@ -1323,7 +1327,7 @@ _processo () {
           mv -f -- "$f" "${f%.zip}.bkp"
      done
           mv -f -- *_"$VERSAO".bkp "$BACKUP"
-          mv -f -- "$INI"-"$VERSAO".zip "$OLDS"
+          mv -f -- "$INI" "$OLDS"
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #-Versao atualizada - $VERSAO$
 M40="Versao atualizada - ""$VERSAO"
@@ -1839,8 +1843,8 @@ kill $MYSELF >/dev/null 2>&1
      printf "\n"
 
 #-O backup de nome \"""$ARQ""\" foi criado em $BACKUP$}
-M10="O backup de nome ""$ARQ"
-M32="foi criado em ""$BACKUP"
+M10="O backup de nome :"$ARQ
+M32="foi criado em "$BACKUP
      _linha 
      _mensagec "$YELLOW" "$M10"
      _mensagec "$YELLOW" "$M32"
@@ -1856,11 +1860,11 @@ if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      if [ "$ENVIABACK" != "" ]; then
-          ENVBASE="$ENVIABACK"
+        ENVBASE="$ENVIABACK"
      else
      _meiodatela
      _mensagec "$RED" "$M68"
-     read -r "${YELLOW}""${M41}""${NORM}" ENVBASE
+     read -rp "${YELLOW}""${M41}""${NORM}" ENVBASE
      while [[ "$ENVBASE" =~ [0-9] || -z "$ENVBASE" ]] ;do
      _meiodatela
 #-M69 Voce nao informou o nome do diretorio a enviado, saindo...   
@@ -1895,15 +1899,15 @@ _backupavulso () {
      _mensagec "$RED" "$M52"
      _linha      
      read -rp "${YELLOW}""${M42}""${NORM}" VBACKAV
-     local VBACKUP="$EMPRESA"_"$VBACKAV"
-     while [[ -f "$VBACKUP".zip ]] ;do 
+     local VBACKUP="$EMPRESA"_"$VBACKAV".zip
+     while [[ -f "$VBACKUP" ]] ;do 
      clear
      _meiodatela
      _mensagec "$RED" "$M70"
      _press
      _ferramentas
      done
-     if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
+     if [[ ! -r "$BACKUP"/"$VBACKUP" ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _mensagec "$RED" "$M45"
@@ -1925,7 +1929,7 @@ if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      if [ "$ENVIABACK" != "" ]; then
-     ENVBASE="$ENVIABACK"
+        ENVBASE="$ENVIABACK"
      else
      _meiodatela
      _mensagec "$RED" "$M68"
@@ -1942,7 +1946,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _linha 
      _mensagec "$YELLOW" "$M29"
      _linha 
-     "$cmd_scp" -r -P "$PORTA" "$BACKUP""/""$VBACKUP".zip "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
+     "$cmd_scp" -r -P "$PORTA" "$BACKUP""/""$VBACKUP" "$USUARIO"@"$IPSERVER":/"$ENVBASE" 
 M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _linha 
      _mensagec "$YELLOW" "$M15"
@@ -1975,15 +1979,15 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      _linha
      MA9="         1- Informe somente a data do BACKUP: " 
      read -rp "${YELLOW}""${MA9}""${NORM}" VBACK
-     local VBACKUP="$EMPRESA"_"$VBACK"
-     while [[ -f "$VBACKUP".zip ]]; do 
+     local VBACKUP="$EMPRESA"_"$VBACK"".zip"
+     while [[ -f "$VBACKUP" ]]; do 
      clear
      _meiodatela
      _mensagec "$RED" "$M70"
      _press
      _menubackup
      done
-     if [[ ! -r "$BACKUP"/"$VBACKUP".zip ]]; then
+     if [[ ! -r "$BACKUP"/"$VBACKUP" ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _mensagec "$RED" "$M45"
@@ -2014,7 +2018,7 @@ M34="O arquivo ""$VARQUIVO"
      _mensagec "$YELLOW" "$M34"
      _linha 
      cd "$DIRBACK" || exit
-     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip "$VARQUIVO*.*" >> "$LOG_ATU"
+     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP" "$VARQUIVO*.*" >> "$LOG_ATU"
      _read_sleep 1
      if ls -s "$VARQUIVO"*.* >erro /dev/null 2>&1 ; then
 #-Arquivo encontrado no diretorio
@@ -2047,7 +2051,7 @@ M34="O arquivo ""$VARQUIVO"
      _mensagec "$YELLOW" "$M34"
      _linha 
      cd "$DIRBACK" || exit
-     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP".zip  >> "$LOG_ATU"
+     "$cmd_unzip" -o "$BACKUP""/""$VBACKUP" >> "$LOG_ATU"
      mv -f -- *.* "$BASE1" >> "$LOG_ATU"
      cd "$TOOLS"/ || exit
      clear
