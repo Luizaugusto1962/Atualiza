@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="26/06/2024"                                                                                                    #
+UPDATE="03/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -855,6 +855,10 @@ _desatualizado () { while true ;do
 }
 
 #-Procedimento da desatualizacao de programas------------------------------------------------------#
+_apagadir () {
+     rm -rf "$OLDS""${destino}"
+}     
+
 _voltaprog () {
      clear
 #M61
@@ -936,6 +940,7 @@ _voltabibli () {
      _linha
      _press
      VVERSAO=""
+     INI=""
      _desatualizado
      done
 
@@ -978,13 +983,6 @@ _volta_progx () {
      _press
      _desatualizado
      done
-
-M30="O(s) programa(s) da ${NORM}${RED} ""$VERSAO"
-     _linha
-     _mensagec "$YELLOW" "$M25"
-     _mensagec "$YELLOW" "$M30"
-     _linha
-
      cd "$OLDS"/ || exit
      "$cmd_unzip" -o "$INI" -d "$OLDS" >> "$LOG_ATU"
      _volta_progy
@@ -1003,6 +1001,7 @@ _volta_progz () {
           do
           "$cmd_find" "$OLDS1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
           done
+     _apagadir
      _desatualizado
      fi
 
@@ -1035,13 +1034,12 @@ _volta_progy () {
           "$cmd_find" "$OLDS" -name "$Vprog.TEL" -exec mv {} "$T_TELAS" \; 
           "$cmd_find" "$OLDS" -name "$Vprog*.int" -exec mv {} "$E_EXEC" \; 
      fi
-
 #-VOLTA DE PROGRAMAS CONCLUIDA
      _linha 
      _mensagec "$YELLOW" "$M03"
      _linha 
 
-M30="O(s) programa(s) ""$Vprog""  da ${NORM}${RED} ""$VERSAO"
+M30="O(s) programa(s) ""$Vprog"" da ${NORM}${RED}""$VERSAO"
      _linha 
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M30"
@@ -1088,6 +1086,7 @@ M30="O(s) programa(s) da ${NORM}${RED} ""$VERSAO"
      _linha 
      fi
      _press
+     _apagadir 
      _principal
 }
 
@@ -1424,7 +1423,7 @@ printf "${GREEN}""Sistema em uso Dias/(HH:MM) : ""${NORM}""$tecuptime""%*s\n"
 unset tecreset os architecture kernelrelease internalip externalip nameserver loadaverage
 
 # Removendo temporarios arquivos 
-rm "$LOG_TMP""osrelease" "$LOG_TMP""who" "$LOG_TMP""ramcache" "$LOG_TMP""diskusage"     
+rm -f "$LOG_TMP""osrelease" "$LOG_TMP""who" "$LOG_TMP""ramcache" "$LOG_TMP""diskusage"     
 _linha 
 printf "\n"
 _press
@@ -1497,9 +1496,9 @@ _limpando () {
 clear
      TEMPS="Temps"
      while read -r line; do
-     printf "${GREEN}""$line""${NORM}%s\n"
-     LINE=$line
-     "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$LINE >> "$LOG_LIMPA"
+     printf "${GREEN}""${line}""${NORM}%s\n"
+ #    LINE=$line
+     "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$line >> "$LOG_LIMPA"
      done < "$arqs"
 M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
@@ -1814,10 +1813,10 @@ ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
 _progresso () { 
-     echo -n "${YELLOW}"" Favor aguardar |""${NORM}"
+     echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
      while true
      do
-     echo -n "${GREEN}""#""${NORM}"
+     echo -n "${GREEN}""=""${NORM}"
      _read_sleep 5
      done
 }
@@ -1839,7 +1838,7 @@ _dobackup
 #- Matar progresso
 kill $MYSELF >/dev/null 2>&1
 
-     echo "${YELLOW}""|pronto""${NORM}"
+     echo "${YELLOW}""]pronto""${NORM}"
      printf "\n"
 
 #-O backup de nome \"""$ARQ""\" foi criado em $BACKUP$}
@@ -2253,16 +2252,28 @@ clear
      printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
      local DIR1="$BACKUP""/"
-     for arq in $DIR1{*.zip,*.bkp,*tgz,*.sh}
+     for arq in $DIR1{*.zip,*.bkp,*.sh}
      do
-     "$cmd_find" "$arq" -type f -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+     "$cmd_find" "$arq" -mtime +30 -type f -delete 
      done    
 # Apagar arquivos do diretorio olds----------------------------------#
-     "$cmd_find" "$OLDS""/" -name "*.zip" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+     local DIR2="$OLDS""/"
+     for arq in $DIR2
+     do
+     "$cmd_find" "$arq"* -mtime +30 -type f -delete 
+     done
 #-Apagar arquivos do diretorio progs---------------------------------#
-     "$cmd_find" "$PROGS""/" -name "*.bkp" -ctime +30 -exec rm -r {} \; >> "$LOG_LIMPA"
+     local DIR3="$PROGS""/"
+     for arq in $DIR3
+     do
+     "$cmd_find" "$arq"* -mtime +30 -type f -delete 
+     done
 #-Apagar arquivos do diretorio dos logs---------------------------------#
-     "$cmd_find" "$LOGS""/" -name "*.log" -ctime +30 -exec rm -r {} \; 
+     local DIR4="$LOGS""/"
+     for arq in $DIR4
+     do
+     "$cmd_find" "$arq"* -mtime +30 -type f -delete 
+     done
 cd "$TOOLS"/ || exit
 _ferramentas
 }
@@ -2287,12 +2298,14 @@ fi
 #atualizagit="atualiza.zip"
      "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
      _read_sleep 1
-     "$cmd_find" "$PROGS" -name "$atualizagit" -exec rm -r {} \; 
+     "$cmd_find" "$PROGS" -name "$atualizagit" -type f -delete 
      cd "$PROGS"/Atualiza-main || exit
 #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "atualiza.sh"
      mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
      mv -f -- "atualizap" "$TOOLS" >> "$LOG_ATU"
+     cd "$PROGS" || exit
+     rm -rf "$PROGS"/Atualiza-main
 _press
 exit   
 }
