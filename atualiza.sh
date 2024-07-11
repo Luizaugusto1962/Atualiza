@@ -1066,7 +1066,6 @@ _volta_bibli () {
 
      cd "$TOOLS"/ || exit
      clear
-
      else
      cd "$OLDS"/ || exit
 	"$cmd_find" "$OLDS" -type f \( -iname "*.int" \) -exec mv "{}" "$E_EXEC" \; >> "$LOG_ATU"
@@ -1105,7 +1104,6 @@ M31="o programas da versao: ${NORM}${RED} ""$VERSAO"
      "$cmd_unzip" -o "$INI" -d "$OLDS" >> "$LOG_ATU"
      cd "$TOOLS" || exit
      clear
-
 #-VOLTA DOS PROGRAMAS CONCLUIDA
      _linha 
      _mensagec "$YELLOW" "$M03"
