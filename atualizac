@@ -1,38 +1,41 @@
-####################################################################
 ###      ( Parametros para serem usados no atualiza.sh )         ###
 ####################################################################
+####################################################################
 ###              ( PASTA DO SISTEMA )                            ###
-destino="/u"
+destino=/u                                                        
 #-------------------------------------------------------------------
 ###           ( USA BANCO (S/N) )                                ###
-BANCO=n 
+BANCO=n                                                             
+#-------------------------------------------------------------------
+###          ( Nome de pasta para servidor OFF )                 ###
+#SERACESOFF=/sav/portalsav/Atualiza                                 
 #-------------------------------------------------------------------
 ###          ( Nome de pasta no servidor da SAV )                ###
-#ENVIABACK=cliente/nome_da_pasta
+#ENVIABACK=cliente/nome_da_pasta                                    
 #-------------------------------------------------------------------
-###           ( NOME DA EMPRESA )            ###
-EMPRESA=
+###           ( NOME DA EMPRESA )            ###                    
+EMPRESA=                                                            
 #-------------------------------------------------------------------
-###           ( DIRETORIO DA BASE DE DADOS )                    ###
+###           ( DIRETORIO DA BASE DE DADOS )                    ### 
 #-------------------------------------------------------------------
-base=/sav/dados_jisam
-#base2=
-#base3=
+base=/sav/dados_jisam                                               
+#base2=                                                             
+#base3=                                                             
 ####################################################################
 ###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###
 ####################################################################
-sistema=iscobol
+sistema=iscobol                                                     
 #-------------------------------------------------------------------
-#class=-class
-#VERCLASS=IS2018
-class=-class20
-VERCLASS=IS2020
-#class=-class23
-#VERCLASS=IS2023
+#class=-class                                                       
+#VERCLASS=IS2018                                                    
+class=-class20                                                      
+VERCLASS=IS2020                                                     
+#class=-class23                                                     
+#VERCLASS=IS2023                                                    
 ####################################################################
-##############                COBOL                   ##############                                   
+##############                COBOL                   ##############
 ####################################################################
-# # CONFIGURACAO PARA O SISTEMA EM MICROFOCUS ###
-#sistema=cobol
-#class=-6
+# # CONFIGURACAO PARA O SISTEMA EM MICROFOCUS ###                   
+#sistema=cobol                                                      
+#class=-6                                                           
 ####################################################################

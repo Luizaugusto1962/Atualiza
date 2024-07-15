@@ -1,34 +1,32 @@
 ####################################################################
 ###      ( Parametros para serem usados no atualiza.sh )         ###
 ####################################################################
-
 ###            ( Diretorio de trabalho do atualizador )          ###
-pasta=/sav/tools
-progs=/progs
-olds=/olds
-logs=/logs
-backup=/backup
+pasta=/sav/tools                                                    
+progs=/progs                                                        
+olds=/olds                                                          
+logs=/logs                                                          
+backup=/backup                                                      
 #-------------------------------------------------------------------
-### Diretorio para o IsCobol
-exec=/sav/classes
-telas=/sav/tel_isc
-xml=/sav/xml
-##############( BIBLIOTECAS )########################################
-### Nome de arquivo de atualizacao ###
-SAVATU1=tempSAV_"$VERCLASS"_classA_
-SAVATU2=tempSAV_"$VERCLASS"_classB_
-SAVATU3=tempSAV_"$VERCLASS"_tel_isc_
-SAVATU4=tempSAV_"$VERCLASS"_xml_ 
-
+### Diretorio para o IsCobol                                        
+exec=/sav/classes                                                   
+telas=/sav/tel_isc                                                  
+xml=/sav/xml                                                        
+##############( BIBLIOTECAS )#######################################
+### Nome de arquivo de atualizacao ###                              
+SAVATU1=tempSAV__classA_                                 
+SAVATU2=tempSAV__classB_                                 
+SAVATU3=tempSAV__tel_isc_                                
+SAVATU4=tempSAV__xml_                                    
 ####################################################################
-##############                COBOL                   ##############                                   
+##############                COBOL                   ##############
 ####################################################################
-### Diretorio para o Microfocus###
-#exec=/sav/int
-#telas=/sav/tel
+### Diretorio para o Microfocus###                                  
+#exec=/sav/int                                                      
+#telas=/sav/tel                                                     
 ##################( ISAM )##########################################
-### Nome de arquivo de atualizacao ###
-#SAVATU1=tempSAVintA_
-#SAVATU2=tempSAVintB_
-#SAVATU3=tempSAVtel_ 
+### Nome de arquivo de atualizacao ###                              
+#SAVATU1=tempSAVintA_                                               
+#SAVATU2=tempSAVintB_                                               
+#SAVATU3=tempSAVtel_                                                
 ####################################################################

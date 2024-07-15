@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="10/07/2024"                                                                                                    #
+UPDATE="15/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -192,19 +192,16 @@ DEFAULT_UNZIP="unzip"
 if [ -z "$cmd_unzip" ]; then
           cmd_unzip="$DEFAULT_UNZIP"
 fi
-###
 
 DEFAULT_ZIP="zip"
 if [ -z "$cmd_zip" ]; then
           cmd_zip="$DEFAULT_ZIP"
 fi
-###
 
 DEFAULT_FIND="find"
 if [ -z "$cmd_find" ]; then
           cmd_find="$DEFAULT_FIND"
 fi
-###
 
 DEFAULT_SCP="scp"
 if [ -z "$cmd_scp" ]; then
@@ -215,7 +212,6 @@ DEFAULT_WHO="who"
 if [ -z "$cmd_who" ]; then
           cmd_who="$DEFAULT_WHO"
 fi
-###
 
 #-Lista de mensagens #---------------------------------------------------------------------------------------------------#
 ### Mensagens em AMARELO
@@ -1538,6 +1534,10 @@ clear
      if [[ "$BANCO" = "s" ]]; then
      _mensagec "$GREEN" "$M503"
      printf "\n"
+     _mensagec "$GREEN" "$M506"
+     printf "\n"
+     _mensagec "$GREEN" "$M507"
+     printf "\n"
      _mensagec "$GREEN" "$M509"
      printf "\n"
      _mensagec "$GREEN" "$M510"
@@ -1546,6 +1546,8 @@ clear
      read -rp "${YELLOW}""${M110}""${NORM}" OPCAOB
           case $OPCAOB in
           1) _temps        ;;
+          4) _envrecarq    ;;
+          5) _expurgador   ;;          
           8) _update       ;;
           9) clear ; _principal ;;
           *) _ferramentas ;;
