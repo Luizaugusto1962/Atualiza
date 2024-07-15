@@ -10,3 +10,5 @@ gitkraken_rsa
 *.json
 
 *.gitattributes
+
+*.zip

@@ -12,17 +12,17 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="03/07/2024"                                                                                                    #
+UPDATE="10/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
-# "atualizac"  = Contem a configuracao referente a empresa           e                                                  #
-# "atualizap"  = Configuracao do parametro do sistema                                                                   #
-# "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                         #
-# "atualizaj2" = Lista de arquivos ATE*s E NFE*s para dar rebuild.                                                         #
-# "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                       #
+# "atualizac"  = Contem a configuracao referente a empresa           e                                                 #
+# "atualizap"  = Configuracao do parametro do sistema                                                                  #
+# "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                        #
+# "atualizaj2" = Lista de arquivos ATE*s E NFE*s para dar rebuild.                                                     #
+# "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                      #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
-#                                                                                                                      #
+# "setup.sh"   = Configurador para criar os arquivos atualizac e atualizap                                             #
 # Menus                                                                                                                #
 # 1 - Atualizacao de Programas                                                                                         #
 # 2 - Atualizacao de Biblioteca                                                                                        #
@@ -106,7 +106,7 @@ unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
-unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE
+unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
 unset -v E_EXEC T_TELAS X_XML NOMEPROG NPROG OLDPROG
 tput sgr0; exit 
 }
@@ -133,6 +133,8 @@ SAVATU4=""
 ENVIABACK=""
 VERSAO=""
 INI=""
+SERACESOFF=""
+
 #-Variaveis de cores-------------------------------------------------------------------------------#
 # TERM=xterm-256color
 tput sgr0
@@ -170,6 +172,14 @@ Z1="Aparentemente o programa zip nao esta instalado neste distribuicao."
      if ! command -v zip &> /dev/null; then
      printf "\n"
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "$Z1" ;printf "%*s""${NORM}"
+     printf "\n"
+     exit 1
+     fi
+
+Z2="Aparentemente o programa zip nao esta instalado neste distribuicao."
+     if ! command -v unzip &> /dev/null; then
+     printf "\n"
+     printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z2}+COLUMNS)/2)) "$Z2" ;printf "%*s""${NORM}"
      printf "\n"
      exit 1
      fi
@@ -511,6 +521,10 @@ if [ "$sistema" = "iscobol" ]; then
      exit
      fi
 fi
+
+if [ "$SERACESOFF" != " " ]; then 
+mkdir -p "$destino$SERACESOFF"
+fi
 ##
 
 if [ -d "$TOOLS" ]; then
@@ -571,7 +585,7 @@ _principal () {
 #-100-mensagens do Menu Principal.-----------------------------------------------------------------#	
 	M101="Menu de Opcoes""   -   Versao: ""${BLUE}""$UPDATE""${NORM}"
 	M102=".. Sistema: ""$sistema"" ..  =  ..Empresa: ""$EMPRESA"" .."
-	M103="Escolha a opcao:"
+	M103="Escolha a opcao:   "
 	M104="1${NORM} - Atualizacao de Programas "
      M105="2${NORM} - Atualizacao de Biblioteca" 
      M106="3${NORM} - Desatualizando           "
@@ -680,7 +694,24 @@ _qualprograma () {
      _principal
      done
 }
-
+#-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA #
+_servacessoff () {
+ if [ "$SERACESOFF" != "" ]; then 
+       SAOFF=$destino$SERACESOFF
+      if [ -f "$SAOFF/$NOMEPROG" ]; then 
+      mv -f -- "$SAOFF/$NOMEPROG" "." 
+      else 
+M42="A atualizacao,""$NOMEPROG"
+M422=" nao foi encontrado no diretorio ""$SAOFF" 
+     _linha 
+     _mensagec "$RED" "$M42"
+     _mensagec "$RED" "$M422"
+     _linha 
+     _press
+     _principal       
+      fi
+ fi
+}
 #-PROGRAMAS E/OU PACOTES---------------------------------------------------------------------------# 
 _pacoteon () {
      _qualprograma
@@ -702,6 +733,7 @@ _pacoteoff () {
      _mensagec "$YELLOW" "$M09"
      _linha
      _read_sleep 1
+     _servacessoff
      _atupacote
      _press
      _principal
@@ -1209,9 +1241,67 @@ _savatu () {
 	_scp_biblioteca
 	fi
 }
+# Biblioteca sava em servidor sem acesso remoto#
+_servacessofff () {
+ atu=""    
+
+if [ "$SERACESOFF" != "" ]; then 
+       SAOFF=$destino$SERACESOFF/
+     M42="A atualizacao nao foi encontrado no diretorio ""$SAOFF"  
+     _linha 
+     _mensagec "$YELLOW" "$M21"
+     _linha 
+     if [ "$sistema" = "iscobol" ]; then
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+          if  [[ ! -r $SAOFF$atu$VVERSAO ]]; then
+          clear
+          _linha 
+          _mensagec "$RED" "$M42"
+          _linha 
+          _press
+          clear
+          _principal
+          else
+          mv -f -- "$SAOFF$atu$VVERSAO" "."
+          fi
+          done 
+     _processo
+#-Atualizacao nao encontrado no diretorio
+     _linha 
+     _mensagec "$RED" "$M42"
+     _linha 
+     _press
+     _principal
+     else
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
+          if  [[ ! -r $SAOFF$atu$VVERSAO ]]; then
+          clear
+          #-Atualizacao nao encontrado no diretorio
+          _linha 
+          _mensagec "$RED" "$M42"
+          _linha 
+          _press
+          clear
+          _principal
+          else
+          mv -f -- "$SAOFF$atu$VVERSAO" "."
+          fi
+          done
+          clear 
+          _processo
+M42="A atualizacao nao foi encontrado no diretorio ""$SAOFF" 
+     _linha 
+     _mensagec "$RED" "$M42"
+     _linha 
+     _press
+     _principal       
+      fi
+fi
+}
 
 #-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
 _salva () {
+     _servacessofff
 M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _linha 
      _mensagec "$YELLOW" "$M21"
@@ -1432,11 +1522,11 @@ _ferramentas () {
 clear
 ###-500-mensagens do Menu Ferramentas.	
      M501="Menu das Ferramentas"
-     M503="1${NORM} - Limpar Temporarios               "
-     M504="2${NORM} - Recuperar arquivos               "
+     M503="1${NORM} - Temporarios                      "
+     M504="2${NORM} - Recuperar Arquivos               "
      M505="3${NORM} - Rotina de Backup                 "
      M506="4${NORM} - Envia e Recebe Arquivos          "
-     M507="5${NORM} - Expurgador de arquivos           "
+     M507="5${NORM} - Expurgador de Arquivos           "
      M509="8${NORM} - Update                           "	
      M510="9${NORM} - ${RED}Menu Anterior           "
      _linha "="
@@ -1483,7 +1573,7 @@ clear
           2) _rebuild      ;;
           3) _menubackup   ;;
           4) _envrecarq    ;;
-          5) _expurgador   ;; 
+          5) _expurgador   ;;
           8) _update       ;;
           9) clear ; _principal ;;
           *) _ferramentas ;;
@@ -1495,7 +1585,7 @@ clear
      TEMPS="Temps"
      while read -r line; do
      printf "${GREEN}""${line}""${NORM}%s\n"
- #    LINE=$line
+# shellcheck disable=SC2086
      "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$line >> "$LOG_LIMPA"
      done < "$arqs"
 M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
@@ -1505,6 +1595,31 @@ _linha
 }
 
 _temps () {
+     clear
+     M900="Menu de Limpesa"
+	M901="1${NORM} - Limpesa dos Arquivos Temporarios"
+	M902="2${NORM} - Adicionar Arquivos no ATUALIZAT "
+     printf "\n"
+	_linha "="
+	_mensagec "$RED" "$M900"
+	_linha 
+	printf "\n"
+	_mensagec "$PURPLE" "$M103"
+	printf "\n"
+	_mensagec "$GREEN" "$M901"
+	printf "\n"
+	_mensagec "$GREEN" "$M902"
+	printf "\n"
+     _linha "="
+     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
+     case $OPCAO in
+          1)  _limpesa ;;
+          2)  _addlixo ;;
+          *) _ferramentas ;;
+     esac    
+}
+
+_limpesa () {
 cd "$TOOLS"/ || exit
 #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
@@ -1528,13 +1643,35 @@ DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
 _ferramentas
 }
 
+ _addlixo() {
+clear
+    M8A="Informe o nome do arquivo a ser adicionado ao ATUALIZAT"
+     _meiodatela
+     _mensagec "$CYAN" "$M8A" 
+     _linha  
+     declare -u PEDARQ
+     M8B="         Informe do nome do arquivo em maiusculo: "
+     read -rp "${YELLOW}""${M8B}""${NORM}" PEDARQ
+     _linha
+          if [[ "$PEDARQ" = "" ]]; then
+          _meiodatela
+          _mensagec "$RED" "$M66"
+          cd "$TOOLS"/ || exit
+          _press
+          _ferramentas
+          fi
+          local ARQUIVO="$PEDARQ"
+          echo "$ARQUIVO" >> atualizat        
+ _ferramentas
+ }     
+
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 _rebuild () { 
      clear
 ###-600-mensagens do Menu Rebuild.
      M601="Menu de Recuperacao de Arquivo(s)."
-	M603="1${NORM} - Um arquivo ou Todos   "
-	M604="2${NORM} - Arquivos Principais   "
+	M603="1${NORM} - Um arquivo ou Todos "
+	M604="2${NORM} - Arquivos Principais "
      M605="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
@@ -1634,7 +1771,6 @@ if [ "$sistema" = "iscobol" ]; then
      _meiodatela
      _mensagec "$CYAN" "$M64" 
      _linha  
-#printf "%*s""${RED}""$M64""${NORM}\n"
      declare -u PEDARQ
      MA8="         Informe o nome maiusculo: "
      read -rp "${YELLOW}""${MA8}""${NORM}" PEDARQ
@@ -1649,7 +1785,6 @@ if [ "$sistema" = "iscobol" ]; then
           _jutill
           done
 
- #         cd "$TOOLS"/ || exit
      else
           while [[ "$PEDARQ" =~ [^A-Z0-9] ]]; do
           _meiodatela
@@ -1856,6 +1991,16 @@ M32="foi criado em "$BACKUP
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+     if [ "$SERACESOFF" != "" ]; then 
+       SAOFF=$destino$SERACESOFF
+      mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
+ MA11="Backup enviado para o diretorio:"   
+     _linha
+     _mensagec "$YELLOW" "$MA11"
+     _linha 
+     _press    
+     _ferramentas 
+     fi
      if [ "$ENVIABACK" != "" ]; then
         ENVBASE="$ENVIABACK"
      else
@@ -1919,6 +2064,19 @@ MA1="O backup \"""$VBACKUP""\""
      _linha
      _mensagec "$YELLOW" "$MA1"
      _linha 
+
+ if [ "$SERACESOFF" != "" ]; then 
+       SAOFF=$destino$SERACESOFF
+      mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
+ MA11="Backup enviado para o diretorio:"   
+     _linha
+     _mensagec "$YELLOW" "$MA11"
+     _linha 
+          _press    
+     _ferramentas 
+ fi
+
+      _linha 
      read -rp "${YELLOW}""${M40}""${NORM}" -n1 CONT 
      printf "\n\n"
 
@@ -2144,6 +2302,7 @@ M49="Arquivo nao encontrado no diretorio"
 #   clear
      _meiodatela
      _mensagec "$RED" "$M74"
+     _linha
      _press
      _envrecarq
      fi
@@ -2198,6 +2357,7 @@ M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"
      if [[ -z "$RRECEBE" ]]; then 
      _meiodatela
      _mensagec "$RED" "$M74"
+     _linha
      _press
      _envrecarq
      fi
@@ -2299,9 +2459,9 @@ fi
      "$cmd_find" "$PROGS" -name "$atualizagit" -type f -delete 
      cd "$PROGS"/Atualiza-main || exit
 #-Atualizando somente o atualiza.sh----------------------------------#
-     chmod +x "atualiza.sh"
-     mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
-     mv -f -- "atualizap" "$TOOLS" >> "$LOG_ATU"
+     chmod +x "atualiza.sh" "setup.sh"
+     mv -f -- "*.sh" "$TOOLS" >> "$LOG_ATU"
+#     mv -f -- "setup.sh" "$TOOLS" >> "$LOG_ATU"
      cd "$PROGS" || exit
      rm -rf "$PROGS"/Atualiza-main
 _press
