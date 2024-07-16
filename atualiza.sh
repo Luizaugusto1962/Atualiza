@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="15/07/2024"                                                                                                    #
+UPDATE="16/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -627,7 +627,7 @@ _principal () {
           4) _iscobol       ;;
           5) _linux         ;;
           6) _ferramentas   ;;
-          9) clear ;resetando ;;
+          9) clear ; resetando ;;
           *) clear ; _principal ;;
      esac
 }
@@ -770,8 +770,7 @@ _mens_atualiza () {
 #-Verificando nome do arquivo com a extensao .class ou .int----------#
      local pprog=""   
      if [ "$sistema" = "iscobol" ]; then 
-          for pprog in *.class
-          do
+          for pprog in *.class ; do
           if [ -f "$E_EXEC"/"$pprog" ]; then
           "$cmd_zip" -m "$OLDPROG" "$E_EXEC"/"$pprog"   
           _mens_atualiza
@@ -779,8 +778,7 @@ _mens_atualiza () {
           mv -f -- "$pprog" "$E_EXEC" >> "$LOG_ATU"
 		done
      else 
-          for pprog in *.int
-          do
+          for pprog in *.int ; do
           if [ -f "$E_EXEC"/"$pprog" ]; then
           "$cmd_zip" -m "$OLDPROG" "$E_EXEC"/"$pprog"
           _mens_atualiza
@@ -790,8 +788,7 @@ _mens_atualiza () {
           _read_sleep 1
 	fi
           if [[ -f "$prog".TEL ]]; then
-          for pprog in *.TEL
-          do
+          for pprog in *.TEL ; do
                if [ -f "$T_TELAS"/"$pprog" ]; then
                "$cmd_zip" -m "$OLDPROG" "$T_TELAS"/"$pprog"
                _mens_atualiza
@@ -850,7 +847,7 @@ _principal
 }
 
 #-Desatualizacao de programas----------------------------------------------------------------------# 
-_desatualizado () { while true ;do
+_desatualizado () { while true ; do
      clear
 ###-300-mensagens do Menu desatualizacao.
      M301="Menu de Desatualizacao"
@@ -889,7 +886,6 @@ _apagadir () {
 
 _voltaprog () {
      clear
-#M61
      _meiodatela
      _linha 
      _mensagec "$RED" "$M61"
@@ -998,13 +994,11 @@ _voltabibli () {
 }
 
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
-
 _volta_progx () {
      MA4="       2- Informe o nome do programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MA4}""${NORM}" Vprog
 
-     while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; 
-	do
+     while [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; do
      _meiodatela
      _mensagec "$RED" "$M71"
      _linha 
@@ -1025,8 +1019,7 @@ _volta_progz () {
      _press
 ### limpando diretorio 
      local OLDS1="$OLDS"/
-          for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}
-          do
+          for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg} ; do
           "$cmd_find" "$OLDS1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
           done
      _apagadir
@@ -1083,8 +1076,7 @@ _volta_bibli () {
      if [ "$sistema" = "iscobol" ]; then
 
      cd "$OLDS" || exit
-          for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll}
-          do
+          for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll} ; do
           "$cmd_find" "$OLDS" -type f \( -iname "$Ext" \) -exec mv "{}" "$E_EXEC" \; >> "$LOG_ATU"
           done
 
@@ -1201,12 +1193,12 @@ _biblioteca () {
 #-Processo de recepcao da biblioteca---------------------------------------------------------------#
 _scp_biblioteca () {
 	if [ "$sistema" = "iscobol" ]; then
-     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ; do
      _run_scp2
 	done
      _salva
 	else
-     for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do	
+     for atu in $SAVATU1 $SAVATU2 $SAVATU3 ; do	
 	_run_scp2
 	done 
 	fi
@@ -1248,7 +1240,7 @@ if [ "$SERACESOFF" != "" ]; then
      _mensagec "$YELLOW" "$M21"
      _linha 
      if [ "$sistema" = "iscobol" ]; then
-          for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ; do
           if  [[ ! -r $SAOFF$atu$VVERSAO ]]; then
           clear
           _linha 
@@ -1269,7 +1261,7 @@ if [ "$SERACESOFF" != "" ]; then
      _press
      _principal
      else
-          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ; do
           if  [[ ! -r $SAOFF$atu$VVERSAO ]]; then
           clear
           #-Atualizacao nao encontrado no diretorio
@@ -1303,7 +1295,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _mensagec "$YELLOW" "$M21"
      _linha 
      if [ "$sistema" = "iscobol" ]; then
-          for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ; do
           if  [[ ! -r $atu$VVERSAO ]]; then
           clear
           _linha 
@@ -1322,7 +1314,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _press
      _principal
      else
-          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ;do
+          for atu in $SAVATU1 $SAVATU2 $SAVATU3 ; do
                if  [[ ! -r $atu$VERSAO ]]; then
      clear 
 #-Atualizacao nao encontrado no diretorio
@@ -1396,7 +1388,7 @@ _processo () {
      _linha 
      _mensagec "$YELLOW" "$M19"
      _linha 
-     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ;do
+     for atu in $SAVATU1 $SAVATU2 $SAVATU3 $SAVATU4 ; do
           printf "${GREEN}"" Atualizado ""$atu""$VVERSAO""${NORM}""%*s\n" || printf "%*s""$M48"
           "$cmd_unzip" -o "$atu""$VVERSAO" -d "$destino" >> "$LOG_ATU"
           _read_sleep 2
@@ -1637,7 +1629,7 @@ DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
      _meiodatela
      _messagec RED "$M63"
      fi 
-     for i in $base $base2 $base3 ;do
+     for i in $base $base2 $base3 ; do
      DIRB="$destino""$i""/"
      _limpando
      _press
@@ -1783,7 +1775,7 @@ if [ "$sistema" = "iscobol" ]; then
 #-M65
      _mensagec "$RED" "$M65"
      _linha 
-          for linee in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat} ;do
+          for linee in "$BASE1"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat} ; do
           _jutill
           done
 
@@ -1949,8 +1941,7 @@ ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
 _progresso () { 
      echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
-     while true
-     do
+     while true ; do
      echo -n "${GREEN}""=""${NORM}"
      _read_sleep 5
      done
@@ -2009,7 +2000,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _meiodatela
      _mensagec "$RED" "$M68"
      read -rp "${YELLOW}""${M41}""${NORM}" ENVBASE
-     while [[ "$ENVBASE" =~ [0-9] || -z "$ENVBASE" ]] ;do
+     while [[ "$ENVBASE" =~ [0-9] || -z "$ENVBASE" ]] ; do
      _meiodatela
 #-M69 Voce nao informou o nome do diretorio a enviado, saindo...   
      _mensagec "$RED" "$M69"
@@ -2044,7 +2035,7 @@ _backupavulso () {
      _linha      
      read -rp "${YELLOW}""${M42}""${NORM}" VBACKAV
      local VBACKUP="$EMPRESA"_"$VBACKAV".zip
-     while [[ -f "$VBACKUP" ]] ;do 
+     while [[ -f "$VBACKUP" ]] ; do 
      clear
      _meiodatela
      _mensagec "$RED" "$M70"
@@ -2092,7 +2083,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _mensagec "$RED" "$M68"
      _linha
      read -rp "${YELLOW}""${M41}""${NORM}" ENVBASE
-     while [[ "$ENVBASE" =~ [0-9] || -f "$ENVBASE" ]] ;do
+     while [[ "$ENVBASE" =~ [0-9] || -f "$ENVBASE" ]] ; do
      _meiodatela
      _mensagec "$RED" "$M69"
      _press    
@@ -2160,8 +2151,7 @@ M22=".. Criando o diretorio temp do backup em $DIRBACK.."
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      MB1="       2- Informe o somente nome do arquivo em maiusculo: "
      read -rp "${YELLOW}""${MB1}""${NORM}" VARQUIVO
-     while [[ "$VARQUIVO" =~ [^A-Z0-9] || -z "$VARQUIVO" ]]
-     do
+     while [[ "$VARQUIVO" =~ [^A-Z0-9] || -z "$VARQUIVO" ]] ; do
      _mensagec "$RED" "$M71"
      _linha 
      _press
@@ -2412,26 +2402,22 @@ clear
      printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
      local DIR1="$BACKUP""/"
-     for arq in $DIR1{*.zip,*.bkp,*.sh}
-     do
+     for arq in $DIR1{*.zip,*.bkp,*.sh} ; do
      "$cmd_find" "$arq" -mtime +30 -type f -delete 
      done    
 # Apagar arquivos do diretorio olds----------------------------------#
      local DIR2="$OLDS""/"
-     for arq in $DIR2
-     do
+     for arq in $DIR2 ; do
      "$cmd_find" "$arq"* -mtime +30 -type f -delete 
      done
 #-Apagar arquivos do diretorio progs---------------------------------#
      local DIR3="$PROGS""/"
-     for arq in $DIR3
-     do
+     for arq in $DIR3 ; do
      "$cmd_find" "$arq"* -mtime +30 -type f -delete 
      done
 #-Apagar arquivos do diretorio dos logs---------------------------------#
      local DIR4="$LOGS""/"
-     for arq in $DIR4
-     do
+     for arq in $DIR4 ; do
      "$cmd_find" "$arq"* -mtime +30 -type f -delete 
      done
 cd "$TOOLS"/ || exit
