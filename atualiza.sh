@@ -1639,22 +1639,21 @@ _ferramentas
 
  _addlixo() {
 clear
-    M8A="Informe o nome do arquivo a ser adicionado ao ATUALIZAT"
+    M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
      _meiodatela
      _mensagec "$CYAN" "$M8A" 
      _linha  
-     declare -u PEDARQ
-     M8B="         Informe do nome do arquivo em maiusculo: "
-     read -rp "${YELLOW}""${M8B}""${NORM}" PEDARQ
+     M8B="         Qual o arquivo ->: "
+     read -rp "${YELLOW}""${M8B}""${NORM}" ADDARQ
      _linha
-          if [[ "$PEDARQ" = "" ]]; then
+          if [[ "$ADDARQ" = "" ]]; then
           _meiodatela
           _mensagec "$RED" "$M66"
           cd "$TOOLS"/ || exit
           _press
           _ferramentas
           fi
-          local ARQUIVO="$PEDARQ"
+          local ARQUIVO="$ADDARQ"
           echo "$ARQUIVO" >> atualizat        
  _ferramentas
  }     
