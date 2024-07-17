@@ -111,7 +111,7 @@ unset -v E_EXEC T_TELAS X_XML NOMEPROG NPROG OLDPROG
 tput sgr0; exit 
 }
 
-#-VARIAVEIS que devem vir do atualizac --------------------------------------------------------------------------------#
+#-VARIAVEIS que devem vir do atualizac ------------------------------------------------------------#
 destino=""
 pasta=""
 base=""
@@ -153,7 +153,7 @@ COLUMNS=$(tput cols)
 #-Conectores---------------------------------------------------------------------------------------#
 
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
-#- TESTE de CONFIGURACOES------------------------------------------------------------------------------------------------#
+#- TESTE de CONFIGURACOES--------------------------------------------------------------------------#
 
 [[ ! -e "atualizac" ]] && printf "ERRO. Arquivo atualizac, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizac" ]] && printf "ERRO. Arquivo atualizac, Sem acesso de leitura.\n" && exit 1
@@ -165,7 +165,7 @@ COLUMNS=$(tput cols)
 "." ./atualizac
 # Arquivo de configuracao para o atualiza.sh
 "." ./atualizap
-#------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
 check_zip_instalado() {
 Z1="Aparentemente o programa zip nao esta instalado neste distribuicao."
@@ -187,7 +187,7 @@ Z2="Aparentemente o programa zip nao esta instalado neste distribuicao."
 # Checando se o zip esta na base
 check_zip_instalado
 
-#-Comandos#--------------------------------------------------------------------------------------------------------------#
+#-Comandos#----------------------------------------------------------------------------------------#
 DEFAULT_UNZIP="unzip"
 if [ -z "$cmd_unzip" ]; then
           cmd_unzip="$DEFAULT_UNZIP"
@@ -213,7 +213,7 @@ if [ -z "$cmd_who" ]; then
           cmd_who="$DEFAULT_WHO"
 fi
 
-#-Lista de mensagens #---------------------------------------------------------------------------------------------------#
+#-Lista de mensagens #-----------------------------------------------------------------------------#
 ### Mensagens em AMARELO
 M01="Compactando os arquivos Anteriores" 
 M03="Volta do(s) Programa(s) Concluida(s)" 
@@ -289,7 +289,7 @@ _meiodatela () {
      printf "\033c\033[10;10H\n"
 }
 
-#-Mensagem centralizada-----------------------------------------------------------------------------#
+#-Mensagem centralizada----------------------------------------------------------------------------#
 _mensagec () {
 local CCC="$1"
 local MXX="$2"
@@ -480,7 +480,7 @@ _opinvalida () {
      _linha  
 }      
 
-#-Verificacoes de parametro e diretorios------------------------------------------------------------#
+#-Verificacoes de parametro e diretorios-----------------------------------------------------------#
 
 clear
 if [ -d "$E_EXEC" ]; then
@@ -690,7 +690,7 @@ _qualprograma () {
      _principal
      done
 }
-#-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA #
+#-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
 _servacessoff () {
  if [ "$SERACESOFF" != "" ]; then 
        SAOFF=$destino$SERACESOFF
@@ -720,7 +720,7 @@ _pacoteon () {
      _press 
      _principal
 }
-#_Pacotes em offline-----------------------------#
+#_Pacotes em offline-------------------------------------------------------------------------------#
 
 _pacoteoff () {
      #-O programa tem que estar no diretorio
@@ -755,7 +755,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _principal
 fi
 
-#-Descompactando o programa baixado----------------------------------#
+#-Descompactando o programa baixado----------------------------------------------------------------#
      "$cmd_unzip" -o "$NOMEPROG" >> "$LOG_ATU"
      _read_sleep 1
      clear
@@ -767,7 +767,7 @@ _mens_atualiza () {
      _linha 
      _read_sleep 1
 }
-#-Verificando nome do arquivo com a extensao .class ou .int----------#
+#-Verificando nome do arquivo com a extensao .class ou .int----------------------------------------#
      local pprog=""   
      if [ "$sistema" = "iscobol" ]; then 
           for pprog in *.class ; do
@@ -797,7 +797,7 @@ _mens_atualiza () {
           done
           fi
 
-#-Atualizando o novo programa.--------------------------------------#
+#-Atualizando o novo programa.---------------------------------------------------------------------#
 M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
      _linha 
      _mensagec "$YELLOW" "$M26"
@@ -1820,15 +1820,15 @@ if [ "$base2" ]; then
 fi
 if [ "$sistema" = "iscobol" ]; then
 cd "$BASE1"/ || exit
-#-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo--------------------------#
+#-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
 ls ATE2*.*.dat > "$TOOLS""/""atualizaj2"
 ls NFE?2*.*.dat >> "$TOOLS""/""atualizaj2"
 sleep 1
 cd "-" || exit
-#-Arquivos Ates e NFEs ---------------------------------------------------------------------------#
+#-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
 [[ ! -e "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
-#-------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#
 
 while read -r line; do
 linee="$BASE1""/""$line"
@@ -1888,7 +1888,7 @@ _menubackup () { while true ; do
      done
 }
 
-#-Rotina de backup com opcao de envio da a SAV---------------------------------------------------#
+#-Rotina de backup com opcao de envio da a SAV-----------------------------------------------------#
 _backup () {
 clear
 if [ "$base2" ]; then
