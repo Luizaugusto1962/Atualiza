@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="16/07/2024"                                                                                                    #
+UPDATE="17/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -2447,7 +2447,8 @@ fi
      "$cmd_find" "$PROGS" -name "$atualizagit" -type f -delete 
      cd "$PROGS"/Atualiza-main || exit
 #-Atualizando somente o atualiza.sh----------------------------------#
-     chmod +x "*.sh" 
+     chmod +x "atualiza.sh"
+     chmod +x "setup.sh"
      mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
      mv -f -- "setup.sh" "$TOOLS" >> "$LOG_ATU"
      cd "$PROGS" || exit
