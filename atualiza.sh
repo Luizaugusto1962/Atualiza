@@ -1809,7 +1809,7 @@ _rebuild
 
 #-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
 cd "$TOOLS"/ || exit
-#-TESTE Arquivos ----------------------------------------------------------------------------------#
+#-Arquivos para rebuild ---------------------------------------------------------------------------#
 [[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
@@ -1820,14 +1820,15 @@ if [ "$base2" ]; then
 fi
 if [ "$sistema" = "iscobol" ]; then
 cd "$BASE1"/ || exit
-##### Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo ####
+#-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo--------------------------#
 ls ATE2*.*.dat > "$TOOLS""/""atualizaj2"
 ls NFE?2*.*.dat >> "$TOOLS""/""atualizaj2"
 sleep 1
 cd "-" || exit
-
+#-Arquivos Ates e NFEs ---------------------------------------------------------------------------#
 [[ ! -e "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
+#-------------------------------------------------------------------------------------------------#
 
 while read -r line; do
 linee="$BASE1""/""$line"
@@ -1887,7 +1888,7 @@ _menubackup () { while true ; do
      done
 }
 
-#-Rotina de backup com opcao de envio da a SAV-----------------------------------------------------#
+#-Rotina de backup com opcao de envio da a SAV---------------------------------------------------#
 _backup () {
 clear
 if [ "$base2" ]; then
@@ -2446,9 +2447,9 @@ fi
      "$cmd_find" "$PROGS" -name "$atualizagit" -type f -delete 
      cd "$PROGS"/Atualiza-main || exit
 #-Atualizando somente o atualiza.sh----------------------------------#
-     chmod +x "atualiza.sh" "setup.sh"
-     mv -f -- "*.sh" "$TOOLS" >> "$LOG_ATU"
-#     mv -f -- "setup.sh" "$TOOLS" >> "$LOG_ATU"
+     chmod +x "*.sh" 
+     mv -f -- "atualiza.sh" "$TOOLS" >> "$LOG_ATU"
+     mv -f -- "setup.sh" "$TOOLS" >> "$LOG_ATU"
      cd "$PROGS" || exit
      rm -rf "$PROGS"/Atualiza-main
 _press
