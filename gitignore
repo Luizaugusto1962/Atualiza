@@ -1,0 +1,15 @@
+
+
+gitkraken_rsa
+
+*.pub
+
+*.un~
+
+*.sh~
+
+*.json
+
+*.gitattributes
+
+*.zip
