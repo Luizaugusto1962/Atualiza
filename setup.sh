@@ -38,7 +38,7 @@ echo $linha
 declare -l PASTA
 echo "###          ( Nome de pasta no servidor da SAV )                ###"
 echo "Nome de pasta no servidor da SAV, informar somento e pasta do cliente"
-read -rp "/cliente_" PASTA 
+read -rp "/cliente/" PASTA 
 echo 
 if [[ "$PASTA" == "" ]]; then
     echo "ENVIABACK=/sav/portalsav/Atualiza"
