@@ -692,11 +692,11 @@ _qualprograma () {
 }
 #-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
 _servacessoff () {
- if [ "$SERACESOFF" != "" ]; then 
-       SAOFF=$destino$SERACESOFF
-      if [ -f "$SAOFF/$NOMEPROG" ]; then 
-      mv -f -- "$SAOFF/$NOMEPROG" "." 
-      else 
+if [ "$SERACESOFF" != "" ]; then 
+     SAOFF=$destino$SERACESOFF
+     if [ -f "$SAOFF/$NOMEPROG" ]; then 
+     mv -f -- "$SAOFF/$NOMEPROG" "." 
+     else 
 M42="A atualizacao,""$NOMEPROG"
 M422=" nao foi encontrado no diretorio ""$SAOFF" 
      _linha 
@@ -705,8 +705,8 @@ M422=" nao foi encontrado no diretorio ""$SAOFF"
      _linha 
      _press
      _principal       
-      fi
- fi
+     fi
+fi
 }
 #-PROGRAMAS E/OU PACOTES---------------------------------------------------------------------------# 
 _pacoteon () {
@@ -931,7 +931,7 @@ M02="Voltando a versao anterior do programa ""$prog"
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
-    read -rp "${YELLOW}""${M37}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M37}""${NORM}" -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
           _principal
@@ -1231,10 +1231,10 @@ _savatu () {
 }
 # Biblioteca sava em servidor sem acesso remoto#
 _servacessofff () {
- atu=""    
+atu=""    
 
 if [ "$SERACESOFF" != "" ]; then 
-       SAOFF=$destino$SERACESOFF/
+     SAOFF=$destino$SERACESOFF/
      M42="A atualizacao nao foi encontrado no diretorio ""$SAOFF"  
      _linha 
      _mensagec "$YELLOW" "$M21"
@@ -1283,7 +1283,7 @@ M42="A atualizacao nao foi encontrado no diretorio ""$SAOFF"
      _linha 
      _press
      _principal       
-      fi
+     fi
 fi
 }
 
@@ -1354,7 +1354,7 @@ _processo () {
           "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r "$TOOLS"/"$INI" "{}" +;
      fi 
 
-#-..   BACKUP COMPLETO   ..
+#-..BACKUP COMPLETO..
      _linha 
      _mensagec "$YELLOW" "$M27"
      _linha 
@@ -1637,9 +1637,9 @@ DAYS=$(find "$BACKUP" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
 _ferramentas
 }
 
- _addlixo() {
+_addlixo() {
 clear
-    M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
+M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
      _meiodatela
      _mensagec "$CYAN" "$M8A" 
      _linha  
@@ -1789,7 +1789,7 @@ if [ "$sistema" = "iscobol" ]; then
           local ARQUIVO="$PEDARQ.???.dat"
           for line in $ARQUIVO; do
           $jut -rebuild "$BASE1""/""$line" -a -f
-              _linha  
+          _linha  
           done
      fi
 #-Arquivo(s) recuperado(s)...
@@ -1882,7 +1882,7 @@ _menubackup () { while true ; do
           1) _backup       ;;
           2) _unbackup     ;;
           3) _backupavulso ;;
-          9) clear ; _ferramentas ;;
+          9) clear ; _ferramentas ;;9
           *) _ferramentas ;;
      esac
      done
@@ -1985,8 +1985,8 @@ if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      if [ "$SERACESOFF" != "" ]; then 
-       SAOFF=$destino$SERACESOFF
-      mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
+          SAOFF=$destino$SERACESOFF
+          mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
  MA11="Backup enviado para o diretorio:"   
      _linha
      _mensagec "$YELLOW" "$MA11"
@@ -1995,7 +1995,7 @@ elif [[ "$CONT" =~ ^[Ss]$ ]]; then
      _ferramentas 
      fi
      if [ "$ENVIABACK" != "" ]; then
-        ENVBASE="$ENVIABACK"
+          ENVBASE="$ENVIABACK"
      else
      _meiodatela
      _mensagec "$RED" "$M68"
@@ -2058,26 +2058,26 @@ MA1="O backup \"""$VBACKUP""\""
      _mensagec "$YELLOW" "$MA1"
      _linha 
 
- if [ "$SERACESOFF" != "" ]; then 
-       SAOFF=$destino$SERACESOFF
-      mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
- MA11="Backup enviado para o diretorio:"   
+if [[ "$SERACESOFF" != "" ]]; then 
+          SAOFF=$destino$SERACESOFF
+          mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
+MA11="Backup enviado para o diretorio:"   
      _linha
      _mensagec "$YELLOW" "$MA11"
      _linha 
           _press    
      _ferramentas 
- fi
+fi
 
-      _linha 
+     _linha 
      read -rp "${YELLOW}""${M40}""${NORM}" -n1 CONT 
      printf "\n\n"
 
 if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
      _ferramentas
 elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-     if [ "$ENVIABACK" != "" ]; then
-        ENVBASE="$ENVIABACK"
+     if [[ "$ENVIABACK" != "" ]]; then
+     ENVBASE="$ENVIABACK"
      else
      _meiodatela
      _mensagec "$RED" "$M68"
@@ -2250,7 +2250,7 @@ _envia_avulso () {
      printf "\n\n\n"
 ### Pedir diretorio origem do arquivo    
      _linha 
- M991="1- Origem: Informe em que diretorio esta o arquivo a ser enviado :"   
+M991="1- Origem: Informe em que diretorio esta o arquivo a ser enviado :"   
      _mensagec "$YELLOW" "$M991"  
      read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
      _linha 
