@@ -1655,8 +1655,8 @@ M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
           fi
           local ARQUIVO="$ADDARQ"
           echo "$ARQUIVO" >> atualizat        
- _ferramentas
- }     
+_ferramentas
+}     
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 _rebuild () { 
@@ -1882,7 +1882,7 @@ _menubackup () { while true ; do
           1) _backup       ;;
           2) _unbackup     ;;
           3) _backupavulso ;;
-          9) clear ; _ferramentas ;;9
+          9) clear ; _ferramentas ;;
           *) _ferramentas ;;
      esac
      done
