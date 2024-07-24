@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="17/07/2024"                                                                                                    #
+UPDATE="24/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -1590,8 +1590,8 @@ _linha
 
 _temps () {
      clear
-     M900="Menu de Limpesa"
-	M901="1${NORM} - Limpesa dos Arquivos Temporarios"
+     M900="Menu de Limpeza"
+	M901="1${NORM} - Limpeza dos Arquivos Temporarios"
 	M902="2${NORM} - Adicionar Arquivos no ATUALIZAT "
      printf "\n"
 	_linha "="
@@ -1607,13 +1607,13 @@ _temps () {
      _linha "="
      read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
-          1)  _limpesa ;;
+          1)  _limpeza ;;
           2)  _addlixo ;;
           *) _ferramentas ;;
      esac    
 }
 
-_limpesa () {
+_limpeza () {
 cd "$TOOLS"/ || exit
 #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
 #-TESTE Arquivos ----------------------------------------------------------------------------------#
