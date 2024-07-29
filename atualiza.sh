@@ -1,4 +1,4 @@
-#!/bin/bash -i
+#!/bin/bash 
 #                                                                                                                      #                                                               
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="26/07/2024"                                                                                                    #
+UPDATE="29/07/2024"                                                                                                    #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -237,12 +237,12 @@ M27=" .. Backup Completo .."
 M28="Arquivo encontrado no diretorio" 
 M29="Informe a senha do usuario do SCP"
 M33="Voltando Backup anterior  ..."
-M35="Deseja voltar todos os ARQUIVOS do Backup ? (N/s):"
+M35="Deseja voltar todos os ARQUIVOS do Backup ? [N/s]:"
 M36="<< ... Pressione qualquer tecla para continuar ... >>"
-M37="Deseja informar mais algum programa para ser atualizado? sS/nN"
-M38="Deseja continuar a atualizacao? (n/S):"
+M37="Deseja informar mais algum programa para ser atualizado? [S/n]"
+M38="Deseja continuar a atualizacao? [n/S]:"
 M39="Continuando a atualizacao...:"
-M40="      Deseja enviar para o servidor da SAV ? (N/s):"
+M40="      Deseja enviar para o servidor da SAV ? [N/s]:"
 M41="         Informe para qual diretorio no servidor: "
 M42="         1- Informe nome BACKUP: "
 M43=" "
@@ -334,35 +334,35 @@ if [ -z "$prog" ]; then
 fi
 
 ## Testa se as pastas do atualizac e dp atualizap estao configuradas
-     if [ -n "$pasta" ]; then
+     if [ -n "${pasta}" ]; then
      _mensagec "$CYAN" "$M81"
      else
      printf "Diretorio do Tools, nao esta configurado  \n"
      exit
      fi
 
-     if [ -n "$base" ]; then
+     if [ -n "${base}" ]; then
      _mensagec "$CYAN" "$M81"
      else
      printf "Diretorio da Base de dados, nao esta configurado  \n"
      exit
      fi    
 
-     if [ -n "$exec" ]; then
+     if [ -n "${exec}" ]; then
      _mensagec "$CYAN" "$M81"
      else
      printf "Diretorio dos programas, nao esta configurado  \n"
      exit
      fi    
 
-     if [ -n "$telas" ]; then
+     if [ -n "${telas}" ]; then
      _mensagec "$CYAN" "$M81"
      else
      printf "Diretorio das Telas, nao esta configurado \n"
      exit
      fi    
 if [ "$sistema" = "iscobol" ]; then
-     if [ -n "$xml" ]; then
+     if [ -n "${xml}" ]; then
      _mensagec "$CYAN" "$M81"
      else
      printf "Diretorio dos Xmls do sistema, nao esta configurado  \n"
@@ -412,27 +412,27 @@ BASE1=${destino}${base}
 
 #-Configuracao para acesso ao scp------------------------------------------------------------------#
 DEFAULT_PORTA="41122"
-if [ -z "$PORTA" ]; then
+if [ -z "${PORTA}" ]; then
      PORTA="$DEFAULT_PORTA"
 fi
 
 DEFAULT_USUARIO="atualiza"
-if [ -z "$USUARIO" ]; then
+if [ -z "${USUARIO}" ]; then
      USUARIO="$DEFAULT_USUARIO"
 fi
 
 DEFAULT_IPSERVER="177.115.194.15"
-if [ -z "$IPSERVER" ]; then
+if [ -z "${IPSERVER}" ]; then
      IPSERVER="$DEFAULT_IPSERVER"
 fi
 
 DEFAULT_DESTINO2=""
-if [ -z "$DESTINO2" ]; then
+if [ -z "${DESTINO2}" ]; then
      DESTINO2="$DEFAULT_DESTINO2"
 fi
 
 DEFAULT_ENVIABACK=""
-if [ -z "$ENVIABACK" ]; then
+if [ -z "${ENVIABACK}" ]; then
      ENVIABACK="$DEFAULT_ENVIABACK"
 fi
 ## ------- Parametro para a atualizacao --------
@@ -447,7 +447,8 @@ _run_scp () {
 }
 
 #-Processo do scp2---------------------------------------------------------------------------------#
-_run_scp2 () {     # programas da biblioteca
+_run_scp2 () {     
+# programas da biblioteca
      "$cmd_scp" -C -r -P "$PORTA" "$USUARIO"@"$IPSERVER":"$DESTINO2""${atu}""$VERSAO".zip . 
 }
 
@@ -460,7 +461,7 @@ _read_sleep () {
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
 _press () {
-     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "$M36" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "${M36}" ;printf "%*s""${NORM}"
      read -rt 15 || :
      tput sgr0
 }
@@ -468,7 +469,8 @@ _press () {
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
 _linha () {
      local Traco=${1:-'-'}
-     printf -v Espacos "%$(tput cols)s""" # quantidade de tracos por linha
+# quantidade de tracos por linha
+     printf -v Espacos "%$(tput cols)s""" 
      linhas=${Espacos// /$Traco}
 	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
 }
@@ -521,7 +523,6 @@ fi
 if [ "${SERACESOFF}" != " " ]; then 
 mkdir -p "${destino}${SERACESOFF}"
 fi
-##
 
 if [ -d "${TOOLS}" ]; then
      _linha "*"
@@ -533,17 +534,17 @@ if [ -d "${TOOLS}" ]; then
           else
                mkdir -p "${OLDS}"
           fi
-		PROGS=${TOOLS}$progs
+		PROGS=${TOOLS}${progs}
           if [ -d "${PROGS}" ]; then
                printf " Diretorio progs ... ok \n"
           else
-               mkdir -p "$PROGS"
+               mkdir -p "${PROGS}"
           fi
-          LOGS=${TOOLS}$logs
+          LOGS=${TOOLS}${logs}
           if [ -d "${LOGS}" ]; then
                printf " Diretorio logs ... ok \n"
           else
-               mkdir -p "$LOGS"
+               mkdir -p "${LOGS}"
           fi
 		BACKUP=${TOOLS}$backup
           if [ -d "${BACKUP}" ]; then
@@ -557,7 +558,7 @@ if [ -d "${TOOLS}" ]; then
           else
                mkdir -p "$ENVIA"
           fi
-		RECEBE=$TOOLS"/recebe"
+		RECEBE=${TOOLS}"/recebe"
           if [ -d "${RECEBE}" ]; then
                printf " Diretorio recebe ... ok \n"
           else
@@ -567,10 +568,10 @@ else
      exit
 fi
 
-#### PARAMETRO PARA O LOGS
-LOG_ATU=$LOGS/atualiza.$(date +"%Y-%m-%d").log
-LOG_LIMPA=$LOGS/limpando.$(date +"%Y-%m-%d").log
-LOG_TMP=$LOGS/
+#### PARAMETRO PARA O LOGS ------------------------------------------------------------------------#
+LOG_ATU=${LOGS}/atualiza.$(date +"%Y-%m-%d").log
+LOG_LIMPA=${LOGS}/limpando.$(date +"%Y-%m-%d").log
+LOG_TMP=${LOGS}/
 UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 clear
@@ -578,7 +579,7 @@ clear
 _principal () { 
      tput clear
 	printf "\n"
-#-100-mensagens do Menu Principal.-----------------------------------------------------------------#	
+#-100-mensagens do Menu Principal. ----------------------------------------------------------------#	
 	M101="Menu de Opcoes""   -   Versao: ""${BLUE}""$UPDATE""${NORM}"
 	M102=".. Sistema: ""$sistema"" ..  =  ..Empresa: ""$EMPRESA"" .."
 	M103="Escolha a opcao:   "
@@ -634,7 +635,6 @@ _principal () {
 
 #-Procedimento da atualizacao de programas---------------------------------------------------------# 
 _atualizacao () { 
-
      clear
 ###   200-mensagens do Menu Programas.
      M201="Menu de Programas"
@@ -666,7 +666,6 @@ _atualizacao () {
 }
 
 _qualprograma () {
-
      clear
      _meiodatela
      #-Informe o nome do programa a ser atualizado:
@@ -674,11 +673,11 @@ _qualprograma () {
      _linha
      MB4="       Informe o programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MB4}""${NORM}" prog
-     NPROG=$prog$class
-     NOMEPROG=$NPROG".zip"
-     OLDPROG=$prog"-anterior.zip"
+     NPROG=${prog}${class}
+     NOMEPROG=${NPROG}".zip"
+     OLDPROG=${prog}"-anterior.zip"
      _linha 
-     while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
+     while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
      clear
      _meiodatela
      _mensagec "$RED" "$M60"
@@ -690,6 +689,7 @@ _qualprograma () {
      _principal
      done
 }
+
 #-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
 _servacessoff () {
 if [ "${SERACESOFF}" != "" ]; then 
@@ -720,8 +720,8 @@ _pacoteon () {
      _press 
      _principal
 }
-#_Pacotes em offline-------------------------------------------------------------------------------#
 
+#_Pacotes em offline-------------------------------------------------------------------------------#
 _pacoteoff () {
      #-O programa tem que estar no diretorio
      _qualprograma
@@ -736,15 +736,6 @@ _pacoteoff () {
 }
 
 _atupacote () {
-if [[ -f "$OLDS"/"$OLDPROG" ]]; then
-     clear
-     M43="Programa ""$OLDPROG"" encontrado no diretorio renomeando."
-     _linha
-     _mensagec "$CYAN" "$M43"
-     _linha
-     mv -f -- "$OLDS""/""$OLDPROG" "$OLDS""/""$UMADATA""-""$OLDPROG" >> "$LOG_ATU"
-fi
-
 if  [[ ! -f "$NOMEPROG" ]]; then
      clear
 M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio" 
@@ -754,6 +745,14 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
      _press 
      _principal
 fi
+if [[ -f "${OLDS}"/"$OLDPROG" ]]; then
+     clear
+     M43="Programa ""$OLDPROG"" encontrado no diretorio renomeando."
+     _linha
+     _mensagec "$CYAN" "$M43"
+     _linha
+     mv -f -- "${OLDS}""/""${OLDPROG}" "${OLDS}""/""$UMADATA""-""$OLDPROG" >> "$LOG_ATU"
+fi
 
 #-Descompactando o programa baixado----------------------------------------------------------------#
      "$cmd_unzip" -o "$NOMEPROG" >> "$LOG_ATU"
@@ -761,7 +760,7 @@ fi
      clear
 
 _mens_atualiza () {
-     #..   BACKUP do programa efetuado   ..
+     #..   BACKUP do programa sendo efetuado   ..
      _linha 
      _mensagec "$YELLOW" "$M24"
      _linha 
@@ -787,7 +786,7 @@ _mens_atualiza () {
           done
           _read_sleep 1
 	fi
-          if [[ -f "$prog".TEL ]]; then
+          if [[ -f "${prog}".TEL ]]; then
           for pprog in *.TEL ; do
                if [ -f "${T_TELAS}"/"$pprog" ]; then
                "$cmd_zip" -m "$OLDPROG" "${T_TELAS}"/"$pprog"
@@ -881,7 +880,7 @@ _desatualizado () { while true ; do
 
 #-Procedimento da desatualizacao de programas------------------------------------------------------#
 _apagadir () {
-     rm -rf "$OLDS""${destino}"
+     rm -rf "${OLDS}""${destino}"
 }     
 
 _voltaprog () {
@@ -892,10 +891,10 @@ _voltaprog () {
      printf "\n"
      MA7="     Informe o nome do programa em maiusculo: "
      read -rp "${YELLOW}""${MA7}""${NORM}" prog
-     NPROG=$prog$class
+     NPROG=${prog}${class}
      NOMEPROG=$NPROG".zip"
-     OLDPROG=$prog"-anterior.zip"
-     while [[ "$prog" =~ [^A-Z0-9] || -z "$prog" ]]; do
+     OLDPROG=${prog}"-anterior.zip"
+     while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
      _meiodatela
      _mensagec "$RED" "$M60"
      _linha 
@@ -906,9 +905,9 @@ _voltaprog () {
      _principal
      done
 
-     if [[ ! -r "$OLDS"/"$OLDPROG" ]]; then
+     if [[ ! -r "${OLDS}"/"$OLDPROG" ]]; then
      clear
-M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
+M43="Programa ""${prog}""-anterior.zip nao encontrado no diretorio."
      _linha 
      _mensagec "$RED" "$M43"
      _linha 
@@ -916,7 +915,7 @@ M43="Programa ""$prog""-anterior.zip nao encontrado no diretorio."
      _principal
      fi
 
-M02="Voltando a versao anterior do programa ""$prog"
+M02="Voltando a versao anterior do programa ""${prog}"
      _linha 
      _mensagec "$YELLOW" "$M02"
      _linha 
@@ -976,7 +975,7 @@ _voltabibli () {
      _press
      _desatualizado
      fi
-     MA3="Deseja volta todos os programas para antes da atualizacao? (N/s):"
+     MA3="Deseja volta todos os programas para antes da atualizacao? [N/s]:"
      printf "\n"
      read -rp "${YELLOW}""${MA3}""${NORM}" -n1 CONT 
      printf "\n\n"
@@ -1005,22 +1004,22 @@ _volta_progx () {
      _press
      _desatualizado
      done
-     cd "$OLDS"/ || exit
+     cd "${OLDS}"/ || exit
      "$cmd_unzip" -o "${INI}" -d "${OLDS}" >> "$LOG_ATU"
      _volta_progy
 }
 
 _volta_progz () {
      printf "\n"
-     MA5="Deseja volta mais algum programa ? (N/s):"
+     MA5="Deseja volta mais algum programa ? [N/s]:"
      read -rp "${YELLOW}""${MA5}""${NORM}" -n1 CONT 
      printf "\n\n"
      if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
      _press
 ### limpando diretorio 
-     local OLDS1="$OLDS"/
+     local OLDS1="${OLDS}"/
           for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg} ; do
-          "$cmd_find" "$OLDS1" -name "$pprog" -ctime +30 -exec rm -r {} \; 
+          "$cmd_find" "${OLDS1}" -name "$pprog" -ctime +30 -exec rm -r {} \; 
           done
      _apagadir
      _desatualizado
@@ -1046,7 +1045,7 @@ _volta_progz () {
 
 _volta_progy () {
      _read_sleep 1
-     cd "$OLDS" || exit 
+     cd "${OLDS}" || exit 
           if [ "$sistema" = "iscobol" ]; then
           "$cmd_find" "${OLDS}" -name "$Vprog.xml" -exec mv {} "${X_XML}" \;
           "$cmd_find" "${OLDS}" -name "$Vprog.TEL" -exec mv {} "${T_TELAS}" \;
@@ -1075,7 +1074,7 @@ _volta_bibli () {
      _read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
 
-     cd "$OLDS" || exit
+     cd "${OLDS}" || exit
           for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll} ; do
           "$cmd_find" "${OLDS}" -type f \( -iname "$Ext" \) -exec mv "{}" "${E_EXEC}" \; >> "$LOG_ATU"
           done
@@ -1084,10 +1083,10 @@ _volta_bibli () {
 
           "$cmd_find" "${OLDS}" -type f \( -iname "*.xml" \) -exec mv "{}" "${X_XML}" \; >> "$LOG_ATU"
 
-     cd "$TOOLS"/ || exit
+     cd "${TOOLS}"/ || exit
      clear
      else
-     cd "$OLDS"/ || exit
+     cd "${OLDS}"/ || exit
 	"$cmd_find" "${OLDS}" -type f \( -iname "*.int" \) -exec mv "{}" "${E_EXEC}" \; >> "$LOG_ATU"
 
      "$cmd_find" "${OLDS}" -type f \( -iname "*.TEL" \) -exec mv "{}" "${T_TELAS}" \; >> "$LOG_ATU"
@@ -1120,7 +1119,7 @@ M31="o programas da versao: ${NORM}${RED} ""$VERSAO"
      _mensagec "$YELLOW" "$M25"
      _mensagec "$YELLOW" "$M31"
      _linha 
-     cd "$OLDS"/ || exit
+     cd "${OLDS}"/ || exit
      "$cmd_unzip" -o "${INI}" -d "${OLDS}" >> "$LOG_ATU"
      cd "${TOOLS}" || exit
      clear
@@ -1501,7 +1500,6 @@ unset tecreset os architecture kernelrelease internalip externalip nameserver lo
 # Removendo temporarios arquivos 
 rm -f "$LOG_TMP""osrelease" "$LOG_TMP""who" "$LOG_TMP""ramcache" "$LOG_TMP""diskusage"     
 _linha 
-printf "\n"
 _press
 _principal
 }
@@ -1523,7 +1521,7 @@ clear
      printf "\n"
      _mensagec "$PURPLE" "$M103"
      printf "\n"
-     if [[ "$BANCO" = "s" ]]; then
+if [[ "$BANCO" = "s" ]]; then
      _mensagec "$GREEN" "$M503"
      printf "\n"
      _mensagec "$GREEN" "$M506"
@@ -1536,15 +1534,15 @@ clear
 	printf "\n"
 	_linha "="
      read -rp "${YELLOW}""${M110}""${NORM}" OPCAOB
-          case $OPCAOB in
+case $OPCAOB in
           1) _temps        ;;
           4) _envrecarq    ;;
           5) _expurgador   ;;          
           8) _update       ;;
           9) clear ; _principal ;;
           *) _ferramentas ;;
-     esac
-	else
+esac
+else
 	_mensagec "$GREEN" "$M503"
      printf "\n"
 	_mensagec "$GREEN" "$M504"
@@ -1557,7 +1555,7 @@ clear
      printf "\n"
 	_mensagec "$GREEN" "$M509"
 	printf "\n"
-     fi
+fi
      _mensagec "$GREEN" "$M510"
      printf "\n"
      _linha "="
@@ -1573,6 +1571,7 @@ clear
           *) _ferramentas ;;
      esac
 }
+
 clear
 _limpando () {
 clear
@@ -1911,7 +1910,7 @@ M62="Ja existe um backup em ""${BACKUP}"" nos ultimos dias."
      _mensagec "$CYAN" "$M62"
      _linha   
      printf "\n" 
-MB1="          Deseja continuar ? (N/s): "     
+MB1="          Deseja continuar ? [N/s]: "     
      read -rp "${YELLOW}""${MB1}""${NORM}" -n1 CONT 
      printf "\n"
           if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
@@ -2145,7 +2144,7 @@ M22=".. Criando o diretorio temp do backup em ${DIRBACK}.."
      _menubackup
      fi
      printf "\n" 
-#-"Deseja volta todos os ARQUIVOS do Backup ? (N/s):"
+#-"Deseja volta todos os ARQUIVOS do Backup ? [N/s]:"
      _linha 
      read -rp "${YELLOW}""${M35}""${NORM}" -n1 CONT 
      printf "\n\n"
