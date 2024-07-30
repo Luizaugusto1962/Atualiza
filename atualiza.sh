@@ -8,13 +8,13 @@
 #   /" \   :) /\  |\  /" \   :)     \:  |   (:      "||.  \    /:  | /   /  \\  \      /" \   :)/   /  \\  \\\   /     #
 #  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/      #
 #                                                                                                                      #
-#----------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="29/07/2024"                                                                                                    #
+UPDATE="30/07/2024"                                                                                                    #
 #                                                                                                                      #
-#----------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
 # "atualizac"  = Contem a configuracao referente a empresa           e                                                 #
 # "atualizap"  = Configuracao do parametro do sistema                                                                  #
@@ -99,11 +99,11 @@ UPDATE="29/07/2024"                                                             
 #           7 - Update                                                                                                 #
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
-#----------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#
 #Zerando variaves utilizadas 
 resetando () {
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
-unset -v BASE1 tools DIR1 OLDS PROGS BACKUP 
+unset -v BASE1 BASE2 BASE3 tools DIR1 OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
@@ -346,7 +346,7 @@ fi
      else
      printf "Diretorio da Base de dados, nao esta configurado  \n"
      exit
-     fi    
+     fi 
 
      if [ -n "${exec}" ]; then
      _mensagec "$CYAN" "$M81"
@@ -406,9 +406,25 @@ BASE1=${destino}${base}
      if [ -d "${BASE1}" ]; then
      _mensagec "$CYAN" "$M81"
      else
-     printf "%*s""Diretorio da base nao encontrado""${BASE1}""...  \n"
+     printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
      exit
      fi
+
+BASE2=${destino}${base2}
+     if [ -d "${BASE2}" ]; then
+     _mensagec "$CYAN" "$M81"
+     else
+     printf "%*s""Diretorio da base nao encontrado ""${BASE2}""...  \n"
+     exit
+     fi
+
+BASE3=${destino}${base3}
+     if [ -d "${BASE3}" ]; then
+     _mensagec "$CYAN" "$M81"
+     else
+     printf "%*s""Diretorio da base nao encontrado ""${BASE3}""...  \n"
+     exit
+     fi     
 
 #-Configuracao para acesso ao scp------------------------------------------------------------------#
 DEFAULT_PORTA="41122"
@@ -1206,6 +1222,7 @@ _scp_biblioteca () {
 
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
 _transpc () {
+clear     
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -1216,6 +1233,7 @@ _transpc () {
 
 #-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
 _savatu () {
+clear     
 #-Informe a senha do usuario do scp 
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -1397,11 +1415,21 @@ _processo () {
      _linha 
      _mensagec "$YELLOW" "$M17"
      _linha 
+     ####
+     if [[ -r "${INI}" ]]; then
+          mv -f -- "${INI}" "${OLDS}"
+     else
+MX3="Backup nao encontrado no diretorio."
+     _linha 
+     _mensagec "$RED" "$MX3"
+     _linha
+     ###
+     sleep 30s
+     fi
      for f in *_"$VERSAO".zip; do
           mv -f -- "$f" "${f%.zip}.bkp"
      done
           mv -f -- *_"$VERSAO".bkp "$BACKUP"
-          mv -f -- "${INI}" "${OLDS}"
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
 #-Versao atualizada - $VERSAO$
 M40="Versao atualizada - ""$VERSAO"
@@ -1505,7 +1533,8 @@ _principal
 }
 
 _ferramentas () {
-clear
+tput clear
+printf "\n"
 ###-500-mensagens do Menu Ferramentas.	
      M501="Menu das Ferramentas"
      M503="1${NORM} - Temporarios                      "
