@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="30/07/2024"                                                                                                    #
+UPDATE="31/07/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -1605,15 +1605,16 @@ clear
 _limpando () {
 clear
      TEMPS="Temps"
-     while read -r line; do
+     while read -r line || [[ "$line" ]]; do
+ # shellcheck disable=SC2086
      printf "${GREEN}""${line}""${NORM}%s\n"
-# shellcheck disable=SC2086
-     "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"$line >> "$LOG_LIMPA"
+     "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"${line} >> "$LOG_LIMPA"
      done < "$arqs"
+
 M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
 _mensagec "$YELLOW" "$M11"
-_linha 
+_linha
 }
 
 _temps () {
@@ -1677,13 +1678,14 @@ M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
           if [[ "$ADDARQ" = "" ]]; then
           _meiodatela
           _mensagec "$RED" "$M66"
+          _linha
           cd "${TOOLS}"/ || exit
           _press
-          _ferramentas
+          _temps
           fi
           local ARQUIVO="$ADDARQ"
           echo "$ARQUIVO" >> atualizat        
-_ferramentas
+_temps
 }     
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
