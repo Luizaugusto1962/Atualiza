@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="31/07/2024"                                                                                                    #
+UPDATE="01/08/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -1601,16 +1601,19 @@ fi
      esac
 }
 
-clear
+_varrendo_arquivo () {
+"$cmd_find" "$DIRB" -type f \( -iname "${line}" \) -exec zip -m "$BACKUP""/""$TEMPS-$UMADATA" "{}" +; 
+} >> "$LOG_LIMPA"
+
 _limpando () {
 clear
      TEMPS="Temps"
-     while read -r line || [[ "$line" ]]; do
- # shellcheck disable=SC2086
+     line_array=""
+     mapfile -t line_array < "$arqs"
+     for line in "${line_array[@]}"; do
      printf "${GREEN}""${line}""${NORM}%s\n"
-     "$cmd_zip" -m "$BACKUP""/""$TEMPS-$UMADATA" "$DIRB"${line} >> "$LOG_LIMPA"
-     done < "$arqs"
-
+     _varrendo_arquivo
+     done 
 M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
 _linha 
 _mensagec "$YELLOW" "$M11"
