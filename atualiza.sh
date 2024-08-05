@@ -1693,7 +1693,9 @@ _temps
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 _rebuild () { 
-     rm -rf "${TOOLS}""/""atualizaj2"    
+     if [ -f "${TOOLS}""/""atualizaj2" ]; then
+          rm -rf "${TOOLS}""/""atualizaj2"
+     fi
      clear
 ###-600-mensagens do Menu Rebuild.
      M601="Menu de Recuperacao de Arquivo(s)."
