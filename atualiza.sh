@@ -96,7 +96,7 @@ UPDATE="01/08/2024"                                                             
 #           6 - Expurgar                                                                                               #
 #               Excluir, zips e bkps com mais de 30 dias processado dos diretorios:                                    #
 #                /backup, /olds /progs e /logs                                                                         #
-#           7 - Update                                                                                                 #
+#           9 - Update                                                                                                 #
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
@@ -1035,7 +1035,7 @@ _volta_progz () {
 ### limpando diretorio 
      local OLDS1="${OLDS}"/
           for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg} ; do
-          "$cmd_find" "${OLDS1}" -name "$pprog" -ctime +30 -exec rm -r {} \; 
+          "$cmd_find" "${OLDS1}" -name "$pprog" -ctime +30 -exec rm -rf {} \; 
           done
      _apagadir
      _desatualizado
@@ -1054,15 +1054,15 @@ _volta_progz () {
           else
           _volta_progy
           fi
-          _press
-          _desatualizado
+     _press
+     _desatualizado
      fi
 }
 
 _volta_progy () {
      _read_sleep 1
      cd "${OLDS}" || exit 
-          if [ "$sistema" = "iscobol" ]; then
+     if [ "$sistema" = "iscobol" ]; then
           "$cmd_find" "${OLDS}" -name "$Vprog.xml" -exec mv {} "${X_XML}" \;
           "$cmd_find" "${OLDS}" -name "$Vprog.TEL" -exec mv {} "${T_TELAS}" \;
           "$cmd_find" "${OLDS}" -name "$Vprog*.class" -exec mv {} "${E_EXEC}" \;
@@ -1693,6 +1693,7 @@ _temps
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 _rebuild () { 
+     rm -rf "${TOOLS}""/""atualizaj2"    
      clear
 ###-600-mensagens do Menu Rebuild.
      M601="Menu de Recuperacao de Arquivo(s)."
@@ -1854,20 +1855,20 @@ fi
 if [ "$sistema" = "iscobol" ]; then
 cd "${BASE1}"/ || exit
 #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
-ls ATE2*.*.dat > "${TOOLS}""/""atualizaj2"
-ls NFE?2*.*.dat >> "${TOOLS}""/""atualizaj2"
+ls ATE202*.*.dat > "${TOOLS}""/""atualizaj2"
+ls NFE?202*.*.dat >> "${TOOLS}""/""atualizaj2"
 sleep 1
 cd "-" || exit
 #-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
 [[ ! -e "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
-
+# Trabalhando lista do arquivo "atualizaj" #
 while read -r line; do
 linee="${BASE1}""/""$line"
 _jutill   
 done < atualizaj
-
+# Trabalhando lista do arquivo "atualizaj2" #
 while read -r line; do
 linee="${BASE1}""/""$line"
 _jutill   
@@ -1879,7 +1880,7 @@ done < atualizaj2
 #     _press
 else
 _meiodatela
-#M996="Recuperacao em desenvolvimento :"
+#M996="Recuperacao para este sistema nao disponivel:"
 _mensagec "$RED" "$M996"
 fi
 _press
