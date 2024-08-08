@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="01/08/2024"                                                                                                    #
+UPDATE="08/08/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -246,6 +246,7 @@ M40="      Deseja enviar para o servidor da SAV ? [N/s]:"
 M41="         Informe para qual diretorio no servidor: "
 M42="         1- Informe nome BACKUP: "
 M43=" "
+M44="Acesso externo do servidor em modo OFF"
 MA1="O backup \"""$VBACKUP""\""
 MA2="         1- Informe apos qual versao da BIBLIOTECA: "
 ## Mensagens em VERMELHO
@@ -726,6 +727,14 @@ fi
 }
 #-PROGRAMAS E/OU PACOTES---------------------------------------------------------------------------# 
 _pacoteon () {
+     if [ "${SERACESOFF}" != "" ]; then 
+#-Servidor OFF acesso
+     _linha 
+     _mensagec "$YELLOW" "$M44"
+     _linha
+     _press  
+     _atualizacao    
+     fi
      _qualprograma
      #-Informe a senha do usuario do scp 
      _linha 
@@ -763,7 +772,7 @@ M42="Programa, ""$NOMEPROG"" nao encontrado no diretorio"
 fi
 if [[ -f "${OLDS}"/"$OLDPROG" ]]; then
      clear
-     M43="Programa ""$OLDPROG"" encontrado no diretorio renomeando."
+     M43="Programa ""$OLDPROG"" encontrado no diretorio renomeando..."
      _linha
      _mensagec "$CYAN" "$M43"
      _linha
@@ -776,7 +785,7 @@ fi
      clear
 
 _mens_atualiza () {
-     #..   BACKUP do programa sendo efetuado   ..
+     #..   BACKUP do programa efetuado   ..
      _linha 
      _mensagec "$YELLOW" "$M24"
      _linha 
@@ -787,6 +796,7 @@ _mens_atualiza () {
      if [ "$sistema" = "iscobol" ]; then 
           for pprog in *.class ; do
           if [ -f "${E_EXEC}"/"$pprog" ]; then
+          _linha 
           "$cmd_zip" -m "$OLDPROG" "${E_EXEC}"/"$pprog"   
           _mens_atualiza
           fi
@@ -796,6 +806,7 @@ _mens_atualiza () {
           for pprog in *.int ; do
           if [ -f "${E_EXEC}"/"$pprog" ]; then
           "$cmd_zip" -m "$OLDPROG" "${E_EXEC}"/"$pprog"
+          _linha 
           _mens_atualiza
           fi
           mv -f -- "$pprog" "${E_EXEC}" >> "$LOG_ATU"
@@ -805,6 +816,7 @@ _mens_atualiza () {
           if [[ -f "${prog}".TEL ]]; then
           for pprog in *.TEL ; do
                if [ -f "${T_TELAS}"/"$pprog" ]; then
+               _linha
                "$cmd_zip" -m "$OLDPROG" "${T_TELAS}"/"$pprog"
                _mens_atualiza
                fi
@@ -813,7 +825,7 @@ _mens_atualiza () {
           fi
 
 #-Atualizando o novo programa.---------------------------------------------------------------------#
-M07="Programa(s) a ser(em) atualizado(s) - ""$prog"
+M07="Programa(s) a ser(em) atualizado(s) - " "$prog"
      _linha 
      _mensagec "$YELLOW" "$M26"
      _mensagec "$GREEN" "$M07"
@@ -1197,7 +1209,7 @@ _biblioteca () {
 	_linha "="
      read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
-          1) _transpc ;;
+          1)  _transpc ;;
           2) _savatu ;;
           3) _salva ;;
           9) clear ; _principal ;;
@@ -1220,9 +1232,21 @@ _scp_biblioteca () {
      _salva
 }
 
+_acessooff () {
+     #-Servidor OFF acesso
+     _linha 
+     _mensagec "$YELLOW" "$M44"
+     _linha
+     _press  
+     _biblioteca
+}
+
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
 _transpc () {
-clear     
+clear 
+     if [ "${SERACESOFF}" != "" ]; then 
+_acessooff
+     fi    
 #-Informe a senha do usuario do scp
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -1233,7 +1257,10 @@ clear
 
 #-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
 _savatu () {
-clear     
+clear 
+     if [ "${SERACESOFF}" != "" ]; then 
+_acessooff
+     fi     
 #-Informe a senha do usuario do scp 
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -1246,7 +1273,7 @@ clear
 	_scp_biblioteca
 	fi
 }
-# Biblioteca sava em servidor sem acesso remoto#
+# Biblioteca sav em servidor sem acesso remoto#
 _servacessofff () {
 atu=""    
 
@@ -1472,6 +1499,7 @@ _linux () {
      _mensagec "$YELLOW" "$LM"
      _linha 
 # Checando se conecta com a internet ou nao 
+     [[ "${SERACESOFF}" == "" ]] 
 ping -c 1 google.com &> /dev/null && printf "${GREEN}"" Internet:""${NORM}""Conectada""%*s\n"||printf "${GREEN}"" Internet:""${NORM}""Desconectada""%*s\n"
 
 # Checando tipo de OS
@@ -1492,11 +1520,12 @@ internalip=$(ip route | grep default | awk '{print $3}')
 printf "${GREEN}""IP Interno :""${NORM}""$internalip""%*s\n"
 printf "\n"
 # Checando Externo IP
+if [[ "${SERACESOFF}" == "" ]]; then
 externalip=$(curl -s ipecho.net/plain;echo)
 printf "${GREEN}""IP Externo :""${NORM}""$externalip""%*s\n"
-
+fi
 _linha 
-_press 5
+_press
 clear
 _linha 
 # Checando os usuarios logados 
@@ -1693,9 +1722,7 @@ _temps
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 _rebuild () { 
-     if [ -f "${TOOLS}""/""atualizaj2" ]; then
-          rm -rf "${TOOLS}""/""atualizaj2"
-     fi
+     [[ -e "${TOOLS}""/""atualizaj2" ]] && rm -rf "${TOOLS}""/""atualizaj2"
      clear
 ###-600-mensagens do Menu Rebuild.
      M601="Menu de Recuperacao de Arquivo(s)."
@@ -1942,7 +1969,7 @@ DAYS2=$(find "${BACKUP}" -ctime -2 -name "$EMPRESA"\*zip)
 if [[ "$DAYS2" ]]; then
 
 M62="Ja existe um backup em ""${BACKUP}"" nos ultimos dias."
-     printf "\n\n"
+     clear 
      _linha 
      _mensagec "$CYAN" "$M62"
      _linha   
@@ -1968,6 +1995,7 @@ MB1="          Deseja continuar ? [N/s]: "
           fi
 fi
 #-Criando Backup..
+     clear
      _linha 
      _mensagec "$YELLOW" "$M14"
      _linha 
@@ -1975,33 +2003,26 @@ local ARQ=""
 ARQ="$EMPRESA"_$(date +%Y%m%d%H%M).zip
 
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
-_progresso () { 
+_myself () {
+     kill $!
+} 
      echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
      while true ; do
      echo -n "${GREEN}""=""${NORM}"
      _read_sleep 5
-     done
-}
+     done &
+     trap _myself SIGTERM
 
 _dobackup () {
      #-Backup 
      "$cmd_zip" "$BACKUP"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
 }
 
-#-Inicia em background-----------------------------------------------------------------------------#
-_progresso &
-#-Save o progresso () PID
-#-Você precisa usar o PID para matar a função
-MYSELF=$!
-#-Start backup
-#-Transfere o controle para o dobackup()
 _dobackup
-
 #- Matar progresso
-kill $MYSELF >/dev/null 2>&1
-
      echo "${YELLOW}""]pronto""${NORM}"
      printf "\n"
+_myself
 
 #-O backup de nome \"""$ARQ""\" foi criado em $BACKUP$}
 M10="O backup de nome :"$ARQ
@@ -2054,11 +2075,24 @@ M15="Backup enviado para a pasta, \"""$ENVBASE""\"."
      _mensagec "$YELLOW" "$M15"
      _linha 
      _read_sleep 3 
-     _ferramentas
+#     _ferramentas
 else
      _opinvalida
      _ferramentas 
-fi
+fi     
+M16="Mantem o backup ? [S/n]"     
+     _linha
+     read -rp "${YELLOW}""${M16}""${NORM}" -n1 CONT 
+     printf "\n\n"
+     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
+          rm -f -- "$BACKUP"/"$ARQ"
+     MA17="Backup excluido:"   
+     _linha
+     _mensagec "$YELLOW" "$MA17"
+     _linha 
+     _press    
+     fi
+_ferramentas
 } 
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
