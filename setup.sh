@@ -9,8 +9,8 @@ echo $traco > atualizac
 echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> atualizac
 echo "###      ( Parametros para serem usados no atualiza.sh )          ###" 
 echo $traco >> atualizac
-echo "###           ( USA BANCO (S/N) )                                 ###"
-read -rp "( USA BANCO (S/N)  ->" -n1 BANCO 
+echo "###           ( Banco de Dados )                               ###"
+read -rp " ( Sistema em banco de dados [S/N]  ->" -n1 BANCO 
 echo
 echo $linha
     if [[ "$BANCO" =~ ^[Nn]$ ]] || [[ "$BANCO" == "" ]]; then
@@ -21,7 +21,7 @@ echo $linha
 echo $linha >> atualizac
 declare -l DIR
 echo "###              ( PASTA DO SISTEMA )         ###" 
-read -rp "Informe o diretorio raiz ->" -n1 DIR 
+read -rp " Informe o diretorio raiz ->" -n1 DIR 
 echo 
 echo destino="/$DIR" >> atualizac
 echo $linha 
