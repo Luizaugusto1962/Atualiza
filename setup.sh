@@ -56,7 +56,7 @@ echo $linha
 echo EMPRESA="$EMPR"
 echo EMPRESA="$EMPR" >> atualizac
 echo $linha
-echo "###    ( DIRETORIO DA BASE DE DADOS )        ###"
+echo "###    ( DIRETORIO DA BASE DE DADOS 1 )        ###"
 echo $linha
 declare -l BASE
 declare -l BASE2
@@ -70,6 +70,8 @@ echo "base=""$BASE"
 echo "base=""$BASE" >> atualizac
 fi
 echo $linha
+echo "###    ( DIRETORIO DA BASE DE DADOS 2 )         ###"
+echo $linha
 read -rp "Nome de pasta da base2, Ex: /sav/dados_? -:>" BASE2 
 if [[ "$BASE2" == "" ]]; then
 echo "#base2=" >> atualizac
@@ -79,7 +81,8 @@ echo "base2=""$BASE2"
 echo "base2=""$BASE2" >> atualizac
 fi
 echo $linha
-
+echo "###    ( DIRETORIO DA BASE DE DADOS 3 )        ###"
+echo $linha
 read -rp "Nome de pasta da base3, Ex: /sav/dados_? -:>" BASE3
 if [[ "$BASE3" == "" ]]; then
 echo "#base3="
