@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/08/2024"                                                                                                    #
+UPDATE="14/08/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -134,6 +134,7 @@ ENVIABACK=""
 VERSAO=""
 INI=""
 SERACESOFF=""
+VERSAOANT=""
 
 #-Variaveis de cores-------------------------------------------------------------------------------#
 # TERM=xterm-256color
@@ -334,7 +335,7 @@ if [ -z "$prog" ]; then
           prog="$DEFAULT_PROG"
 fi
 
-## Testa se as pastas do atualizac e dp atualizap estao configuradas
+## Testa se as pastas do atualizac e do atualizap estao configuradas
      if [ -n "${pasta}" ]; then
      _mensagec "$CYAN" "$M81"
      else
@@ -537,8 +538,10 @@ if [ "$sistema" = "iscobol" ]; then
      fi
 fi
 
-if [ "${SERACESOFF}" != " " ]; then 
-mkdir -p "${destino}${SERACESOFF}"
+if [[ "${SERACESOFF}" != " " ]]; then
+    if ! [[ -d "${SERACESOFF}" ]]; then 
+    mkdir -p "${destino}${SERACESOFF}"
+    fi
 fi
 
 if [ -d "${TOOLS}" ]; then
@@ -654,7 +657,7 @@ _principal () {
 _atualizacao () { 
      clear
 ###   200-mensagens do Menu Programas.
-     M201="Menu de Programas"
+     M201="Menu de Programas "
      M202="Escolha o tipo de Atualizacao:"
      M203="1${NORM} - ${WHITE}Programa ou Pacote ON-Line    "
      M204="2${NORM} - ${WHITE}Programa ou Pacote em OFF-Line"
@@ -825,7 +828,7 @@ _mens_atualiza () {
           fi
 
 #-Atualizando o novo programa.---------------------------------------------------------------------#
-M07="Programa(s) a ser(em) atualizado(s) - " "$prog"
+M07="Programa(s) a ser(em) atualizado(s) - "$prog
      _linha 
      _mensagec "$YELLOW" "$M26"
      _mensagec "$GREEN" "$M07"
@@ -1184,21 +1187,22 @@ _biblioteca () {
 ###-400-mensagens do Menu Biblioteca.
      M401="Menu da Biblioteca"
      M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
-     M403="Escolha o local da Biblioteca:"
-     M404="1${NORM} - Atualizacao do Transpc"
-     M405="2${NORM} - Atualizacao do Savatu "
-     M406="3${NORM} - Atualizacao OFF-Line  "
-     M407="9${NORM} - ${RED}Menu Anterior"
+     M403="Anterior - ${NORM}${PURPLE}${VERSAOANT}"
+     M404="Escolha o local da Biblioteca:"
+     M405="1${NORM} - Atualizacao do Transpc"
+     M406="2${NORM} - Atualizacao do Savatu "
+     M407="3${NORM} - Atualizacao OFF-Line  "
+     M408="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
 	_mensagec "$RED" "$M401"
 	_linha 
 	_mensagec "$RED" "$M402"
+     _linha 
+	_mensagec "$RED" "$M403"
 	_linha "="
 	printf "\n"
-	_mensagec "$PURPLE" "$M403"
-	printf "\n"
-	_mensagec "$GREEN" "$M404"
+	_mensagec "$PURPLE" "$M404"
 	printf "\n"
 	_mensagec "$GREEN" "$M405"
 	printf "\n"
@@ -1206,7 +1210,10 @@ _biblioteca () {
 	printf "\n"
 	_mensagec "$GREEN" "$M407"
 	printf "\n"
+	_mensagec "$GREEN" "$M408"
+	printf "\n"
 	_linha "="
+     
      read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case $OPCAO in
           1)  _transpc ;;
@@ -1384,18 +1391,18 @@ _processo () {
      _read_sleep 1
      if [ "$sistema" = "iscobol" ]; then
           cd "${E_EXEC}"/ || exit
-          "$cmd_find" "${E_EXEC}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r "${TOOLS}"/"${INI}" "{}" +;
+          "$cmd_find" "${E_EXEC}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
           cd "${T_TELAS}"/ || exit
-          "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r "${TOOLS}"/"${INI}" "{}" +;
+          "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
           cd "${X_XML}"/ || exit
-          "$cmd_find" "${X_XML}"/ -type f \( -iname "*.xml" \) -exec zip -r "${TOOLS}"/"${INI}" "{}" +;
+          "$cmd_find" "${X_XML}"/ -type f \( -iname "*.xml" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
           cd "${TOOLS}"/ || exit
           clear
      else
           cd "${E_EXEC}"/ || exit
-          "$cmd_find" "${E_EXEC}"/ -type f \( -iname "*.int" \) -exec zip -r "${TOOLS}"/"${INI}" "{}" +;
+          "$cmd_find" "${E_EXEC}"/ -type f \( -iname "*.int" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
           cd "${T_TELAS}"/ || exit
-          "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r "${TOOLS}"/"${INI}" "{}" +;
+          "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
      fi 
 
 #-..BACKUP COMPLETO..
@@ -1466,6 +1473,8 @@ _mensagec "$YELLOW" "$M13"
 _mensagec "$RED" "$M40"
 _linha 
 _press
+ANTVERSAO=$VERSAO
+echo "VERSAOANT=""$ANTVERSAO" >> atualizac
 _principal
 }
 
@@ -1640,7 +1649,7 @@ clear
      line_array=""
      mapfile -t line_array < "$arqs"
      for line in "${line_array[@]}"; do
-     printf "${GREEN}""${line}""${NORM}%s\n"
+     printf "${GREEN}""Excluido todos as arquivos: ""${line}""${NORM}%s\n"
      _varrendo_arquivo
      done 
 M11="Movendo arquivos Temporarios do diretorio = ""$DIRB"
