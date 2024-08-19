@@ -2510,8 +2510,10 @@ local NOMEBAT="atualiza.bat"
 local CMD_PSCP="pscp"     
 if [ "${SERACESOFF}" != "" ]; then 
      SAOFF=${destino}${SERACESOFF}
+     if [[ ! -f "${SAOFF}/${NOMEBAT}" ]]; then
      mv -f -- "$NOMEBAT" "${SAOFF}" >> "$LOG_ATU"
      mv -f -- "$CMD_PSCP" "${SAOFF}" >> "$LOG_ATU"
+     fi
 fi
 }
 _update () {
@@ -2541,7 +2543,6 @@ fi
      chmod +x "setup.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "$LOG_ATU"
      mv -f -- "setup.sh" "${TOOLS}" >> "$LOG_ATU"
-     ##
      cd "${PROGS}" || exit
      rm -rf "${PROGS}"/Atualiza-main
 _press
