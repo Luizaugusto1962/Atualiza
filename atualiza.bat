@@ -4,8 +4,16 @@ mode con cols=60 lines=30
 color 0e
 set op=0
 set class=class23
-del /Q  *.zip
 set "line============================================"
+IF EXIST *.zip (
+    del /Q  *.zip
+    echo %line%
+    echo arquivos zip excluidos
+) ELSE (
+    echo %line%
+    echo Diretorio sem arquivos zip
+)    
+
 echo %line% 
 echo.
 echo Rotina para atualizar os programas da SAV.
