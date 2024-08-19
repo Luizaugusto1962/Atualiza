@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="14/08/2024"                                                                                                    #
+UPDATE="19/08/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -2507,22 +2507,11 @@ _ferramentas
 #-Atualizacao online-------------------------------------------------------------------------------#
 _seratusoff () {
 local NOMEBAT="atualiza.bat"
-local CMD_PSCP="PSCP"     
+local CMD_PSCP="pscp"     
 if [ "${SERACESOFF}" != "" ]; then 
      SAOFF=${destino}${SERACESOFF}
-     if [ -f "${SAOFF}/${NOMEBAT}" ]; then 
      mv -f -- "$NOMEBAT" "${SAOFF}" >> "$LOG_ATU"
      mv -f -- "$CMD_PSCP" "${SAOFF}" >> "$LOG_ATU"
-     else 
-M42="A atualizacao,""$NOMEBAT"
-M422=" nao foi encontrado no diretorio ""$SAOFF" 
-     _linha 
-     _mensagec "$RED" "$M42"
-     _mensagec "$RED" "$M422"
-     _linha 
-     _press
-     _principal       
-     fi
 fi
 }
 _update () {
