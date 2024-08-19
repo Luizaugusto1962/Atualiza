@@ -2505,7 +2505,28 @@ _ferramentas
 }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
+_seratusoff () {
+local NOMEBAT="atualiza.bat"
+local CMD_PSCP="PSCP"     
+if [ "${SERACESOFF}" != "" ]; then 
+     SAOFF=${destino}${SERACESOFF}
+     if [ -f "${SAOFF}/${NOMEBAT}" ]; then 
+     mv -f -- "$NOMEBAT" "${SAOFF}" >> "$LOG_ATU"
+     mv -f -- "$CMD_PSCP" "${SAOFF}" >> "$LOG_ATU"
+     else 
+M42="A atualizacao,""$NOMEBAT"
+M422=" nao foi encontrado no diretorio ""$SAOFF" 
+     _linha 
+     _mensagec "$RED" "$M42"
+     _mensagec "$RED" "$M422"
+     _linha 
+     _press
+     _principal       
+     fi
+fi
+}
 _update () {
+     link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
      _linha 
@@ -2514,23 +2535,24 @@ _update () {
      _linha 
      cp -rfv atualiza.sh "$BACKUP"
      cd "${PROGS}" || exit 
-     wget -q -c https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip || exit
+     wget -q -c "$link" || exit
      
 #-Descompactando o programa baixado----------------------------------#
 DEFAULT_ATUALIZAGIT="atualiza.zip"
 if [ -z "$atualizagit" ]; then
      atualizagit="$DEFAULT_ATUALIZAGIT"
 fi
-#atualizagit="atualiza.zip"
      "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
      _read_sleep 1
      "$cmd_find" "${PROGS}" -name "$atualizagit" -type f -delete 
      cd "${PROGS}"/Atualiza-main || exit
+     _seratusoff
 #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "atualiza.sh"
      chmod +x "setup.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "$LOG_ATU"
      mv -f -- "setup.sh" "${TOOLS}" >> "$LOG_ATU"
+     ##
      cd "${PROGS}" || exit
      rm -rf "${PROGS}"/Atualiza-main
 _press
