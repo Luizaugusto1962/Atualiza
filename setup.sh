@@ -30,7 +30,7 @@ echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF S ou N ->" -n1 OFF 
 echo
 if [[ "$OFF" =~ ^[Nn]$ ]] || [[ "$OFF" == "" ]]; then
-        echo "#SERACESOFF=/sav/portalsav/Atualiza"  >> atualizac
+        echo "#SERACESOFF="  >> atualizac
 elif [[ "$OFF" =~ ^[Ss]$ ]]; then
         echo "SERACESOFF=/sav/portalsav/Atualiza"  >> atualizac
 fi
