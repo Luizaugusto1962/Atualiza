@@ -15,10 +15,9 @@ echo
 echo $linha
     if [[ "$BANCO" =~ ^[Nn]$ ]] || [[ "$BANCO" == "" ]]; then
         echo "BANCO=n" >> atualizac
-    elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+    else [[ "$CONT" =~ ^[Ss]$ ]];
         echo "BANCO=s" >> atualizac
     fi
-echo $linha >> atualizac
 declare -l DIR
 echo "###              ( PASTA DO SISTEMA )         ###" 
 read -rp " Informe o diretorio raiz ->" -n1 DIR 
@@ -41,8 +40,13 @@ echo "Nome de pasta no servidor da SAV, informar somento e pasta do cliente"
 read -rp "/cliente/" PASTA 
 echo 
 if [[ "$PASTA" == "" ]]; then
+    if [[ "$OFF" =~ ^[Nn]$ ]] || [[ "$OFF" == "" ]]; then
+        echo "ENVIABACK="""
+        echo "ENVIABACK=""" >> atualizac
+    else
     echo "ENVIABACK=/sav/portalsav/Atualiza"
     echo "ENVIABACK=/sav/portalsav/Atualiza" >> atualizac
+    fi
 else
     echo "ENVIABACK=cliente/""$PASTA"
     echo "ENVIABACK=cliente/""$PASTA"  >> atualizac
