@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash 
 # shellcheck disable=SC2016
+#versao de 27/08/2024
 clear
 linha="#-------------------------------------------------------------------#"
 traco="#####################################################################"
@@ -138,33 +139,7 @@ sleep 1
 exit
 ;;
 esac
-}
-
-_2018 () {
-echo "class=-class" >> atualizac                                                       
-echo "VERCLASS=IS2018" >> atualizac       
-_PARISCOBOL
-}
-
-_2020 () {
-echo "class=-class20" >> atualizac                                                       
-echo "VERCLASS=IS2020" >> atualizac       
-_PARISCOBOL
-}
-
-_2023 () {
-echo "class=-class23" >> atualizac                                                       
-echo "VERCLASS=IS2023" >> atualizac  
-_PARISCOBOL     
-}
-
-_2024 () {
-    echo "class=-class24" >> atualizac                                                       
-    echo "VERCLASS=IS2024" >> atualizac       
-    _PARISCOBOL
-    }
-
-_PARISCOBOL () {
+{
     echo "exec=/sav/classes" 
     echo "telas=/sav/tel_isc"
     echo "xml=/sav/xml" 
@@ -178,6 +153,40 @@ _PARISCOBOL () {
     echo "SAVATU4=tempSAV_""$classD"
     echo $linha 
 } >> atualizap
+}
+
+_2018 () {
+    {
+echo "class=-class"
+echo "mclass=-mclass"
+echo "VERCLASS=IS2018"
+echo $linha
+} >> atualizac
+} 
+_2020 () {
+    {
+echo "class=-class20"   
+echo "mclass=-mclass20"                                                      
+echo "VERCLASS=IS2020"
+echo $linha  
+} >> atualizac      
+}
+_2023 () {
+{
+echo "class=-class23"                                                        
+echo "mclass=-mclass23"
+echo "VERCLASS=IS2023"  
+echo $linha
+} >> atualizac
+}
+_2024 () {
+{
+echo "class=-class24"  
+echo "mclass=-mclass24"                                                      
+echo "VERCLASS=IS2024"
+echo $linha
+} >> atualizac
+}
 
 _COBOL () { 
     {
@@ -190,11 +199,11 @@ _COBOL () {
     echo "SAVATU1=tempSAVintA_"
     echo "SAVATU2=tempSAVintB_" 
     echo "SAVATU3=tempSAVtel_" 
-    echo $traco
+    echo $linha
     } >> atualizap
 }
 
-echo "Qual sistema que o SAV esta rodando" 
+echo "  Em qual sistema que o SAV esta rodando " 
 echo $linha
 echo "1) Iscobol" 
 echo 
