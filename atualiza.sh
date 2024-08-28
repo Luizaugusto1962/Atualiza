@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/usr/bin/env bash 
 #                                                                                                                      #                                                               
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="23/08/2024"                                                                                                    #
+UPDATE="27/08/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -120,6 +120,7 @@ base3=""
 logs=""
 exec=""
 class=""
+mclass=""
 telas=""
 xml=""
 olds=""
@@ -277,7 +278,7 @@ M71="ERRO: Voce informou o nome do arquivo em minusculo ou em branco "
 M72="Informe o(s) arquivo(s) que deseja enviar."
 M73="Informe o(s) arquivo(s) que deseja receber."
 M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
-
+M75="Programa normal (zipa) ou em teste (zipaman)"
 ## Mensagens em cyan
 M80="..Checando estrutura dos diretorios do atualiza.sh.." 
 M81="..Encontrado o diretorio do sistema .." 
@@ -539,9 +540,9 @@ if [ "$sistema" = "iscobol" ]; then
 fi
 
 if [[ "${SERACESOFF}" != " " ]]; then
-    if ! [[ -d "${SERACESOFF}" ]]; then 
-    mkdir -p "${destino}${SERACESOFF}"
-    fi
+     if ! [[ -d "${SERACESOFF}" ]]; then 
+     mkdir -p "${destino}${SERACESOFF}"
+     fi
 fi
 
 if [ -d "${TOOLS}" ]; then
@@ -693,10 +694,21 @@ _qualprograma () {
      _linha
      MB4="       Informe o programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MB4}""${NORM}" prog
-     NPROG=${prog}${class}
-     NOMEPROG=${NPROG}".zip"
-     OLDPROG=${prog}"-anterior.zip"
-     _linha 
+     _linha
+     _mensagec "$RED" "$M75"
+     _linha
+     MB5="       Compilado normal [S ou N]: "
+     read -rp "${YELLOW}""${MB5}""${NORM}" -n1 COMPILADO 
+     printf "\n"
+     
+     if [[ "$COMPILADO" =~ ^[Ss]$ ]] || [[ "$COMPILADO" == "" ]]; then
+          NPROG=${prog}${class}
+     else
+          NPROG=${prog}${mclass}
+     fi
+          NOMEPROG=${NPROG}".zip"
+          OLDPROG=${prog}"-anterior.zip"
+     _linha
      while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
      clear
      _meiodatela
@@ -717,7 +729,7 @@ if [ "${SERACESOFF}" != "" ]; then
      if [ -f "${SAOFF}/${NOMEPROG}" ]; then 
      mv -f -- "${SAOFF}/${NOMEPROG}" "." 
      else 
-M42="A atualizacao,""$NOMEPROG"
+M42="O programa a ser atualizado, ""$NOMEPROG"
 M422=" nao foi encontrado no diretorio ""$SAOFF" 
      _linha 
      _mensagec "$RED" "$M42"
@@ -739,6 +751,8 @@ _pacoteon () {
      _atualizacao    
      fi
      _qualprograma
+     M421="O programa a ser atualizado, ""$NOMEPROG"
+     _mensagec "$RED" "$M421"
      #-Informe a senha do usuario do scp 
      _linha 
      _mensagec "$YELLOW" "$M29"
@@ -922,17 +936,13 @@ _voltaprog () {
      printf "\n"
      MA7="     Informe o nome do programa em maiusculo: "
      read -rp "${YELLOW}""${MA7}""${NORM}" prog
-     NPROG=${prog}${class}
-     NOMEPROG=$NPROG".zip"
      OLDPROG=${prog}"-anterior.zip"
+     _linha
      while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
      _meiodatela
      _mensagec "$RED" "$M60"
      _linha 
      _press
-     NPROG=" "
-     NOMEPROG=" "
-     OLDPROG=" "
      _principal
      done
 
@@ -947,15 +957,16 @@ M43="Programa ""${prog}""-anterior.zip nao encontrado no diretorio."
      fi
 
 M02="Voltando a versao anterior do programa ""${prog}"
-     _linha 
-     _mensagec "$YELLOW" "$M02"
-     _linha 
+#     _linha 
+#     _mensagec "$YELLOW" "$M02"
+#     _linha 
      "$cmd_unzip" -o "${OLDS}"/"$OLDPROG" -d /  >> "$LOG_ATU"
      _read_sleep 2
      clear
 #-VOLTA DE PROGRAMA CONCLUIDA
      _linha 
      _mensagec "$YELLOW" "$M03"
+     _mensagec "$GREEN" "$M02"
      _linha 
      _press
 #-Escolha de multi programas-----------------------------------------------------------------------# 
@@ -1458,7 +1469,7 @@ MX3="Backup nao encontrado no diretorio."
      _mensagec "$RED" "$MX3"
      _linha
      ###
-     sleep 30s
+     read_sleep 0.3
      fi
      for f in *_"$VERSAO".zip; do
           mv -f -- "$f" "${f%.zip}.bkp"
@@ -1895,7 +1906,7 @@ cd "${BASE1}"/ || exit
 #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
 ls ATE202*.*.dat > "${TOOLS}""/""atualizaj2"
 ls NFE?202*.*.dat >> "${TOOLS}""/""atualizaj2"
-sleep 1
+read_sleep 1
 cd "-" || exit
 #-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
 [[ ! -e "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
@@ -2478,7 +2489,7 @@ clear
      _linha 
      _mensagec "$RED" "$M51"
      _linha 
-     sleep 3s
+     read_sleep 3
      printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
      local DIR1="${BACKUP}""/"
