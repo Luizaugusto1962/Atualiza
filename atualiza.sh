@@ -847,14 +847,14 @@ M07="Programa(s) a ser(em) atualizado(s) - "$prog
      _mensagec "$YELLOW" "$M26"
      _mensagec "$GREEN" "$M07"
      _linha 
-     _read_sleep 
+     _read_sleep 1
 
 #-ALTERANDO A EXTENSAO DA ATUALIZACAO... De *.zip para *.bkp
      _linha 
      _mensagec "$YELLOW" "$M20"
      _mensagec "$YELLOW" "$M13"
      _linha 
-     _read_sleep 
+     _read_sleep 1
 
      for f in *"$NOMEPROG"; do
           mv -f -- "$f" "${f%.zip}.bkp"
@@ -1469,7 +1469,7 @@ MX3="Backup nao encontrado no diretorio."
      _mensagec "$RED" "$MX3"
      _linha
      ###
-     read_sleep 0.3
+     _read_sleep 0.3
      fi
      for f in *_"$VERSAO".zip; do
           mv -f -- "$f" "${f%.zip}.bkp"
@@ -1906,7 +1906,7 @@ cd "${BASE1}"/ || exit
 #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
 ls ATE202*.*.dat > "${TOOLS}""/""atualizaj2"
 ls NFE?202*.*.dat >> "${TOOLS}""/""atualizaj2"
-read_sleep 1
+_read_sleep 1
 cd "-" || exit
 #-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
 [[ ! -e "atualizaj2" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
@@ -2489,7 +2489,7 @@ clear
      _linha 
      _mensagec "$RED" "$M51"
      _linha 
-     read_sleep 3
+     _read_sleep 3
      printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
      local DIR1="${BACKUP}""/"
