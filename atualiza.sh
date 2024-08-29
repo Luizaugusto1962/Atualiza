@@ -697,11 +697,11 @@ _qualprograma () {
      _linha
      _mensagec "$RED" "$M75"
      _linha
-     MB5="       Compilado normal [S ou N]: "
-     read -rp "${YELLOW}""${MB5}""${NORM}" -n1 COMPILADO 
+     MB5="Programa compilado normal [S ou N]: "
+     read -rp "${YELLOW}""${MB5}""${NORM}" -n1  
      printf "\n"
      
-     if [[ "$COMPILADO" =~ ^[Ss]$ ]] || [[ "$COMPILADO" == "" ]]; then
+     if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ "${REPLY,,}" == "" ]]; then
           NPROG=${prog}${class}
      else
           NPROG=${prog}${mclass}
@@ -871,12 +871,12 @@ M07="Programa(s) a ser(em) atualizado(s) - "$prog
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
-     read -rp "${YELLOW}""${M37}""${NORM}" -n1 CONT
+     read -rp "${YELLOW}""${M37}""${NORM}" -n1 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
+     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
           _principal
-     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
-          if [[ "$OPCAO" = 1 ]]; then
+     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
+          if [[ "${OPCAO}" = 1 ]]; then
           _pacoteon
           else
           _pacoteoff
@@ -972,11 +972,11 @@ M02="Voltando a versao anterior do programa ""${prog}"
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
      _meiodatela
-     read -rp "${YELLOW}""${M37}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M37}""${NORM}" -n1  
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
+     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
           _principal
-     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
           if [[ "$OPCAO" = 1 ]]; then
           _voltaprog
           fi
@@ -1019,12 +1019,12 @@ _voltabibli () {
      fi
      MA3="Deseja volta todos os programas para antes da atualizacao? [N/s]:"
      printf "\n"
-     read -rp "${YELLOW}""${MA3}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${MA3}""${NORM}" -n1 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
+     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
 	_linha 
      _volta_progx
-     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
 	_linha 
      _volta_geral
      else
@@ -1054,9 +1054,9 @@ _volta_progx () {
 _volta_progz () {
      printf "\n"
      MA5="Deseja volta mais algum programa ? [N/s]:"
-     read -rp "${YELLOW}""${MA5}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${MA5}""${NORM}" -n1 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
+     if [[ "${REPLU,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
      _press
 ### limpando diretorio 
      local OLDS1="${OLDS}"/
@@ -1069,7 +1069,7 @@ _volta_progz () {
 
 	local Vprog=" "
      MA6="       2- Informe o nome do programa em maiusculo: "
-     if [[ "$CONT" =~ ^[Ss]$ ]]; then
+     if [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
      read -rp "${YELLOW}""${MA6}""${NORM}" Vprog
           if [[ "$Vprog" =~ [^A-Z0-9] || -z "$Vprog" ]]; then
           _meiodatela
@@ -1431,11 +1431,11 @@ _processo () {
 #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
      _read_sleep 2    
      _meiodatela
-     read -rp "${YELLOW}""${M38}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M38}""${NORM}" -n1 
      printf "\n\n"
-          if [[ "$CONT" =~ ^[Nn]$ ]]; then
+          if [[ "${REPLY,,}" =~ ^[Nn]$ ]]; then
           _principal
-          elif [[ "$CONT" =~ ^[Ss]$ ]] || [[ "$CONT" == "" ]]; then
+          elif [[ "${REPLY,,}" =~ ^[Ss]$ ]] || [[ "${REPLY,,}" == "" ]]; then
           _meiodatela
           _mensagec "$YELLOW" "$M39"
           else
@@ -1995,16 +1995,16 @@ M62="Ja existe um backup em ""${BACKUP}"" nos ultimos dias."
      _linha   
      printf "\n" 
 MB1="          Deseja continuar ? [N/s]: "     
-     read -rp "${YELLOW}""${MB1}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${MB1}""${NORM}" -n1 
      printf "\n"
-          if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
+          if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
 #-Backup Abortado!
           _linha 
           _mensagec "$RED" "$M47"
           _linha         
           _read_sleep 3
           _ferramentas 
-          elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+          elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
 #-Sera criado mais um backup para o periodo.
           _linha 
           _mensagec "$YELLOW" "$M06"
@@ -2056,11 +2056,11 @@ M32="foi criado em "$BACKUP
      _linha 
      _mensagec "$YELLOW" "$M16"
      _linha 
-     read -rp "${YELLOW}""${M40}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M40}""${NORM}" -n1 
      printf "\n\n"
-if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "$REPLY,," == "" ]]; then    
      _ferramentas
-elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+elif [[ "$REPLY,," =~ ^[Ss]$ ]]; then
      if [ "${SERACESOFF}" != "" ]; then 
           SAOFF=${destino}${SERACESOFF}
           mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
@@ -2102,9 +2102,9 @@ else
 fi     
 M16="Mantem o backup ? [S/n]"     
      _linha
-     read -rp "${YELLOW}""${M16}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M16}""${NORM}" -n1 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
+     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then    
           rm -f -- "$BACKUP"/"$ARQ"
      MA17="Backup excluido:"   
      _linha
@@ -2160,12 +2160,12 @@ MA11="Backup enviado para o diretorio:"
 fi
 
      _linha 
-     read -rp "${YELLOW}""${M40}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M40}""${NORM}" -n1 
      printf "\n\n"
 
-if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then    
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then    
      _ferramentas
-elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
      if [[ "$ENVIABACK" != "" ]]; then
      ENVBASE="$ENVIABACK"
      else
@@ -2237,9 +2237,9 @@ M22=".. Criando o diretorio temp do backup em ${DIRBACK}.."
      printf "\n" 
 #-"Deseja volta todos os ARQUIVOS do Backup ? [N/s]:"
      _linha 
-     read -rp "${YELLOW}""${M35}""${NORM}" -n1 CONT 
+     read -rp "${YELLOW}""${M35}""${NORM}" -n1 
      printf "\n\n"
-     if [[ "$CONT" =~ ^[Nn]$ ]] || [[ "$CONT" == "" ]]; then
+     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
      MB1="       2- Informe o somente nome do arquivo em maiusculo: "
      read -rp "${YELLOW}""${MB1}""${NORM}" VARQUIVO
      while [[ "$VARQUIVO" =~ [^A-Z0-9] || -z "$VARQUIVO" ]] ; do
@@ -2280,7 +2280,7 @@ M34="O arquivo ""$VARQUIVO"
      _linha 
      _press
      _menubackup
-     elif [[ "$CONT" =~ ^[Ss]$ ]]; then
+     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
 
 #---- Voltando Backup anterior  ... ----
 M34="O arquivo ""$VARQUIVO"
