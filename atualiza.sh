@@ -2058,7 +2058,7 @@ M32="foi criado em "$BACKUP
      _linha 
      read -rp "${YELLOW}""${M40}""${NORM}" -n1 
      printf "\n\n"
-if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "$REPLY,," == "" ]]; then    
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
      _ferramentas
 elif [[ "$REPLY,," =~ ^[Ss]$ ]]; then
      if [ "${SERACESOFF}" != "" ]; then 
@@ -2550,12 +2550,12 @@ fi
      cd "${PROGS}"/Atualiza-main || exit
      _seratusoff
 #-Atualizando somente o atualiza.sh----------------------------------#
-     chmod +x "atualiza.sh"
      chmod +x "setup.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "$LOG_ATU"
      mv -f -- "setup.sh" "${TOOLS}" >> "$LOG_ATU"
      cd "${PROGS}" || exit
      rm -rf "${PROGS}"/Atualiza-main
+     
 _press
 exit   
 }
