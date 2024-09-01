@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="27/08/2024"                                                                                                    #
+UPDATE="01/09/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 # Arquivos de trabalho:                                                                                                #
@@ -1591,6 +1591,7 @@ printf "\n"
      M505="3${NORM} - Rotina de Backup                 "
      M506="4${NORM} - Envia e Recebe Arquivos          "
      M507="5${NORM} - Expurgador de Arquivos           "
+     M508="7${NORM} - Parametros                      "
      M509="8${NORM} - Update                           "	
      M510="9${NORM} - ${RED}Menu Anterior           "
      _linha "="
@@ -1606,6 +1607,8 @@ if [[ "$BANCO" = "s" ]]; then
      printf "\n"
      _mensagec "$GREEN" "$M507"
      printf "\n"
+     _mensagec "$GREEN" "$M508"
+     printf "\n"
      _mensagec "$GREEN" "$M509"
      printf "\n"
      _mensagec "$GREEN" "$M510"
@@ -1616,6 +1619,7 @@ case $OPCAOB in
           1) _temps        ;;
           4) _envrecarq    ;;
           5) _expurgador   ;;          
+          7) _parametros   ;;
           8) _update       ;;
           9) clear ; _principal ;;
           *) _ferramentas ;;
@@ -1631,6 +1635,8 @@ else
      printf "\n"
      _mensagec "$GREEN" "$M507"
      printf "\n"
+	_mensagec "$GREEN" "$M508"
+	printf "\n"
 	_mensagec "$GREEN" "$M509"
 	printf "\n"
 fi
@@ -1644,6 +1650,7 @@ fi
           3) _menubackup   ;;
           4) _envrecarq    ;;
           5) _expurgador   ;;
+          7) _parametros   ;;
           8) _update       ;;
           9) clear ; _principal ;;
           *) _ferramentas ;;
@@ -2558,6 +2565,42 @@ fi
      
 _press
 exit   
+}
+
+_parametros () {
+     clear
+     _linha
+printf "${GREEN}""Sistema e banco de dados: ""${NORM}""$BANCO""%*s\n"     
+printf "${GREEN}""O diretorio raiz e: ""${NORM}""$destino""%*s\n"
+printf "${GREEN}""O diretorio do atualiza.sh: ""${NORM}""$pasta""%*s\n"
+printf "${GREEN}""O diretorio da base Principal : ""${NORM}""$base""%*s\n"
+printf "${GREEN}""O diretorio da Segunda base: ""${NORM}""$base2""%*s\n"
+printf "${GREEN}""O diretorio da Terceira base: ""${NORM}""$base3""%*s\n"
+printf "${GREEN}""O diretorio do executavies: ""${NORM}""$exec""%*s\n"
+printf "${GREEN}""O diretorio das telas: ""${NORM}""$telas""%*s\n"
+printf "${GREEN}""O diretorio dos xmls: ""${NORM}""$xml""%*s\n"
+printf "${GREEN}""O diretorio dos logs: ""${NORM}""$logs""%*s\n"
+printf "${GREEN}""O diretorio dos olds: ""${NORM}""$olds""%*s\n"
+printf "${GREEN}""O diretorio dos progs: ""${NORM}""$progs""%*s\n"
+printf "${GREEN}""O diretorio do backup: ""${NORM}""$backup""%*s\n"
+printf "${GREEN}""Qual o sistem em uso: ""${NORM}""$sistema""%*s\n"
+printf "${GREEN}""Biblioteca sendo usada 1: ""${NORM}""$SAVATU1""%*s\n"
+printf "${GREEN}""Biblioteca sendo usada 2: ""${NORM}""$SAVATU2""%*s\n"
+printf "${GREEN}""Biblioteca sendo usada 3: ""${NORM}""$SAVATU3""%*s\n"
+printf "${GREEN}""Biblioteca sendo usada 4: ""${NORM}""$SAVATU4""%*s\n"
+_linha
+_press
+clear
+_linha
+printf "${GREEN}""O diretorio para onde enviar o backup: ""${NORM}""$ENVIABACK""%*s\n"
+printf "${GREEN}""O diretorio Servidor OFF: ""${NORM}""$SERACESOFF""%*s\n"
+printf "${GREEN}""Versão anterior da Biblioteca: ""${NORM}""$VERSAOANT""%*s\n"
+printf "${GREEN}""O diretorio da classe: ""${NORM}""$class""%*s\n"
+printf "${GREEN}""O diretorio da mclasse: ""${NORM}""$mclass""%*s\n"
+printf "${GREEN}""O Versao do biblioteca do class: ""${NORM}""$VERCLASS""%*s\n"
+_linha
+_press
+_ferramentas
 }
 
 _principal
