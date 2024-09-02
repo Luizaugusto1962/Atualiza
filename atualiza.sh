@@ -16,10 +16,9 @@ UPDATE="01/09/2024"                                                             
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
-# "atualizac"  = Contem a configuracao referente a empresa           e                                                 #
+# "atualizac"  = Contem a configuracao referente a empresa                                                             #
 # "atualizap"  = Configuracao do parametro do sistema                                                                  #
 # "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                        #
-# "atualizaj2" = Lista de arquivos ATE*s E NFE*s para dar rebuild.                                                     #
 # "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                      #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
 # "setup.sh"   = Configurador para criar os arquivos atualizac e atualizap                                             #
@@ -93,7 +92,7 @@ UPDATE="01/09/2024"                                                             
 #                                                                                                                      #  
 #           6.4 - Envia e Recebe Arquivos "Avulsos"                                                                    #
 #               6.4.1 - Enviar arquivo(s)                                                                              #
-#               6.4.2 - Receber arquivo(s)                                                                             #                                                                                                       #
+#               6.4.2 - Receber arquivo(s)                                                                             #
 #                                                                                                                      #
 #           6.5 - Expurgador de arquivos                                                                               #
 #               Excluir, zips e bkps com mais de 30 dias processado dos diretorios:                                    #
