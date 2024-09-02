@@ -8,13 +8,13 @@
 #   /" \   :) /\  |\  /" \   :)     \:  |   (:      "||.  \    /:  | /   /  \\  \      /" \   :)/   /  \\  \\\   /     #
 #  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/      #
 #                                                                                                                      #
-#--------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#                   #
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
 UPDATE="01/09/2024"                                                                                                    #
 #                                                                                                                      #
-#--------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
 # "atualizac"  = Contem a configuracao referente a empresa           e                                                 #
 # "atualizap"  = Configuracao do parametro do sistema                                                                  #
@@ -40,6 +40,7 @@ UPDATE="01/09/2024"                                                             
 #            1.2 - OFF-Line                                                                                            #
 #      Atualiza o arquivo de programa ".zip" que deve ter sido colocado em ?/sav/tmp.                                  #
 #      O processo de atualizacao e id ntico ao passo acima.                                                            #
+#                                                                                                                      #
 #      2 - Atualizacao de Biblioteca                                                                                   #
 #            2.1 - Atualizacao do Transpc                                                                              #
 #      Atualiza a biblioteca que esta no diretorio /u/varejo/trans_pc/ do servidor da SAV.                             #
@@ -61,7 +62,7 @@ UPDATE="01/09/2024"                                                             
 #      na pasta dos programas.                                                                                         #
 #                                                                                                                      #
 #            3.2 - Voltar antes da Biblioteca                                                                          #
-#      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com nome ("backcup-versao da biblioteca".zip)       #
+#      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com nome ("backup-versao da biblioteca".zip)        #
 #      na pasta dos programas.                                                                                         #
 #                                                                                                                      #
 #      4 - Versao do Iscobol                                                                                           #
@@ -72,8 +73,9 @@ UPDATE="01/09/2024"                                                             
 #                                                                                                                      #
 #      6 - Ferramentas                                                                                                 #
 #           6.1 - Limpar Temporarios                                                                                   #
-#               Le os arquivos da lista "atualizat" compactando na pasta ?/sav/tmp/backup                              #
-#               com o nome de Temp(dia+mes+ano) e excluindo da pasta de dados.                                         #
+#               6.1.1 - Le os arquivos da lista "atualizat" compactando na pasta ?/sav/tmp/backup                      #
+#                       com o nome de Temp(dia+mes+ano) e excluindo da pasta de dados.                                 #
+#               6.1.2 - Adiciona arquivos no "ATUALIZAT"                                                               #
 #                                                                                                                      #
 #           6.2 - Recuperar arquivos                                                                                   #
 #               6.2.1 - Um arquivo ou Todos                                                                            #
@@ -84,19 +86,23 @@ UPDATE="01/09/2024"                                                             
 #               6.2.2 - Arquivos Principais                                                                            #
 #                   Roda o Jtuil somente nos arquivos que estao na lista "atualizaj"                                   #
 #                                                                                                                      #
-#           3 - Backup da base de dados                                                                                #
-#               Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                                    #
+#           6.3 - Backup da base de dados                                                                              #
+#               6.3.1 - Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                            #
+#               6.3.2 - Restaura Backup da base de dados                                                               #
+#               6.3.3 - Enviar Backup selecionado                                                                      #
+#                                                                                                                      #  
+#           6.4 - Envia e Recebe Arquivos "Avulsos"                                                                    #
+#               6.4.1 - Enviar arquivo(s)                                                                              #
+#               6.4.2 - Receber arquivo(s)                                                                             #                                                                                                       #
 #                                                                                                                      #
-#           4 - Restaurar Backup da base de dados                                                                      #
-#               Volta o backup feito pela opcao acima                                                                  #
-#                                                                                                                      #
-#           5 - Enviar Backup                                                                                          #
-#               Enviar ZIP feito pela opcao 3                                                                          #
-#                                                                                                                      #
-#           6 - Expurgar                                                                                               #
+#           6.5 - Expurgador de arquivos                                                                               #
 #               Excluir, zips e bkps com mais de 30 dias processado dos diretorios:                                    #
 #                /backup, /olds /progs e /logs                                                                         #
-#           9 - Update                                                                                                 #
+#                                                                                                                      # 
+#           6.7 - Parametros                                                                                           #    
+#                 Variaves e caminhos necessarios para o funcionamento do atualiza.sh                                  # 
+#                                                                                                                      # 
+#           6.8 - Update                                                                                               #
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
