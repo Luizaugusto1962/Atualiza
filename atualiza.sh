@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="01/09/2024"                                                                                                    #
+UPDATE="05/09/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -291,7 +291,7 @@ M81="..Encontrado o diretorio do sistema .."
 ## Mensagens em VERDE
 M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
-
+M93="Sistema atualizado verificar em  /portalsav/Atualiza"
 #-Centro da tela-----------------------------------------------------------------------------------#
 _meiodatela () {
      printf "\033c\033[10;10H\n"
@@ -2531,15 +2531,19 @@ _ferramentas
 _seratusoff () {
 local NOMEBAT="atualiza.bat"
 local CMD_PSCP="pscp"     
-if [ "${SERACESOFF}" != "" ]; then 
-     SAOFF=${destino}${SERACESOFF}
-     if [[ ! -f "${SAOFF}/${NOMEBAT}" ]]; then
+SAOFF=${destino}${SERACESOFF}
      mv -f -- "$NOMEBAT" "${SAOFF}" >> "$LOG_ATU"
-     mv -f -- "$CMD_PSCP" "${SAOFF}" >> "$LOG_ATU"
-     fi
-fi
+     cp -f -n -- "$CMD_PSCP" "${SAOFF}" >> "$LOG_ATU"
+     _mensagec "$GREEN" "$M93"
+     _linha
+     _press      
+_principal     
 }
+
 _update () {
+if [ "${SERACESOFF}" != "" ]; then 
+     _seratusoff
+else 
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
@@ -2550,24 +2554,24 @@ _update () {
      cp -rfv atualiza.sh "$BACKUP"
      cd "${PROGS}" || exit 
      wget -q -c "$link" || exit
-     
+
 #-Descompactando o programa baixado----------------------------------#
 DEFAULT_ATUALIZAGIT="atualiza.zip"
-if [ -z "$atualizagit" ]; then
+     if [ -z "$atualizagit" ]; then
      atualizagit="$DEFAULT_ATUALIZAGIT"
-fi
+     fi
      "$cmd_unzip" -o "$atualizagit" >> "$LOG_ATU"
      _read_sleep 1
      "$cmd_find" "${PROGS}" -name "$atualizagit" -type f -delete 
      cd "${PROGS}"/Atualiza-main || exit
      _seratusoff
-#-Atualizando somente o atualiza.sh----------------------------------#
-     chmod +x "setup.sh"
+     #-Atualizando somente o atualiza.sh----------------------------------#
+     chmod +x "setup.sh" "atualiza.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "$LOG_ATU"
      mv -f -- "setup.sh" "${TOOLS}" >> "$LOG_ATU"
      cd "${PROGS}" || exit
      rm -rf "${PROGS}"/Atualiza-main
-     
+fi     
 _press
 exit   
 }
@@ -2599,9 +2603,9 @@ clear
 _linha
 printf "${GREEN}""O diretorio para onde enviar o backup: ""${NORM}""$ENVIABACK""%*s\n"
 printf "${GREEN}""O diretorio Servidor OFF: ""${NORM}""$SERACESOFF""%*s\n"
-printf "${GREEN}""Versão anterior da Biblioteca: ""${NORM}""$VERSAOANT""%*s\n"
-printf "${GREEN}""O diretorio da classe: ""${NORM}""$class""%*s\n"
-printf "${GREEN}""O diretorio da mclasse: ""${NORM}""$mclass""%*s\n"
+printf "${GREEN}""Versao anterior da Biblioteca: ""${NORM}""$VERSAOANT""%*s\n"
+printf "${GREEN}""Variavel da classe: ""${NORM}""$class""%*s\n"
+printf "${GREEN}""Variavel da mclasse: ""${NORM}""$mclass""%*s\n"
 printf "${GREEN}""O Versao do biblioteca do class: ""${NORM}""$VERCLASS""%*s\n"
 _linha
 _press
