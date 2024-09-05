@@ -90,8 +90,17 @@ call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%S
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
 
 :EOF
-exit /b
+set sn=""
+set op=""
+set class=""
+set mclass=""
+set SAVATU1=""
+set SAVATU2=""
+set SAVATU3=""
+set SAVATU4=""
 cls
+
+exit /b
 EOF
     } >> atualiza.bat 
 }
@@ -153,6 +162,7 @@ esac
     echo "SAVATU3=tempSAV_""$classC"
     echo "SAVATU4=tempSAV_""$classD"
     } >> atualizap
+
 }
 
 _2018 () {
