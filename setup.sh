@@ -23,13 +23,18 @@ IF EXIST *.zip (
 echo %line% 
 echo.
 echo Rotina para atualizar os programas da SAV.
+echo ou atualizar a biblioteca
 echo Para servidor que nao tem acesso online
 echo %line% 
-echo	[1]- Atualizar programa [0]- Sair     
+
+echo    [1] - Atualizar programa 
+echo    [2] - Atualizar Biblioteca
+echo    [0] - Sair     
 echo.
 set /p op=Selecione a opcao ... 
 echo.
 if %op% equ 1 goto:Modo_compilado
+if %op% equ 2 goto:Biblioteca
 if %op% equ 0 goto:EOF
 
 :OPCAO
@@ -73,6 +78,16 @@ goto OPCAO
 :DEBUG
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%mclass%.zip .
 goto OPCAO
+
+:Biblioteca
+echo Informe qual versao vai ser baixada
+echo %line%
+set versao=""
+set /p versao=Numero da versao: 
+call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU1%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
 
 :EOF
 exit /b
@@ -217,7 +232,7 @@ case $escolha in
 		exit
 	;;
 esac 
-###
+clear
 declare -l BANCO
 echo $traco
 echo "###           ( Banco de Dados )                               ###"
@@ -321,6 +336,10 @@ if [[ "$OFF" =~ ^[Ss]$ ]]; then
 echo "@echo off"
 echo "set class=""${class}"                                                        
 echo "set mclass=""${mclass}" 
+echo "set SAVATU1=tempSAV_""$classA"
+echo "set SAVATU2=tempSAV_""$classB"
+echo "set SAVATU3=tempSAV_""$classC"
+echo "set SAVATU4=tempSAV_""$classD"
     } > atualiza.bat
     _ATUALIZA_BAT
 fi
