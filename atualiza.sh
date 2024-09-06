@@ -2058,9 +2058,9 @@ M32="foi criado em "$BACKUP
      _linha 
      read -rp "${YELLOW}""${M40}""${NORM}" -n1 
      printf "\n\n"
-if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "$REPLY,," == "" ]]; then    
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then    
      _ferramentas
-elif [[ "$REPLY,," =~ ^[Ss]$ ]]; then
+elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
      if [ "${SERACESOFF}" != "" ]; then 
           SAOFF=${destino}${SERACESOFF}
           mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"

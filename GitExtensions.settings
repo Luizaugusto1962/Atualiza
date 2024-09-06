@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<dictionary>
+  <item>
+    <key>
+      <string>dc3ca904-b9a5-4fe8-bf63-5b8ee9c2ddac.Branch where all branches should be merged in</string>
+    </key>
+    <value>
+      <string />
+    </value>
+  </item>
+  <item>
+    <key>
+      <string>dc3ca904-b9a5-4fe8-bf63-5b8ee9c2ddac.Regex to filter branches to delete</string>
+    </key>
+    <value>
+      <string />
+    </value>
+  </item>
+  <item>
+    <key>
+      <string>dc3ca904-b9a5-4fe8-bf63-5b8ee9c2ddac.Remote name obsoleted branches should be deleted from</string>
+    </key>
+    <value>
+      <string />
+    </value>
+  </item>
+</dictionary>

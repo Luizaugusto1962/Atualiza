@@ -1,6 +1,6 @@
 #!/usr/bin/env bash 
 # shellcheck disable=SC2016
-#versao de 27/08/2024
+#versao de 06/09/2024
 clear
 linha="#-------------------------------------------------------------------#"
 traco="#####################################################################"
@@ -14,9 +14,9 @@ echo "###           ( Banco de Dados )                               ###"
 read -rp " ( Sistema em banco de dados [S/N]  ->" -n1 BANCO 
 echo
 echo $linha
-    if [[ "$BANCO" =~ ^[Nn]$ ]] || [[ "$BANCO" == "" ]]; then
+    if [[ "${BANCO}" =~ ^[Nn]$ ]] || [[ "${BANCO}" == "" ]]; then
         echo "BANCO=n" >> atualizac
-    else [[ "$CONT" =~ ^[Ss]$ ]];
+    else [[ "${BANCO}" =~ ^[Ss]$ ]];
         echo "BANCO=s" >> atualizac
     fi
 declare -l DIR
@@ -29,9 +29,9 @@ declare -l OFF
 echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF S ou N ->" -n1 OFF 
 echo
-if [[ "$OFF" =~ ^[Nn]$ ]] || [[ "$OFF" == "" ]]; then
+if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
         echo "#SERACESOFF="  >> atualizac
-elif [[ "$OFF" =~ ^[Ss]$ ]]; then
+elif [[ "${OFF}" =~ ^[Ss]$ ]]; then
         echo "SERACESOFF=/sav/portalsav/Atualiza"  >> atualizac
 fi
 echo $linha 
