@@ -12,7 +12,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="05/09/2024"                                                                                                    #
+UPDATE="06/09/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2072,7 +2072,7 @@ M32="foi criado em "$BACKUP
      printf "\n\n"
 if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
      _ferramentas
-elif [[ "$REPLY,," =~ ^[Ss]$ ]]; then
+elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
      if [ "${SERACESOFF}" != "" ]; then 
           SAOFF=${destino}${SERACESOFF}
           mv -f -- "$BACKUP"/"$VBACKUP" "$SAOFF"
