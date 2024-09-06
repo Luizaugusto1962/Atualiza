@@ -1,4 +1,5 @@
 #!/usr/bin/env bash 
+# shellcheck disable=SC1017
 #versao de 30/08/2024
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
