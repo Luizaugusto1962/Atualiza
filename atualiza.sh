@@ -1382,7 +1382,7 @@ M21="A atualizacao tem que esta no diretorio ""$TOOLS"
      _principal
      else
           for atu in $SAVATU1 $SAVATU2 $SAVATU3 ; do
-               if  [[ ! -r $atu$VERSAO ]]; then
+               if  [[ ! -r $atu$VVERSAO ]]; then
      clear 
 #-Atualizacao nao encontrado no diretorio
      _linha 
@@ -2606,7 +2606,6 @@ printf "${GREEN}""O diretorio Servidor OFF: ""${NORM}""$SERACESOFF""%*s\n"
 printf "${GREEN}""Versao anterior da Biblioteca: ""${NORM}""$VERSAOANT""%*s\n"
 printf "${GREEN}""Variavel da classe: ""${NORM}""$class""%*s\n"
 printf "${GREEN}""Variavel da mclasse: ""${NORM}""$mclass""%*s\n"
-printf "${GREEN}""O Versao do biblioteca do class: ""${NORM}""$VERCLASS""%*s\n"
 _linha
 _press
 _ferramentas
