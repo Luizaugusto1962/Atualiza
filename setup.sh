@@ -173,7 +173,6 @@ mclass="-mclass"
 VERCLASS="IS2018"        
 echo "class=-class"
 echo "mclass=-mclass"
-echo "VERCLASS=IS2018"
     } >> atualizac
 } 
 
@@ -184,7 +183,6 @@ mclass="-mclass20"
 VERCLASS="IS2020"
 echo "class=-class20"   
 echo "mclass=-mclass20"                                                      
-echo "VERCLASS=IS2020" 
     } >> atualizac      
 }
 
@@ -195,7 +193,6 @@ mclass="-mclass23"
 VERCLASS="IS2023"  
 echo "class=-class23"                                                        
 echo "mclass=-mclass23"
-echo "VERCLASS=IS2023"  
     } >> atualizac
 }
 
@@ -206,7 +203,6 @@ mclass="-mclass24"
 VERCLASS="IS2024"  
 echo "class=-class24"                                                        
 echo "mclass=-mclass24"
-echo "VERCLASS=IS2024"  
     } >> atualizac
 }
 
@@ -226,7 +222,6 @@ _COBOL () {
 }
 
 echo "  Em qual sistema que o SAV esta rodando " 
-echo $linha
 echo "1) Iscobol" 
 echo 
 echo "2) Microfocus"
