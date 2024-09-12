@@ -193,7 +193,7 @@ COLUMNS=$(tput cols)
 check_zip_instalado() {
 Z1="Aparentemente falta algum programa que nao esta instalado neste distribuicao."
 ## Informe abaixo no comando fox se precisar informar mais algum programa a ser checado.
-for prog in zip unzip; do     
+for prog in {zip,unzip}; do     
      if ! command -v "${prog}" &> /dev/null; then
      printf "\n"
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "${Z1}" ;printf "%*s""${NORM}"
@@ -1737,7 +1737,7 @@ DAYS=$(find "${BACKUP}" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \;)
      _meiodatela
      _messagec RED "${M63}"
      fi 
-     for i in $base $base2 $base3 ; do
+     for i in $base $base2 $base3; do
      DIRB="${destino}""${i}""/"
      _limpando
      _press
