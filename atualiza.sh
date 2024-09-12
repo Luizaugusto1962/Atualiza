@@ -191,22 +191,19 @@ COLUMNS=$(tput cols)
 #--------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
 check_zip_instalado() {
-Z1="Aparentemente o programa zip nao esta instalado neste distribuicao."
-     if ! command -v zip &> /dev/null; then
+Z1="Aparentemente falta algum programa que nao esta instalado neste distribuicao."
+## Informe abaixo no comando fox se precisar informar mais algum programa a ser checado.
+for prog in zip unzip; do     
+     if ! command -v "${prog}" &> /dev/null; then
      printf "\n"
      printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "${Z1}" ;printf "%*s""${NORM}"
+     printf "%*s""${YELLOW}"" O programa nao foi encontrado ->> ""${NORM}""${prog}"
      printf "\n"
      exit 1
      fi
-
-Z2="Aparentemente o programa zip nao esta instalado neste distribuicao."
-     if ! command -v unzip &> /dev/null; then
-     printf "\n"
-     printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z2}+COLUMNS)/2)) "${Z2}" ;printf "%*s""${NORM}"
-     printf "\n"
-     exit 1
-     fi
+done
 }
+
 # Checando se o zip esta na base
 check_zip_instalado
 
