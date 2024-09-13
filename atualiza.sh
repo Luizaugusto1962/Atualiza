@@ -13,7 +13,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="11/09/2024"                                                                                                    #
+UPDATE="12/09/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -192,7 +192,7 @@ COLUMNS=$(tput cols)
 # Funcao para checar se o zip esta instalado
 check_zip_instalado() {
 Z1="Aparentemente falta algum programa que nao esta instalado neste distribuicao."
-## Informe abaixo no comando fox se precisar informar mais algum programa a ser checado.
+## Informe abaixo no comando for se precisar informar mais algum programa a ser checado.
 for prog in {zip,unzip}; do     
      if ! command -v "${prog}" &> /dev/null; then
      printf "\n"
@@ -1773,8 +1773,8 @@ _rebuild () {
      clear
 ###-600-mensagens do Menu Rebuild.
      M601="Menu de Recuperacao de Arquivo(s)."
-	M603="1${NORM} - Um arquivo ou Todos  "
-	M604="2${NORM} - Arquivos Principais  "
+	M603="1${NORM} - Um arquivo ou Todos   "
+	M604="2${NORM} - Arquivos Principais   "
      M605="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
@@ -1810,6 +1810,7 @@ _escolhe_base () {
      else
           M903="3${NORM} - Base em ${destino}${base3}"
 	fi
+     M909="9${NORM} - ${RED}Menu Anterior "
      printf "\n"
 	_linha "="
 	_mensagec "${RED}" "${M900}"
@@ -1823,19 +1824,23 @@ _escolhe_base () {
 	printf "\n"
      _mensagec "${GREEN}" "${M903}"
      printf "\n"
+     _mensagec "${GREEN}" "${M909}"
+     printf "\n"
      _linha "="
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
      if [[ ! "${base3}" ]]; then
      case ${OPCAO} in
-          1)  _dbase1 ;;
-          2)  _dbase2 ;;
+          1) _dbase1 ;;
+          2) _dbase2 ;;
+          9) clear ; _ferramentas ;;
           *) _ferramentas ;;
      esac    
      else
      case ${OPCAO} in
-          1)  _dbase1 ;;
-          2)  _dbase2 ;;
-          3)  _dbase3 ;;
+          1) _dbase1 ;;
+          2) _dbase2 ;;
+          3) _dbase3 ;;
+          9) clear ; _ferramentas ;;          
           *) _ferramentas ;;
      esac
      fi    
