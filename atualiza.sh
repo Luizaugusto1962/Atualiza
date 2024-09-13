@@ -115,7 +115,7 @@ unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
 unset -v E_EXEC T_TELAS X_XML NOMEPROG NPROG OLDPROG
 unset -v cmd_unzip cmd_zip cmd_find cmd_scp cmd_who VBACKUP ARQUIVO 
-unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2
+unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 
 tput sgr0; exit 
 }
 
@@ -190,7 +190,7 @@ COLUMNS=$(tput cols)
 "." ./atualizap
 #--------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
-check_zip_instalado() {
+_check_instalado() {
 Z1="Aparentemente falta algum programa que nao esta instalado neste distribuicao."
 ## Informe abaixo no comando for se precisar informar mais algum programa a ser checado.
 for prog in {zip,unzip}; do     
@@ -205,7 +205,7 @@ done
 }
 
 # Checando se o zip esta na base
-check_zip_instalado
+_check_instalado
 
 #-Comandos#----------------------------------------------------------------------------------------#
 DEFAULT_UNZIP="unzip"
@@ -304,7 +304,7 @@ M81="..Encontrado o diretorio do sistema .."
 ## Mensagens em VERDE
 M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
-M93="Sistema atualizado verificar em  /portalsav/Atualiza"
+#M93="Sistema atualizado verificar em  /portalsav/Atualiza"
 #-Centro da tela-----------------------------------------------------------------------------------#
 _meiodatela () {
      printf "\033c\033[10;10H\n"
@@ -543,8 +543,7 @@ M44="Nao foi encontrado o diretorio ""${T_TELAS}"
      _read_sleep 2
      exit
 fi
-
-if [[ "$sistema" = "iscobol" ]]; then 
+if [[ "${sistema}" = "iscobol" ]]; then
      if [[ -d "${X_XML}" ]]; then
      _mensagec "${CYAN}" "${M81}"
      else
@@ -559,8 +558,15 @@ fi
 
 if [[ "${SERACESOFF}" != " " ]]; then
      if ! [[ -d "${SERACESOFF}" ]]; then 
-     mkdir -p "${destino}${SERACESOFF}"
+          mkdir -p "${destino}${SERACESOFF}"
      fi
+     BAT="atualiza.bat"
+     if  [[ -f "${BAT}" ]]; then
+     echo "${BAT}"
+     _press
+          mv -f -- "${BAT}" "${destino}${SERACESOFF}"
+     fi
+
 fi
 
 if [[ -d "${TOOLS}" ]]; then
@@ -1697,7 +1703,7 @@ _temps () {
      M900="Menu de Limpeza"
 	M901="1${NORM} - Limpeza dos Arquivos Temporarios"
 	M902="2${NORM} - Adicionar Arquivos no ATUALIZAT "
-     M909="9${NORM} - ${RED}Menu Anterior         "
+     M909="9${NORM} - ${RED}Menu Anterior          "
      printf "\n"
 	_linha "="
 	_mensagec "${RED}" "${M900}"
@@ -2067,7 +2073,7 @@ _myself () {
 
 _dobackup () {
      #-Backup 
-     "${cmd_zip}" "${BACKUP}"/"{$ARQ}" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+     "${cmd_zip}" "${BACKUP}"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
 }
 
 _dobackup
@@ -2547,22 +2553,8 @@ _ferramentas
 }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
-_seratusoff () {
-local NOMEBAT="atualiza.bat"
-local CMD_PSCP="pscp"     
-SAOFF=${destino}${SERACESOFF}
-     mv -f -- "${NOMEBAT}" "${SAOFF}" >> "${LOG_ATU}"
-     cp -f -n -- "${CMD_PSCP}" "${SAOFF}" >> "${LOG_ATU}"
-     _mensagec "${GREEN}" "${M93}"
-     _linha
-     _press      
-_principal     
-}
-
 _update () {
-if [[ "${SERACESOFF}" != "" ]]; then 
-     _seratusoff
-else 
+ 
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
@@ -2583,16 +2575,19 @@ DEFAULT_ATUALIZAGIT="atualiza.zip"
      _read_sleep 1
      "${cmd_find}" "${PROGS}" -name "${atualizagit}" -type f -delete 
      cd "${PROGS}"/Atualiza-main || exit
-     _seratusoff
+
      #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "setup.sh" "atualiza.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
      mv -f -- "setup.sh" "${TOOLS}" >> "${LOG_ATU}"
+     if [[ "${SERACESOFF}" != "" ]]; then 
+     local CMD_PSCP="pscp"     
+     SAOFF=${destino}${SERACESOFF}
+     cp -f -n -- "${CMD_PSCP}" "${SAOFF}" >> "${LOG_ATU}"
+     fi
      cd "${PROGS}" || exit
      rm -rf "${PROGS}"/Atualiza-main
-fi     
-_press
-exit   
+
 }
 
 _parametros () {
