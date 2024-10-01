@@ -215,22 +215,22 @@ fi
 
 DEFAULT_ZIP="zip"
 if [[ -z "${cmd_zip}" ]]; then
-          cmd_zip="${DEFAULT_ZIP}"
+     cmd_zip="${DEFAULT_ZIP}"
 fi
 
 DEFAULT_FIND="find"
 if [[ -z "${cmd_find}" ]]; then
-          cmd_find="${DEFAULT_FIND}"
+     cmd_find="${DEFAULT_FIND}"
 fi
 
 DEFAULT_SCP="scp"
 if [[ -z "${cmd_scp}" ]]; then
-          cmd_scp="${DEFAULT_SCP}"
+     cmd_scp="${DEFAULT_SCP}"
 fi
 
 DEFAULT_WHO="who"
 if [[ -z "${cmd_who}" ]]; then
-          cmd_who="${DEFAULT_WHO}"
+     cmd_who="${DEFAULT_WHO}"
 fi
 
 #-Lista de mensagens #-----------------------------------------------------------------------------#
@@ -321,37 +321,37 @@ printf "%*s""${CCC}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "${MXX}" ;printf "
 ##
 DEFAULT_VERSAO=""
 if [[ -z "${VERSAO}" ]]; then
-          VERSAO="${DEFAULT_VERSAO}"
+     VERSAO="${DEFAULT_VERSAO}"
 fi
 
 SAVISCC="${destino}""/sav/savisc/iscobol/bin/"
 if [[ -n "${SAVISCC}" ]]; then
-          SAVISC="${SAVISCC}"
+     SAVISC="${SAVISCC}"
 fi
 
 JUTILL="jutil"
 if [[ -n "${JUTILL}" ]]; then
-          JUTIL="${JUTILL}"
+     JUTIL="${JUTILL}"
 fi
 
 ISCCLIENTT="iscclient"
 if [[ -n "${ISCCLIENTT}" ]]; then
-          ISCCLIENT="${ISCCLIENTT}"
+     ISCCLIENT="${ISCCLIENTT}"
 fi
 
 DEFAULT_ARQUIVO=""
 if [[ -z "${ARQUIVO}" ]]; then
-          ARQUIVO="${DEFAULT_ARQUIVO}"
+     ARQUIVO="${DEFAULT_ARQUIVO}"
 fi
 
 DEFAULT_PEDARQ=""
 if [[ -z "${PEDARQ}" ]]; then
-          PEDARQ="${DEFAULT_PEDARQ}"
+     PEDARQ="${DEFAULT_PEDARQ}"
 fi
 
 DEFAULT_PROG=""
 if [[ -z "${prog}" ]]; then
-          prog="${DEFAULT_PROG}"
+     prog="${DEFAULT_PROG}"
 fi
 
 ## Testa se as pastas do atualizac e do atualizap estao configuradas
@@ -1249,7 +1249,7 @@ _biblioteca () {
      
      read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
      case ${OPCAO} in
-          1)  _transpc ;;
+          1) _transpc ;;
           2) _savatu ;;
           3) _salva ;;
           9) clear ; _principal ;;
