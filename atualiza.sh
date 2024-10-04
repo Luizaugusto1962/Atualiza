@@ -13,7 +13,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="01/10/2024"                                                                                                    #
+UPDATE="04/10/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -109,7 +109,7 @@ UPDATE="01/10/2024"                                                             
 #Zerando variaves utilizadas 
 resetando () {
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
-unset -v BASE1 BASE2 BASE3 tools DIR1 OLDS PROGS BACKUP 
+unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
@@ -2525,28 +2525,48 @@ clear
      _linha 
      _mensagec "${RED}" "${M51}"
      _linha 
-     _read_sleep 3
+#     _read_sleep 3
      printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
-     local DIR1="${BACKUP}""/"
-     for arq in ${DIR1}{*.zip,*.bkp,*.sh} ; do
+MDIR="Limpando os arquivos do diretorio: "
+     local DIR="${BACKUP}""/"
+     _mensagec "${GREEN}" "${MDIR}${DIR}"
+     for arq in ${DIR}{*.zip,*.bkp,*.sh} ; do
      "${cmd_find}" "${arq}" -mtime +30 -type f -delete 
-     done    
+     done
 # Apagar arquivos do diretorio olds----------------------------------#
-     local DIR2="${OLDS}""/"
-     for arq in ${DIR2} ; do
+     local DIR="${OLDS}""/"
+     for arq in ${DIR} ; do
      "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+     _mensagec "${GREEN}" "${MDIR}${DIR}"
      done
 #-Apagar arquivos do diretorio progs---------------------------------#
-     local DIR3="${PROGS}""/"
-     for arq in ${DIR3} ; do
+     local DIR="${PROGS}""/"
+     for arq in ${DIR} ; do
      "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+     _mensagec "${GREEN}" "${MDIR}${DIR}"
      done
 #-Apagar arquivos do diretorio dos logs---------------------------------#
-     local DIR4="${LOGS}""/"
-     for arq in ${DIR4} ; do
+     local DIR="${LOGS}""/"
+     for arq in ${DIR} ; do
      "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+     _mensagec "${GREEN}" "${MDIR}${DIR}"
      done
+#-Apagar arquivos do diretorio do /portalsav/log---------------------------------#
+     SAVLOG="$destino""/sav/portalsav/log" 
+     local DIR="${SAVLOG}""/"
+     for arq in ${DIR} ; do
+     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+     _mensagec "${GREEN}" "${MDIR}${DIR}"
+     done   
+#-Apagar arquivos do diretorio do /err_isc/---------------------------------#
+     ERR_ISC="$destino""/sav/err_isc" 
+     local DIR="${ERR_ISC}""/"
+     for arq in ${DIR} ; do
+     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+     _mensagec "${GREEN}" "${MDIR}${DIR}"
+     _press
+     done         
 cd "${TOOLS}"/ || exit
 _ferramentas
 }
