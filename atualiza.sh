@@ -2529,44 +2529,53 @@ clear
      printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
 MDIR="Limpando os arquivos do diretorio: "
-     local DIR="${BACKUP}""/"
-     _mensagec "${GREEN}" "${MDIR}${DIR}"
-     for arq in ${DIR}{*.zip,*.bkp,*.sh} ; do
-     "${cmd_find}" "${arq}" -mtime +30 -type f -delete 
+     local DIR1="${BACKUP}""/"
+     local DIR2="${OLDS}""/"
+     local DIR3="${PROGS}""/"
+     local DIR4="${LOGS}""/"
+SAVLOG="$destino""/sav/portalsav/log" 
+     local DIR5="${SAVLOG}""/"
+ERR_ISC="$destino""/sav/err_isc" 
+     local DIR6="${ERR_ISC}""/"
+     for ARQS in $DIR1 $DIR2 $DIR3 $DIR4 $DIR5 $DIR6; do
+     "${cmd_find}" "${ARQS}" -mtime +30 -type f -delete 
+     _mensagec "${GREEN}" "${MDIR}${ARQS}"
      done
-# Apagar arquivos do diretorio olds----------------------------------#
-     local DIR="${OLDS}""/"
-     for arq in ${DIR} ; do
-     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-     _mensagec "${GREEN}" "${MDIR}${DIR}"
-     done
-#-Apagar arquivos do diretorio progs---------------------------------#
-     local DIR="${PROGS}""/"
-     for arq in ${DIR} ; do
-     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-     _mensagec "${GREEN}" "${MDIR}${DIR}"
-     done
-#-Apagar arquivos do diretorio dos logs---------------------------------#
-     local DIR="${LOGS}""/"
-     for arq in ${DIR} ; do
-     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-     _mensagec "${GREEN}" "${MDIR}${DIR}"
-     done
-#-Apagar arquivos do diretorio do /portalsav/log---------------------------------#
-     SAVLOG="$destino""/sav/portalsav/log" 
-     local DIR="${SAVLOG}""/"
-     for arq in ${DIR} ; do
-     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-     _mensagec "${GREEN}" "${MDIR}${DIR}"
-     done   
-#-Apagar arquivos do diretorio do /err_isc/---------------------------------#
-     ERR_ISC="$destino""/sav/err_isc" 
-     local DIR="${ERR_ISC}""/"
-     for arq in ${DIR} ; do
-     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-     _mensagec "${GREEN}" "${MDIR}${DIR}"
-     _press
-     done         
+printf "\n\n"     
+_press
+## Apagar arquivos do diretorio olds----------------------------------#
+#     local DIR2="${OLDS}""/"
+#     for arq in ${DIR} ; do
+#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+#     _mensagec "${GREEN}" "${MDIR}${DIR}"
+#     done
+##-Apagar arquivos do diretorio progs---------------------------------#
+#     local DIR3="${PROGS}""/"
+#     for arq in ${DIR} ; do
+#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+#     _mensagec "${GREEN}" "${MDIR}${DIR}"
+#     done
+##-Apagar arquivos do diretorio dos logs---------------------------------#
+#     local DIR4="${LOGS}""/"
+#     for arq in ${DIR} ; do
+#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+#     _mensagec "${GREEN}" "${MDIR}${DIR}"
+#     done
+##-Apagar arquivos do diretorio do /portalsav/log---------------------------------#
+#     SAVLOG="$destino""/sav/portalsav/log" 
+#     local DIR5="${SAVLOG}""/"
+#     for arq in ${DIR} ; do
+#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+#     _mensagec "${GREEN}" "${MDIR}${DIR}"
+#     done   
+##-Apagar arquivos do diretorio do /err_isc/---------------------------------#
+#     ERR_ISC="$destino""/sav/err_isc" 
+#     local DIR6="${ERR_ISC}""/"
+#     for arq in ${DIR} ; do
+#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
+#     _mensagec "${GREEN}" "${MDIR}${DIR}"
+#     _press
+#     done         
 cd "${TOOLS}"/ || exit
 _ferramentas
 }
