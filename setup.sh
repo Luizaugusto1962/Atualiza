@@ -30,12 +30,14 @@ echo %line%
 
 echo    [1] - Atualizar programa 
 echo    [2] - Atualizar Biblioteca
+echo    [3] - Atualiza o tools
 echo    [0] - Sair     
 echo.
 set /p op=Selecione a opcao ... 
 echo.
 if %op% equ 1 goto:Modo_compilado
 if %op% equ 2 goto:Biblioteca
+if %op% equ 3 goto:Tools
 if %op% equ 0 goto:EOF
 
 :OPCAO
@@ -89,6 +91,9 @@ call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%S
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
+
+:Tools
+start chrome https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip
 
 :EOF
 set sn=""
