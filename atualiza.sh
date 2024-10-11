@@ -1,6 +1,6 @@
 #!/usr/bin/env bash 
 #set -euo pipefail
-#                                                                                                                      #                                                               
+#                                                                                                                      #
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
 #  (:   \___/ ||  |  (:   \___/  )__/  \\__/(: ______) \   \  //   |    /    \        (:   \___/   /    \\   \  //  /  #
@@ -1110,12 +1110,12 @@ _volta_progy () {
      _read_sleep 1
      cd "${OLDS}" || exit 
 if [[ "${sistema}" = "iscobol" ]]; then
-          "${cmd_find}" "${OLDS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \;
-          "${cmd_find}" "${OLDS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \;
-          "${cmd_find}" "${OLDS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \;
+     "${cmd_find}" "${OLDS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \;
+     "${cmd_find}" "${OLDS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \;
+     "${cmd_find}" "${OLDS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \;
 else
-          "${cmd_find}" "${OLDS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; 
-          "${cmd_find}" "${OLDS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; 
+     "${cmd_find}" "${OLDS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; 
+     "${cmd_find}" "${OLDS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; 
 fi
 #-VOLTA DE PROGRAMAS CONCLUIDA
      _linha 
@@ -1139,12 +1139,12 @@ if [[ "${sistema}" = "iscobol" ]]; then
 
      cd "${OLDS}" || exit
      for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll} ; do
-          "${cmd_find}" "${OLDS}" -type f \( -iname "${Ext}" \) -exec mv "{}" "${E_EXEC}" \; >> "${LOG_ATU}"
+     "${cmd_find}" "${OLDS}" -type f \( -iname "${Ext}" \) -exec mv "{}" "${E_EXEC}" \; >> "${LOG_ATU}"
      done
 
-          "${cmd_find}" "${OLDS}" -type f \( -iname "*.TEL" \) -exec mv "{}" "${T_TELAS}" \; >> "${LOG_ATU}"
+     "${cmd_find}" "${OLDS}" -type f \( -iname "*.TEL" \) -exec mv "{}" "${T_TELAS}" \; >> "${LOG_ATU}"
 
-          "${cmd_find}" "${OLDS}" -type f \( -iname "*.xml" \) -exec mv "{}" "${X_XML}" \; >> "${LOG_ATU}"
+     "${cmd_find}" "${OLDS}" -type f \( -iname "*.xml" \) -exec mv "{}" "${X_XML}" \; >> "${LOG_ATU}"
 
      cd "${TOOLS}"/ || exit
      clear
@@ -1472,10 +1472,10 @@ fi
      _mensagec "${YELLOW}" "${M19}"
      _linha 
 for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4} ; do
-          printf "${GREEN}"" Atualizado ""${atu}""${VVERSAO}""${NORM}""%*s\n" || printf "%*s""${M48}"
-          "${cmd_unzip}" -o "${atu}""${VVERSAO}" -d "${destino}" >> "${LOG_ATU}"
-          _read_sleep 2
-          clear
+     printf "${GREEN}"" Atualizado ""${atu}""${VVERSAO}""${NORM}""%*s\n" || printf "%*s""${M48}"
+     "${cmd_unzip}" -o "${atu}""${VVERSAO}" -d "${destino}" >> "${LOG_ATU}"
+     _read_sleep 2
+     clear
 done
 #-Atualizacao COMPLETA
      _linha 
@@ -1811,9 +1811,9 @@ _escolhe_base () {
 	M901="1${NORM} - Base em ${destino}${base}"
 	M902="2${NORM} - Base em ${destino}${base2}"
 if [[ ! "${base3}" ]]; then
-          M903=""
+     M903=""
 else
-          M903="3${NORM} - Base em ${destino}${base3}"
+     M903="3${NORM} - Base em ${destino}${base3}"
 fi
      M909="9${NORM} - ${RED}Menu Anterior "
      printf "\n"
@@ -2398,10 +2398,10 @@ if [[ -z "${DIRENVIA}" ]]; then # testa variavel vazia
      local DIRENVIA=${ENVIA}
      if ls -s "${DIRENVIA}"/*.* ; then
 #-Arquivo encontrado no diretorio
-          printf "\n"
-          _linha
-          _mensagec "${YELLOW}" "${M28}"
-          _linha
+     printf "\n"
+     _linha
+     _mensagec "${YELLOW}" "${M28}"
+     _linha
      else
 M49="Arquivo nao encontrado no diretorio"
      _linha 
