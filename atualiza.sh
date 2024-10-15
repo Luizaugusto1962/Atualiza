@@ -1420,22 +1420,26 @@ _processo () {
      _linha 
      _mensagec "${YELLOW}" "${M01}"
      _linha 
-     
      _read_sleep 1
 if [[ "${sistema}" = "iscobol" ]]; then
      cd "${E_EXEC}"/ || exit
-     "${cmd_find}" "${E_EXEC}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
+     _mensagec "${GREEN}" "${M14}""${E_EXEC}"
+     "${cmd_find}" "${E_EXEC}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
      cd "${T_TELAS}"/ || exit
-     "${cmd_find}" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
+     _mensagec "${GREEN}" "${M14}""${T_TELAS}"
+     "${cmd_find}" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
      cd "${X_XML}"/ || exit
-     "${cmd_find}" "${X_XML}"/ -type f \( -iname "*.xml" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
+     _mensagec "${GREEN}" "${M14}""${X_XML}"
+     "${cmd_find}" "${X_XML}"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
      cd "${TOOLS}"/ || exit
      clear
 else
      cd "${E_EXEC}"/ || exit
-     "${cmd_find}" "${E_EXEC}"/ -type f \( -iname "*.int" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
+     _mensagec "${GREEN}" "${M14}""${E_EXEC}"
+     "${cmd_find}" "${E_EXEC}"/ -type f \( -iname "*.int" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
      cd "${T_TELAS}"/ || exit
-     "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -dc "${TOOLS}"/"${INI}" "{}" +;
+     _mensagec "${GREEN}" "${M14}""${T_TELAS}"
+     "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
 fi 
 
 #-..BACKUP COMPLETO..
