@@ -13,7 +13,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="16/10/2024"                                                                                                    #
+UPDATE="23/10/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -267,6 +267,8 @@ M41="         Informe para qual diretorio no servidor: "
 M42="         1- Informe nome BACKUP: "
 M43=" "
 M44="Acesso externo do servidor em modo OFF"
+M45="Alterando a extensao da atualizacao"
+M46="De *-anterior.zip para *.zip"
 MA1="O backup \"""$VBACKUP""\""
 MA2="         1- Informe apos qual versao da BIBLIOTECA: "
 ## Mensagens em VERMELHO
@@ -281,7 +283,7 @@ M53="Informe de qual o Backup que deseja voltara o(s) arquivo(s)."
 M55="Informe versao a da Biblioteca a ser atualizada: "
 M56="*+* < <- Versao a ser atualizada nao foi informada: -> > *+*"
 M57="Informe somente o numeral da versao : "
-M58="Voltando todos os programas."
+#M58="Voltando todos os programas."
 M59="Informe o nome do programa a ser atualizado:"
 M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
 M61="Informe o nome do programa a ser desatualizado:" 
@@ -391,7 +393,7 @@ if [[ "${sistema}" = "iscobol" ]]; then
      fi 
 fi     
 # Verificacao de diretorio necessarios ------------------------------------------------------------#
-E_EXEC=${destino}${exec}
+E_EXEC=${destino}"/"${exec}
 if [[ -d "${E_EXEC}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
@@ -399,7 +401,7 @@ else
      exit
 fi
 
-T_TELAS=${destino}${telas}
+T_TELAS=${destino}"/"${telas}
 if [[ -d "${T_TELAS}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
@@ -407,7 +409,7 @@ else
      exit
 fi
 
-X_XML=${destino}${xml}
+X_XML=${destino}"/"${xml}
 if [[ -d "${X_XML}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
@@ -719,6 +721,15 @@ _qualprograma () {
      MB4="       Informe o programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MB4}""${NORM}" prog
      _linha
+while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
+     _meiodatela
+     _mensagec "${RED}" "${M60}"
+     _linha 
+     _press
+     _principal
+done
+
+     _linha
      _mensagec "${RED}" "${M75}"
      _linha
      MB5="Programa compilado normal [S ou N]: "
@@ -730,9 +741,9 @@ if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ "${REPLY,,}" == "" ]]; then
 else
      NPROG=${prog}${mclass}
 fi
-          NOMEPROG=${NPROG}".zip"
-          OLDPROG=${prog}"-anterior.zip"
-     _linha
+     NOMEPROG=${NPROG}".zip"
+     OLDPROG=${prog}"-anterior.zip"
+_linha
 while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
      clear
      _meiodatela
@@ -838,7 +849,8 @@ if [[ "${sistema}" = "iscobol" ]]; then
      for pprog in *.class ; do
           if [[ -f "${E_EXEC}"/"${pprog}" ]]; then
           _linha 
-          "${cmd_zip}" -m "${OLDPROG}" "${E_EXEC}"/"${pprog}"   
+          "${cmd_zip}" -m -j "${OLDPROG}" "${E_EXEC}"/"${pprog}"   
+          
           _mens_atualiza
           fi
      mv -f -- "${pprog}" "${E_EXEC}" >> "${LOG_ATU}"
@@ -846,7 +858,7 @@ if [[ "${sistema}" = "iscobol" ]]; then
 else 
      for pprog in *.int ; do
           if [[ -f "${E_EXEC}"/"${pprog}" ]]; then
-          "${cmd_zip}" -m "${OLDPROG}" "${E_EXEC}"/"${pprog}"
+          "${cmd_zip}" -m -j "${OLDPROG}" "${E_EXEC}"/"${pprog}"
           _linha 
           _mens_atualiza
           fi
@@ -858,7 +870,7 @@ if [[ -f "${prog}".TEL ]]; then
      for pprog in *.TEL ; do
           if [ -f "${T_TELAS}"/"${pprog}" ]; then
           _linha
-          "${cmd_zip}" -m "${OLDPROG}" "${T_TELAS}"/"${pprog}"
+          "${cmd_zip}" -m -j "${OLDPROG}" "${T_TELAS}"/"${pprog}"
           _mens_atualiza
           fi
      mv -f -- "${pprog}" "${T_TELAS}" >> "${LOG_ATU}"
@@ -885,12 +897,16 @@ M07="Programa(s) a ser(em) atualizado(s) - "${prog}
      done
      _read_sleep 1
 #-Atualizacao COMPLETA
-     mv -f -- "${NPROG}".bkp "${PROGS}"
+     mv -f -- *.bkp "${PROGS}"
      mv -f -- "${OLDPROG}" "${OLDS}"
      _read_sleep 1
      _linha 
      _mensagec "${YELLOW}" "${M17}"
      _linha 
+
+if [ "${voltaprg}" = "sim" ]; then
+     _voltamaisprog
+fi
 
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
@@ -947,12 +963,38 @@ _desatualizado () { while true ; do
      done
 }
 
-#-Procedimento da desatualizacao de programas------------------------------------------------------#
-_apagadir () {
-     rm -rf "${OLDS}""${destino}"
-}     
+###
+_voltamaisprog () {
+#-VOLTA DE PROGRAMA CONCLUIDA
+     _linha 
+     _mensagec "${YELLOW}" "${M03}"
+     _mensagec "${GREEN}" "${M02}"
+     _linha 
+     _press
 
+#-Escolha de multi programas-----------------------------------------------------------------------# 
+#M37 Deseja informar mais algum programa para ser atualizado?
+
+     _meiodatela
+     read -rp "${YELLOW}""${M37}""${NORM}" -n1  
+     printf "\n\n"
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
+          _principal
+elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
+     if [[ "${OPCAO}" = 1 ]]; then
+     _voltaprog
+     fi
+else
+     _opinvalida	 
+     _press
+     _principal
+fi
+}
+####
+
+#-Procedimento da desatualizacao de programas------------------------------------------------------#
 _voltaprog () {
+     voltaprg="sim"
      clear
      _meiodatela
      _linha 
@@ -979,33 +1021,16 @@ M43="Programa ""${prog}""-anterior.zip nao encontrado no diretorio."
      _press
      _principal
 fi
+#-ALTERANDO A EXTENSAO DA ATUALIZACAO... De *-anterior.zip para *.zip
+cd "${OLDS}"/ || exit
+     for f in *"${OLDPROG}"; do
+          mv -f -- "${f}" "${TOOLS}""/""${prog}${class}.zip"
+     done
 
 M02="Voltando a versao anterior do programa ""${prog}"
-     "${cmd_unzip}" -o "${OLDS}"/"${OLDPROG}" -d /  >> "${LOG_ATU}"
-     _read_sleep 2
-     clear
-#-VOLTA DE PROGRAMA CONCLUIDA
-     _linha 
-     _mensagec "${YELLOW}" "${M03}"
-     _mensagec "${GREEN}" "${M02}"
-     _linha 
-     _press
-#-Escolha de multi programas-----------------------------------------------------------------------# 
-#M37 Deseja informar mais algum programa para ser atualizado?
-     _meiodatela
-     read -rp "${YELLOW}""${M37}""${NORM}" -n1  
-     printf "\n\n"
-if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-          _principal
-elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-     if [[ "${OPCAO}" = 1 ]]; then
-     _voltaprog
-     fi
-else
-     _opinvalida	 
-     _press
-     _principal
-fi
+NOMEPROG="${prog}${class}.zip"
+cd "${TOOLS}"/ || exit
+_atupacote
 _principal    
 
 }
@@ -1068,7 +1093,7 @@ while [[ "${Vprog}" =~ [^A-Z0-9] || -z "${Vprog}" ]]; do
      _desatualizado
 done
      cd "${OLDS}"/ || exit
-     "${cmd_unzip}" -o "${INI}" -d "${OLDS}" >> "${LOG_ATU}"
+     "${cmd_unzip}" -j -o "${INI}" "sav/*/""${Vprog}"".*" -d "${TOOLS}" >> "${LOG_ATU}"
      _volta_progy
 }
 
@@ -1108,14 +1133,14 @@ fi
 
 _volta_progy () {
      _read_sleep 1
-     cd "${OLDS}" || exit 
+     cd "${TOOLS}" || exit 
 if [[ "${sistema}" = "iscobol" ]]; then
-     "${cmd_find}" "${OLDS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \;
-     "${cmd_find}" "${OLDS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \;
-     "${cmd_find}" "${OLDS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \;
+     "${cmd_find}" "${TOOLS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \;
+     "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \;
+     "${cmd_find}" "${TOOLS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \;
 else
-     "${cmd_find}" "${OLDS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; 
-     "${cmd_find}" "${OLDS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; 
+     "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; 
+     "${cmd_find}" "${TOOLS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; 
 fi
 #-VOLTA DE PROGRAMAS CONCLUIDA
      _linha 
@@ -1132,67 +1157,21 @@ M30="O(s) programa(s) ""${Vprog}"" da ${NORM}${RED}""$VERSAO"
 }
 
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
-_volta_bibli () {
+_volta_geral () {
 #-VOLTA DOS ARQUIVOS ANTERIORES...
-     _read_sleep 1
-if [[ "${sistema}" = "iscobol" ]]; then
-
-     cd "${OLDS}" || exit
-     for Ext in {*.class,*.png,*.jpg,*brw,*.,*.dll} ; do
-     "${cmd_find}" "${OLDS}" -type f \( -iname "${Ext}" \) -exec mv "{}" "${E_EXEC}" \; >> "${LOG_ATU}"
-     done
-
-     "${cmd_find}" "${OLDS}" -type f \( -iname "*.TEL" \) -exec mv "{}" "${T_TELAS}" \; >> "${LOG_ATU}"
-
-     "${cmd_find}" "${OLDS}" -type f \( -iname "*.xml" \) -exec mv "{}" "${X_XML}" \; >> "${LOG_ATU}"
-
-     cd "${TOOLS}"/ || exit
-     clear
-else
-     cd "${OLDS}"/ || exit
-	"${cmd_find}" "${OLDS}" -type f \( -iname "*.int" \) -exec mv "{}" "${E_EXEC}" \; >> "${LOG_ATU}"
-
-     "${cmd_find}" "${OLDS}" -type f \( -iname "*.TEL" \) -exec mv "{}" "${T_TELAS}" \; >> "${LOG_ATU}"
-
-     cd "${TOOLS}"/ || exit
-     clear
-     _linha 
-     _mensagec "${YELLOW}" "${M03}"
-     _linha 
-
-M30="O(s) programa(s) da ${NORM}${RED} ""${VERSAO}"
-     _linha 
-     _mensagec "${YELLOW}" "${M25}"
-     _mensagec "${YELLOW}" "${M30}"
-     _linha 
-fi
-     _press
-     _apagadir 
-     _principal
-}
-
-#-Volta total dos programas------------------------------------------------------------------------#
-_volta_geral () { 
-#-M58=Voltando todos os programas.
-     _linha 
-     _mensagec "${RED}" "${M58}"
-     _linha 
-M31="o programas da versao: ${NORM}${RED} ""${VERSAO}"
-     _linha 
-     _mensagec "${YELLOW}" "${M25}"
-     _mensagec "${YELLOW}" "${M31}"
-     _linha 
-     cd "${OLDS}""/" || exit
-     "${cmd_unzip}" -o "${INI}" -d "${OLDS}" >> "${LOG_ATU}"
-     cd "${TOOLS}" || exit
-     clear
+cd "${OLDS}" || exit
+"${cmd_unzip}" -o "${INI}" -d "${destino}" >> "${LOG_ATU}"
+cd "${TOOLS}"/ || exit
+_mensagec "${YELLOW}" "${M33}"
+clear
 #-VOLTA DOS PROGRAMAS CONCLUIDA
-     _linha 
-     _mensagec "${YELLOW}" "${M03}"
-     _linha 
-     _volta_bibli
-     _press
-     _principal  
+_linha 
+_mensagec "${YELLOW}" "${M03}"
+_linha 
+ANTVERSAO=$VERSAO
+echo "VERSAOANT=""${ANTVERSAO}" >> atualizac
+_press
+_principal
 }
 
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
@@ -1340,7 +1319,7 @@ if [[ "${SERACESOFF}" != "" ]]; then
      _processo
 #-Atualizacao nao encontrado no diretorio
      _linha 
-     _mensagec "${RED}" "${M42}"
+     _mensagec "${RED}" "${M48}"
      _linha 
      _press
      _principal
@@ -1350,7 +1329,7 @@ if [[ "${SERACESOFF}" != "" ]]; then
           clear
           #-Atualizacao nao encontrado no diretorio
           _linha 
-          _mensagec "${RED}" "${M42}"
+          _mensagec "${RED}" "${M48}"
           _linha 
           _press
           clear
@@ -1422,24 +1401,24 @@ _processo () {
      _linha 
      _read_sleep 1
 if [[ "${sistema}" = "iscobol" ]]; then
-     cd "${E_EXEC}"/ || exit
+     cd "${destino}""/" || exit
      _mensagec "${GREEN}" "${M14}""${E_EXEC}"
-     "${cmd_find}" "${E_EXEC}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
-     cd "${T_TELAS}"/ || exit
+     "${cmd_find}" "${exec}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
+     
      _mensagec "${GREEN}" "${M14}""${T_TELAS}"
-     "${cmd_find}" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
-     cd "${X_XML}"/ || exit
+     "${cmd_find}" "${telas}"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
+     
      _mensagec "${GREEN}" "${M14}""${X_XML}"
-     "${cmd_find}" "${X_XML}"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
+     "${cmd_find}" "${xml}"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
      cd "${TOOLS}"/ || exit
      clear
 else
-     cd "${E_EXEC}"/ || exit
+     cd "${destino}""/" || exit
      _mensagec "${GREEN}" "${M14}""${E_EXEC}"
-     "${cmd_find}" "${E_EXEC}"/ -type f \( -iname "*.int" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
-     cd "${T_TELAS}"/ || exit
+     "${cmd_find}" "${exec}""/" -type f \( -iname "*.int" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
+
      _mensagec "${GREEN}" "${M14}""${T_TELAS}"
-     "$cmd_find" "${T_TELAS}"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${TOOLS}"/"${INI}" "{}" +;
+     "$cmd_find" "${telas}""/" -type f \( -iname "*.TEL" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
 fi 
 
 #-..BACKUP COMPLETO..
@@ -1448,7 +1427,8 @@ fi
      _linha 
      _read_sleep 1
 
-if [[ ! -r "${TOOLS}"/"${INI}" ]]; then
+cd "${TOOLS}" || exit
+if [[ ! -r "${OLDS}"/"${INI}" ]]; then
 #-Backup nao encontrado no diretorio
      _linha 
      _mensagec "${RED}" "${M45}"
@@ -1468,7 +1448,9 @@ if [[ ! -r "${TOOLS}"/"${INI}" ]]; then
           _principal
      fi 
 fi
-
+_atubiblioteca 
+}
+_atubiblioteca () {
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
      cd "${TOOLS}" || exit
 #-ATUALIZANDO OS PROGRAMAS...
@@ -1485,17 +1467,6 @@ done
      _linha 
      _mensagec "${YELLOW}" "${M17}"
      _linha 
-     ####
-if [[ -r "${INI}" ]]; then
-     mv -f -- "${INI}" "${OLDS}"
-else
-MX3="Backup nao encontrado no diretorio."
-     _linha 
-     _mensagec "${RED}" "${MX3}"
-     _linha
-     ###
-     _read_sleep 0.3
-fi
      for f in *_"${VERSAO}".zip; do
           mv -f -- "${f}" "${f%.zip}.bkp"
      done
@@ -1514,7 +1485,7 @@ echo "VERSAOANT=""${ANTVERSAO}" >> atualizac
 _principal
 }
 
-#-Mostrar a versao do iscobol que esta sendo usada.------------------------------------------------# 
+#-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
 _iscobol () {
 if [[ "${sistema}" = "iscobol" ]]; then
      clear    
@@ -2630,9 +2601,9 @@ printf "${GREEN}""O diretorio da base Principal : ""${NORM}""${destino}""${base}
 printf "${GREEN}""O diretorio da Segunda base: ""${NORM}""${destino}""${base2}""%*s\n"
 printf "${GREEN}""O diretorio da Terceira base: ""${NORM}""${destino}""${base3}""%*s\n"
 printf "${GREEN}""O diretorio do executavies: ""${NORM}""${destino}""${exec}""%*s\n"
-printf "${GREEN}""O diretorio das telas: ""${NORM}""${destino}""${pasta}""${telas}""%*s\n"
-printf "${GREEN}""O diretorio dos xmls: ""${NORM}""${destino}""${pasta}""${xml}""%*s\n"
-printf "${GREEN}""O diretorio dos logs: ""${NORM}""${destino}""${pasta}""${logs}""%*s\n"
+printf "${GREEN}""O diretorio das telas: ""${NORM}""${destino}""${telas}""%*s\n"
+printf "${GREEN}""O diretorio dos xmls: ""${NORM}""${destino}""${xml}""%*s\n"
+printf "${GREEN}""O diretorio dos logs: ""${NORM}""${destino}""${logs}""%*s\n"
 printf "${GREEN}""O diretorio dos olds: ""${NORM}""${destino}""${pasta}""${olds}""%*s\n"
 printf "${GREEN}""O diretorio dos progs: ""${NORM}""${destino}""${pasta}""${progs}""%*s\n"
 printf "${GREEN}""O diretorio do backup: ""${NORM}""${destino}""${pasta}""${backup}""%*s\n"
