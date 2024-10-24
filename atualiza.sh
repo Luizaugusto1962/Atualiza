@@ -1874,7 +1874,7 @@ if [[ "${sistema}" = "iscobol" ]]; then
           done
 
      else
-          while [[ "${PEDARQ}" =~ [^A-Z0-9] ]]; do
+          while [[ "${PEDARQ}" =~ [^A-Z0-9] || -z "${PEDARQ}" ]]; do
           _meiodatela
           _mensagec "${RED}" "${M66}"
           cd "${TOOLS}"/ || exit
@@ -2137,7 +2137,7 @@ _backupavulso () {
      _linha      
      read -rp "${YELLOW}${M42}${NORM}" VBACKAV
      local VBACKUP="${EMPRESA}"_"${VBACKAV}".zip
-while [[ -f "${VBACKUP}" ]] ; do 
+while [[ -f "${VBACKUP}" || -z "${VBACKUP}" ]] ; do 
      clear
      _meiodatela
      _mensagec "${RED}" "${M70}"
@@ -2230,7 +2230,7 @@ fi
      MA9="         1- Informe somente a data do BACKUP: " 
      read -rp "${YELLOW}${MA9}${NORM}" VBACK
      local VBACKUP="${EMPRESA}"_"${VBACK}"".zip"
-     while [[ -f "${VBACKUP}" ]]; do 
+     while [[ -f "${VBACKUP}" || -z "${VBACKUP}" ]]; do 
      clear
      _meiodatela
      _mensagec "${RED}" "${M70}"
@@ -2600,9 +2600,9 @@ printf "${GREEN}""O diretorio do atualiza.sh: ""${NORM}""${destino}""${pasta}""%
 printf "${GREEN}""O diretorio da base Principal : ""${NORM}""${destino}""${base}""%*s\n"
 printf "${GREEN}""O diretorio da Segunda base: ""${NORM}""${destino}""${base2}""%*s\n"
 printf "${GREEN}""O diretorio da Terceira base: ""${NORM}""${destino}""${base3}""%*s\n"
-printf "${GREEN}""O diretorio do executavies: ""${NORM}""${destino}""${exec}""%*s\n"
-printf "${GREEN}""O diretorio das telas: ""${NORM}""${destino}""${telas}""%*s\n"
-printf "${GREEN}""O diretorio dos xmls: ""${NORM}""${destino}""${xml}""%*s\n"
+printf "${GREEN}""O diretorio do executavies: ""${NORM}""${destino}""/""${exec}""%*s\n"
+printf "${GREEN}""O diretorio das telas: ""${NORM}""${destino}""/""${telas}""%*s\n"
+printf "${GREEN}""O diretorio dos xmls: ""${NORM}""${destino}""/""${xml}""%*s\n"
 printf "${GREEN}""O diretorio dos logs: ""${NORM}""${destino}""${logs}""%*s\n"
 printf "${GREEN}""O diretorio dos olds: ""${NORM}""${destino}""${pasta}""${olds}""%*s\n"
 printf "${GREEN}""O diretorio dos progs: ""${NORM}""${destino}""${pasta}""${progs}""%*s\n"
