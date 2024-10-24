@@ -156,9 +156,9 @@ exit
 ;;
 esac
     {
-    echo "exec=/sav/classes" 
-    echo "telas=/sav/tel_isc"
-    echo "xml=/sav/xml" 
+    echo "exec=sav/classes" 
+    echo "telas=sav/tel_isc"
+    echo "xml=sav/xml" 
     classA="${VERCLASS}""_classA_"
     classB="${VERCLASS}""_classB_"
     classC="${VERCLASS}""_tel_isc_"
@@ -217,8 +217,8 @@ _COBOL () {
     echo "class=-6" 
     } >> atualizac
     {
-    echo "exec=/sav/int" 
-    echo "telas=/sav/tel"
+    echo "exec=sav/int" 
+    echo "telas=sav/tel"
     echo "SAVATU1=tempSAVintA_"
     echo "SAVATU2=tempSAVintB_" 
     echo "SAVATU3=tempSAVtel_" 
