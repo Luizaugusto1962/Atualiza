@@ -13,7 +13,7 @@
 ##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
 ##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="23/10/2024"                                                                                                    #
+UPDATE="28/10/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -248,7 +248,7 @@ M14="Criando Backup.."
 M16="Backup Concluido!"
 M17="Atualizacao Completa"
 M18="Arquivo(s) recuperado(s)..."
-M19="ATUALIZANDO OS PROGRAMAS..."
+#M19="ATUALIZANDO OS PROGRAMAS..."
 M20="Alterando a extensao da atualizacao"
 M24=".. BACKUP do programa efetuado .." 
 M25="... Voltando versao anterior ..." 
@@ -565,10 +565,8 @@ if [[ "${SERACESOFF}" != " " ]]; then
      BAT="atualiza.bat"
      if  [[ -f "${BAT}" ]]; then
      echo "${BAT}"
-     _press
           mv -f -- "${BAT}" "${destino}${SERACESOFF}"
      fi
-
 fi
 
 if [[ -d "${TOOLS}" ]]; then
@@ -1454,11 +1452,12 @@ _atubiblioteca () {
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
      cd "${TOOLS}" || exit
 #-ATUALIZANDO OS PROGRAMAS...
-     _linha 
-     _mensagec "${YELLOW}" "${M19}"
-     _linha 
 for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4} ; do
-     printf "${GREEN}"" Atualizado ""${atu}""${VVERSAO}""${NORM}""%*s\n" || printf "%*s""${M48}"
+     _linha
+     _mensagec "${YELLOW}" "${M26}"
+     _linha 
+     _mensagec "${GREEN}" "${atu}""${VVERSAO}" || _messagec "${RED}" "${M48}"
+     _linha
      "${cmd_unzip}" -o "${atu}""${VVERSAO}" -d "${destino}" >> "${LOG_ATU}"
      _read_sleep 2
      clear
