@@ -11,7 +11,7 @@ cls
 mode con cols=60 lines=30
 color 0e
 set op=0  
-set "line============================================"
+set "line================================================"
 IF EXIST *.zip (
     del /Q  *.zip
     echo %line%
@@ -20,17 +20,20 @@ IF EXIST *.zip (
     echo %line%
     echo Diretorio sem arquivos zip
 )    
-
+:MENU
+cls
 echo %line% 
 echo.
 echo Rotina para atualizar os programas da SAV.
 echo ou atualizar a biblioteca
 echo Para servidor que nao tem acesso online
+echo.
 echo %line% 
 
 echo    [1] - Atualizar programa 
 echo    [2] - Atualizar Biblioteca
 echo    [3] - Atualiza o tools
+echo    [4] - Atualiza o pscp
 echo    [0] - Sair     
 echo.
 set /p op=Selecione a opcao ... 
@@ -38,6 +41,7 @@ echo.
 if %op% equ 1 goto:Modo_compilado
 if %op% equ 2 goto:Biblioteca
 if %op% equ 3 goto:Tools
+if %op% equ 4 goto:PSCP
 if %op% equ 0 goto:EOF
 
 :OPCAO
@@ -53,7 +57,7 @@ if %sn% equ 0 goto EOF
 if %sn% equ 1 goto Modo_compilado
 
 :Modo_compilado
-set sn=1
+set sn=""
 echo %line% 
 echo Programa compilado em qual modos? :
 echo %line% 
@@ -61,7 +65,11 @@ echo	[1]- Normal [2]- Debug
 echo.
 set /p sn=Selecione a opcao ... 
 echo.
+if %sn% equ 0 goto EOF
+if %sn% equ 1 goto NORMAL 
+if %sn% equ 2 goto DEBUG
 
+:NORMAL
 echo.
 echo %line% 
 echo Informe o programa a ser baixado em "MAISCULO"
@@ -69,16 +77,19 @@ echo somente o nome do programa sem  ".zip" :
 echo %line%
 set prog=""
 set /p prog=Nome do programa: 
-
-if %sn% equ 0 goto EOF
-if %sn% equ 1 goto NORMAL 
-if %sn% equ 2 goto DEBUG
-
-:NORMAL
+if %prog% equ "" goto MENU
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%class%.zip .
 goto OPCAO
 
 :DEBUG
+echo.
+echo %line% 
+echo Informe o programa a ser baixado em "MAISCULO"
+echo somente o nome do programa sem  ".zip" :
+echo %line%
+set prog=""
+set /p prog=Nome do programa: 
+if %prog% equ "" goto MENU
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%mclass%.zip .
 goto OPCAO
 
@@ -87,13 +98,20 @@ echo Informe qual versao vai ser baixada
 echo %line%
 set versao=""
 set /p versao=Numero da versao: 
+if %versao% equ "" goto MENU
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU1%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
+goto MENU
 
 :Tools
 start chrome https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip
+goto MENU
+
+:PSCP
+start chrome https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe" 
+goto MENU
 
 :EOF
 set sn=""
