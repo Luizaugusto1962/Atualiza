@@ -10,10 +10,10 @@
 #  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/      #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
-##  Rotina para atualizar programas e bibliotecas da SAV                                                               #
-##  Feito por Luiz Augusto   email luizaugusto@sav.com.br                                                              #
+##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
+##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="11/11/2024"                                                                                                    #
+UPDATE="25/11/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -22,7 +22,7 @@ UPDATE="11/11/2024"                                                             
 # "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                        #
 # "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                      #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
-# "setup.sh"   = Configurador para criar os arquivos atualizac e atualizap                                             #
+# "setup.sh"   = Configurador  para criar os arquivos atualizac e atualizap                                             #
 # Menus                                                                                                                #
 # 1 - Atualizacao de Programas                                                                                         #
 # 2 - Atualizacao de Biblioteca                                                                                        #
@@ -39,7 +39,7 @@ UPDATE="11/11/2024"                                                             
 #      dos programa e salva o a atualizacao na pasta ?/sav/tmp/progs.                                                  #
 #            1.2 - OFF-Line                                                                                            #
 #      Atualiza o arquivo de programa ".zip" que deve ter sido colocado em ?/sav/tmp.                                  #
-#      O processo de atualizacao e id ntico ao passo acima.                                                            #
+#      O processo de atualizacao e identico ao passo acima.                                                            #
 #                                                                                                                      #
 #      2 - Atualizacao de Biblioteca                                                                                   #
 #            2.1 - Atualizacao do Transpc                                                                              #
@@ -107,6 +107,9 @@ UPDATE="11/11/2024"                                                             
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
 #Zerando variaves utilizadas 
+# resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
+#            evitar que elas sejam utilizadas por outros programas.
+#            Também fecha o programa atualiza.sh.
 resetando () {
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP 
@@ -178,10 +181,10 @@ COLUMNS=$(tput cols)
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
 #- TESTE de CONFIGURACOES--------------------------------------------------------------------------#
 
-[[ ! -e "atualizac" ]] && printf "ERRO. Arquivo atualizac, Nao existe no diretorio.\n" && exit 1
+[[ ! -e "atualizac" ]] && printf "ERRO. Arquivo atualizac, Nao existe no diretorio, usar ./setup.sh .\n" && exit 1
 [[ ! -r "atualizac" ]] && printf "ERRO. Arquivo atualizac, Sem acesso de leitura.\n" && exit 1
 
-[[ ! -e "atualizap" ]] && printf "ERRO. Arquivo atualizap, Nao existe no diretorio.\n" && exit 1
+[[ ! -e "atualizap" ]] && printf "ERRO. Arquivo atualizap, Nao existe no diretorio, usar ./setup.sh .\n" && exit 1
 [[ ! -r "atualizap" ]] && printf "ERRO. Arquivo atualizap, Sem acesso de leitura.\n" && exit 1
 
 # Arquivo de configuracao para a empresa
@@ -190,6 +193,8 @@ COLUMNS=$(tput cols)
 "." ./atualizap
 #--------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
+# Checa se os programas necessarios para o atualiza.sh estao instalados no sistema. 
+# Se o programa nao for encontrado, exibe uma mensagem de erro e sai do programa.
 _check_instalado() {
 Z1="Aparentemente falta algum programa que nao esta instalado neste distribuicao."
 ## Informe abaixo no comando for se precisar informar mais algum programa a ser checado.
@@ -307,12 +312,28 @@ M81="..Encontrado o diretorio do sistema .."
 M91="Atualizar este sistema"
 M92="ao termino da atualizacao sair e entrar novamente"
 #M93="Sistema atualizado verificar em  /portalsav/Atualiza"
+
 #-Centro da tela-----------------------------------------------------------------------------------#
+# _meiodatela ()
+# 
+# Limpa a tela e posiciona o cursor no meio da tela.
+# 
+# O printf "\033c" limpa a tela, e o "\033[10;10H" posiciona o
+# cursor na linha 10, coluna 10.
+#
 _meiodatela () {
      printf "\033c\033[10;10H\n"
 }
 
 #-Mensagem centralizada----------------------------------------------------------------------------#
+# _mensagec (string, string)
+# 
+# Exibe uma mensagem centralizada na tela, com a cor de fundo e o texto
+# informados como par metro.
+# 
+# Par metros:
+#   $1   - Cor a ser usada como fundo, no formato ANSI. Ex.: "\033[32m"
+#   $2   - Texto a ser exibido na tela.
 _mensagec () {
 local CCC="${1}"
 local MXX="${2}"
@@ -481,17 +502,36 @@ DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
 DESTINO2TRANSPC="/u/varejo/trans_pc/"
 
 #-Processo do scp----------------------------------------------------------------------------------#
+#-Realiza o download via scp de um programa especifico do servidor da SAV para o diretorio atual.
+#-O parametro NOMEPROG e o nome do programa sem a extensao.
 _run_scp () {
      "${cmd_scp}" -C -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${DESTINO2SERVER}""${NOMEPROG}" .
 }
 
-#-Processo do scp2---------------------------------------------------------------------------------#
+
+# Esta função executa uma operação de cópia segura (SCP) para baixar
+# uma versão específica de um programa de biblioteca do servidor SAV.
+# Utiliza o comando SCP configurado com opções de compactação e recursivas.
+# O programa é identificado por sua versão e variáveis ​​atu, e o
+# destino é construído usando-os junto com o caminho DESTINO2.
+#-Download de um programa da biblioteca via scp--------------------------------------------------#
+#-Realiza o download via scp de um programa especifico da biblioteca do servidor da SAV para o
+#-diretorio atual.
+#-O parametro atu e a variavel de ambiente que define o tipo de biblioteca ( Iscobol ou Isam )
+#-O parametro VERSAO e o nome do arquivo sem a extensao.
+#-O destino e construdo usando o caminho DESTINO2 e o nome do arquivo.
 _run_scp2 () {     
 # programas da biblioteca
      "${cmd_scp}" -C -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${DESTINO2}""${atu}""${VERSAO}".zip . 
 }
 
 #-Funcao de sleep----------------------------------------------------------------------------------#
+# Esta função pausa a execução por um número especificado de segundos.
+# A duração é determinada pelo argumento passado para a função.
+# Ele usa o comando `read` com uma opção de tempo limite para obter o efeito de suspensão.
+# Exemplo de uso:
+# _read_sleep 1   # Pauses for 1 second
+# _read_sleep 0.2 # Pauses for 0.2 seconds
 _read_sleep () {
 # Usage: _read_sleep 1
 #        _read_sleep 0.2
@@ -499,6 +539,9 @@ _read_sleep () {
 }
 
 #-Funcao teclar qualquer tecla---------------------------------------------------------------------#
+#-Exibe um aviso centralizado para pressionar qualquer tecla e aguarda por 15 segundos para o
+#-usuario pressionar uma tecla. Ap s o tempo limite expirar, limpa a tela e volta para o menu
+#-principal.
 _press () {
      printf "%*s""${YELLOW}" ;printf "%*s\n" $(((${#M36}+COLUMNS)/2)) "${M36}" ;printf "%*s""${NORM}"
      read -rt 15 || :
@@ -506,6 +549,10 @@ _press () {
 }
 
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
+# Esta função imprime uma linha de caracteres na largura do terminal.
+# O caractere usado para a linha pode ser especificado como argumento; 
+# caso contrário, o padrão é um hífen ('-'). A linha é centralizada com base
+# na largura atual do terminal.
 _linha () {
      local Traco=${1:-'-'}
 # quantidade de tracos por linha
@@ -621,6 +668,18 @@ UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 
 clear
 
+# _principal () - Funcao principal do programa
+# Mostra o menu principal com as opcoes de atualizacao de programas, biblioteca, desatualizando,
+# versao do iscobol, versao do linux e ferramentas. Chama a funcao escolhida pelo usuario.
+# 
+# Opcoes:
+# 1 - Atualizacao de Programas
+# 2 - Atualizacao de Biblioteca
+# 3 - Desatualizando
+# 4 - Versao do Iscobol
+# 5 - Versao do Linux
+# 6 - Ferramentas
+# 9 - Sair
 _principal () { 
      tput clear
 	printf "\n"
@@ -679,6 +738,9 @@ _principal () {
 }
 
 #-Procedimento da atualizacao de programas---------------------------------------------------------# 
+### _atualizacao
+# Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
+# Chama a funcao escolhida pelo usuario.
 _atualizacao () { 
      clear
 ###   200-mensagens do Menu Programas.
@@ -756,6 +818,12 @@ done
 }
 
 #-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
+# _servacessoff: Move o programa de atualizacao de um diretorio local para o diretorio atual.
+#
+# Se o diretorio SERACESOFF estiver configurado, este metodo move o programa
+# de atualizacao do diretorio SERACESOFF para o diretorio atual, caso o
+# arquivo exista. Se o arquivo nao existir, exibe uma mensagem de erro e
+# volta para o menu principal.
 _servacessoff () {
 if [[ "${SERACESOFF}" != "" ]]; then 
      SAOFF="${destino}${SERACESOFF}"
@@ -774,6 +842,20 @@ M422=" nao foi encontrado no diretorio ""${SAOFF}"
 fi
 }
 #-PROGRAMAS E/OU PACOTES---------------------------------------------------------------------------# 
+# _pacoteon: Realiza a atualizacao de um programa em um servidor sem acesso a rede
+#            exterior.
+#
+# Se o diretorio SERACESOFF estiver configurado, este metodo:
+# - Exibe uma mensagem informando que o servidor esta sem acesso a rede exterior.
+# - Aguarda um pressionamento de tecla.
+# - Chama o metodo _atualizacao para atualizar o programa.
+# - Chama o metodo _qualprograma para solicitar o nome do programa a ser
+#   atualizado.
+# - Exibe uma mensagem informando o nome do programa a ser atualizado.
+# - Chama o metodo _run_scp para solicitar a senha do usuario do scp.
+# - Chama o metodo _atupacote para atualizar o programa.
+# - Aguarda um pressionamento de tecla.
+# - Volta para o menu principal.
 _pacoteon () {
 if [[ "${SERACESOFF}" != "" ]]; then 
 #-Servidor OFF acesso
@@ -797,6 +879,17 @@ fi
 }
 
 #_Pacotes em offline-------------------------------------------------------------------------------#
+# _pacoteoff: Realiza a atualizacao de um programa em um servidor sem acesso a rede
+#            exterior.
+#
+# Se o diretorio SERACESOFF estiver configurado, este metodo:
+# - Solicita o nome do programa a ser atualizado com o metodo _qualprograma.
+# - Exibe uma mensagem informando o nome do programa a ser atualizado.
+# - Chama o metodo _servacessoff para mover o arquivo de atualizacao do diretorio
+#   SERACESOFF para o diretorio atual, se o arquivo existir.
+# - Chama o metodo _atupacote para atualizar o programa.
+# - Aguarda um pressionamento de tecla.
+# - Volta para o menu principal.
 _pacoteoff () {
      #-O programa tem que estar no diretorio
      _qualprograma
@@ -810,6 +903,18 @@ _pacoteoff () {
      _principal
 }
 
+# _atupacote: Realiza a atualizacao de um programa.
+#
+# O metodo:
+# - Verifica se o arquivo de atualizacao existe no diretorio atual.
+# - Caso o arquivo exista, renomeia o programa antigo para um nome com data e hora.
+# - Descompacta o programa baixado.
+# - Verifica se o arquivo tem a extensao .class ou .int e o move para o diretorio executavel.
+# - Se o arquivo de atualizacao tiver a extensao .TEL, o move para o diretorio de telas.
+# - Atualiza o novo programa.
+# - Altera a extensao da atualizacao de *.zip para *.bkp.
+# - Mostra a mensagem de atualizacao completa.
+# - E escolhe se deseja informar mais algum programa para ser atualizado.
 _atupacote () {
 if  [[ ! -f "${NOMEPROG}" ]]; then
      clear
@@ -834,6 +939,9 @@ fi
      _read_sleep 1
      clear
 
+# Displays a message indicating that a backup of the program has been completed.
+# It uses a yellow color for the message, draws lines above and below the message,
+# and pauses execution for one second before continuing.
 _mens_atualiza () {
      #..   BACKUP do programa efetuado   ..
      _linha 
@@ -929,6 +1037,14 @@ _principal
 }
 
 #-Desatualizacao de programas----------------------------------------------------------------------# 
+# _desatualizado () - Menu de desatualizacao de programas e biblioteca.
+#
+# Mostra um menu com opcoes de desatualizacao de programas e biblioteca.
+#
+# Opcoes:
+#   1 - Voltar programa Atualizado
+#   2 - Voltar antes da Biblioteca
+#   9 - Menu Anterior
 _desatualizado () { while true ; do
      clear
 ###-300-mensagens do Menu desatualizacao.
@@ -962,6 +1078,10 @@ _desatualizado () { while true ; do
 }
 
 ###
+#-VOLTA DE PROGRAMA CONCLUIDA
+# Mostra uma mensagem de fim de atualizacao de programa e pergunta se deseja voltar mais algum 
+# programa. Se sim, chama a funcao "_voltaprog" para voltar o programa, se nao, volta ao menu 
+# principal.
 _voltamaisprog () {
 #-VOLTA DE PROGRAMA CONCLUIDA
      _linha 
@@ -991,6 +1111,12 @@ fi
 ####
 
 #-Procedimento da desatualizacao de programas------------------------------------------------------#
+#-VOLTA DE PROGRAMA CONCLUIDA
+# Mostra uma mensagem de inicio de desatualizacao de programa e pergunta o nome do programa a ser
+# desatualizado. Se o programa nao for encontrado no diretorio, volta ao menu principal.
+#
+# Opcoes:
+#   Qualquer tecla - Desatualiza o programa
 _voltaprog () {
      voltaprg="sim"
      clear
@@ -1034,6 +1160,11 @@ _principal
 }
 
 #-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
+# Esta função trata do processo de reversão do sistema para o estado anterior à atualização da biblioteca.
+# Ele solicita ao usuário a versão do backup a ser restaurada e verifica a existência do
+# arquivo de backup no diretório especificado. Se o backup não for encontrado, ele retorna ao menu anterior.
+# O usuário é questionado se deseja restaurar todos os programas para o estado anterior à atualização. Baseado em
+# resposta do usuário, ele restaura programas específicos ou todos os programas para suas versões anteriores.
 _voltabibli () {
      clear
      _meiodatela
@@ -1079,7 +1210,11 @@ fi
 }
 
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
-_volta_progx () {
+# _volta_progx: Volta um programa especifico para a versao anterior
+# 
+# Informa o nome do programa em MAIUSCULO e descompacta o arquivo
+# da biblioteca anterior no diretorio TOOLS.
+volta_progx () {
      MA4="       2- Informe o nome do programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MA4}""${NORM}" Vprog
 
@@ -1095,6 +1230,11 @@ done
      _volta_progy
 }
 
+# _volta_progz: Volta mais algum programa para a versao anterior
+# 
+# Pergunta se deseja volta mais algum programa e caso sim, informa o nome
+# do programa em MAIUSCULO e descompacta o arquivo
+# da biblioteca anterior no diretorio TOOLS.
 _volta_progz () {
      printf "\n"
      MA5="Deseja volta mais algum programa ? [N/s]:"
@@ -1129,6 +1269,11 @@ if [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
 fi
 }
 
+# 
+# _volta_progy
+# 
+# Volta de programa.
+# Esta funcao e responsavel por voltar um programa.
 _volta_progy () {
      _read_sleep 1
      cd "${TOOLS}" || exit 
@@ -1155,6 +1300,11 @@ M30="O(s) programa(s) ""${Vprog}"" da ${NORM}${RED}""$VERSAO"
 }
 
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
+# 
+# _volta_geral
+# 
+# Volta todos os arquivos da biblioteca.
+# Esta funcao e responsavel por voltar todos os arquivos da biblioteca da SAV.
 _volta_geral () {
 #-VOLTA DOS ARQUIVOS ANTERIORES...
 cd "${OLDS}" || exit
@@ -1173,6 +1323,11 @@ _principal
 }
 
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
+# 
+# _biblioteca
+# 
+# Atualiza a biblioteca da SAV.
+# Esta funcao e responsavel por atualizar a biblioteca da SAV.
 _biblioteca () { 
      clear
      _meiodatela
@@ -1235,6 +1390,12 @@ fi
 }
 
 #-Processo de recepcao da biblioteca---------------------------------------------------------------#
+#-Recebe a biblioteca da SAV atraves do scp
+# 
+# _scp_biblioteca
+# 
+# Recebe a biblioteca da SAV atraves do scp.
+# Esta funcao e responsavel por receber a biblioteca da SAV atraves do scp.
 _scp_biblioteca () {
 if [[ "${sistema}" = "iscobol" ]]; then
      for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4} ; do
@@ -1249,6 +1410,12 @@ fi
      _salva
 }
 
+#-Acessa o menu de biblioteca no servidor OFF
+# 
+# _acessooff
+# 
+# Acessa o menu de biblioteca no servidor OFF.
+# Esta funcao e responsavel por acessar o menu de biblioteca no servidor OFF.
 _acessooff () {
      #-Servidor OFF acesso
      _linha 
@@ -1259,6 +1426,12 @@ _acessooff () {
 }
 
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
+#-Atualiza a pasta transpc
+# 
+# _transpc
+# 
+# Atualiza a pasta transpc.
+# Esta funcao e responsavel por atualizar a pasta transpc.
 _transpc () {
 clear 
 if [[ "${SERACESOFF}" != "" ]]; then 
@@ -1273,6 +1446,12 @@ fi
 }
 
 #-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
+#-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
+# 
+# _savatu
+# 
+# Atualiza a pasta do savatu.
+# Esta funcao e responsavel por atualizar a pasta do savatu.
 _savatu () {
 clear 
 if [[ "${SERACESOFF}" != "" ]]; then 
@@ -1291,6 +1470,10 @@ else
 fi
 }
 # Biblioteca sav em servidor sem acesso remoto#
+# _servacessofff
+# 
+# Verifica se a atualizacao esta no diretorio do servidor sem acesso remoto.
+# Se a atualizacao nao estiver no diretorio, sai do programa.
 _servacessofff () {
 atu=""    
 
@@ -1349,6 +1532,10 @@ fi
 }
 
 #-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
+# _salva
+# 
+# Verifica se a atualizacao esta no diretorio atual, se nao estiver
+#   vai para o diretorio de atualizacao offline
 _salva () {
      _servacessofff
 M21="A atualizacao tem que esta no diretorio ""${TOOLS}"
@@ -1391,6 +1578,8 @@ fi
 }
 
 #-procedimento salvar os programas antes de atualizar----------------------------------------------# 
+#-ZIPANDO OS ARQUIVOS ANTERIORES
+#-..BACKUP COMPLETO..
 _processo () {
 
 #-ZIPANDO OS ARQUIVOS ANTERIORES...
@@ -1448,6 +1637,10 @@ if [[ ! -r "${OLDS}"/"${INI}" ]]; then
 fi
 _atubiblioteca 
 }
+#-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
+# 
+# Faz a atualizacao dos programas.
+# Altera a versao da atualizacao e salva no arquivo "atualizac".
 _atubiblioteca () {
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
      cd "${TOOLS}" || exit
@@ -1485,6 +1678,10 @@ _principal
 }
 
 #-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
+#-Mostrar a versao do isCobol que esta sendo usada.
+#
+# Se o sistema for IsCOBOL, ele ira mostrar a versao do isCobol.
+# Se o sistema nao for IsCOBOL, ele ira mostrar uma mensagem de erro.
 _iscobol () {
 if [[ "${sistema}" = "iscobol" ]]; then
      clear    
@@ -1503,6 +1700,17 @@ _principal
 }
 
 #-Mostrar a versao do Linux que esta sendo usada.--------------------------------------------------# 
+#-Mostra informacoes sobre o sistema, como:
+#
+#   - tipo de OS
+#   - versao do OS
+#   - nome do servidor
+#   - IP interno
+#   - IP externo
+#   - usuarios logados
+#   - uso de memoria RAM e SWAP
+#   - uso de disco
+#   - tempo de uptime do sistema
 _linux () {
      clear
      LX="Vamos descobrir qual S.O. / Distro voce esta executando"
@@ -1544,8 +1752,14 @@ _press
 clear
 _linha 
 # Checando os usuarios logados 
+# _run_who
+# 
+# Executa o comando "who" e salva na variavel "${LOG_TMP}who" 
+# 
+# Exemplo:
+#   _run_who
 _run_who () {
-     "${cmd_who}" >"${LOG_TMP}"who 
+"${cmd_who}" >"${LOG_TMP}"who 
 }
 _run_who
 printf "${GREEN}""Usuario Logado :""${NORM}""${cmd_who}""%*s\n" && cat "${LOG_TMP}"who 
@@ -1576,6 +1790,12 @@ _press
 _principal
 }
 
+### _ferramentas
+# 
+# Mostra o menu das ferramentas 
+# 
+# Exemplo:
+#   _ferramentas
 _ferramentas () {
 tput clear
 printf "\n"
@@ -1652,10 +1872,24 @@ fi
      esac
 }
 
+# _varrendo_arquivo: compacta arquivos temporarios no diretorio "${DIRB}" que contenham o nome "${line}" e move para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}"
+# 
+# O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" que contenham o nome "${line}" e o comando zip para compactar e mover para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}".
+# 
+# Parametros:
+#   line: nome do arquivo temporario a ser compactado
+# 
+# Exemplo:
+#   _varrendo_arquivo
 _varrendo_arquivo () {
 "${cmd_find}" "${DIRB}" -type f \( -iname "${line}" \) -exec zip -m "${BACKUP}""/""${TEMPS}-${UMADATA}" "{}" +; 
 } >> "${LOG_LIMPA}"
 
+# _limpando: Limpa os arquivos temporarios no diretorio "${DIRB}"
+#
+# O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" e o comando zip para compactar e mover para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}".
+#
+# E mostrado na tela o nome dos arquivos que ser o excluidos.
 _limpando () {
 clear
      TEMPS="Temps"
@@ -1670,6 +1904,13 @@ _linha
 _mensagec "${YELLOW}" "${M11}"
 _linha
 }
+
+# _temps: Menu de Limpeza
+#
+# Mostra o menu de limpeza de arquivos temporarios com opcoes de:
+# - Limpar todos os arquivos temporarios no diretorio "${DIRB}".
+# - Adicionar arquivos na lista "atualizat" para serem excluidos no diretorio "${DIRB}".
+# - Voltar ao menu anterior.
 
 _temps () {
      clear
@@ -1700,6 +1941,12 @@ _temps () {
      esac    
 }
 
+# _limpeza: Limpeza de arquivos temporarios
+#
+# Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema.
+#
+# Exclui os arquivos temporarios da pasta "${DIRB}" com base na lista "atualizat".
+
 _limpeza () {
 cd "${TOOLS}"/ || exit
 #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
@@ -1724,6 +1971,11 @@ fi
 _ferramentas
 }
 
+# _addlixo: Adiciona um arquivo na lista "atualizat".
+#
+# Pergunta ao usuario o nome do arquivo a ser adicionado na lista "atualizat".
+# Se o usuario nao informar o arquivo, sai da rotina.
+
 _addlixo() {
 clear
 M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
@@ -1747,6 +1999,13 @@ _temps
 }     
 
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
+# _rebuild: Recupera arquivo(s) do backup.
+#
+# Pergunta ao usuario qual a op o para recuperar o(s) arquivo(s):
+#   1 - Um arquivo ou Todos
+#   2 - Arquivos Principais
+#   9 - Menu Anterior
+
 _rebuild () { 
      [[ -e "${TOOLS}""/""atualizaj2" ]] && rm -rf "${TOOLS}""/""atualizaj2"
      clear
@@ -1778,6 +2037,17 @@ _rebuild () {
      esac
 }
 
+# Funcao para escolher qual base ser  utilizada.
+#
+# Permite ao usuario escolher qual base ser  utilizada para a
+# atualiza o. A base escolhida gravada no arquivo
+# atualizac.
+#
+# O menu   montado dinamicamente, considerando se o terceiro
+# diretorio de base est  ou n o configurado.
+#
+# No final, o valor da vari vel BASE   atualizado com o valor
+# escolhido pelo usu rio.
 _escolhe_base () {
      clear
 ###-600-mensagens do Menu Rebuild.
@@ -1825,22 +2095,42 @@ else
 fi    
 }
 
+# Configura BASE1 com o caminho para o banco de dados primário.
+#
+# Esta função define a variável BASE1 para o caminho concatenado
+# composto pelas variáveis ​​`destino` e `base`, que representa
+# a localização do diretório do banco de dados primário.
 _dbase1 () {
      BASE1="${destino}""${base}"
 }
 
+# Configura BASE2 com o caminho para o banco de dados secundário.
+#
+# Esta função define a variável BASE1 para o caminho concatenado
+# composto pelas variáveis ​​`destino` e `base2`, que representa
+# a localização do diretório do banco de dados secundário.
 _dbase2 () {
      BASE1="${destino}""${base2}"  
 }
 
+# Configura BASE3 com o caminho para o banco de dados terciário.
+#
+# Esta função define a variável BASE1 para o caminho concatenado
+# composto pelas variáveis ​​`destino` e `base3`, que representa
+# a localização do diretório do banco de dados terciário.
 _dbase3 () {
      BASE1="${destino}""${base3}" 
 }
 
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
 ##- Rotina para rodar o jutil
-jut="$SAVISC""$JUTIL"
+# Reconstrói um arquivo específico com jutil.
+#
+# _jutill irá verificar se o arquivo existe e se tem tamanho maior que zero. 
+# Se ambas as condições forem atendidas, ele executará o comando jutil com o
+# -rebuild opção no arquivo.
 _jutill () {
+jut="$SAVISC""$JUTIL"
 if [[ -s "${linee}" ]]; then      
      if [[ -e "${linee}" ]]; then 
      $jut -rebuild "${linee}" -a -f
@@ -1907,6 +2197,27 @@ cd "${TOOLS}"/ || exit
 [[ ! -e "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Nao existe no diretorio.\n" && exit 1
 [[ ! -r "atualizaj" ]] && printf "ERRO. Arquivo atualizaj, Sem acesso de leitura.\n" && exit 1
 #--------------------------------------------------------------------------------------------------#
+# Recupera arquivos das listas "atualizaj" e "atualizaj2".
+#
+# Esta função reconstrói os arquivos listados em "atualizaj" e "atualizaj2",
+# se o sistema estiver configurado como "iscobol". Ele primeiro verifica e
+# opcionalmente seleciona um diretório base. Em seguida, gera o "atualizaj2"
+# arquivo com padrões específicos. Ele lê cada linha de "atualizaj" e
+# "atualizaj2", reconstruindo cada arquivo encontrado usando a função _jutill.
+#
+# Dependências:
+# - A função requer acesso aos arquivos "atualizaj" e "atualizaj2",
+# e usa a função _jutill para processar cada arquivo.
+#
+# Pré-condições:
+# - O sistema deverá estar configurado como "iscobol".
+# - O arquivo "atualizaj" deve existir e ser legível.
+#
+# Pós-condições:
+# - Os arquivos listados em "atualizaj" e "atualizaj2" são processados.
+#
+# Tratamento de erros:
+# - Sai com uma mensagem de erro se "atualizaj2" não puder ser acessado.
 _rebuildlista () {
 clear
 if [[ "${base2}" ]]; then
@@ -1947,6 +2258,13 @@ _press
 _rebuild
 }
 
+# _menubackup () - Menu de Backup(s).
+#
+# Mostra op oes de:
+# 1 - Faz backup da base de dados.
+# 2 - Restaura backup da base de dados.
+# 3 - Envia backup.
+# 9 - Volta ao menu anterior.
 _menubackup () { while true ; do
      clear
 ###-700-mensagens do Menu Backup.
@@ -1983,6 +2301,11 @@ _menubackup () { while true ; do
 }
 
 #-Rotina de backup com opcao de envio da a SAV-----------------------------------------------------#
+#      1 - Faz backup da base de dados.
+#      2 - Restaura backup da base de dados.
+#      3 - Envia backup.
+#      9 - Volta ao menu anterior.
+#
 _backup () {
 clear
 if [[ "${base2}" ]]; then
@@ -2034,6 +2357,10 @@ local ARQ=""
 ARQ="${EMPRESA}"_$(date +%Y%m%d%H%M).zip
 
 #-Rotina do progresso de execução.-----------------------------------------------------------------#
+# Encerra o indicador de progresso em segundo plano.
+#
+# Esta função é acionada para parar o indicador de progresso enviando um
+# sinal de encerramento para o último processo em segundo plano.
 _myself () {
      kill $!
 } 
@@ -2044,6 +2371,12 @@ _myself () {
      done &
      trap _myself SIGTERM
 
+# _dobackup: Realiza o backup do diretorio atual.
+#
+# O metodo:
+# - Cria um arquivo zip com o nome informado em $ARQ no diretorio $BACKUP.
+# - Ignora arquivos zip, tar e tar.gz.
+# - Redireciona o output e erros para /dev/null.
 _dobackup () {
      #-Backup 
      "${cmd_zip}" "${BACKUP}"/"$ARQ" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
@@ -2127,6 +2460,18 @@ _ferramentas
 } 
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
+#-Enviar backup avulso.
+#
+# Envia backup avulso para o servidor da SAV.
+#
+# Op o   1 - Envia o backup para o servidor da SAV.
+# Op o   2 - Envia o backup para o diretorio especificado na variavel
+#          de ambiente SERACESOFF.
+#
+# As opcoes sa:
+#    1 - Envia o backup para o servidor da SAV.
+#    2 - Envia o backup para o diretorio especificado na variavel
+#       de ambiente SERACESOFF.
 _backupavulso () {
      clear 
      ls "${BACKUP}"/"${EMPRESA}"_*.zip
@@ -2207,6 +2552,11 @@ fi
 }   
 
 #-VOLTA BACKUP TOTAL OU PARCIAL--------------------------------------------------------------------#
+# Esta função trata do processo de restauração de um backup anterior do sistema.
+# Ele solicita ao usuário a data do backup para restaurar e verifica a existência do
+# arquivo de backup no diretório especificado. Se o backup não for encontrado, ele retorna ao menu anterior.
+# O usuário é questionado se deseja restaurar todos os arquivos para o estado anterior à atualização. Baseado em
+# resposta do usuário, ele restaura arquivos específicos ou todos os arquivos para suas versões anteriores.
 _unbackup () {
 clear
 if [[ "${base2}" ]]; then
@@ -2315,6 +2665,14 @@ _ferramentas
 }
 
 #-Envia e receber arquivos-------------------------------------------------------------------------#
+###-Funcao _envrecarq---------------------------------------------------------------
+##  Menu de Envio e Retorno de Arquivos.
+##  Chama as funcoes _envia_avulso() e _recebe_avulso() para o envio e recebimento de arquivos.
+##  Opcoes:
+##  1 - Envia arquivo(s)
+##  2 - Recebe arquivo(s)
+##  9 - Menu Anterior
+##-----------------------------------------------------------------------------------------------
 _envrecarq () { 
      clear
 ###-800-mensagens do Menu Envio e Retorno.
@@ -2345,7 +2703,14 @@ _envrecarq () {
      esac
 }
 
-###---envia_avulso-------------
+###---_envia_avulso-------------------------------------------------------------
+##  Funcao para Enviar um arquivo avulso.
+##  Chama as funcoes _envia_avulso() e _recebe_avulso() para o envio e recebimento de arquivos.
+##  Opcoes:
+##  1 - Envia arquivo(s)
+##  2 - Recebe arquivo(s)
+##  9 - Menu Anterior
+##-----------------------------------------------------------------------------------------------
 _envia_avulso () {
      clear
      printf "\n\n\n"
@@ -2435,6 +2800,13 @@ M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
 }
 
 ##---recebe_avulso-------------------------------------
+# _recebe_avulso()
+# 
+# Recebe um arquivo avulso via scp do servidor da SAV.
+# 
+# - Informe a origem, nome do arquivo e o destino do arquivo.
+# - O usuario do scp sera o mesmo do usuario do atualiza.sh.
+# - O diretorio do arquivo recebido sera o mesmo do diretorio do atualiza.sh.
 _recebe_avulso () {
      clear
      _linha 
@@ -2492,6 +2864,12 @@ _envrecarq
 ########################################################
 # Limpando arquivos de atualizacao com mais de 30 dias #
 ########################################################
+# _expurgador ()
+# Limpa arquivos de atualizacao com mais de 30 dias na pasta de backup.
+# Apaga todos os arquivos do diretorio backup, olds, progs e logs.
+# Apaga arquivos do diretorio do /portalsav/log e /err_isc/.
+# Apaga arquivos do diretorio backup, olds, progs e logs.
+# Apaga arquivos do diretorio do /portalsav/log e /err_isc/.
 _expurgador () {
 clear
 #-Apagar Biblioteca--------------------------------------------------# 
@@ -2517,44 +2895,21 @@ ERR_ISC="$destino""/sav/err_isc"
      done
 printf "\n\n"     
 _press
-## Apagar arquivos do diretorio olds----------------------------------#
-#     local DIR2="${OLDS}""/"
-#     for arq in ${DIR} ; do
-#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-#     _mensagec "${GREEN}" "${MDIR}${DIR}"
-#     done
-##-Apagar arquivos do diretorio progs---------------------------------#
-#     local DIR3="${PROGS}""/"
-#     for arq in ${DIR} ; do
-#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-#     _mensagec "${GREEN}" "${MDIR}${DIR}"
-#     done
-##-Apagar arquivos do diretorio dos logs---------------------------------#
-#     local DIR4="${LOGS}""/"
-#     for arq in ${DIR} ; do
-#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-#     _mensagec "${GREEN}" "${MDIR}${DIR}"
-#     done
-##-Apagar arquivos do diretorio do /portalsav/log---------------------------------#
-#     SAVLOG="$destino""/sav/portalsav/log" 
-#     local DIR5="${SAVLOG}""/"
-#     for arq in ${DIR} ; do
-#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-#     _mensagec "${GREEN}" "${MDIR}${DIR}"
-#     done   
-##-Apagar arquivos do diretorio do /err_isc/---------------------------------#
-#     ERR_ISC="$destino""/sav/err_isc" 
-#     local DIR6="${ERR_ISC}""/"
-#     for arq in ${DIR} ; do
-#     "${cmd_find}" "${arq}"* -mtime +30 -type f -delete 
-#     _mensagec "${GREEN}" "${MDIR}${DIR}"
-#     _press
-#     done         
 cd "${TOOLS}"/ || exit
 _ferramentas
 }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
+# _update ()
+# 
+# Atualiza o atualiza.sh via Github, sempre que o programa for executado.
+# 
+# Baixa o atualiza.sh do Github, descompacta o arquivo, copia o programa
+# descompactado para o diretorio do atualiza.sh, remove o diretorio
+# descompactado e remove o arquivo descompactado.
+# 
+# O programa sempre sera atualizado via internet, caso o servidor tenha
+# acesso a rede.
 _update () {
  
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
@@ -2590,6 +2945,12 @@ fi
      rm -rf "${PROGS}"/Atualiza-main
 }
 
+# _parametros ()
+# Mostra os parametros de configuracao do sistema, base de dados, diretorios
+# do atualiza.sh, base principal, segunda base, terceira base, executaveis,
+# telas, xmls, logs, olds, progs, backup, sistema em uso, bibliotecas
+# sendo usadas, variaveis da classe e da mclasse, e o diretorio para onde
+# enviar o backup, e o diretorio do servidor OFF.
 _parametros () {
      clear
      _linha
