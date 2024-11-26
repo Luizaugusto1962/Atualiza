@@ -522,7 +522,7 @@ _run_scp () {
 #-O destino e construdo usando o caminho DESTINO2 e o nome do arquivo.
 _run_scp2 () {     
 # programas da biblioteca
-     "${cmd_scp}" -C -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${DESTINO2}""${atu}""${VERSAO}".zip . 
+     "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${atu}" . 
 }
 
 #-Funcao de sleep----------------------------------------------------------------------------------#
@@ -530,8 +530,9 @@ _run_scp2 () {
 # A duração é determinada pelo argumento passado para a função.
 # Ele usa o comando `read` com uma opção de tempo limite para obter o efeito de suspensão.
 # Exemplo de uso:
-# _read_sleep 1   # Pauses for 1 second
-# _read_sleep 0.2 # Pauses for 0.2 seconds
+# _read_sleep 1   # Pausa por 1 segundo
+# _read_sleep 0.2 # Pausas por 2 segundos
+
 _read_sleep () {
 # Usage: _read_sleep 1
 #        _read_sleep 0.2
@@ -1397,15 +1398,19 @@ fi
 # Recebe a biblioteca da SAV atraves do scp.
 # Esta funcao e responsavel por receber a biblioteca da SAV atraves do scp.
 _scp_biblioteca () {
+
+     ATU1="${DESTINO2}""${SAVATU1}""${VERSAO}".zip
+     ATU2="${DESTINO2}""${SAVATU2}""${VERSAO}".zip
+     ATU3="${DESTINO2}""${SAVATU3}""${VERSAO}".zip
+     ATU4="${DESTINO2}""${SAVATU4}""${VERSAO}".zip
+
+
 if [[ "${sistema}" = "iscobol" ]]; then
-     for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4} ; do
+     atu="$ATU1 $ATU2 $ATU3 $ATU4"
      _run_scp2
-	done
-     _salva
 else
-     for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ; do	
-	_run_scp2
-	done 
+     atu="$ATU1 $ATU2 $ATU3"
+     _run_scp2
 fi
      _salva
 }
@@ -1469,6 +1474,7 @@ else
 	_scp_biblioteca
 fi
 }
+
 # Biblioteca sav em servidor sem acesso remoto#
 # _servacessofff
 # 
@@ -1640,7 +1646,7 @@ _atubiblioteca
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
 # 
 # Faz a atualizacao dos programas.
-# Altera a versao da atualizacao e salva no arquivo "atualizac".
+# Altera a versao da atualizacao e salva no diretorio /backuup como a extensao .bkp".
 _atubiblioteca () {
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
      cd "${TOOLS}" || exit
@@ -1678,7 +1684,6 @@ _principal
 }
 
 #-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
-#-Mostrar a versao do isCobol que esta sendo usada.
 #
 # Se o sistema for IsCOBOL, ele ira mostrar a versao do isCobol.
 # Se o sistema nao for IsCOBOL, ele ira mostrar uma mensagem de erro.
@@ -1794,8 +1799,6 @@ _principal
 # 
 # Mostra o menu das ferramentas 
 # 
-# Exemplo:
-#   _ferramentas
 _ferramentas () {
 tput clear
 printf "\n"
@@ -1888,8 +1891,7 @@ _varrendo_arquivo () {
 # _limpando: Limpa os arquivos temporarios no diretorio "${DIRB}"
 #
 # O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" e o comando zip para compactar e mover para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}".
-#
-# E mostrado na tela o nome dos arquivos que ser o excluidos.
+
 _limpando () {
 clear
      TEMPS="Temps"
@@ -2001,7 +2003,7 @@ _temps
 #-Rotina de recuperar arquivos---------------------------------------------------------------------#
 # _rebuild: Recupera arquivo(s) do backup.
 #
-# Pergunta ao usuario qual a op o para recuperar o(s) arquivo(s):
+# Pergunta ao usuario qual a opcao para recuperar o(s) arquivo(s):
 #   1 - Um arquivo ou Todos
 #   2 - Arquivos Principais
 #   9 - Menu Anterior
@@ -2039,15 +2041,8 @@ _rebuild () {
 
 # Funcao para escolher qual base ser  utilizada.
 #
-# Permite ao usuario escolher qual base ser  utilizada para a
-# atualiza o. A base escolhida gravada no arquivo
-# atualizac.
-#
-# O menu   montado dinamicamente, considerando se o terceiro
-# diretorio de base est  ou n o configurado.
-#
-# No final, o valor da vari vel BASE   atualizado com o valor
-# escolhido pelo usu rio.
+# Permite ao usuario escolher qual base ser utilizada. 
+# As bases esta gravada no arquivo atualizac.
 _escolhe_base () {
      clear
 ###-600-mensagens do Menu Rebuild.
@@ -2207,7 +2202,7 @@ cd "${TOOLS}"/ || exit
 #
 # Dependências:
 # - A função requer acesso aos arquivos "atualizaj" e "atualizaj2",
-# e usa a função _jutill para processar cada arquivo.
+# e usa a função _jutil para processar cada arquivo.
 #
 # Pré-condições:
 # - O sistema deverá estar configurado como "iscobol".
@@ -2260,7 +2255,7 @@ _rebuild
 
 # _menubackup () - Menu de Backup(s).
 #
-# Mostra op oes de:
+# Mostra opcoes:
 # 1 - Faz backup da base de dados.
 # 2 - Restaura backup da base de dados.
 # 3 - Envia backup.
@@ -2366,7 +2361,7 @@ _myself () {
 } 
      echo -n "${YELLOW}"" Favor aguardar [""${NORM}"
      while true ; do
-     echo -n "${GREEN}""=""${NORM}"
+     echo -n "${GREEN}""#""${NORM}"
      _read_sleep 5
      done &
      trap _myself SIGTERM
@@ -2460,15 +2455,14 @@ _ferramentas
 } 
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
-#-Enviar backup avulso.
 #
 # Envia backup avulso para o servidor da SAV.
 #
-# Op o   1 - Envia o backup para o servidor da SAV.
-# Op o   2 - Envia o backup para o diretorio especificado na variavel
+# Opcao   1 - Envia o backup para o servidor da SAV.
+# Opcao   2 - Envia o backup para o diretorio especificado na variavel
 #          de ambiente SERACESOFF.
 #
-# As opcoes sa:
+# As opcoes sao:
 #    1 - Envia o backup para o servidor da SAV.
 #    2 - Envia o backup para o diretorio especificado na variavel
 #       de ambiente SERACESOFF.
@@ -2867,8 +2861,6 @@ _envrecarq
 # _expurgador ()
 # Limpa arquivos de atualizacao com mais de 30 dias na pasta de backup.
 # Apaga todos os arquivos do diretorio backup, olds, progs e logs.
-# Apaga arquivos do diretorio do /portalsav/log e /err_isc/.
-# Apaga arquivos do diretorio backup, olds, progs e logs.
 # Apaga arquivos do diretorio do /portalsav/log e /err_isc/.
 _expurgador () {
 clear
