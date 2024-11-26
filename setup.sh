@@ -189,6 +189,15 @@ esac
 
 }
 
+# _2018
+#
+# Define as variaveis para o Iscobol da versao 2018.
+#
+# As variaveis class e mclass recebem seus valores para a versao 2018.
+#
+# A variavel VERCLASS recebe o valor IS2018.
+#
+# As variaveis sao escritas no arquivo atualizac.
 _2018 () {
     {
 class="-class"
@@ -199,6 +208,15 @@ echo "mclass=-mclass"
     } >> atualizac
 } 
 
+# _2020
+#
+# Define as variaveis para o Iscobol da versao 2020.
+#
+# As variaveis class e mclass recebem seus valores para a versao 2020.
+#
+# A variavel VERCLASS recebe o valor IS2020.
+#
+# As variaveis sao escritas no arquivo atualizac.
 _2020 () {
     {
 class="-class20"   
@@ -209,6 +227,15 @@ echo "mclass=-mclass20"
     } >> atualizac      
 }
 
+# _2023
+#
+# Define as variaveis para o Iscobol da versao 2023.
+#
+# As variaveis class e mclass recebem seus valores para a versao 2023.
+#
+# A variavel VERCLASS recebe o valor IS2023.
+#
+# As variaveis sao escritas no arquivo atualizac.
 _2023 () {
     {
 class="-class23"                                                        
@@ -219,6 +246,15 @@ echo "mclass=-mclass23"
     } >> atualizac
 }
 
+# _2024
+#
+# Define as variaveis para o Iscobol da versao 2024.
+#
+# As variaveis class e mclass recebem seus valores para a versao 2024.
+#
+# A variavel VERCLASS recebe o valor IS2024.
+#
+# As variaveis sao escritas no arquivo atualizac.
 _2024 () {
     {
 class="-class24"                                                        
@@ -229,6 +265,23 @@ echo "mclass=-mclass24"
     } >> atualizac
 }
 
+# _COBOL
+#
+# Define as variaveis para o COBOL.
+#
+# As variaveis class e sistema recebem seus valores para o COBOL.
+#
+# As variaveis sao escritas no arquivo atualizac.
+#
+# A variavel exec recebe o valor sav/int.
+#
+# A variavel telas recebe o valor sav/tel.
+#
+# A variavel SAVATU1 recebe o valor tempSAVintA_.
+#
+# A variavel SAVATU2 recebe o valor tempSAVintB_.
+#
+# A variavel SAVATU3 recebe o valor tempSAVtel_.
 _COBOL () { 
     {
     echo "sistema=cobol" 
