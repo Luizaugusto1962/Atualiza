@@ -106,6 +106,7 @@ UPDATE="25/11/2024"                                                             
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
+
 #Zerando variaves utilizadas 
 # resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
 #            evitar que elas sejam utilizadas por outros programas.
@@ -495,7 +496,7 @@ DEFAULT_ENVIABACK=""
 if [[ -z "${ENVIABACK}" ]]; then
      ENVIABACK="${DEFAULT_ENVIABACK}"
 fi
-## ------- Parametro para a atualizacao --------
+## ------- Parametro para a atualizacao de biblioteca ----------------------------
 DESTINO2SERVER="/u/varejo/man/"
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
@@ -507,7 +508,6 @@ DESTINO2TRANSPC="/u/varejo/trans_pc/"
 _run_scp () {
      "${cmd_scp}" -C -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${DESTINO2SERVER}""${NOMEPROG}" .
 }
-
 
 # Esta função executa uma operação de cópia segura (SCP) para baixar
 # uma versão específica de um programa de biblioteca do servidor SAV.
@@ -521,7 +521,6 @@ _run_scp () {
 #-O parametro VERSAO e o nome do arquivo sem a extensao.
 #-O destino e construdo usando o caminho DESTINO2 e o nome do arquivo.
 _run_scp2 () {     
-# programas da biblioteca
      "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${atu}" . 
 }
 
@@ -773,6 +772,12 @@ _atualizacao () {
      esac
 }
 
+# Esta função solicita que o usuário insira o nome de um programa em letras maiúsculas para ser atualizado.
+# Ele valida a entrada para garantir que ela consista apenas em letras maiúsculas e números.
+# Se a entrada for inválida, exibe uma mensagem de erro e retorna ao menu principal.
+# Depois que um nome de programa válido é fornecido, ele pergunta se o programa foi compilado normalmente.
+# Com base na resposta do usuário, ele constrói o nome do arquivo do programa com o sufixo de classe apropriado.
+# A função define as variáveis ​​NOMEPROG e OLDPROG para processamento posterior.
 _qualprograma () {
      clear
      _meiodatela
@@ -782,13 +787,20 @@ _qualprograma () {
      MB4="       Informe o programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MB4}""${NORM}" prog
      _linha
-while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
-     _meiodatela
-     _mensagec "${RED}" "${M60}"
-     _linha 
-     _press
-     _principal
-done
+     if [[ -z "${prog}" ]]; then
+          _meiodatela
+          _mensagec "${RED}" "${M60}"
+          _linha 
+          _press
+          _principal
+     fi
+     while [[ "${prog}" =~ [^A-Z0-9] ]]; do
+          _meiodatela
+          _mensagec "${RED}" "${M60}"
+          _linha 
+          _press
+          _principal
+     done
 
      _linha
      _mensagec "${RED}" "${M75}"
@@ -797,25 +809,25 @@ done
      read -rp "${YELLOW}${MB5}${NORM}" -n1  
      printf "\n"
      
-if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-     NPROG=${prog}${class}
-else
-     NPROG=${prog}${mclass}
-fi
+     if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ "${REPLY,,}" == "" ]]; then
+          NPROG=${prog}${class}
+     else
+          NPROG=${prog}${mclass}
+     fi
      NOMEPROG=${NPROG}".zip"
      OLDPROG=${prog}"-anterior.zip"
-_linha
-while [[ "${prog}" =~ [^A-Z0-9] || -z "${prog}" ]]; do
-     clear
-     _meiodatela
-     _mensagec "${RED}" "${M60}"
-     _linha 
-     _press
-     NPROG=" "
-     NOMEPROG=" "
-     OLDPROG=" "
-     _principal
-done
+     _linha
+     if [[ -z "${NPROG}" ]]; then
+          clear
+          _meiodatela
+          _mensagec "${RED}" "${M60}"
+          _linha 
+          _press
+          NPROG=" "
+          NOMEPROG=" "
+          OLDPROG=" "
+          _principal
+     fi
 }
 
 #-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
@@ -940,9 +952,9 @@ fi
      _read_sleep 1
      clear
 
-# Displays a message indicating that a backup of the program has been completed.
-# It uses a yellow color for the message, draws lines above and below the message,
-# and pauses execution for one second before continuing.
+# Exibe uma mensagem indicando que o backup do programa foi concluído.
+# Usa uma cor amarela para a mensagem, desenha linhas acima e abaixo da mensagem,
+# e pausa a execução por um segundo antes de continuar.
 _mens_atualiza () {
      #..   BACKUP do programa efetuado   ..
      _linha 
@@ -1093,7 +1105,6 @@ _voltamaisprog () {
 
 #-Escolha de multi programas-----------------------------------------------------------------------# 
 #M37 Deseja informar mais algum programa para ser atualizado?
-
      _meiodatela
      read -rp "${YELLOW}""${M37}""${NORM}" -n1  
      printf "\n\n"
@@ -1215,7 +1226,7 @@ fi
 # 
 # Informa o nome do programa em MAIUSCULO e descompacta o arquivo
 # da biblioteca anterior no diretorio TOOLS.
-volta_progx () {
+_volta_progx () {
      MA4="       2- Informe o nome do programa em MAIUSCULO: "
      read -rp "${YELLOW}""${MA4}""${NORM}" Vprog
 
@@ -1450,7 +1461,6 @@ fi
      _scp_biblioteca
 }
 
-#-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
 #-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
 # 
 # _savatu
@@ -1987,7 +1997,7 @@ M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
      M8B="         Qual o arquivo ->: "
      read -rp "${YELLOW}${M8B}${NORM}" ADDARQ
      _linha
-if [[ "${ADDARQ}" = "" ]]; then
+if [[ -z "${ADDARQ}" ]]; then
      _meiodatela
      _mensagec "${RED}" "${M66}"
      _linha
