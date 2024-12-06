@@ -117,7 +117,7 @@ unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
-unset -v E_EXEC T_TELAS X_XML NOMEPROG NPROG OLDPROG
+unset -v E_EXEC T_TELAS X_XML NOMEPROG OLDPROG
 unset -v cmd_unzip cmd_zip cmd_find cmd_scp cmd_who VBACKUP ARQUIVO 
 unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 
 tput sgr0; exit 
@@ -358,6 +358,11 @@ if [[ -n "${JUTILL}" ]]; then
      JUTIL="${JUTILL}"
 fi
 
+jut="$SAVISC""$JUTIL"
+if [[ -n "${jut}" ]]; then
+     JUTIL="${jut}"
+fi
+
 ISCCLIENTT="iscclient"
 if [[ -n "${ISCCLIENTT}" ]]; then
      ISCCLIENT="${ISCCLIENTT}"
@@ -383,35 +388,35 @@ if [[ -n "${pasta}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "Diretorio do Tools, nao esta configurado  \n"
-     exit
+     exit 1
 fi
 
 if [[ -n "${base}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "Diretorio da Base de dados, nao esta configurado  \n"
-     exit
+     exit 1
 fi 
 
 if [[ -n "${exec}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "Diretorio dos programas, nao esta configurado  \n"
-     exit
+     exit 1
 fi    
 
 if [[ -n "${telas}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "Diretorio das Telas, nao esta configurado \n"
-     exit
+     exit 1
 fi    
 if [[ "${sistema}" = "iscobol" ]]; then
      if [[ -n "${xml}" ]]; then
      _mensagec "${CYAN}" "${M81}"
      else
      printf "Diretorio dos Xmls do sistema, nao esta configurado  \n"
-     exit
+     exit 1
      fi 
 fi     
 # Verificacao de diretorio necessarios ------------------------------------------------------------#
@@ -420,7 +425,7 @@ if [[ -d "${E_EXEC}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da destino nao encontrado ""${E_EXEC}""...  \n"
-     exit
+     exit 1
 fi
 
 T_TELAS=${destino}"/"${telas}
@@ -428,7 +433,7 @@ if [[ -d "${T_TELAS}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da destino nao encontrado ""${T_TELAS}""...  \n"
-     exit
+     exit 1
 fi
 
 X_XML=${destino}"/"${xml}
@@ -436,7 +441,7 @@ if [[ -d "${X_XML}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da destino nao encontrado ""${X_XML}""...  \n"
-     exit
+     exit 1
 fi     
 
 TOOLS=${destino}${pasta}
@@ -444,7 +449,7 @@ if [[ -d "${TOOLS}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da destino nao encontrado ""${TOOLS}""...  \n"
-     exit
+     exit 1
 fi
 
 BASE1=${destino}${base}
@@ -452,7 +457,7 @@ if [[ -d "${BASE1}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
-     exit
+     exit 1
 fi
 
 BASE2=${destino}${base2}
@@ -460,7 +465,7 @@ if [[ -d "${BASE2}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da base nao encontrado ""${BASE2}""...  \n"
-     exit
+     exit 1
 fi
 
 BASE3=${destino}${base3}
@@ -468,7 +473,7 @@ if [[ -d "${BASE3}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
      printf "%*s""Diretorio da base nao encontrado ""${BASE3}""...  \n"
-     exit
+     exit 1
 fi     
 
 #-Configuracao para acesso ao scp------------------------------------------------------------------#
@@ -504,9 +509,9 @@ DESTINO2TRANSPC="/u/varejo/trans_pc/"
 
 #-Processo do scp----------------------------------------------------------------------------------#
 #-Realiza o download via scp de um programa especifico do servidor da SAV para o diretorio atual.
-#-O parametro NOMEPROG e o nome do programa sem a extensao.
+#-O parametro NOMEPROG e o nome do programa.
 _run_scp () {
-     "${cmd_scp}" -C -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${DESTINO2SERVER}""${NOMEPROG}" .
+     "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${DESTINO2SERVER}""${NOMEPROG}" .
 }
 
 # Esta função executa uma operação de cópia segura (SCP) para baixar
@@ -514,12 +519,12 @@ _run_scp () {
 # Utiliza o comando SCP configurado com opções de compactação e recursivas.
 # O programa é identificado por sua versão e variáveis ​​atu, e o
 # destino é construído usando-os junto com o caminho DESTINO2.
-#-Download de um programa da biblioteca via scp--------------------------------------------------#
+#-Download de um programa da biblioteca via scp
 #-Realiza o download via scp de um programa especifico da biblioteca do servidor da SAV para o
 #-diretorio atual.
 #-O parametro atu e a variavel de ambiente que define o tipo de biblioteca ( Iscobol ou Isam )
 #-O parametro VERSAO e o nome do arquivo sem a extensao.
-#-O destino e construdo usando o caminho DESTINO2 e o nome do arquivo.
+#-O destino e construdo usando o caminho DESTINO2 e o nome do programa.
 _run_scp2 () {     
      "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${atu}" . 
 }
@@ -531,7 +536,6 @@ _run_scp2 () {
 # Exemplo de uso:
 # _read_sleep 1   # Pausa por 1 segundo
 # _read_sleep 0.2 # Pausas por 2 segundos
-
 _read_sleep () {
 # Usage: _read_sleep 1
 #        _read_sleep 0.2
@@ -810,20 +814,19 @@ _qualprograma () {
      printf "\n"
      
      if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-          NPROG=${prog}${class}
+          NOMEPROG=${prog}${class}".zip"
      else
-          NPROG=${prog}${mclass}
+          NOMEPROG=${prog}${mclass}".zip"
      fi
-     NOMEPROG=${NPROG}".zip"
      OLDPROG=${prog}"-anterior.zip"
+
      _linha
-     if [[ -z "${NPROG}" ]]; then
+     if [[ -z "${NOMEPROG}" ]]; then
           clear
           _meiodatela
           _mensagec "${RED}" "${M60}"
           _linha 
           _press
-          NPROG=" "
           NOMEPROG=" "
           OLDPROG=" "
           _principal
@@ -881,7 +884,6 @@ fi
      _qualprograma
      M421="O programa a ser atualizado, ""${NOMEPROG}"
      _mensagec "${RED}" "${M421}"
-     #-Informe a senha do usuario do scp 
      _linha 
      _mensagec "${YELLOW}" "${M29}"
      _linha 
@@ -1252,7 +1254,7 @@ _volta_progz () {
      MA5="Deseja volta mais algum programa ? [N/s]:"
      read -rp "${YELLOW}${MA5}${NORM}" -n1 
      printf "\n\n"
-if [[ "${REPLU,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
      _press
 ### limpando diretorio 
      local OLDS1="${OLDS}"/
@@ -2135,7 +2137,6 @@ _dbase3 () {
 # Se ambas as condições forem atendidas, ele executará o comando jutil com o
 # -rebuild opção no arquivo.
 _jutill () {
-jut="$SAVISC""$JUTIL"
 if [[ -s "${linee}" ]]; then      
      if [[ -e "${linee}" ]]; then 
      $jut -rebuild "${linee}" -a -f
