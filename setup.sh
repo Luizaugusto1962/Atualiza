@@ -1,12 +1,13 @@
 #!/usr/bin/env bash 
 # shellcheck disable=SC1017
-#versao de 11/09/2024
+#versao de 08/12/2024
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
 
 _ATUALIZA_BAT () {
     {
-    cat << EOF    
+    cat << 'EOF'
+@echo off
 cls
 mode con cols=60 lines=30
 color 0e
@@ -77,7 +78,7 @@ echo somente o nome do programa sem  ".zip" :
 echo %line%
 set prog=""
 set /p prog=Nome do programa: 
-if %prog% equ "" goto MENU
+if "%prog%" == "" goto MENU
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%class%.zip .
 goto OPCAO
 
@@ -89,7 +90,7 @@ echo somente o nome do programa sem  ".zip" :
 echo %line%
 set prog=""
 set /p prog=Nome do programa: 
-if %prog% equ "" goto MENU
+if "%prog%" == "" goto MENU
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%mclass%.zip .
 goto OPCAO
 
@@ -98,7 +99,7 @@ echo Informe qual versao vai ser baixada
 echo %line%
 set versao=""
 set /p versao=Numero da versao: 
-if %versao% equ "" goto MENU
+if "%versao%" == "" goto MENU
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU1%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
 call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
@@ -144,49 +145,48 @@ echo ${traco} > atualizap
 echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> atualizap
 echo ${traco} >> atualizap
 _ISCOBOL () {
-echo ${traco}           
-echo "###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###"
-echo ${traco}
-echo "sistema=iscobol"
-echo "sistema=iscobol" >> atualizac
-echo ${linha}
-echo "Escolha a versao do Iscobol"
-echo
-echo "1- Versao 2018"
-echo
-echo "2- Versao 2020"
-echo
-echo "3- Versao 2023"
-echo
-echo "4- Versao 2024"
-echo
-read -rp "Escolha a versão -> " -n1 VERSAO 
-echo
-case ${VERSAO} in
-1) _2018 ;;
-2) _2020 ;;
-3) _2023 ;;
-4) _2024 ;;
-*) echo
-echo Alternativas incorretas, saindo!
-sleep 1
-exit
-;;
-esac
+    echo ${traco}           
+    echo "###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###"
+    echo ${traco}
+    echo "sistema=iscobol"
+    echo "sistema=iscobol" >> atualizac
+    echo ${linha}
+    echo "Escolha a versao do Iscobol"
+    echo
+    echo "1- Versao 2018"
+    echo
+    echo "2- Versao 2020"
+    echo
+    echo "3- Versao 2023"
+    echo
+    echo "4- Versao 2024"
+    echo
+    read -rp "Escolha a versão -> " -n1 VERSAO 
+    echo
+    case ${VERSAO} in
+        1) _2018 ;;
+        2) _2020 ;;
+        3) _2023 ;;
+        4) _2024 ;;
+        *) echo
+            echo Alternativas incorretas, saindo!
+            sleep 1
+            exit
+            ;;
+    esac
     {
-    echo "exec=sav/classes" 
-    echo "telas=sav/tel_isc"
-    echo "xml=sav/xml" 
-    classA="${VERCLASS}""_classA_"
-    classB="${VERCLASS}""_classB_"
-    classC="${VERCLASS}""_tel_isc_"
-    classD="${VERCLASS}""_xml_"
-    echo "SAVATU1=tempSAV_""${classA}"
-    echo "SAVATU2=tempSAV_""${classB}"
-    echo "SAVATU3=tempSAV_""${classC}"
-    echo "SAVATU4=tempSAV_""${classD}"
+        echo "exec=sav/classes" 
+        echo "telas=sav/tel_isc"
+        echo "xml=sav/xml" 
+        classA="${VERCLASS}""_classA_"
+        classB="${VERCLASS}""_classB_"
+        classC="${VERCLASS}""_tel_isc_"
+        classD="${VERCLASS}""_xml_"
+        echo "SAVATU1=tempSAV_""${classA}"
+        echo "SAVATU2=tempSAV_""${classB}"
+        echo "SAVATU3=tempSAV_""${classC}"
+        echo "SAVATU4=tempSAV_""${classD}"
     } >> atualizap
-
 }
 
 # _2018
@@ -282,10 +282,10 @@ echo "mclass=-mclass24"
 # A variavel SAVATU2 recebe o valor tempSAVintB_.
 #
 # A variavel SAVATU3 recebe o valor tempSAVtel_.
-_COBOL () { 
+_COBOL () {
     {
-    echo "sistema=cobol" 
-    echo "class=-6" 
+        echo "sistema=cobol"
+        echo "class=-6"
     } >> atualizac
     {
     echo "exec=sav/int" 
@@ -415,15 +415,23 @@ echo ${linha}
 } >> atualizap
 
 if [[ "${OFF}" =~ ^[Ss]$ ]]; then
-{
-echo "@echo off"
-echo "set class=""${class}"                                                        
-echo "set mclass=""${mclass}" 
-echo "set SAVATU1=tempSAV_""$classA"
-echo "set SAVATU2=tempSAV_""$classB"
-echo "set SAVATU3=tempSAV_""$classC"
-echo "set SAVATU4=tempSAV_""$classD"
+    {
+        echo "@echo off"
+        echo "set class=\"${class}\""
+        echo "set mclass=\"${mclass}\""
+        echo "set SAVATU1=tempSAV_\"${classA}\""
+        echo "set SAVATU2=tempSAV_\"${classB}\""
+        echo "set SAVATU3=tempSAV_\"${classC}\""
+        echo "set SAVATU4=tempSAV_\"${classD}\""
     } > atualiza.bat
-    _ATUALIZA_BAT
+    
+    # Check if the batch file was created successfully
+    if [[ -f "atualiza.bat" ]]; then
+        _ATUALIZA_BAT
+    else
+        echo "Falhou ao criar o arquivo atualiza.bat." >&2
+        exit 1
+    fi
 fi
+
 echo "Pronto !!!"
