@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="08/12/2024"                                                                                                    #
+UPDATE="09/12/2024"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2138,9 +2138,9 @@ _scp_biblioteca () {
      fi
 
      if [[ "${sistema}" = "iscobol" ]]; then
-          atu=("${ATU1}" "${ATU2}" "${ATU3}" "${ATU4}")
+          atu=("${ATU1} ${ATU2} ${ATU3} ${ATU4}")
      else
-          atu=("${ATU1}" "${ATU2}" "${ATU3}")
+          atu=("${ATU1} ${ATU2} ${ATU3}")
      fi
 
      _run_scp2
