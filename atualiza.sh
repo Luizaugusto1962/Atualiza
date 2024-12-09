@@ -1037,7 +1037,7 @@ _atualizacao () {
 _qualprograma () {
     NOMEPROG=""
     OLDPROG=""
-    local prog
+    export prog=""
 
     clear
     _meiodatela
@@ -1111,7 +1111,7 @@ _qualprograma2 () {
     _meiodatela
     _mensagec "${RED}" "${M59}"
     _linha
-    MB4="       Informe o programa 2 em MAIUSCULO: "
+    MB4="       Informe o programa segundo em MAIUSCULO ou de Enter : "
     read -rp "${YELLOW}${MB4}${NORM}" prog2
     _linha
     
@@ -1173,7 +1173,7 @@ _qualprograma3 () {
     _meiodatela
     _mensagec "${RED}" "${M59}"
     _linha
-    MB4="       Informe o programa 3 em MAIUSCULO: "
+    MB4="       Informe o programa terceiro em MAIUSCULO ou de Enter : "
     read -rp "${YELLOW}${MB4}${NORM}" prog3
     _linha
 
@@ -1512,7 +1512,7 @@ _maisprograma () {
 if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
      _principal
 elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-     _maisprograma
+     _qualprograma
 else
      _opinvalida	 
      _press
@@ -1569,23 +1569,23 @@ _atupacote () {
     local pprog=""
     # Verifica e move arquivos com extensão .TEL
     
- if [[ -f "${prog}.class" ]]; then
+# if [[ -f "${prog}.class" ]]; then
         for pprog in "${prog}"*.class; do
 
-            if [[ -f "${E_EXEC}/${pprog}" ]]; then
-                if [[ -f "${E_EXEC}/${pprog}" ]]; then
+            if [[ -f "${E_EXEC}"/"${pprog}" ]]; then
+ #               if [[ -f "${E_EXEC}/${pprog}" ]]; then
                     "${cmd_zip}" -m -j "${OLDPROG}" "${E_EXEC}/${pprog}"
                     _linha 
-                fi
+#               fi
             fi
             mv -f -- "${pprog}" "${E_EXEC}" >> "${LOG_ATU}"
         done
-fi
+#fi
 
 if [[ -f "${prog}.int" ]]; then
         for pprog in "${prog}"*.int; do
 
-            if [[ -f "${E_EXEC}/${pprog}" ]]; then
+            if [[ -f "${E_EXEC}"/"${pprog}" ]]; then
                "${cmd_zip}" -m -j "${OLDPROG}" "${E_EXEC}/${pprog}"
                _linha 
             fi
@@ -1603,7 +1603,7 @@ if [[ -f "${prog}.TEL" ]]; then
 #        _read_sleep 1
 fi 
     # Atualizando o novo programa
-    M07="Programa(s) a ser(em) atualizado(s) - ${prog}"
+    M07="Programa(s) a ser(em) atualizado(s) - ""${prog}"
     _linha 
     _mensagec "${YELLOW}" "${M26}"
     _mensagec "${GREEN}" "${M07}"
