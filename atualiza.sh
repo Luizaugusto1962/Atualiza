@@ -1536,7 +1536,7 @@ _atupacote () {
     # Verifica se o programa existe
     if [[ -z "${NOMEPROG}" || ! -f "${NOMEPROG}" ]]; then
         clear
-        M42="Programa, ${NOMEPROG} nao encontrado no diretorio" 
+        M42="Programa, ""${NOMEPROG}"" nao encontrado no diretorio" 
         _linha 
         _mensagec "${RED}" "${M42}"
         _linha 
@@ -1548,7 +1548,7 @@ _atupacote () {
     # Verifica e renomeia o programa antigo
     if [[ -n "${OLDPROG}" && -f "${OLDS}/${OLDPROG}" ]]; then
         clear
-        M43="Programa ${OLDPROG} encontrado no diretorio renomeando..."
+        M43="Programa ""${OLDPROG}"" encontrado no diretorio renomeando..."
         _linha
         _mensagec "${CYAN}" "${M43}"
         _linha
@@ -1559,12 +1559,12 @@ _atupacote () {
     # Descompactando o programa baixado
     if [[ -x "$(command -v "${cmd_unzip}")" ]]; then
         "${cmd_unzip}" -o "${NOMEPROG}" >> "${LOG_ATU}"
-#        _read_sleep 1
+
     else
         _mensagec "${RED}" "Erro: Comando unzip não encontrado"
         return
     fi
-#    clear
+   clear
     # Verifica e move arquivos com extensões .class ou .int
     local pprog=""
     # Verifica e move arquivos com extensão .TEL
