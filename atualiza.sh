@@ -79,7 +79,7 @@ UPDATE="09/12/2024"                                                             
 #                                                                                                                      #
 #           6.2 - Recuperar arquivos                                                                                   #
 #               6.2.1 - Um arquivo ou Todos                                                                            #
-#                   Opcao pede para informa um arquivo espec fico, somente o nome sem a extensao                       #
+#                   Opcao pede para informa um arquivo especifico, somente o nome sem a extensao                       #
 #                   ou se deixar em branco o nome do arquivo vai recuperar todos os arquivos com as extens es,         #
 #                   "*.ARQ.dat" "*.DAT.dat" "*.LOG.dat" "*.PAN.dat"                                                    #
 #                                                                                                                      #
