@@ -46,29 +46,30 @@ if %op% equ 4 goto:PSCP
 if %op% equ 0 goto:EOF
 
 :OPCAO
+clear
 set sn=0
 echo %line% 
 echo Baixar mais algum programa da SAV.
 echo %line% 
-echo	[1]- Sim [0]- Nao     
+echo	[S]- Sim [N]- Nao     
 echo.
 set /p sn=Selecione a opcao ... 
 echo.
-if %sn% equ 0 goto EOF
-if %sn% equ 1 goto Modo_compilado
+if %sn% equ N goto EOF
+if %sn% equ S goto Modo_compilado
 
 :Modo_compilado
 set sn=""
 echo %line% 
 echo Programa compilado em qual modos? :
 echo %line% 
-echo	[1]- Normal [2]- Debug     
+echo	[N]- Normal [D]- Debug     
 echo.
 set /p sn=Selecione a opcao ... 
 echo.
 if %sn% equ 0 goto EOF
-if %sn% equ 1 goto NORMAL 
-if %sn% equ 2 goto DEBUG
+if %sn% equ N goto NORMAL 
+if %sn% equ D goto DEBUG
 
 :NORMAL
 echo.
