@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="09/12/2024"                                                                                                    #
+UPDATE="13/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -117,7 +117,7 @@ unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
-unset -v E_EXEC T_TELAS X_XML NOMEPROG OLDPROG
+unset -v E_EXEC T_TELAS X_XML NOMEPROG 
 unset -v cmd_unzip cmd_zip cmd_find cmd_scp cmd_who VBACKUP ARQUIVO 
 unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 
 tput sgr0; exit 
@@ -317,15 +317,15 @@ M06="Sera criado mais um backup para o periodo"
 M08="Opcao Invalida"
 M09="O programa tem que estar no diretorio"
 M12="Arquivo(s) recuperado(s)..."
-M13="De *.zip para *.bkp"
+#M13="De *.zip para *.bkp"
 M14="Criando Backup.."
 M16="Backup Concluido!"
 M17="Atualizacao Completa"
 M18="Arquivo(s) recuperado(s)..."
-M20="Alterando a extensao da atualizacao"
+#M20="Alterando a extensao da atualizacao"
 M24=".. BACKUP do programa efetuado .."
 M25="... Voltando versao anterior ..."
-M26="... Agora, ATUALIZANDO ..."
+#M26="... Agora, ATUALIZANDO ..."
 M27=" .. Backup Completo .."
 M28="Arquivo encontrado no diretorio"
 M29="Informe a senha do usuario do SCP"
@@ -338,7 +338,7 @@ M39="Continuando a atualizacao...:"
 M40="      Deseja enviar para o servidor da SAV ? [N/s]:"
 M41="         Informe para qual diretorio no servidor: "
 M42="         1- Informe nome BACKUP: "
-M43=" "
+#M43=" "
 M44="Acesso externo do servidor em modo OFF"
 M45="Alterando a extensao da atualizacao"
 M46="De *-anterior.zip para *.zip"
@@ -358,8 +358,8 @@ M55="Informe versao a da Biblioteca a ser atualizada: "
 M56="*+* < <- Versao a ser atualizada nao foi informada: -> > *+*"
 M57="Informe somente o numeral da versao : "
 M59="Informe o nome do programa a ser atualizado:"
-M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
-M61="Informe o nome do programa a ser desatualizado:"
+#M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
+#M61="Informe o nome do programa a ser desatualizado:"
 M62="Informe a ultima versao que foi feita a atualizacao da biblioteca."
 M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
 M65="Recuperado todos os arquivos:"
@@ -371,7 +371,7 @@ M71="ERRO: Voce informou o nome do arquivo em minusculo ou em branco "
 M72="Informe o(s) arquivo(s) que deseja enviar."
 M73="Informe o(s) arquivo(s) que deseja receber."
 M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
-M75="Programa normal (zipa) ou em teste (zipaman)"
+M75="Informe o tipo de compilaçao (1 - Normal, 2 - Depuração): "
 
 # Mensagens em CYAN
 M80="..Checando estrutura dos diretorios do atualiza.sh.."
@@ -690,7 +690,7 @@ fi
 #-Realiza o download via scp de um programa especifico do servidor da SAV para o diretorio atual.
 #-O parametro NOMEPROG e o nome do programa.
 _run_scp () {
-     "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${ATUPACK}" .
+     "${cmd_scp}" -C -r -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
 }
 
 # Esta função executa uma operação de cópia segura (SCP) para baixar
@@ -943,15 +943,14 @@ _principal () {
 	M101="Menu de Opcoes""   -   Versao: ""${BLUE}""${UPDATE}""${NORM}"
 	M102=".. Sistema: ""${sistema}"" ..  =  ..Empresa: ""${EMPRESA}"" .."
 	M103="Escolha a opcao:   "
-	M104="1${NORM} - Atualizacao de Programas "
-     M105="2${NORM} - Atualizacao de Biblioteca" 
-     M106="3${NORM} - Desatualizando           "
-	M111="4${NORM} - Versao do Iscobol        "
-	M112="4${NORM} - Funcao nao disponivel    "
-	M107="5${NORM} - Versao do Linux          "
-     M108="6${NORM} - Ferramentas              "
-     M109="9${NORM} - ${RED}Sair            "
-     M110=" Digite a opcao desejada -> " 
+	M104="1${NORM} - Programas                "
+    M105="2${NORM} - Biblioteca               " 
+	M111="3${NORM} - Versao do Iscobol        "
+	M112="3${NORM} - Funcao nao disponivel    "
+	M107="4${NORM} - Versao do Linux          "
+    M108="5${NORM} - Ferramentas              "
+    M109="9${NORM} - ${RED}Sair            "
+    M110=" Digite a opcao desejada -> " 
 
 	_linha "="
 	_mensagec "${RED}" "${M101}"
@@ -964,13 +963,11 @@ _principal () {
 	printf "\n"
 	_mensagec "${GREEN}" "${M105}"
 	printf "\n"
-	_mensagec "${GREEN}" "${M106}"
-	printf "\n"
-          if [[ "${sistema}" = "iscobol" ]]; then
-          _mensagec "${GREEN}" "${M111}"
-          else
-          _mensagec "${GREEN}" "${M112}"
-          fi
+        if [[ "${sistema}" = "iscobol" ]]; then
+        _mensagec "${GREEN}" "${M111}"
+        else
+        _mensagec "${GREEN}" "${M112}"
+        fi
 	printf "\n"
 	_mensagec "${GREEN}" "${M107}"
 	printf "\n"
@@ -984,15 +981,13 @@ _principal () {
      case ${OPCAO} in
           1) _atualizacao   ;;
           2) _biblioteca    ;;
-          3) _desatualizado ;;
-          4) _iscobol       ;;
-          5) _linux         ;;
-          6) _ferramentas   ;;
+          3) _iscobol       ;;
+          4) _linux         ;;
+          5) _ferramentas   ;;
           9) clear ; resetando ;;
           *) clear ; _principal ;;
      esac
 }
-
 #-Procedimento da atualizacao de programas---------------------------------------------------------# 
 ### _atualizacao
 # Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
@@ -1001,10 +996,12 @@ _atualizacao () {
      clear
 ###   200-mensagens do Menu Programas.
      M201="Menu de Programas "
-     M202="Escolha o tipo de Atualizacao:"
+     M202="Escolha o tipo de Acao:"
      M203="1${NORM} - Programa ou Pacote ON-Line    "
      M204="2${NORM} - Programa ou Pacote em OFF-Line"
-     M205="9${NORM} - ${RED}Menu Anterior        "
+     M205="Escolha o tipo de Desatualizacao:         "
+     M206="3${NORM} - Voltar programa Atualizado    "
+     M209="9${NORM} - ${RED}Menu Anterior        "
      printf "\n"
 	_linha "="
 	_mensagec "${RED}" "${M201}"
@@ -1016,224 +1013,121 @@ _atualizacao () {
 	printf "\n"
 	_mensagec "${GREEN}" "${M204}"
 	printf "\n"
-	_mensagec "${GREEN}" "${M205}"
+	_mensagec "${PURPLE}" "${M205}"
 	printf "\n"
+	_mensagec "${GREEN}" "${M206}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M209}"
+	printf "\n"        
 	_linha "="
      read -rp "${YELLOW}${M110}${NORM}" OPCAO
      case ${OPCAO} in
           1) _pacoteon ;;
           2) _pacoteoff ;;
+          3) _voltaprog ;;
           9) clear ; _principal ;;
           *) _principal ;;
      esac
 }
+
 
 # Esta função solicita que o usuário insira o nome de um programa em letras maiúsculas para ser atualizado.
 # Ele valida a entrada para garantir que ela consista apenas em letras maiúsculas e números.
 # Se a entrada for inválida, exibe uma mensagem de erro e retorna ao menu principal.
 # Depois que um nome de programa válido é fornecido, ele pergunta se o programa foi compilado normalmente.
 # Com base na resposta do usuário, ele constrói o nome do arquivo do programa com o sufixo de classe apropriado.
-# A função define as variáveis ​​NOMEPROG e OLDPROG para processamento posterior.
+# A função define as variáveis ​​NOMEPROG para processamento posterior.
+
 _qualprograma () {
-    NOMEPROG=""
-    OLDPROG=""
-    export prog=""
+# Variáveis
+MAX_REPETICOES=3
+contador=0
+#resultados=()
+NOMEPROG=()
+programas=()
 
-    clear
-    _meiodatela
-    _mensagec "${RED}" "${M59}"
-    _linha
-    MB4="       Informe o programa em MAIUSCULO: "
-    read -rp "${YELLOW}${MB4}${NORM}" prog
-    _linha
 
-    # Check if 'prog' is empty
-    if [[ -z "${prog}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M60}"
-        _linha 
-        _press
-        _principal
-        return 1
-    fi
-
-    # Validate 'prog' for allowed characters
-    if [[ "${prog}" =~ [^A-Z0-9] ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M60}"
-        _linha 
-        _press
-        _principal
-        return 1
-    fi
-
-    _linha
-    _mensagec "${RED}" "${M75}"
-    _linha
-    MB5="Programa compilado normal [S ou N]: "
-    read -rp "${YELLOW}${MB5}${NORM}" -n1  
-    printf "\n"
-
-    # Determine the file name based on user input
-    if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ -z "${REPLY}" ]]; then
-        NOMEPROG="${prog}${class}.zip"
-    else
-        NOMEPROG="${prog}${mclass}.zip"
-    fi
-    OLDPROG="${prog}-anterior.zip"
-
-    _linha
-    # Check if 'NOMEPROG' is empty
-    if [[ -z "${NOMEPROG}" ]]; then
-        clear
-        _meiodatela
-        _mensagec "${RED}" "${M60}"
-        _linha 
-        _press
-        NOMEPROG=" "
-        OLDPROG=" "
-        _principal
-        return 1
-    fi
+# Função para validar nome do programa
+validar_nome() {
+    [[ "$1" =~ ^[A-Z0-9]+$ ]]
 }
 
-# _qualprograma2: Pede ao usuario informar o nome do 2 programa em MAIUSCULO e
-#                 valida se o nome contem apenas caracteres permitidos.
-#                 Caso o nome seja valido, pergunta se o programa foi compilado
-#                 normalmente e construi o nome do arquivo do programa com o
-#                 sufixo de classe apropriado.
-#                 Se o nome for invalido, exibe uma mensagem de erro e volta
-#                 para o menu principal.
-_qualprograma2 () {
-    NOMEPROG2=""
-    OLDPROG2=""
-    clear
-    _meiodatela
-    _mensagec "${RED}" "${M59}"
-    _linha
-    MB4="       Informe o programa segundo em MAIUSCULO ou de Enter : "
-    read -rp "${YELLOW}${MB4}${NORM}" prog2
-    _linha
+# Loop principal
+while (( contador < MAX_REPETICOES )); do
+     _meiodatela
+     #-Informe o nome do programa a ser atualizado:
+     _mensagec "${RED}" "${M59}"
+     _linha
+     MB4="Informe o nome do programa (ENTER ou espaço para sair): "
+     read -rp "${YELLOW}""${MB4}""${NORM}" programa
+     _linha
     
-    # Check if 'prog2' is empty
-if [[ -z "${prog2}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M74}"
-        _linha 
-        _press
-#        return
-else       
-    # Validate 'prog2' for allowed characters
-    if [[ "${prog2}" =~ [^A-Z0-9] ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M74}"
-        _linha 
-        _press
-#        return
+    # Verifica se foi digitado ENTER ou espaço
+    if [[ -z "${programa}" ]]; then
+        break
     fi
 
-    _linha
-    _mensagec "${RED}" "${M75}"
-    _linha
-    MB5="Programa compilado normal [S ou N]: "
-    read -rp "${YELLOW}${MB5}${NORM}" -n1  
-    printf "\n"
-    
-    # Determine the file name based on user input
-    if [[ "${REPLY,,}" =~ ^[S|s]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-        NOMEPROG2="${prog2}${class}.zip"
+    # Verifica se o nome do programa é válido
+    if ! validar_nome "$programa"; then
+        _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiúsculas e números (ex.: ABC123)."
+        continue
+    fi
+
+    # Solicita o tipo de compilação
+     _mensagec "${RED}" "${M75}"
+     _linha  
+
+     read -rp "${YELLOW}${M75}${NORM}" -n1 tipo_compilacao  
+     printf "\n"
+    if [[ "$tipo_compilacao" == "1" ]]; then
+        compila=${programa}${class}".zip"
+    elif [[ "$tipo_compilacao" == "2" ]]; then
+        compila=${programa}${mclass}".zip"
     else
-        NOMEPROG2="${prog2}${mclass}.zip"
+        _mensagec "${RED}" "Erro: Opcao de compilacao invalida."
+        continue
     fi
-    OLDPROG2="${prog2}-anterior.zip"
+    # Armazena o resultado
+    programas+=("$programa") 
 
+    NOMEPROG+=("$compila")
+#    OLDPROG+=("$anterior")
     _linha
-    # Check if 'NOMEPROG2' is empty
-    if [[ -z "${NOMEPROG2}" ]]; then
-        clear
-        _meiodatela
-        _mensagec "${RED}" "${M60}"
-        _linha 
-        _press
-        return
-    fi
-fi    
+    _mensagec "${GREEN}" "Compilacao adicionada: ${NOMEPROG[*]}"
+    ((contador++))
+    _linha
+done
 }
 
-    # Solicita que o usuario insira o nome de um programa em letras maiusculas para ser atualizado.
-    # Ele valida a entrada para garantir que ela consista apenas em letras maiusculas e numeros.
-    # Se a entrada for invalida, exibe uma mensagem de erro e retorna ao menu principal.
-    # Depois que um nome de programa valido e fornecido, ele pergunta se o programa foi compilado normalmente.
-    # Com base na resposta do usuario, ele construi o nome do arquivo do programa com o sufixo de classe apropriado.
-    # A funcao define as variaveis NOMEPROG3 e OLDPROG3 para processamento posterior.
-_qualprograma3 () {
-    NOMEPROG3=""
-    OLDPROG3=""
-    clear
-    _meiodatela
-    _mensagec "${RED}" "${M59}"
-    _linha
-    MB4="       Informe o programa terceiro em MAIUSCULO ou de Enter : "
-    read -rp "${YELLOW}${MB4}${NORM}" prog3
-    _linha
+# Lista os programas armazenados
+_mensagec "${YELLOW}" "Lista de programas a serem baixados:"
+for programas in "${NOMEPROG[@]}"; do
+    _mensagec "${GREEN}" "$programas"
+done
 
-    # Check if 'prog3' is empty
-    if [[ -z "${prog3}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M74}"
-        _linha 
-        _press
-        return 1
+_baixarviascp () {
+# Exibe os resultados finais se houver
+if (( ${#NOMEPROG[@]} > 0 )); then
+    _mensagec "${YELLOW}" "Resultados armazenados:"
+    _linha
+    _mensagec "${GREEN}" "${NOMEPROG[@]}"
+
+    # Realiza o SCP
+    _linha
+    _mensagec "${YELLOW}" "Realizando SCP dos arquivos..."
+    for arquivo in "${NOMEPROG[@]}"; do
+        _linha
+        _mensagec "${GREEN}" "Transferindo: $arquivo"
+        _run_scp
+    done
 else
-
-    # Validate 'prog3' for allowed characters
-    if [[ "${prog3}" =~ [^A-Z0-9] ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M74}"
-        _linha 
-        _press
-        return 1
-    fi
-
-    _linha
-    _mensagec "${RED}" "${M75}"
-    _linha
-    MB5="Programa compilado normal [S ou N]: "
-    read -rp "${YELLOW}${MB5}${NORM}" -n1  
-    printf "\n"
-    
-    # Determine the file name based on user input
-    case "${REPLY,,}" in
-        [sS]|[nN])
-            if [[ "${REPLY,,}" == "s" ]]; then
-                NOMEPROG3="${prog3}${class}.zip"
-            else
-                NOMEPROG3="${prog3}${mclass}.zip"
-            fi
-            ;;
-        *)
-            _meiodatela
-            _mensagec "${RED}" "${M60}"
-            _linha 
-            _press
-            return 1
-            ;;
-    esac
-
-    OLDPROG3="${prog3}-anterior.zip"
-
-    _linha
-    # Check if 'NOMEPROG3' is empty
-    if [[ -z "${NOMEPROG3}" ]]; then
-        clear
-        _meiodatela
-        _mensagec "${RED}" "${M60}"
-        _linha 
-        _press
-        return 1
-    fi
+_mensagec "${RED}" "Nenhum valor armazenado."
+_mensagec "${GREEN}" "Processo finalizado."
 fi
+
 }
+    
+
 #-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
 # _servacessoff: Move o programa de atualizacao de um diretorio local para o diretorio atual.
 #
@@ -1243,30 +1137,32 @@ fi
 # volta para o menu principal.
 _servacessoff () {
     if [[ -z "${SERACESOFF}" ]]; then
-        _mensagec "${RED}" "Erro: SERACESOFF não está configurado"
+        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
         return
     fi
 
     local SAOFF="${destino}${SERACESOFF}"
 
     if [[ ! -d "${SAOFF}" ]]; then
-        _mensagec "${RED}" "Erro: Diretório ${SAOFF} não existe"
+        _mensagec "${RED}" "Erro: Diretório ${SAOFF} nao existe"
         return
     fi
 
-    if [[ -z "${NOMEPROG}" ]]; then
-        _mensagec "${RED}" "Erro: NOMEPROG não está configurado"
+    if [[ -z "${#NOMEPROG[@]}" ]]; then
+        _mensagec "${RED}" "Erro: NOMEPROG nao está configurado"
         return
     fi
 
-    if [[ -f "${SAOFF}/${NOMEPROG}" ]]; then
-        mv -f -- "${SAOFF}/${NOMEPROG}" "." || {
-            _mensagec "${RED}" "Erro ao mover ${NOMEPROG}"
+    if [[ -f "${SAOFF}/${#NOMEPROG[@]}" ]]; then
+        for arquivo in "${NOMEPROG[@]}"; do
+            mv -f -- "${SAOFF}/${arquivo}" "." || exit 1
+            _mensagec "${RED}" "Erro ao mover ${arquivo}"
             return
-        }
+       done
+
     else
         local M42="O programa a ser atualizado, ${NOMEPROG}"
-        local M422=" não foi encontrado no diretório ${SAOFF}"
+        local M422=" nao foi encontrado no diretório ${SAOFF}"
         _linha
         _mensagec "${RED}" "${M42}"
         _mensagec "${RED}" "${M422}"
@@ -1299,93 +1195,11 @@ _pacoteon () {
         _principal
         return
     fi
-
     _qualprograma
-
-    if [[ -z "${NOMEPROG}" ]]; then
-        _linha
-        _mensagec "${RED}" "Erro: Variavel NOMEPROG esta vazia"
-        _linha
-        _press
-        _principal
-        return
-    fi
-
-    M421="O programa a ser atualizado, ${NOMEPROG}"
-    _mensagec "${YELLOW}" "${M421}"
-
-    if [[ -z "${DESTINO2SERVER}" ]]; then
-        _linha
-        _mensagec "${RED}" "Erro: Variavel DESTINO2SERVER esta vazia"
-        _linha
-        _press
-        _principal
-        return
-    fi
-
-    ATUPACK="${DESTINO2SERVER}${NOMEPROG}"
-        _qualprograma2
-     if [[ -z "${prog2}" ]]; then
-            _linha
-            _mensagec "${RED}" "Segue processo..."
-            _linha
-    else
-        if [[ -z "${NOMEPROG2}" ]]; then
-            _linha
-            _mensagec "${RED}" "Erro: Variavel NOMEPROG2 esta vazia"
-            _linha
-            _press
-            _principal
-            return
-        fi
-
-        M421="O programa a ser atualizado2, ${NOMEPROG} ${NOMEPROG2}"
-        _mensagec "${YELLOW}" "${M421}"
-
-        if [[ -z "${DESTINO2SERVER}" ]]; then
-            _linha
-            _mensagec "${RED}" "Erro: Variavel DESTINO2SERVER esta vazia"
-            _linha
-            _press
-            _principal
-            return
-        fi
-
-        ATUPACK="${DESTINO2SERVER}${NOMEPROG2} ${DESTINO2SERVER}${NOMEPROG}"
-    _qualprograma3
-    if [[ -z "${prog3}" ]]; then
-            _linha
-            _mensagec "${RED}" "Segue processo..."
-            _linha       
-    else
-        if [[ -z "${NOMEPROG3}" ]]; then
-            _linha
-            _mensagec "${RED}" "Erro: Variavel NOMEPROG3 esta vazia"
-            _linha
-            _press
-            _principal
-            return
-        fi
-
-        M421="O programa a ser atualizado3, ${NOMEPROG} ${NOMEPROG2} ${NOMEPROG3}"
-        _mensagec "${YELLOW}" "${M421}"
-
-        if [[ -z "${DESTINO2SERVER}" ]]; then
-            _linha
-            _mensagec "${RED}" "Erro: Variavel DESTINO2SERVER esta vazia"
-            _linha
-            _press
-            _principal
-            return
-        fi
-
-        ATUPACK="${DESTINO2SERVER}${NOMEPROG3} ${DESTINO2SERVER}${NOMEPROG2} ${DESTINO2SERVER}${NOMEPROG}"
-    fi
-fi
+    _baixarviascp 
     _linha 
-    _mensagec "${YELLOW}" "${M29}"
+     _mensagec "${YELLOW}" "${M29}"
     _linha 
-    _run_scp
     _atupacote
     _press 
     _principal
@@ -1437,254 +1251,133 @@ _pacoteoff () {
     _principal
 }
 
-# _atupacote2: Realiza a atualizacao de um programa em um servidor
-# 
-# Se as variaveis OLDPROG2, NOMEPROG2 e prog2 estiverem preenchidas,
-# este metodo:
-# - Atualiza as variaveis OLDPROG, NOMEPROG e prog com os valores de
-#   OLDPROG2, NOMEPROG2 e prog2.
-# - Chama o metodo _atupacote para atualizar o programa.
-# - Volta as variaveis OLDPROG, NOMEPROG e prog para vazio.
-# Caso contrario, exibe uma mensagem de erro e volta para o menu
-# principal.
-_atupacote2 () {
-     if [[ -n "${OLDPROG2}" && -n "${NOMEPROG2}" && -n "${prog2}"  ]]; then
-         OLDPROG="${OLDPROG2}"
-         NOMEPROG="${NOMEPROG2}"
-         prog="${prog2}"
-         OLDPROG2=""
-         NOMEPROG2=""
-         _atupacote 
-         OLDPROG=""
-         NOMEPROG=""
-         prog=""
-     else
-         _meiodatela
-         _mensagec "${RED}" "Erro: Variaveis OLDPROG2, NOMEPROG2 e prog2 estao vazias"
-         _linha 
-         _press
-         _principal
-     fi
-     }
-
-# - Verifica se as variaveis OLDPROG3, NOMEPROG3 e prog3 estao vazias.
-# - Se estiverem vazias, exibe uma mensagem de erro e volta para o menu principal.
-# - Se estiverem preenchidas, atualiza o programa com o metodo _atupacote
-#   e volta para o menu principal.
-_atupacote3 () {
-     if [[ -n "${OLDPROG3}" && -n "${NOMEPROG3}" && -n "${prog3}" ]]; then
-         OLDPROG="${OLDPROG3}"
-         NOMEPROG="${NOMEPROG3}"
-         prog="${prog3}"
-         OLDPROG3=""
-         NOMEPROG3=""
-         _atupacote 
-         OLDPROG=""
-         NOMEPROG=""
-         prog=""
-     else
-         _meiodatela
-         _mensagec "${RED}" "Erro: Variaveis OLDPROG3, NOMEPROG3 e prog3 estao vazias"
-         _linha 
-         _press
-         _principal
-     fi
-     }
-
-    # Função para exibir mensagem de backup concluído
-# _mens_atualiza: Mostra a mensagem de conclus o da atualiza o
-#
-# Mostra a mensagem "Backup Concludo" e aguarda 1 segundo antes de
-# continuar. Se houver um erro ao executar _read_sleep, mostra uma
-# mensagem de erro vermelha e retorna 1.
-_mens_atualiza () {
-     _linha 
-     _mensagec "${YELLOW}" "${M24}"
-     _linha 
-#     _read_sleep 1
-     return 0
-}
-_maisprograma () {
-     printf "\n\n"
-     M37="Deseja atualizar mais programas? [S/N] "
-     read -rp "${YELLOW}""${M37}""${NORM}" -n1  
-     printf "\n\n"
-if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-     _principal
-elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-     _qualprograma
-else
-     _opinvalida	 
-     _press
-     _principal
-fi
-}
-# _atupacote: Realiza a atualizacao de um programa.
-#
-# O metodo:
-# - Verifica se o arquivo de atualizacao existe no diretorio atual.
-# - Caso o arquivo exista, renomeia o programa antigo para um nome com data e hora.
-# - Descompacta o programa baixado.
-# - Verifica se o arquivo tem a extensao .class ou .int e o move para o diretorio executavel.
-# - Se o arquivo de atualizacao tiver a extensao .TEL, o move para o diretorio de telas.
-# - Atualiza o novo programa.
-# - Altera a extensao da atualizacao de *.zip para *.bkp.
-# - Mostra a mensagem de atualizacao completa.
-# - E escolhe se deseja informar mais algum programa para ser atualizado.
-
 _atupacote () {
     # Verifica se o programa existe
-    if [[ -z "${NOMEPROG}" || ! -f "${NOMEPROG}" ]]; then
-        clear
-        M42="Programa, ""${NOMEPROG}"" nao encontrado no diretorio" 
-        _linha 
+    if (( ${#NOMEPROG[@]} == 0 )) || [[ ! -f "${NOMEPROG[0]}" ]]; then
+        M42="Programa(s), ${NOMEPROG[*]} nao encontrado(s) no diretório"
+        _linha
         _mensagec "${RED}" "${M42}"
-        _linha 
-        _press 
+        _linha
+        _press
         _principal
         return
     fi
+    _mens_atualiza () {
+     #..   BACKUP do programa efetuado   ..
+     _linha 
+     _mensagec "${YELLOW}" "${M24}"
+     _linha 
+     _read_sleep 1
+    }
 
-    # Verifica e renomeia o programa antigo
-    if [[ -n "${OLDPROG}" && -f "${OLDS}/${OLDPROG}" ]]; then
-        clear
-        M43="Programa ""${OLDPROG}"" encontrado no diretorio renomeando..."
-        _linha
-        _mensagec "${CYAN}" "${M43}"
-        _linha
-
-        mv -f -- "${OLDS}/${OLDPROG}" "${OLDS}/${UMADATA}-${OLDPROG}" >> "${LOG_ATU}"
-   fi
-    
-    # Descompactando o programa baixado
-    if [[ -x "$(command -v "${cmd_unzip}")" ]]; then
-        "${cmd_unzip}" -o "${NOMEPROG}" >> "${LOG_ATU}"
-
-    else
-        _mensagec "${RED}" "Erro: Comando unzip não encontrado"
-        return
-    fi
-   clear
-    # Verifica e move arquivos com extensões .class ou .int
-    local pprog=""
-    # Verifica e move arquivos com extensão .TEL
-    
-# if [[ -f "${prog}.class" ]]; then
-        for pprog in "${prog}"*.class; do
-
-            if [[ -f "${E_EXEC}"/"${pprog}" ]]; then
- #               if [[ -f "${E_EXEC}/${pprog}" ]]; then
-                    "${cmd_zip}" -m -j "${OLDPROG}" "${E_EXEC}/${pprog}"
-                    _linha 
-#               fi
-            fi
-            mv -f -- "${pprog}" "${E_EXEC}" >> "${LOG_ATU}"
-        done
-#fi
-
-if [[ -f "${prog}.int" ]]; then
-        for pprog in "${prog}"*.int; do
-
-            if [[ -f "${E_EXEC}"/"${pprog}" ]]; then
-               "${cmd_zip}" -m -j "${OLDPROG}" "${E_EXEC}/${pprog}"
-               _linha 
-            fi
-            mv -f -- "${pprog}" "${E_EXEC}" >> "${LOG_ATU}"
-        done
-fi 
-if [[ -f "${prog}.TEL" ]]; then
-        for pprog in "${prog}"*.TEL; do
-            if [[ -f "${T_TELAS}/${pprog}" ]]; then
-               "${cmd_zip}" -m -j "${OLDPROG}" "${T_TELAS}/${pprog}"
-               _linha 
-            fi
-            mv -f -- "${pprog}" "${T_TELAS}" >> "${LOG_ATU}"
-        done 
-#        _read_sleep 1
-fi 
-    # Atualizando o novo programa
-    M07="Programa(s) a ser(em) atualizado(s) - ""${prog}"
-    _linha 
-    _mensagec "${YELLOW}" "${M26}"
-    _mensagec "${GREEN}" "${M07}"
-    _linha 
-#    _read_sleep 1
-
-    # Alterando a extensão da atualização de .zip para .bkp
-    _linha 
-    _mensagec "${YELLOW}" "${M20}"
-    _mensagec "${YELLOW}" "${M13}"
-    _linha 
-#    _read_sleep 1
-
-    for f in *"${NOMEPROG}"; do
-        mv -f -- "${f}" "${f%.zip}.bkp"
+    # Processa programas antigos
+    for  f in "${!programas[@]}"; do
+    anterior="${OLDS}/${programas[f]}-anterior.zip"
+        if [ -f "$anterior" ]; then
+# Verifica se o arquivo de backup já existe
+            mv -f -- "${anterior}" "${OLDS}/${UMADATA}-${programas[f]}-anterior.zip" >> "${LOG_ATU}" || {
+                M49="Erro: Falha ao renomear o arquivo ${anterior}"
+                _linha
+                _mensagec "${RED}" "${M49}"
+                _linha
+                _press
+                _principal
+                return
+            }
+        fi
     done
-#    _read_sleep 1
 
-    # Atualização COMPLETA
-    mv -f -- *.bkp "${PROGS}"
-    mv -f -- "${OLDPROG}" "${OLDS}"
-#    _read_sleep 1
-    _linha 
+for  f in "${!programas[@]}"; do
+# Processa arquivos .class
+EXT_CLASS=".class"
+    if [ -f "${E_EXEC}/${programas[f]}${EXT_CLASS}" ]; then
+        "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas}"*"${EXT_CLASS}"
+    _mens_atualiza
+    fi
+# Processa arquivos .int
+EXT_INT=".int"
+    if [ -f "${E_EXEC}/${programas[f]}${EXT_INT}" ]; then
+        "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas}${EXT_INT}"
+    _mens_atualiza
+    fi
+
+# Processa arquivos .TEL
+EXT_TEL=".TEL"
+    if [ -f "${T_TELAS}/${programas[f]}${EXT_TEL}" ]; then
+        "${cmd_zip}" -m -j "${anterior}" "${T_TELAS}/${programas}${EXT_TEL}"
+    _mens_atualiza
+    fi
+
+done
+
+    # Processa cada arquivo de atualização
+    for f in "${NOMEPROG[@]}"; do
+        if [[ ! -f "${f}" ]]; then
+            M48="Erro: Arquivo de atualizacao ${f} nao existe"
+            _linha
+            _mensagec "${RED}" "${M48}"
+            _linha
+            _press
+            _principal
+            return
+        fi
+         # Descompacta o arquivo e registra no log
+    if ! "${cmd_unzip}" -o "${f}" >> "${LOG_ATU}"; then
+        M48="Erro ao descompactar ${f}"
+        _linha
+        _mensagec "${RED}" "${M48}"
+        _linha
+        _press
+        _principal
+        return
+    fi   
+    done
+
+   # Salvando arquivos .class e .int 
+for prog in "${programas[@]}"; do
+    # Processa arquivos .class
+    if compgen -G "*.class" > /dev/null; then
+        for file in *.class; do
+            mv -f -- "${file}" "${E_EXEC}" >> "${LOG_ATU}"
+        done
+    fi
+    # Processa arquivos .int
+    if compgen -G "*.int" > /dev/null; then
+        for file in *.int; do
+          mv -f -- "${file}" "${E_EXEC}" >> "${LOG_ATU}"
+        done
+    fi
+
+    # Processa arquivos .TEL
+    if compgen -G "*.TEL" > /dev/null; then
+        for file in *.TEL; do
+           mv -f -- "${file}" "${T_TELAS}" >> "${LOG_ATU}"
+        done
+    fi
+done
+
+# Altera extensões e move arquivos para o diretório PROGS
+for f in "${NOMEPROG[@]}"; do
+  if [[ -f "${f}" ]]; then
+    # Renomeia o arquivo para extensão .bkp
+        backup_file="${f%.zip}.bkp"
+        if ! mv -f -- "${f}" "${PROGS}/${backup_file}"; then
+            M48="Erro ao renomear ${f} para ${backup_file}"
+            _linha
+            _mensagec "${RED}" "${M48}"
+            _linha
+            _press
+            _principal
+            return
+        fi
+    fi
+done
+
+    # Mensagem de conclusão
+    _linha
     _mensagec "${YELLOW}" "${M17}"
-    _linha 
-    OLDPROG=""
-    NOMEPROG=""
-  
-    if [[ "${NOMEPROG2}" != "" ]]; then
-        # Chamando a funcao _atupacote2 
-        _atupacote2
-    fi
+    _linha
 
-    if [[ "${NOMEPROG3}" != "" ]]; then
-        # Chamando a funcao _atupacote3
-        _atupacote3
-    fi
-
-     _maisprograma
-
-}
-
-#-Desatualizacao de programas----------------------------------------------------------------------# 
-# _desatualizado () - Menu de desatualizacao de programas e biblioteca.
-#
-# Mostra um menu com opcoes de desatualizacao de programas e biblioteca.
-#
-# Opcoes:
-#   1 - Voltar programa Atualizado
-#   2 - Voltar antes da Biblioteca
-#   9 - Menu Anterior
-_desatualizado () { while true ; do
-     clear
-###-300-mensagens do Menu desatualizacao.
-     M301="Menu de Desatualizacao"
-     M302="Escolha o tipo de Desatualizacao:"
-     M303="1${NORM} - Voltar programa Atualizado "
-     M304="2${NORM} - Voltar antes da Biblioteca "
-     M305="9${NORM} - ${RED}Menu Anterior     "
-	printf "\n"
-	_linha "="
-	_mensagec "${RED}" "${M301}"
-	_linha
-	printf "\n"
-	_mensagec "${PURPLE}" "${M302}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M303}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M304}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M305}"
-	printf "\n"
-	_linha "="
-     read -rp "${YELLOW}${M110}${NORM}" OPCAO
-     case ${OPCAO} in
-          1) _voltaprog ;;
-          2) _voltabibli ;;
-          9) clear ; _principal ;;
-          *) _desatualizado ;;
-     esac
-     done
 }
 
 #-VOLTA DE PROGRAMA CONCLUIDA
@@ -1723,7 +1416,7 @@ _voltamaisprog () {
 
 #-Verifica se o programa a ser desatualizado existe no diretorio
 # Se o programa nao existir no diretorio, volta ao menu principal
-# _verifica_desatualizado () - Verifica se o programa a ser desatualizado existe no diretorio
+# _verifica_principal () - Verifica se o programa a ser desatualizado existe no diretorio
 #
 # Se o programa nao existir no diretorio, volta ao menu principal
 #
@@ -1738,56 +1431,83 @@ _voltamaisprog () {
 # Opcoes:
 #   Qualquer tecla - Desatualiza o programa
 _voltaprog () {
-#     voltaprg="sim"
-     clear
-     _meiodatela
-     _linha 
-     _mensagec "${RED}" "${M61}"
-     printf "\n"
-     MA7="     Informe o nome do programa em maiusculo: "
-     read -rp "${YELLOW}${MA7}${NORM}" prog
-     OLDPROG=${prog}"-anterior.zip"
-     _linha
 
-     if [[ -z "${prog}" ]]; then
-          _meiodatela
-          _mensagec "${RED}" "${M60}"
-          _linha 
-          _press
-          _principal
-          return
-     fi
+    # Variáveis
+    MAX_REPETICOES=3
+    contador=0
+    NOMEPROG=()
+    programas=()
 
-     if [[ "${prog}" =~ [^A-Z0-9] ]]; then
-          _meiodatela
-          _mensagec "${RED}" "${M60}"
-          _linha 
-          _press
-          _principal
-          return
-     fi
+    validar_nome() {
+        [[ "$1" =~ ^[A-Z0-9]+$ ]]
+    }
 
-     if [[ ! -r "${OLDS}"/"${OLDPROG}" ]]; then
-          clear
-M43="Programa ""${prog}""-anterior.zip nao encontrado no diretorio."
-          _linha 
-          _mensagec "${RED}" "${M43}"
-          _linha 
-          _press
-          _principal
-          return
-     fi
+    # Loop principal
+    while (( contador < MAX_REPETICOES )); do
+        _meiodatela
+        #-Informe o nome do programa a ser desatualizado:
+        _mensagec "${RED}" "${M59}"
+        _linha
+        MB4="Informe o nome do programa (ENTER ou espaço para sair): "
+        read -rp "${YELLOW}""${MB4}""${NORM}" programa
+        _linha
 
-     #-ALTERANDO A EXTENSAO DA ATUALIZACAO... De *-anterior.zip para *.zip
-     cd "${OLDS}"/ || exit
-     for f in *"${OLDPROG}"; do
-          mv -f -- "${f}" "${TOOLS}""/""${prog}${class}.zip"
-     done
-     NOMEPROG="${prog}${class}.zip"
-     cd "${TOOLS}"/ || exit
-     _atupacote
-     _principal    
+        # Verifica se foi digitado ENTER ou espaço
+        if [[ -z "${programa}" ]]; then
+            break
+        fi
 
+        # Verifica se o nome do programa é válido
+        if ! validar_nome "$programa"; then
+            _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiúsculas e números (ex.: ABC123)."
+            continue
+        fi
+        _linha  
+        compila=${programa}${class}".zip"
+        
+        # Armazena o resultado
+        programas+=("$programa") 
+        NOMEPROG+=("$compila")
+        ((contador++))
+    done
+
+    # Exibe os resultados finais se houver
+    if (( ${#NOMEPROG[@]} > 0 )); then
+        _mensagec "${YELLOW}" "Resultados armazenados:"
+        _linha
+        _mensagec "${GREEN}" "${NOMEPROG[@]}"
+
+        for arquivo in "${NOMEPROG[@]}"; do
+            _linha
+            _mensagec "${GREEN}" "Verificando arquivo: $arquivo"
+        done
+    else
+        _mensagec "${RED}" "Nenhum programa armazenado."
+        _mensagec "${GREEN}" "Processo finalizado."
+    fi
+
+    # Processa programas antigos
+    for f in "${!programas[@]}"; do
+        anterior="${OLDS}/${programas[f]}-anterior.zip"
+        if [ -f "$anterior" ]; then
+            mv -f -- "${anterior}" "${TOOLS}/${programas[f]}${class}.zip" >> "${LOG_ATU}" || {
+                M49="Erro: Falha ao renomear o arquivo ${anterior}.zip"
+                _linha
+                _mensagec "${RED}" "${M49}"
+                _linha
+                _press
+                _principal
+                return
+            }
+        fi
+    done
+    if ! cd "${TOOLS}/"; then
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretório ${TOOLS}."
+        _principal
+        return
+    fi
+    _atupacote
+    _voltamaisprog
 }
 
 #-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
@@ -1803,27 +1523,14 @@ _voltabibli () {
      _mensagec "${RED}" "${M62}"
      _linha
      read -rp "${YELLOW}""${MA2}""${NORM}" VERSAO
-     VVERSAO=${VERSAO}".zip"
-     INI="backup-"${VVERSAO}
+     INI="backup-""${VERSAO}"".zip"
      if [[ -z "${VERSAO}" ]]; then
           _meiodatela
           _mensagec "${RED}" "${M56}"
           _linha
           _press
-          VVERSAO=""
-          INI=""          
-          _desatualizado
-          return
-     fi   
-     if [[ "$VERSAO" =~ [^0-9] ]]; then
-          clear
-          _meiodatela
-          _mensagec "${RED}" "${M56}"
-          _linha
-          _press
-          VVERSAO=""
           INI=""
-          _desatualizado
+          _principal
           return
      fi
      if [[ ! -r "${OLDS}"/"${INI}" ]]; then
@@ -1832,7 +1539,8 @@ _voltabibli () {
           _mensagec "${RED}" "${M46}"
           _linha 
           _press
-          _desatualizado
+          INI=""
+          _principal
           return
      fi
      MA3="Deseja volta todos os programas para antes da atualizacao? [N/s]:"
@@ -1848,7 +1556,8 @@ _voltabibli () {
      else
           _opinvalida
           _press
-          _desatualizado
+          INI=""
+          _principal
      fi
 }
 
@@ -1866,8 +1575,8 @@ _volta_progx () {
           _mensagec "${RED}" "${M71}"
           _linha 
           _press
-          _desatualizado
-          return
+          _principal
+          return 1
      fi
 
      if [[ ! "${Vprog}" =~ [A-Z0-9] ]]; then
@@ -1875,12 +1584,19 @@ _volta_progx () {
           _mensagec "${RED}" "${M71}"
           _linha 
           _press
-          _desatualizado
-          return
+          _principal
+          return 1
      fi
 
-     cd "${OLDS}"/ || exit
-     "${cmd_unzip}" -j -o "${INI}" "sav/*/""${Vprog}"".*" -d "${TOOLS}" >> "${LOG_ATU}"
+     cd "${OLDS}"/ || return 1
+     if ! "${cmd_unzip}" -j -o "${INI}" "sav/*/""${Vprog}"".*" -d "${TOOLS}" >> "${LOG_ATU}"; then
+          _meiodatela
+          _mensagec "${RED}" "Erro ao descompactar ${INI} para ${TOOLS}"
+          _linha 
+          _press
+          _principal
+          return 1
+     fi
      _volta_progy
 }
 
@@ -1890,38 +1606,41 @@ _volta_progx () {
 # do programa em MAIUSCULO e descompacta o arquivo
 # da biblioteca anterior no diretorio TOOLS.
 _volta_progz () {
-     printf "\n"
-     MA5="Deseja volta mais algum programa ? [N/s]:"
-     read -rp "${YELLOW}${MA5}${NORM}" -n1 
-     printf "\n\n"
-     local REPLY1="${REPLY,,}"
-     if [[ "${REPLY1}" =~ ^[Nn]$ ]] || [[ "${REPLY1}" == "" ]]; then
-          _press
-          ### limpando diretorio 
-          local OLDS1="${OLDS}"/
-          for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg} ; do
-               "${cmd_find}" "${OLDS1}" -name "${pprog}" -ctime +30 -exec rm -rf {} \; 
-          done
-          _apagadir
-          _desatualizado
-     fi
+    printf "\n"
+    MA5="Deseja voltar mais algum programa ? [N/s]:"
+    read -rp "${YELLOW}${MA5}${NORM}" -n1
+    printf "\n\n"
+    
+    local REPLY1="${REPLY,,}"
+    if [[ "${REPLY1}" =~ ^[Nn]$ ]] || [[ "${REPLY1}" == "" ]]; then
+        _press
+        # Limpa o diretório de arquivos antigos
+        local OLDS1="${OLDS}/"
+        if [[ -d "${OLDS1}" ]]; then
+            for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}; do
+                "${cmd_find}" "${OLDS1}" -name "${pprog}" -ctime +30 -exec rm -rf {} \;
+            done
+        fi
+        _apagadir
+        _principal
+        return
+    fi
 
-     local Vprog=" "
-     MA6="       2- Informe o nome do programa em maiusculo: "
-     if [[ "${REPLY1}" =~ ^[Ss]$ ]]; then
-          read -rp "${YELLOW}${MA6}${NORM}" Vprog
-          if [[ -z "${Vprog}" ]] || [[ "${Vprog}" =~ [^A-Z0-9] ]]; then
-               _meiodatela
-               _mensagec "${RED}" "${M71}"
-               _linha
-               _press
-               _desatualizado
-          else
-               _volta_progy
-          fi
-          _press
-          _desatualizado
-     fi
+    if [[ "${REPLY1}" =~ ^[Ss]$ ]]; then
+        MA6="       2- Informe o nome do programa em maiusculo: "
+        read -rp "${YELLOW}${MA6}${NORM}" Vprog
+        if [[ -z "${Vprog}" ]] || [[ "${Vprog}" =~ [^A-Z0-9] ]]; then
+            _meiodatela
+            _mensagec "${RED}" "${M71}"
+            _linha
+            _press
+            _principal
+        else
+            _volta_progy
+        fi
+        _press
+        _principal
+    fi
 }
 
 # 
@@ -1931,26 +1650,34 @@ _volta_progz () {
 # Esta funcao e responsavel por voltar um programa.
 _volta_progy () {
     _read_sleep 1
-    cd "${TOOLS}" || { echo "Erro: Diretorio ${TOOLS} nao encontrado."; exit 1; }
 
+    # Check if TOOLS directory exists
+    if [[ -z "${TOOLS}" ]] || ! cd "${TOOLS}" ; then
+        echo "Erro: Diretorio ${TOOLS} nao encontrado."
+        exit 1
+    fi
+
+    # Check if Vprog is set
     if [[ -z "${Vprog}" ]]; then
         _meiodatela
         _mensagec "${RED}" "${M71}"
         _linha
         _press
-        _desatualizado
-        return
+        _principal
+        return 1
     fi
 
+    # Handle file moving based on system type
     if [[ "${sistema}" = "iscobol" ]]; then
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \; || { echo "Erro ao mover arquivos XML."; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { echo "Erro ao mover arquivos TEL."; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \; || { echo "Erro ao mover arquivos CLASS."; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \; || { echo "Erro ao mover arquivos XML."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { echo "Erro ao mover arquivos TEL."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \; || { echo "Erro ao mover arquivos CLASS."; return 1; }
     else
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { echo "Erro ao mover arquivos TEL."; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; || { echo "Erro ao mover arquivos INT."; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { echo "Erro ao mover arquivos TEL."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; || { echo "Erro ao mover arquivos INT."; return 1; }
     fi
 
+    # Messages and confirmation
     _linha
     _mensagec "${YELLOW}" "${M03}"
     _linha
@@ -1971,138 +1698,175 @@ _volta_progy () {
 # Volta todos os arquivos da biblioteca.
 # Esta funcao e responsavel por voltar todos os arquivos da biblioteca da SAV.
 _volta_geral () {
-#-VOLTA DOS ARQUIVOS ANTERIORES...
-if [[ -z "${OLDS}" ]]; then
-     _meiodatela
-     _mensagec "${RED}" "${M71}"
-     _linha 
-     _press
-     _desatualizado
-     return 1
-fi
+    #-VOLTA DOS ARQUIVOS ANTERIORES...
+    if [[ -z "${OLDS}" ]]; then
+        _meiodatela
+        _mensagec "${RED}" "${M71}"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
 
-if [[ -z "${INI}" ]]; then
-     _meiodatela
-     _mensagec "${RED}" "${M71}"
-     _linha 
-     _press
-     _desatualizado
-     return 1
-fi
+    if [[ -z "${INI}" ]]; then
+        _meiodatela
+        _mensagec "${RED}" "${M71}"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
 
-if [[ ! -d "${OLDS}" ]]; then
-     _meiodatela
-     _mensagec "${RED}" "${M71}"
-     _linha 
-     _press
-     _desatualizado
-     return 1
-fi
+    if [[ ! -d "${OLDS}" ]]; then
+        _meiodatela
+        _mensagec "${RED}" "${M71}"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
 
-cd "${OLDS}" || return 1
-if ! "${cmd_unzip}" -o "${INI}" -d "${destino}" >> "${LOG_ATU}"; then
-     _meiodatela
-     _mensagec "${RED}" "Erro ao descompactar ${INI} para ${destino}"
-     _linha 
-     _press
-     _desatualizado
-     return 1
-fi
+    if ! cd "${OLDS}"; then
+        _meiodatela
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretório ${OLDS}"
+        _linha
+        _press
+        _principal
+        return 1
+    fi
 
-cd "${TOOLS}"/ || return 1
-_mensagec "${YELLOW}" "${M33}"
-clear
-#-VOLTA DOS PROGRAMAS CONCLUIDA
-_linha 
-_mensagec "${YELLOW}" "${M03}"
-_linha 
-ANTVERSAO=$VERSAO
-if echo "VERSAOANT=""${ANTVERSAO}" >> atualizac; then
-     _press
-     _principal
-else
-     _meiodatela
-     _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
-     _linha 
-     _press
-     _desatualizado
-     return 1
-fi
+    if ! "${cmd_unzip}" -o "${INI}" -d "${destino}" >> "${LOG_ATU}"; then
+        _meiodatela
+        _mensagec "${RED}" "Erro ao descompactar ${INI} para ${destino}"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
+
+    if ! cd "${TOOLS}"; then
+        _meiodatela
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretório ${TOOLS}"
+        _linha
+        _press
+        _principal
+        return 1
+    fi
+    
+    _mensagec "${YELLOW}" "${M33}"
+    clear
+    #-VOLTA DOS PROGRAMAS CONCLUIDA
+    _linha 
+    _mensagec "${YELLOW}" "${M03}"
+    _linha 
+    ANTVERSAO=$VERSAO
+    if ! echo "VERSAOANT=""${ANTVERSAO}" >> atualizac; then
+        _meiodatela
+        _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
+
+    _press
+    _principal
 }
 
+_versao () {
+    _linha 
+    printf "\n"
+    read -rp "${GREEN}${M57}${NORM}" VERSAO
+    if [[ -z "${VERSAO}" ]]; then
+        printf "\n"
+        _linha
+        _mensagec "${RED}" "${M56}"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
+    INI="backup-${VERSAO}.zip"
+    if [[ -f "${INI}" ]]; then
+        printf "\n"
+        _linha
+        _mensagec "${RED}" "${M56}"
+        _linha 
+        _press
+        _principal
+        return 1
+    fi
+}
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
 # 
 # _biblioteca
 # 
 # Atualiza a biblioteca da SAV.
 # Esta funcao e responsavel por atualizar a biblioteca da SAV.
+
 _biblioteca () { 
-     local OPCAO
-     local VVERSAO
-     local INI
-     local DESTINO2
+    local OPCAO
+    local INI
+    VERSAO=" " # Variavel que define a versao do programa.
+#    clear
+    _meiodatela
+    _mensagec "${RED}" "${M55}"
+    _linha
+    printf "\n"
+    clear
+    M401="Menu da Biblioteca"
+    M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
+    M403="Anterior - ${NORM}${PURPLE}${VERSAOANT}"
+    M404="Escolha o local da Biblioteca:        "
+    M405="1${NORM} - Atualizacao do Transpc     "
+    M406="2${NORM} - Atualizacao do Savatu      "
+    M407="3${NORM} - Atualizacao OFF-Line       "
+    M408="Escolha o tipo de Desatualizacao:       "
+    M409="4${NORM} - Voltar antes da Biblioteca "
+    M410="9${NORM} - ${RED}Menu Anterior      "
 
-     clear
-     _meiodatela
-     _mensagec "${RED}" "${M55}"
-     _linha
-     printf "\n"  
-#-M57=Informe somente o numeral da versao :
-     read -rp "${GREEN}${M57}${NORM}" VERSAO 
-     VVERSAO=${VERSAO}".zip"
-     INI="backup-${VVERSAO}"
-     if [[ -z "${VERSAO}" ]]; then
-#-M56=Versao a ser atualizada nao foi informada :
-     printf "\n"
-     _linha
-     _mensagec "${RED}" "${M56}"
-     _linha 
-     _press
-     VVERSAO=""
-     _principal
-     return 1
-fi
-     clear
-###-400-mensagens do Menu Biblioteca.
-     M401="Menu da Biblioteca"
-     M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
-     M403="Anterior - ${NORM}${PURPLE}${VERSAOANT}"
-     M404="Escolha o local da Biblioteca:"
-     M405="1${NORM} - Atualizacao do Transpc"
-     M406="2${NORM} - Atualizacao do Savatu "
-     M407="3${NORM} - Atualizacao OFF-Line  "
-     M408="9${NORM} - ${RED}Menu Anterior"
-	printf "\n"
-	_linha "="
-	_mensagec "${RED}" "${M401}"
-	_linha 
-	_mensagec "${RED}" "${M402}"
-     _linha 
-	_mensagec "${RED}" "${M403}"
-	_linha "="
-	printf "\n"
-	_mensagec "${PURPLE}" "${M404}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M405}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M406}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M407}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M408}"
-	printf "\n"
-	_linha "="
-     
-     read -rp "${YELLOW}""${M110}""${NORM}" OPCAO	
-     case ${OPCAO} in
-          1) _transpc ;;
-          2) _savatu ;;
-          3) _salva ;;
-          9) clear ; _principal ;;
-          *) _biblioteca ;;
-     esac
+    printf "\n"
+    _linha "="
+    _mensagec "${RED}" "${M401}"
+    _linha 
+    _mensagec "${RED}" "${M402}"
+    _linha 
+    _mensagec "${RED}" "${M403}"
+    _linha "="
+    printf "\n"
+    _mensagec "${PURPLE}" "${M404}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M405}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M406}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M407}"
+    printf "\n"
+    _mensagec "${PURPLE}" "${M408}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M409}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M410}"
+    printf "\n"        
+    _linha "="
+
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+    case ${OPCAO} in
+        1) _transpc ;;
+        2) _savatu ;;
+        3) _salva ;;
+        4) _voltabibli ;;
+        9) clear; _principal ;;
+        *) _biblioteca ;;
+    esac
 }
+_variaveis_atualiza () {
 
+     ATUALIZA1="${SAVATU1}""${VERSAO}".zip
+     ATUALIZA2="${SAVATU2}""${VERSAO}".zip
+     ATUALIZA3="${SAVATU3}""${VERSAO}".zip
+     ATUALIZA4="${SAVATU4}""${VERSAO}".zip
+}
 #-Processo de recepcao da biblioteca---------------------------------------------------------------#
 #-Recebe a biblioteca da SAV atraves do scp
 # 
@@ -2126,12 +1890,12 @@ _scp_biblioteca () {
           _mensagec "${RED}" "As variaveis SAVATU1, SAVATU2 e SAVATU3 nao foram informadas"
           exit 1
      fi
+_variaveis_atualiza
 
-     ATU1="${DESTINO2}""${SAVATU1}""${VERSAO}".zip
-     ATU2="${DESTINO2}""${SAVATU2}""${VERSAO}".zip
-     ATU3="${DESTINO2}""${SAVATU3}""${VERSAO}".zip
-     ATU4="${DESTINO2}""${SAVATU4}""${VERSAO}".zip
-
+     ATU1="${DESTINO2}""${ATUALIZA1}"
+     ATU2="${DESTINO2}""${ATUALIZA2}"
+     ATU3="${DESTINO2}""${ATUALIZA3}"
+     ATU4="${DESTINO2}""${ATUALIZA4}"
      if [[ -z "${sistema}" ]]; then
           _mensagec "${RED}" "A variavel sistema nao foi informada"
           exit 1
@@ -2142,7 +1906,6 @@ _scp_biblioteca () {
      else
           atu=("${ATU1} ${ATU2} ${ATU3}")
      fi
-
      _run_scp2
      _salva
 }
@@ -2172,8 +1935,9 @@ _acessooff () {
 # Esta funcao e responsavel por atualizar a pasta transpc.
 _transpc () {
     clear
+    _versao 
     if [[ -z "${DESTINO2TRANSPC}" ]]; then
-        _mensagec "${RED}" "Erro: DESTINO2TRANSPC não foi definido"
+        _mensagec "${RED}" "Erro: DESTINO2TRANSPC nao foi definido"
         exit 1
     fi
 
@@ -2188,7 +1952,7 @@ _transpc () {
     DESTINO2="${DESTINO2TRANSPC}"
 
     if [[ -z "${DESTINO2}" ]]; then
-        _mensagec "${RED}" "Erro: DESTINO2 não foi definido"
+        _mensagec "${RED}" "Erro: DESTINO2 nao foi definido"
         exit 1
     fi
 
@@ -2203,6 +1967,7 @@ _transpc () {
 # Esta funcao e responsavel por atualizar a pasta do savatu.
 _savatu () {
     clear
+    _versao
     if [[ "${SERACESOFF}" != "" ]]; then
         _acessooff
     fi
@@ -2213,12 +1978,12 @@ _savatu () {
     _linha
 
     if [[ -z "${DESTINO2SAVATUISC}" ]]; then
-        _mensagec "${RED}" "Erro: DESTINO2SAVATUISC não foi definido"
+        _mensagec "${RED}" "Erro: DESTINO2SAVATUISC nao foi definido"
         exit 1
     fi
 
     if [[ -z "${DESTINO2SAVATUMF}" ]]; then
-        _mensagec "${RED}" "Erro: DESTINO2SAVATUMF não foi definido"
+        _mensagec "${RED}" "Erro: DESTINO2SAVATUMF nao foi definido"
         exit 1
     fi
 
@@ -2231,6 +1996,46 @@ _savatu () {
     _scp_biblioteca
 }
 
+#-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
+# _salva
+# 
+# Verifica se a atualizacao esta no diretorio atual, se nao estiver
+#   vai para o diretorio de atualizacao offline
+_salva () {
+    if [[ -z "${VERSAO}" ]]; then
+        _versao 
+    fi
+
+    _variaveis_atualiza
+
+    M21="A atualizacao tem que esta no diretorio ""${TOOLS}"
+    _linha 
+    _mensagec "${YELLOW}" "${M21}"
+    _linha 
+
+    if [[ "${sistema}" = "iscobol" ]]; then
+        local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}" )
+    else
+        local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" )
+    fi
+
+    for atu in "${atualizas[@]}"; do
+        if [[ ! -r "${atu}" ]]; then
+            clear
+            _linha 
+            _mensagec "${RED}" "${M48}"
+            _linha 
+            _press
+            clear
+            _principal
+            return 1
+        fi
+    done
+
+    _processo
+}
+
+
 # Biblioteca sav em servidor sem acesso remoto#
 # _servacessofff
 # 
@@ -2240,97 +2045,23 @@ _servacessofff () {
     local atu
     
     if [[ -z "${SERACESOFF}" ]]; then
-        _mensagec "${RED}" "Erro: SERACESOFF não está configurado"
+        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
         return
     fi
 
     SAOFF="${destino}${SERACESOFF}/"
 
     if [[ ! -d "${SAOFF}" ]]; then
-        _mensagec "${RED}" "Erro: Diretório ${SAOFF} não existe"
+        _mensagec "${RED}" "Erro: Diretório ${SAOFF} nao existe"
         return
     fi
 
-    M42="A atualização não foi encontrada no diretório ${SAOFF}"
+    M42="A atualização nao foi encontrada no diretório ${SAOFF}"
 
     _linha
     _mensagec "${YELLOW}" "${M21}"
     _linha
-
-    if [[ "${sistema}" = "iscobol" ]]; then
-        for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4}; do
-            if [[ ! -r "${SAOFF}${atu}${VVERSAO}" ]]; then
-                clear
-                _linha
-                _mensagec "${RED}" "${M42}"
-                _linha
-                _press
-                clear
-                _principal
-                return
-            else
-                mv -f -- "${SAOFF}${atu}${VVERSAO}" "." || { _mensagec "${RED}" "Erro ao mover ${atu}"; return; }
-            fi
-        done
-        _processo
-    else
-        for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3}; do
-            if [[ ! -r "${SAOFF}${atu}${VVERSAO}" ]]; then
-                clear
-                _linha
-                _mensagec "${RED}" "${M42}"
-                _linha
-                _press
-                clear
-                _principal
-                return
-            else
-                mv -f -- "${SAOFF}${atu}${VVERSAO}" "." || { _mensagec "${RED}" "Erro ao mover ${atu}"; return; }
-            fi
-        done
-        clear
-        _processo
-    fi
-}
-
-#-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
-# _salva
-# 
-# Verifica se a atualizacao esta no diretorio atual, se nao estiver
-#   vai para o diretorio de atualizacao offline
-_salva () {
-    _servacessofff
-    M21="A atualizacao tem que esta no diretorio ""${TOOLS}"
-    _linha 
-    _mensagec "${YELLOW}" "${M21}"
-    _linha 
-    if [[ "${sistema}" = "iscobol" ]]; then
-        for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4}; do
-            if [[ ! -r "${atu}${VVERSAO}" ]]; then
-                clear
-                _linha 
-                _mensagec "${RED}" "${M48}"
-                _linha 
-                _press
-                clear
-                _principal
-                return
-            fi
-        done 
-    else
-        for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3}; do
-            if [[ ! -r "${atu}${VVERSAO}" ]]; then
-                clear
-                _linha 
-                _mensagec "${RED}" "${M48}"
-                _linha 
-                _press
-                _principal
-                return
-            fi
-        done
-    fi
-    _processo
+_salva
 }
 
 #-procedimento salvar os programas antes de atualizar----------------------------------------------# 
@@ -2438,58 +2169,56 @@ _atubiblioteca
 # Faz a atualizacao dos programas.
 # Altera a versao da atualizacao e salva no diretorio /backuup como a extensao .bkp".
 _atubiblioteca () {
-    # Procedimento da Atualizacao de Programas
-    cd "${TOOLS}" || { echo "Erro: Diretorio ${TOOLS} nao encontrado."; exit 1; }
+    # Atualização de Programas
+    cd "${TOOLS}" || { echo "Erro: Diretório ${TOOLS} nao encontrado."; exit 1; }
 
-    # ATUALIZANDO OS PROGRAMAS...
-    for atu in ${SAVATU1} ${SAVATU2} ${SAVATU3} ${SAVATU4}; do
-        if [[ -n "${atu}" && -r "${atu}${VVERSAO}" ]]; then
+    # Atualizando os programas
+    for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
+        if [[ -n "${arquivo}" && -r "${arquivo}" ]]; then
             _linha
-            _mensagec "${YELLOW}" "${M26}"
-            _linha 
-            if _mensagec "${GREEN}" "${atu}${VVERSAO}"; then
-                "${cmd_unzip}" -o "${atu}${VVERSAO}" -d "${destino}" >> "${LOG_ATU}" 2>&1 || {
-                    _mensagec "${RED}" "Erro ao descompactar ${atu}${VVERSAO}"
+            _mensagec "${YELLOW}" "${MENSAGEM_ATUALIZANDO}"
+            _linha
+            if _mensagec "${GREEN}" "${arquivo}"; then
+                "${cmd_unzip}" -o "${arquivo}" -d "${destino}" >> "${LOG_ATUALIZACAO}" 2>&1 || {
+                    _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
                     continue
                 }
             else
-                _mensagec "${RED}" "${M48}"
+                _mensagec "${RED}" "${MENSAGEM_ERRO}"
             fi
             _linha
             _read_sleep 2
             clear
         else
-            _mensagec "${RED}" "Erro: Arquivo ${atu}${VVERSAO} nao encontrado ou nao legivel."
+            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} nao encontrado ou nao legível."
         fi
     done
 
-    # Atualizacao COMPLETA
-    _linha 
-    _mensagec "${YELLOW}" "${M17}"
-    _linha 
+    # Atualização completa
+    _linha
+    _mensagec "${YELLOW}" "${MENSAGEM_COMPLETA}"
+    _linha
 
-    for f in *_"${VERSAO}".zip; do
-        if [[ -f "${f}" ]]; then
-            mv -f -- "${f}" "${f%.zip}.bkp" || _mensagec "${RED}" "Erro ao mover ${f} para ${f%.zip}.bkp"
+    for arquivo_zip in *_"${VERSAO}".zip; do
+        if [[ -f "${arquivo_zip}" ]]; then
+            mv -f -- "${arquivo_zip}" "${arquivo_zip%.zip}.bkp" || _mensagec "${RED}" "Erro ao mover ${arquivo_zip} para ${arquivo_zip%.zip}.bkp"
         else
-            _mensagec "${RED}" "Arquivo ${f} nao encontrado."
+            _mensagec "${RED}" "Arquivo ${arquivo_zip} nao encontrado."
         fi
     done
-
     mv -f -- *_"${VERSAO}".bkp "${BACKUP}" || _mensagec "${RED}" "Erro ao mover backups para ${BACKUP}"
 
-    # ALTERANDO A EXTENSAO DA ATUALIZACAO.../De *.zip para *.bkp/
-    M40="Versao atualizada - ${VERSAO}"
-    _linha 
-    _mensagec "${YELLOW}" "${M20}"
-    _mensagec "${YELLOW}" "${M13}"
-    _mensagec "${RED}" "${M40}"
-    _linha 
+    # Alterando a extensão da atualização de .zip para .bkp
+    mensagem_versao="Versão atualizada - ${VERSAO}"
+    _linha
+    _mensagec "${YELLOW}" "${MENSAGEM_EXTENSAO_ALTERADA}"
+    _mensagec "${YELLOW}" "${MENSAGEM_SALVA}"
+    _mensagec "${RED}" "${mensagem_versao}"
+    _linha
     _press
 
-    ANTVERSAO=$VERSAO
-    echo "VERSAOANT=${ANTVERSAO}" >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
-
+    VERSAO_ANTERIOR=$VERSAO
+    echo "VERSAOANT=${VERSAO_ANTERIOR}" >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuração."
     _principal
 }
 
@@ -2498,7 +2227,7 @@ _atubiblioteca () {
 # Se o sistema for IsCOBOL, ele ira mostrar a versao do isCobol.
 # Se o sistema nao for IsCOBOL, ele ira mostrar uma mensagem de erro.
 _iscobol () {
-    if [[ "${sistema}" = "iscobol" ]]; then
+    if [[ "${sistema}" == "iscobol" ]]; then
         if [[ -x "${SAVISC}${ISCCLIENT}" ]]; then
             clear
             _linha
@@ -2510,6 +2239,11 @@ _iscobol () {
             _mensagec "${RED}" "Erro: ${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel."
             _linha
         fi
+    elif [[ -z "${sistema}" ]]; then
+        # -Variavel de sistema nao configurada
+        _linha
+        _mensagec "${RED}" "Erro: Variavel de sistema nao configurada."
+        _linha
     else
         # -Sistema nao e IsCOBOL
         _linha
@@ -2713,59 +2447,32 @@ _ferramentas () {
 # 
 # Exemplo:
 #   _varrendo_arquivo
-_varrendo_arquivo () {
-    if [ -z "${line}" ]; then
-        printf "Erro: Variavel line nao pode ser nula.\n" >&2
-        exit 1
-    fi
-
-    if [ ! -d "${DIRB}" ]; then
-        printf "Erro: Diretorio ""${DIRB}"" nao existe. %*s\n" >&2
-        exit 1
-    fi
-
-    if [ ! -d "${BACKUP}" ]; then
-        printf "Erro: Diretorio ""${BACKUP}"" nao existe. %*s\n" >&2
-        exit 1
-    fi
-
-    "${cmd_find}" "${DIRB}" -type f \( -iname "${line}" \) -exec zip -m "${BACKUP}""/""${TEMPS}-${UMADATA}" "{}" +; 
+_varrendo_arquivo() {
+    local zip_file_name="Temps-${UMADATA}"
+    "${cmd_find}" "${DIRB}" -type f -iname "${file_name}" -exec "${cmd_zip}" -m "${BACKUP}/${zip_file_name}" "{}" +
 } >> "${LOG_LIMPA}"
 
+#_varrendo_arquivo () {
+#       "${cmd_find}" "${DIRB}" -type f -iname "${line}" -exec zip -m "${BACKUP}/${TEMPS}-${UMADATA}" "{}" + || {
+#        printf "Erro ao executar o comando zip.\n" >&2
+#        return 1
+#    }
 # _limpando: Limpa os arquivos temporarios no diretorio "${DIRB}"
 #
 # O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" e o comando zip para compactar e mover para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}".
 
 _limpando () {
-    local line
-    local -a line_array
-    local IFS=$'\n'
-
-    if [ -z "${arqs}" ]; then
-        printf "Erro: Variavel arqs nao pode ser nula.\n" >&2
-        exit 1
-    fi
-
-    if [ ! -r "${arqs}" ]; then
-        printf "Erro: Arquivo ""${arqs}"" nao existe. %*s\n" >&2
-        exit 1
-    fi
-
-    mapfile -t line_array < "${arqs}"
-    if [ ${#line_array[@]} -eq 0 ]; then
-        printf "Erro: Arquivo ""${arqs}"" esta vazio. %*s\n" >&2
-        exit 1
-    fi
-
-    for line in "${line_array[@]}"; do
-        printf "${GREEN}""Excluido todos as arquivos: ""${line}""${NORM}%s\n"
-        _varrendo_arquivo "${line}"
-    done 
-
-    local M11="Movendo arquivos Temporarios do diretorio = ""${DIRB}"
-    _linha 
-    _mensagec "${YELLOW}" "${M11}"
-    _linha
+clear
+     line_array=""
+     mapfile -t line_array < "${arqs}"
+     for file_name in "${line_array[@]}"; do
+     printf "${GREEN}""Excluido todos as arquivos: ${YELLOW}${file_name}${NORM}%s\n"
+     _varrendo_arquivo
+     done 
+M11="Movendo arquivos Temporarios do diretorio = ""${DIRB}"
+_linha 
+_mensagec "${YELLOW}" "${M11}"
+_linha
 }
 
 # _temps: Menu de Limpeza
@@ -2776,8 +2483,6 @@ _limpando () {
 # - Voltar ao menu anterior.
 
 _temps () {
-    local OPCAO
-
     clear
     M900="Menu de Limpeza"
     M901="1${NORM} - Limpeza dos Arquivos Temporarios"
@@ -2803,7 +2508,7 @@ _temps () {
     case ${OPCAO} in
         1)  _limpeza ;;
         2)  _addlixo ;;
-        9) clear ; _ferramentas ;;
+        9)  clear ; _ferramentas ;;
         *) _ferramentas ;;
     esac    
 }
@@ -2816,7 +2521,7 @@ _temps () {
 
 _limpeza () {
     if [[ ! -d "${TOOLS}" ]]; then
-        printf "ERRO. Diretorio ""${TOOLS}"", Nao existe.%*s\n" >&2
+        printf "ERRO. Diretorio \"${TOOLS}\", Nao existe.%*s\n" >&2
         exit 1
     fi
 
@@ -2824,36 +2529,34 @@ _limpeza () {
 
     #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
     #-TESTE Arquivos ----------------------------------------------------------------------------------#
-    if [[ ! -e "atualizat" ]]; then
-        printf "ERRO. Arquivo atualizat, Nao existe no diretorio.\n" >&2
+    local atualizat_file="atualizat"
+    if [[ ! -e "${atualizat_file}" ]]; then
+        printf "ERRO. Arquivo \"${atualizat_file}\", Nao existe no diretorio.%*s\n" >&2
+        exit 1
+    elif [[ ! -r "${atualizat_file}" ]]; then
+        printf "ERRO. Arquivo \"${atualizat_file}\", Sem acesso de leitura.%*s\n" >&2
         exit 1
     fi
 
-    if [[ ! -r "atualizat" ]]; then
-        printf "ERRO. Arquivo atualizat, Sem acesso de leitura.\n" >&2
-        exit 1
-    fi
-
-    #--------------------------------------------------------------------------------------------------#
-    #-Rotina para excluir arquivo temporarios----------------------------------------------------------#
+#-Rotina para excluir arquivo temporarios----------------------------------------------------------#
     local arqs=""
-    arqs="atualizat"
-    DAYS=$(find "${BACKUP}" -type f -name "Temps*" -mtime 10 -exec rm -rf {} \; 2>/dev/null)
-    if [[ -n "${DAYS}" ]]; then
-        M63="Existe um backup antigo sera excluido do Diretorio ""${DIRDEST}"
+    arqs="${atualizat_file}"
+    TEMPS=$(find "${BACKUP}" -type f -name "Temps*" -mtime +10 -exec rm -rf {} \;) 2>/dev/null
+    if [[ -n "${TEMPS}" ]]; then
+        local M63="Existe um backup antigo sera excluido do Diretorio ""${DIRDEST}"
         _meiodatela
         _messagec RED "${M63}"
     fi
-
-    for i in $base $base2 $base3; do
-        DIRB="${destino}""${i}""/"
+    for base in $base $base2 $base3; do
+        DIRB="${destino}${base}/"
         if [[ -d "${DIRB}" ]]; then
             _limpando
             _press
         else
-            printf "ERRO. Diretorio ""${DIRB}"", Nao existe.%*s\n" >&2
+            printf "ERRO: Diretório \"%s\" nao existe.\n" "${DIRB}" >&2
         fi
     done
+# Chamando ferramentas auxiliares
     _ferramentas
 }
 
@@ -2875,17 +2578,17 @@ _addlixo() {
         _meiodatela
         _mensagec "${RED}" "${M66}"
         _linha
-        cd "${TOOLS}"/ || exit
+        cd "${TOOLS}"/ || exit 1
         _press
         _temps
         return
     fi
-    local ARQUIVO="${ADDARQ}"
-    if [[ -n "${ARQUIVO}" ]]; then
-        echo "${ARQUIVO}" >> atualizat
-    else
-        _mensagec "${RED}" "Erro: Nome do arquivo não pode ser nulo."
-    fi
+    # Adicionando o arquivo à lista "atualizat"
+    echo "${ADDARQ}" >> atualizat
+    _mensagec "${CYAN}" "Arquivo '${ADDARQ}' adicionado com sucesso ao 'atualizat'."
+    _linha
+
+    # Chamando funções auxiliares
     _temps
 }
 
@@ -2898,15 +2601,15 @@ _addlixo() {
 #   9 - Menu Anterior
 
 _rebuild () { 
-     if [[ -e "${TOOLS}"/"atualizaj2" ]]; then
-          rm -rf "${TOOLS}"/"atualizaj2"
-     fi
-     clear
+    if [[ -e "${TOOLS}"/"atualizaj2" ]]; then
+        rm -rf "${TOOLS}"/"atualizaj2"
+    fi
+    clear
 ###-600-mensagens do Menu Rebuild.
-     M601="Menu de Recuperacao de Arquivo(s)."
+    M601="Menu de Recuperacao de Arquivo(s)."
 	M603="1${NORM} - Um arquivo ou Todos   "
 	M604="2${NORM} - Arquivos Principais   "
-     M605="9${NORM} - ${RED}Menu Anterior"
+    M605="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
 	_mensagec "${RED}" "${M601}"
@@ -2930,23 +2633,25 @@ _rebuild () {
      esac
 }
 
+
+
 # Funcao para escolher qual base ser  utilizada.
 #
 # Permite ao usuario escolher qual base ser utilizada. 
 # As bases esta gravada no arquivo atualizac.
 _escolhe_base () {
-     local OPCAO
-     clear
+    clear
 ###-600-mensagens do Menu Rebuild.
-     local M900="Escolha a Base"
-	local M901="1${NORM} - Base em ${destino}${base}"
-	local M902="2${NORM} - Base em ${destino}${base2}"
-     local M903=""
-     if [[ -n "${base3}" ]]; then
-          M903="3${NORM} - Base em ${destino}${base3}"
-     fi
-     local M909="9${NORM} - ${RED}Menu Anterior "
-     printf "\n"
+    M900="Escolha a Base"
+	M901="1${NORM} - Base em ${destino}${base}"
+	M902="2${NORM} - Base em ${destino}${base2}"
+if [[ ! "${base3}" ]]; then
+        M903=""
+else
+        M903="3${NORM} - Base em ${destino}${base3}"
+fi
+    M909="9${NORM} - ${RED}Menu Anterior "
+    printf "\n"
 	_linha "="
 	_mensagec "${RED}" "${M900}"
 	_linha 
@@ -2965,19 +2670,28 @@ _escolhe_base () {
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
 if [[ ! "${base3}" ]]; then
      case ${OPCAO} in
-     1) _dbase1 ;;
-     2) _dbase2 ;;
-     9) clear ; _ferramentas ;;
-     *) _ferramentas ;;
+    1) 
+	     _dbase1 
+	     ;;
+     2) 
+	     _dbase2 
+		 ;;
+     3) 
+         if [[ -n "${base3}" ]]; then
+             _dbase3 
+         else
+             _ferramentas
+         fi
+         ;;
+     9) 
+	     clear 
+	     _ferramentas 
+	     ;;
+     *) 
+	 _ferramentas 
+	 ;;
      esac    
-else
-     case ${OPCAO} in
-     1) _dbase1 ;;
-     2) _dbase2 ;;
-     3) _dbase3 ;;
-     9) clear ; _ferramentas ;;          
-     *) _ferramentas ;;
-     esac
+
 fi    
 }
 
@@ -2985,42 +2699,31 @@ fi
 #
 # Esta função define a variável BASE1 para o caminho concatenado
 # composto pelas variáveis ​​`destino` e `base`, que representa
-# a localização do diretório do banco de dados primário.
+# Configura BASE1 com o caminho para o banco de dados primário.
 _dbase1 () {
-     if [[ -n "${destino}" ]] && [[ -n "${base}" ]]; then
-          BASE1="${destino}""${base}"
-     else
-          printf "Erro: Variaveis de ambiente destino ou base nao estao configuradas.\n"
-          exit 1
-     fi
+    if [[ -z "${destino}" || -z "${base}" ]]; then
+        printf "Erro: Variaveis de ambiente destino ou base nao estao configuradas.\n"
+        exit 1
+    fi
+    BASE1="${destino}${base}"
 }
 
 # Configura BASE2 com o caminho para o banco de dados secundário.
-#
-# Esta função define a variável BASE1 para o caminho concatenado
-# composto pelas variáveis ​​`destino` e `base2`, que representa
-# a localização do diretório do banco de dados secundário.
 _dbase2 () {
-    if [[ -n "${destino}" ]] && [[ -n "${base2}" ]]; then
-        BASE1="${destino}${base2}"
-    else
-        printf "Erro: Variáveis de ambiente destino ou base2 não estão configuradas.\n"
+    if [[ -z "${destino}" || -z "${base2}" ]]; then
+        printf "Erro: Variaveis de ambiente destino ou base2 nao estao configuradas.\n"
         exit 1
     fi
+    BASE1="${destino}${base2}"
 }
 
 # Configura BASE3 com o caminho para o banco de dados terciário.
-#
-# Esta função define a variável BASE1 para o caminho concatenado
-# composto pelas variáveis ​​`destino` e `base3`, que representa
-# a localização do diretório do banco de dados terciário.
 _dbase3 () {
-     if [[ -n "${destino}" ]] && [[ -n "${base3}" ]]; then
-          BASE1="${destino}""${base3}"
-     else
-          printf "Erro: Variaveis de ambiente destino ou base3 nao estao configuradas.\n"
-          exit 1
-     fi
+    if [[ -z "${destino}" || -z "${base3}" ]]; then
+        printf "Erro: Variaveis de ambiente destino ou base3 nao estao configuradas.\n"
+        exit 1
+    fi
+    BASE1="${destino}${base3}"
 }
 
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
@@ -3032,80 +2735,86 @@ _dbase3 () {
 # -rebuild opção no arquivo.
 
 _jutill () {
-
-     if [[ -n "${linee}" ]] && [[ -e "${linee}" ]] && [[ -s "${linee}" ]]; then
-          if [[ -x "${jut}" ]]; then
-               "${jut}" -rebuild "${linee}" -a -f
-               _linha
-          else
-               _mensagec "${RED}" "Erro: Jutil nao encontrado."
-               return 1
-          fi
-     else
-          _mensagec "${YELLOW}" "Erro: ""${linee}"" nao encontrado ou esta vazio."
-          return 1
-     fi
+    if [[ -n "${arquivo}" ]] && [[ -e "${arquivo}" ]] && [[ -s "${arquivo}" ]]; then
+        if [[ -x "${jut}" ]]; then
+            if ! "${jut}" -rebuild "${arquivo}" -a -f; then
+                _mensagec "${RED}" "Erro: Falha ao reconstruir o arquivo ${arquivo}."
+                return 1
+            fi
+            _linha
+        else
+            _mensagec "${RED}" "Erro: Jutil nao encontrado."
+            return 1
+        fi
+    else
+        _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado ou está vazio."
+        return 1
+    fi
 }
 
 _rebuild1 () {
-if [[ "${base2}" ]]; then
-     _escolhe_base
-fi
-clear
-if [[ "${sistema}" = "iscobol" ]]; then          
-     _meiodatela
-     _mensagec "${CYAN}" "${M64}" 
-     _linha  
-     declare -u PEDARQ
-     MA8="         Informe o nome maiusculo: "
-     read -rp "${YELLOW}${MA8}${NORM}" PEDARQ
+    local base_to_use
+    if [[ -n "${base2}" ]]; then
+        _escolhe_base
+        base_to_use="${BASE1}"
+    else
+        base_to_use="${destino}${base}"
+    fi
 
-     _linha
-     if [[ -z "${PEDARQ}" ]]; then
-     _meiodatela
-#-M65
-     _mensagec "${RED}" "${M65}"
-     _linha 
-          if [[ -d "${BASE1}" ]]; then
-               local -a files=("${BASE1}"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat})
-               for linee in "${files[@]}"; do
-                    if [[ -f "${linee}" ]] && [[ -s "${linee}" ]]; then
-                         _jutill
+    clear
+    if [[ "${sistema}" = "iscobol" ]]; then
+        _meiodatela
+        _mensagec "${CYAN}" "${M64}"
+        _linha
+        read -rp "${YELLOW}Informe o nome do arquivo: ${NORM}" arquivo
+
+        _linha
+        if [[ -z "${arquivo}" ]]; then
+            _meiodatela
+            _mensagec "${RED}" "${M65}"
+            _linha
+            if [[ -d "${base_to_use}" ]]; then
+                local -a files=("${base_to_use}"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat})
+                for arquivo in "${files[@]}"; do
+                    if [[ -f "${arquivo}" ]] && [[ -s "${arquivo}" ]]; then
+                        _jutill "${arquivo}"
                     else
-                         _mensagec "${YELLOW}" "Erro: Arquivo ${linee} nao encontrado ou esta vazio."
+                        _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado ou esta vazio."
                     fi
-               done
-          else
-               _mensagec "${RED}" "Erro: Diretorio ${BASE1} Nao existe."
-          fi
+                done
+            else
+                _mensagec "${RED}" "Erro: Diretorio ${base_to_use} Nao existe."
+            fi
+        else
+            while [[ "${arquivo}" =~ [^A-Z0-9] || -z "${arquivo}" ]]; do
+                _meiodatela
+                _mensagec "${RED}" "${M66}"
+                cd "${TOOLS}"/ || exit
+                _press
+                _ferramentas
+            done
+            local arquivo_com_extensao="${arquivo}.???.dat"
+            for arquivo in "${base_to_use}"/${arquivo_com_extensao}; do
+                if [[ -f "${arquivo}" ]]; then
+                    "${jut}" -rebuild "${arquivo}" -a -f
+                else
+                    _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado."
+                fi
+                _linha
+            done
+        fi
+        _linha
+        _mensagec "${YELLOW}" "${M18}"
+        _linha
 
-     else
-           while [[ "${PEDARQ}" =~ [^A-Z0-9] || -z "${PEDARQ}" ]]; do
-          _meiodatela
-          _mensagec "${RED}" "${M66}"
-          cd "${TOOLS}"/ || exit
-          _press
-          _ferramentas
-          done
-          local ARQUIVO="${PEDARQ}.???.dat"
-          for line in ${ARQUIVO}; do
-                    "${jut}" -rebuild "${BASE1}"/"${line}" -a -f
-                    _linha  
-          done
-     fi
-#-Arquivo(s) recuperado(s)...
-     _linha 
-     _mensagec "${YELLOW}" "${M18}"
-     _linha 
-
-cd "${TOOLS}"/ || exit
-else
-     _meiodatela
-     M996="Recuperacao em desenvolvimento :"
-     _mensagec "${RED}" "${M996}"
-fi
-_press
-_rebuild
+        cd "${TOOLS}"/ || exit
+    else
+        _meiodatela
+        M996="Recuperacao em desenvolvimento :"
+        _mensagec "${RED}" "${M996}"
+    fi
+    _press
+    _rebuild
 }
 
 
@@ -3135,76 +2844,76 @@ _rebuild
 # Tratamento de erros:
 # - Sai com uma mensagem de erro se "atualizaj2" não puder ser acessado.
 _rebuildlista () {
-cd "${TOOLS}"/ || exit
-if [[ "${base2}" ]]; then
-     _escolhe_base
-fi
-if [[ "${sistema}" = "iscobol" ]]; then
-cd "${BASE1}"/ || exit
-#-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
-var_ano=$(date +%y)
-var_ano4=$(date +%Y)
-ls ATE"${var_ano}"*.dat > "${TOOLS}""/""atualizaj2"
-ls NFE?"${var_ano4}".*.dat >> "${TOOLS}""/""atualizaj2"
-_read_sleep 1
-cd "-" || exit
-#-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
-if [[ ! -e "atualizaj2" ]]; then
-    printf "ERRO. Arquivo atualizaj2, Nao existe no diretorio.\n" >&2
-    exit 1
-fi
-
-if [[ ! -r "atualizaj2" ]]; then
-    printf "ERRO. Arquivo atualizaj2, Sem acesso de leitura.\n" >&2
-    exit 1
-fi
+    cd "${TOOLS}"/ || exit
+    if [[ "${base2}" ]]; then
+        _escolhe_base
+    fi
+    if [[ "${sistema}" = "iscobol" ]]; then
+        cd "${BASE1}"/ || exit
+        #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
+        var_ano=$(date +%y)
+        var_ano4=$(date +%Y)
+        ls ATE"${var_ano}"*.dat > "${TOOLS}""/""atualizaj2"
+        ls NFE?"${var_ano4}".*.dat >> "${TOOLS}""/""atualizaj2"
+        _read_sleep 1
+        cd "-" || exit
+        #-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
+        if [[ ! -e "atualizaj2" ]]; then
+            printf "ERRO. Arquivo atualizaj2, Nao existe no diretorio.\n" >&2
+            exit 1
+        fi
+        
+        if [[ ! -r "atualizaj2" ]]; then
+            printf "ERRO. Arquivo atualizaj2, Sem acesso de leitura.\n" >&2
+            exit 1
+        fi
 #--------------------------------------------------------------------------------------------------#
 # Trabalhando lista do arquivo "atualizaj" #
-     while read -r line; do
-     if [[ -z "${line}" ]]; then
-     _meiodatela
-     _mensagec "${RED}" "Nao foi encontrado o arquivo ${line}"
-     _linha
-     else
-     linee="${BASE1}""/""${line}"
-          if [[ ! -e "${linee}" ]]; then
-               _meiodatela
-               _mensagec "${RED}" "Nao foi encontrado o arquivo ${linee}"
-               _linha
-          else
-               _jutill   
-          fi
-     fi
-     done < atualizaj
+        while read -r line; do
+            if [[ -z "${line}" ]]; then
+                _meiodatela
+                _mensagec "${RED}" "Nao foi encontrado o arquivo ${line}"
+                _linha
+            else
+                arquivo="${BASE1}""/""${line}"
+                if [[ ! -e "${arquivo}" ]]; then
+                    _meiodatela
+                    _mensagec "${RED}" "Nao foi encontrado o arquivo ${arquivo}"
+                    _linha
+                else
+                    _jutill   
+                fi
+            fi
+        done < atualizaj
 # Trabalhando lista do arquivo "atualizaj2" #
-     while read -r line; do
-     if [[ -z "${line}" ]]; then
-     _meiodatela
-     _mensagec "${RED}" "Nao foi encontrado o arquivo ""${line}"
-     _linha
-     else
-     linee="${BASE1}""/""${line}"
-     if [[ ! -e "${linee}" ]]; then
-          _meiodatela
-          _mensagec "${RED}" "Nao foi encontrado o arquivo ""${linee}"
-          _linha
-     else
-          _jutill   
-     fi
-     fi
-     done < atualizaj2
-#-Lista de Arquivo(s) recuperado(s)... 
-     _linha 
-     _mensagec "${YELLOW}" "${M12}"
-     _linha 
-#     _press
-else
-_meiodatela
-#M996="Recuperacao para este sistema nao disponivel:"
-_mensagec "${RED}" "${M996}"
-fi
-_press
-_rebuild
+        while read -r line; do
+            if [[ -z "${line}" ]]; then
+                _meiodatela
+                _mensagec "${RED}" "Nao foi encontrado o arquivo ""${line}"
+                _linha
+            else
+                arquivo="${BASE1}""/""${line}"
+                if [[ ! -e "${arquivo}" ]]; then
+                    _meiodatela
+                    _mensagec "${RED}" "Nao foi encontrado o arquivo ""${arquivo}"
+                    _linha
+                else
+                    _jutill   
+                fi
+            fi
+        done < atualizaj2
+    #-Lista de Arquivo(s) recuperado(s)... 
+        _linha 
+        _mensagec "${YELLOW}" "${M12}"
+        _linha 
+    #     _press
+    else
+        _meiodatela
+        #M996="Recuperacao para este sistema nao disponivel:"
+        _mensagec "${RED}" "${M996}"
+    fi
+    _press
+    _rebuild
 }
 
 # _menubackup () - Menu de Backup(s).
@@ -3477,12 +3186,19 @@ elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
      _linha 
      _mensagec "${YELLOW}""${M29}"
      _linha 
-     "${cmd_scp}" -r -P "${PORTA}" "${BACKUP}""/""${VBACKUP}" "${USUARIO}"@"${IPSERVER}":/"${ENVBASE}" 
+     if [[ -n "${IPSERVER}" && -n "${PORTA}" ]]; then
+          "${cmd_scp}" -r -P "${PORTA}" "${BACKUP}""/""${VBACKUP}" "${USUARIO}"@"${IPSERVER}":/"${ENVBASE}" 
 M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
      _linha 
      _mensagec "${YELLOW}" "${M15}"
      _linha 
      _read_sleep 3 
+     else
+     _meiodatela
+     _mensagec "${RED}" "${M71}"
+     _press    
+     _ferramentas
+     fi
 else
      _opinvalida
      _ferramentas   
@@ -3496,108 +3212,107 @@ fi
 # O usuário é questionado se deseja restaurar todos os arquivos para o estado anterior à atualização. Baseado em
 # resposta do usuário, ele restaura arquivos específicos ou todos os arquivos para suas versões anteriores.
 _unbackup () {
-clear
-if [[ "${base2}" ]]; then
-     _escolhe_base
-fi
-
 local DIRBACK="${BACKUP}"/dados
+local VBACKUP="${EMPRESA}"_"${VBACK}"".zip"
 
 if [[ ! -d "${DIRBACK}" ]]; then
-M22=".. Criando o diretorio temp do backup em ${DIRBACK}.." 
-     _linha 
-     _mensagec "${YELLOW}" "${M22}"
-     _linha 
-     mkdir -p "${DIRBACK}"
+    M22=".. Criando o diretorio temp do backup em ${DIRBACK}.." 
+    _linha 
+    _mensagec "${YELLOW}" "${M22}"
+    _linha 
+    mkdir -p "${DIRBACK}"
 fi
-     ls -s "${BACKUP}""/""${EMPRESA}"_*.zip
-     _linha 
-     _mensagec "${RED}" "${M53}"
-     _linha
-     MA9="         1- Informe somente a data do BACKUP: " 
-     read -rp "${YELLOW}${MA9}${NORM}" VBACK
-     local VBACKUP="${EMPRESA}"_"${VBACK}"".zip"
-     while [[ -f "${VBACKUP}" || -z "${VBACKUP}" ]]; do 
-     clear
-     _meiodatela
-     _mensagec "${RED}" "${M70}"
-     _press
-     _menubackup
-     done
-if [[ ! -r "${BACKUP}"/"${VBACKUP}" ]]; then
-#-Backup nao encontrado no diretorio
-     _linha 
-     _mensagec "${RED}" "${M45}"
-     _linha 
-     _press
-     _menubackup
-fi
-     printf "\n" 
-#-"Deseja volta todos os ARQUIVOS do Backup ? [N/s]:"
-     _linha 
-     read -rp "${YELLOW}${M35}${NORM}" -n1 
-     printf "\n\n"
-if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-     MB1="       2- Informe o somente nome do arquivo em maiusculo: "
-     read -rp "${YELLOW}${MB1}${NORM}" VARQUIVO
-     while [[ "${VARQUIVO}" =~ [^A-Z0-9] || -z "${VARQUIVO}" ]] ; do
-     _mensagec "${RED}" "${M71}"
-     _linha 
-     _press
-     _menubackup
-     done
 
-#-Voltando Backup anterior  ...-#
-M34="O arquivo ""${VARQUIVO}"
-     _linha 
-     _mensagec "${YELLOW}" "${M33}"
-     _mensagec "${YELLOW}" "${M34}"
-     _linha 
-     cd "${DIRBACK}" || exit
-     "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" "${VARQUIVO}*.*" >> "${LOG_ATU}"
-     _read_sleep 1
-     if ls -s "${VARQUIVO}"*.* >erro /dev/null 2>&1 ; then
-#-Arquivo encontrado no diretorio
-     _linha 
-     _mensagec "${YELLOW}" "${M28}"
-     _linha 
-     else
-#-Arquivo nao encontrado no diretorio
-     _linha 
-     _mensagec "${YELLOW}" "${M49}"
-     _linha 
-     _press 
-     _menubackup  
-     fi
-     mv -f "${VARQUIVO}"*.* "${BASE1}" >> "${LOG_ATU}" 
-     cd "${TOOLS}"/ || exit
-     clear
-#-VOLTA DO ARQUIVO CONCLUIDA
-     _linha 
-     _mensagec "${YELLOW}" "${M04}"
-     _linha 
-     _press
-     _menubackup
+ls -s "${BACKUP}""/""${EMPRESA}"_*.zip
+_linha 
+_mensagec "${RED}" "${M53}"
+_linha
+MA9="         1- Informe somente a data do BACKUP: " 
+read -rp "${YELLOW}${MA9}${NORM}" VBACK
+while [[ -f "${VBACKUP}" || -z "${VBACKUP}" ]]; do 
+    clear
+    _meiodatela
+    _mensagec "${RED}" "${M70}"
+    _press
+    _menubackup
+done
+
+if [[ ! -r "${BACKUP}"/"${VBACKUP}" ]]; then
+    #-"Backup nao encontrado no diretorio"
+    _linha 
+    _mensagec "${RED}" "${M45}"
+    _linha 
+    _press
+    _menubackup
+fi
+
+printf "\n" 
+#"Deseja volta todos os ARQUIVOS do Backup ? [N/s]:"
+_linha 
+read -rp "${YELLOW}${M35}${NORM}" -n1 
+printf "\n\n"
+
+if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
+    MB1="       2- Informe o somente nome do arquivo em maiusculo: "
+    read -rp "${YELLOW}${MB1}${NORM}" VARQUIVO
+    while [[ "${VARQUIVO}" =~ [^A-Z0-9] || -z "${VARQUIVO}" ]] ; do
+        _mensagec "${RED}" "${M71}"
+        _linha 
+        _press
+        _menubackup
+    done
+
+    #-"Voltando Backup anterior  ...-#
+    M34="O arquivo ""${VARQUIVO}"
+    _linha 
+    _mensagec "${YELLOW}" "${M33}"
+    _mensagec "${YELLOW}" "${M34}"
+    _linha 
+    cd "${DIRBACK}" || exit
+    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" "${VARQUIVO}*.*" >> "${LOG_ATU}"
+    _read_sleep 1
+    if ls -s "${VARQUIVO}"*.* >erro /dev/null 2>&1 ; then
+        #-"Arquivo encontrado no diretorio"
+        _linha 
+        _mensagec "${YELLOW}" "${M28}"
+        _linha 
+    else
+        #-"Arquivo nao encontrado no diretorio"
+        _linha 
+        _mensagec "${YELLOW}" "${M49}"
+        _linha 
+        _press 
+        _menubackup  
+    fi
+    mv -f "${VARQUIVO}"*.* "${BASE1}" >> "${LOG_ATU}" 
+    cd "${TOOLS}"/ || exit
+    clear
+    #-"VOLTA DO ARQUIVO CONCLUIDA"
+    _linha 
+    _mensagec "${YELLOW}" "${M04}"
+    _linha 
+    _press
+    _menubackup
 elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
 
-#---- Voltando Backup anterior  ... ----
-M34="O arquivo ""${VARQUIVO}"
-     _linha 
-     _mensagec "${YELLOW}" "${M33}"
-     _mensagec "${YELLOW}" "${M34}"
-     _linha 
-     cd "${DIRBACK}" || exit
-     "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" >> "${LOG_ATU}"
-     mv -f -- *.* "${BASE1}" >> "${LOG_ATU}"
-     cd "${TOOLS}"/ || exit
-     clear
-#-VOLTA DOS ARQUIVOS CONCLUIDA
-     _linha 
-     _mensagec "${YELLOW}" "${M04}"
-     _linha 
-     _press
+    #---- Voltando Backup anterior  ... ----
+    M34="O arquivo ""${VARQUIVO}"
+    _linha 
+    _mensagec "${YELLOW}" "${M33}"
+    _mensagec "${YELLOW}" "${M34}"
+    _linha 
+    cd "${DIRBACK}" || exit
+    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" >> "${LOG_ATU}"
+    mv -f -- *.* "${BASE1}" >> "${LOG_ATU}"
+    cd "${TOOLS}"/ || exit
+    clear
+    #-"VOLTA DOS ARQUIVOS CONCLUIDA"
+    _linha 
+    _mensagec "${YELLOW}" "${M04}"
+    _linha 
+    _press
 else
-	_opinvalida
+    _opinvalida
 fi
 _ferramentas
 }
