@@ -1058,7 +1058,7 @@ while (( contador < MAX_REPETICOES )); do
      #-Informe o nome do programa a ser atualizado:
      _mensagec "${RED}" "${M59}"
      _linha
-     MB4="Informe o nome do programa (ENTER ou espaço para sair): "
+     MB4="Informe o nome do programa (ENTER ou espaco para sair): "
      read -rp "${YELLOW}""${MB4}""${NORM}" programa
      _linha
     
@@ -1069,7 +1069,7 @@ while (( contador < MAX_REPETICOES )); do
 
     # Verifica se o nome do programa é válido
     if ! validar_nome "$programa"; then
-        _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiúsculas e números (ex.: ABC123)."
+        _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
         continue
     fi
 
@@ -1144,7 +1144,7 @@ _servacessoff () {
     local SAOFF="${destino}${SERACESOFF}"
 
     if [[ ! -d "${SAOFF}" ]]; then
-        _mensagec "${RED}" "Erro: Diretório ${SAOFF} nao existe"
+        _mensagec "${RED}" "Erro: Diretorio ${SAOFF} nao existe"
         return
     fi
 
@@ -1162,7 +1162,7 @@ _servacessoff () {
 
     else
         local M42="O programa a ser atualizado, ${NOMEPROG}"
-        local M422=" nao foi encontrado no diretório ${SAOFF}"
+        local M422=" nao foi encontrado no diretorio ${SAOFF}"
         _linha
         _mensagec "${RED}" "${M42}"
         _mensagec "${RED}" "${M422}"
@@ -1254,7 +1254,7 @@ _pacoteoff () {
 _atupacote () {
     # Verifica se o programa existe
     if (( ${#NOMEPROG[@]} == 0 )) || [[ ! -f "${NOMEPROG[0]}" ]]; then
-        M42="Programa(s), ${NOMEPROG[*]} nao encontrado(s) no diretório"
+        M42="Programa(s), ${NOMEPROG[*]} nao encontrado(s) no diretorio"
         _linha
         _mensagec "${RED}" "${M42}"
         _linha
@@ -1448,7 +1448,7 @@ _voltaprog () {
         #-Informe o nome do programa a ser desatualizado:
         _mensagec "${RED}" "${M59}"
         _linha
-        MB4="Informe o nome do programa (ENTER ou espaço para sair): "
+        MB4="Informe o nome do programa (ENTER ou espaco para sair): "
         read -rp "${YELLOW}""${MB4}""${NORM}" programa
         _linha
 
@@ -1459,7 +1459,7 @@ _voltaprog () {
 
         # Verifica se o nome do programa é válido
         if ! validar_nome "$programa"; then
-            _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiúsculas e números (ex.: ABC123)."
+            _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
             continue
         fi
         _linha  
@@ -1502,7 +1502,7 @@ _voltaprog () {
         fi
     done
     if ! cd "${TOOLS}/"; then
-        _mensagec "${RED}" "Erro: Falha ao acessar o diretório ${TOOLS}."
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${TOOLS}."
         _principal
         return
     fi
@@ -1728,7 +1728,7 @@ _volta_geral () {
 
     if ! cd "${OLDS}"; then
         _meiodatela
-        _mensagec "${RED}" "Erro: Falha ao acessar o diretório ${OLDS}"
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${OLDS}"
         _linha
         _press
         _principal
@@ -1746,7 +1746,7 @@ _volta_geral () {
 
     if ! cd "${TOOLS}"; then
         _meiodatela
-        _mensagec "${RED}" "Erro: Falha ao acessar o diretório ${TOOLS}"
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${TOOLS}"
         _linha
         _press
         _principal
@@ -2052,11 +2052,11 @@ _servacessofff () {
     SAOFF="${destino}${SERACESOFF}/"
 
     if [[ ! -d "${SAOFF}" ]]; then
-        _mensagec "${RED}" "Erro: Diretório ${SAOFF} nao existe"
+        _mensagec "${RED}" "Erro: Diretorio ${SAOFF} nao existe"
         return
     fi
 
-    M42="A atualização nao foi encontrada no diretório ${SAOFF}"
+    M42="A atualização nao foi encontrada no diretorio ${SAOFF}"
 
     _linha
     _mensagec "${YELLOW}" "${M21}"
@@ -2170,7 +2170,7 @@ _atubiblioteca
 # Altera a versao da atualizacao e salva no diretorio /backuup como a extensao .bkp".
 _atubiblioteca () {
     # Atualização de Programas
-    cd "${TOOLS}" || { echo "Erro: Diretório ${TOOLS} nao encontrado."; exit 1; }
+    cd "${TOOLS}" || { echo "Erro: Diretorio ${TOOLS} nao encontrado."; exit 1; }
 
     # Atualizando os programas
     for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
@@ -2553,7 +2553,7 @@ _limpeza () {
             _limpando
             _press
         else
-            printf "ERRO: Diretório \"%s\" nao existe.\n" "${DIRB}" >&2
+            printf "ERRO: Diretorio \"%s\" nao existe.\n" "${DIRB}" >&2
         fi
     done
 # Chamando ferramentas auxiliares
