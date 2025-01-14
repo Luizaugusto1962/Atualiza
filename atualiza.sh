@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/01/2025"                                                                                                    #
+UPDATE="14/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -117,7 +117,7 @@ unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP
 unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
-unset -v E_EXEC T_TELAS X_XML NOMEPROG 
+unset -v E_EXEC T_TELAS X_XML NOMEPROG CCC MXX
 unset -v cmd_unzip cmd_zip cmd_find cmd_scp cmd_who VBACKUP ARQUIVO 
 unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 
 tput sgr0; exit 
@@ -371,7 +371,7 @@ M71="ERRO: Voce informou o nome do arquivo em minusculo ou em branco "
 M72="Informe o(s) arquivo(s) que deseja enviar."
 M73="Informe o(s) arquivo(s) que deseja receber."
 M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
-M75="Informe o tipo de compilaçao (1 - Normal, 2 - Depuração): "
+M75="Informe o tipo de compilacao (1 - Normal, 2 - Depuracao): "
 
 # Mensagens em CYAN
 M80="..Checando estrutura dos diretorios do atualiza.sh.."
@@ -1046,7 +1046,6 @@ contador=0
 NOMEPROG=()
 programas=()
 
-
 # Função para validar nome do programa
 validar_nome() {
     [[ "$1" =~ ^[A-Z0-9]+$ ]]
@@ -1089,21 +1088,23 @@ while (( contador < MAX_REPETICOES )); do
     fi
     # Armazena o resultado
     programas+=("$programa") 
-
     NOMEPROG+=("$compila")
-#    OLDPROG+=("$anterior")
+#   
     _linha
     _mensagec "${GREEN}" "Compilacao adicionada: ${NOMEPROG[*]}"
     ((contador++))
     _linha
 done
-}
-
 # Lista os programas armazenados
 _mensagec "${YELLOW}" "Lista de programas a serem baixados:"
-for programas in "${NOMEPROG[@]}"; do
-    _mensagec "${GREEN}" "$programas"
+for progr in "${NOMEPROG[@]}"; do
+    _mensagec "${GREEN}" "$progr"
 done
+}
+
+# Esta função verifica se há nomes de programas armazenados na lista NOMEPROG e,
+# se houver, exibe-os e inicia o processo de transferência via SCP para cada arquivo.
+# Caso contrário, informa que nenhum valor foi armazenado e finaliza o processo.
 
 _baixarviascp () {
 # Exibe os resultados finais se houver
@@ -1124,17 +1125,25 @@ else
 _mensagec "${RED}" "Nenhum valor armazenado."
 _mensagec "${GREEN}" "Processo finalizado."
 fi
-
 }
-    
 
-#-PROGRAMA E/OU ATUALIZACOES EM QUE O SERVIDOR NAO ESTA CONECTADO A REDE EXTERNA ------------------#
 # _servacessoff: Move o programa de atualizacao de um diretorio local para o diretorio atual.
 #
 # Se o diretorio SERACESOFF estiver configurado, este metodo move o programa
 # de atualizacao do diretorio SERACESOFF para o diretorio atual, caso o
 # arquivo exista. Se o arquivo nao existir, exibe uma mensagem de erro e
 # volta para o menu principal.
+#
+# Argumentos:
+#   Nenhum
+#
+# Variaveis de ambiente:
+#   SERACESOFF: diretorio onde estao os arquivos a serem atualizados
+#   NOMEPROG: lista de nomes de programas a serem atualizados
+#
+# Retorna:
+#   0 se o arquivo foi movido com sucesso
+#   1 se ocorrer um erro
 _servacessoff () {
     if [[ -z "${SERACESOFF}" ]]; then
         _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
@@ -1171,21 +1180,18 @@ _servacessoff () {
         _principal
     fi
 }
-#-PROGRAMAS E/OU PACOTES---------------------------------------------------------------------------# 
-# _pacoteon: Realiza a atualizacao de um programa em um servidor sem acesso a rede
-#            exterior.
+
+# _pacoteon: Realiza a atualização de um programa em um servidor com acesso à rede externa.
 #
-# Se o diretorio SERACESOFF estiver configurado, este metodo:
-# - Exibe uma mensagem informando que o servidor esta sem acesso a rede exterior.
-# - Aguarda um pressionamento de tecla.
-# - Chama o metodo _atualizacao para atualizar o programa.
-# - Chama o metodo _qualprograma para solicitar o nome do programa a ser
-#   atualizado.
-# - Exibe uma mensagem informando o nome do programa a ser atualizado.
-# - Chama o metodo _run_scp para solicitar a senha do usuario do scp.
-# - Chama o metodo _atupacote para atualizar o programa.
+# Este método:
+# - Verifica se a variável SERACESOFF está configurada.
+# - Solicita o nome do programa a ser atualizado com o método _qualprograma.
+# - Baixa o arquivo de atualização via SCP com o método _baixarviascp.
+# - Exibe uma mensagem informando que a atualização está em andamento.
+# - Chama o método _atupacote para atualizar o programa.
 # - Aguarda um pressionamento de tecla.
 # - Volta para o menu principal.
+
 _pacoteon () {
     if [[ -n "${SERACESOFF}" ]]; then
         _linha 
@@ -1204,18 +1210,19 @@ _pacoteon () {
     _press 
     _principal
 }
-#_Pacotes em offline-------------------------------------------------------------------------------#
-# _pacoteoff: Realiza a atualizacao de um programa em um servidor sem acesso a rede
-#            exterior.
-#
-# Se o diretorio SERACESOFF estiver configurado, este metodo:
-# - Solicita o nome do programa a ser atualizado com o metodo _qualprograma.
-# - Exibe uma mensagem informando o nome do programa a ser atualizado.
-# - Chama o metodo _servacessoff para mover o arquivo de atualizacao do diretorio
-#   SERACESOFF para o diretorio atual, se o arquivo existir.
-# - Chama o metodo _atupacote para atualizar o programa.
-# - Aguarda um pressionamento de tecla.
-# - Volta para o menu principal.
+
+    # _pacoteoff: Realiza a atualização de um programa em um ambiente offline.
+    #
+    # Este método:
+    # - Solicita o nome do programa a ser atualizado utilizando o método _qualprograma.
+    # - Exibe uma mensagem indicando que a atualização está em andamento.
+    # - Verifica se o diretório de acesso offline está configurado corretamente com o método _servacessoff.
+    # - Atualiza o pacote chamando o método _atupacote.
+    # - Aguarda um pressionamento de tecla e retorna ao menu principal.
+    #
+    # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
+    # e o usuário é retornado ao menu principal.
+
 _pacoteoff () {
     # Solicita o nome do programa a ser atualizado
     if ! _qualprograma; then
@@ -1251,34 +1258,30 @@ _pacoteoff () {
     _principal
 }
 
-_atupacote () {
+_atupacote() {
+    local programa
+    local programa_anterior
+    local arquivo
+    local extensao
+    local backup_file
+
     # Verifica se o programa existe
     if (( ${#NOMEPROG[@]} == 0 )) || [[ ! -f "${NOMEPROG[0]}" ]]; then
-        M42="Programa(s), ${NOMEPROG[*]} nao encontrado(s) no diretorio"
         _linha
-        _mensagec "${RED}" "${M42}"
+        _mensagec "${RED}" "Programa(s) nao encontrado(s) no diretorio"
         _linha
         _press
         _principal
         return
     fi
-    _mens_atualiza () {
-     #..   BACKUP do programa efetuado   ..
-     _linha 
-     _mensagec "${YELLOW}" "${M24}"
-     _linha 
-     _read_sleep 1
-    }
-
     # Processa programas antigos
-    for  f in "${!programas[@]}"; do
-    anterior="${OLDS}/${programas[f]}-anterior.zip"
-        if [ -f "$anterior" ]; then
-# Verifica se o arquivo de backup já existe
-            mv -f -- "${anterior}" "${OLDS}/${UMADATA}-${programas[f]}-anterior.zip" >> "${LOG_ATU}" || {
-                M49="Erro: Falha ao renomear o arquivo ${anterior}"
+    for programa in "${!programas[@]}"; do
+        programa_anterior="${OLDS}/${programas[$programa]}-anterior.zip"
+        if [ -f "$programa_anterior" ]; then
+            # Verifica se o arquivo de backup já existe
+            mv -f -- "${programa_anterior}" "${OLDS}/${UMADATA}-${programas[$programa]}-anterior.zip" >> "${LOG_ATU}" || {
                 _linha
-                _mensagec "${RED}" "${M49}"
+                _mensagec "${RED}" "Erro: Falha ao renomear o arquivo ${programa_anterior}"
                 _linha
                 _press
                 _principal
@@ -1287,97 +1290,101 @@ _atupacote () {
         fi
     done
 
-for  f in "${!programas[@]}"; do
-# Processa arquivos .class
-EXT_CLASS=".class"
-    if [ -f "${E_EXEC}/${programas[f]}${EXT_CLASS}" ]; then
-        "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas}"*"${EXT_CLASS}"
-    _mens_atualiza
-    fi
-# Processa arquivos .int
-EXT_INT=".int"
-    if [ -f "${E_EXEC}/${programas[f]}${EXT_INT}" ]; then
-        "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas}${EXT_INT}"
-    _mens_atualiza
-    fi
-
-# Processa arquivos .TEL
-EXT_TEL=".TEL"
-    if [ -f "${T_TELAS}/${programas[f]}${EXT_TEL}" ]; then
-        "${cmd_zip}" -m -j "${anterior}" "${T_TELAS}/${programas}${EXT_TEL}"
-    _mens_atualiza
-    fi
-
-done
-
-    # Processa cada arquivo de atualização
-    for f in "${NOMEPROG[@]}"; do
-        if [[ ! -f "${f}" ]]; then
-            M48="Erro: Arquivo de atualizacao ${f} nao existe"
-            _linha
-            _mensagec "${RED}" "${M48}"
-            _linha
-            _press
-            _principal
-            return
+    # Processa arquivos .class
+    #if compgen -G "*.class" > /dev/null; then
+    for programa in "${!programas[@]}"; do
+        extensao=".class"
+        arquivo="${E_EXEC}/${programas[$programa]}${extensao}"
+        if [ -f "${arquivo}" ]; then
+            "${cmd_zip}" -m -j "${programa_anterior}" "${arquivo}"
+            _mensagec "${YELLOW}" "Backup do arquivo ${arquivo} efetuado"
         fi
-         # Descompacta o arquivo e registra no log
-    if ! "${cmd_unzip}" -o "${f}" >> "${LOG_ATU}"; then
-        M48="Erro ao descompactar ${f}"
-        _linha
-        _mensagec "${RED}" "${M48}"
-        _linha
-        _press
-        _principal
-        return
-    fi   
+    done
+    #fi
+    # Processa arquivos .int
+    for programa in "${!programas[@]}"; do
+        extensao=".int"
+        arquivo="${E_EXEC}/${programas[$programa]}${extensao}"
+        if [ -f "${arquivo}" ]; then
+            "${cmd_zip}" -m -j "${programa_anterior}" "${arquivo}"
+            _mensagec "${YELLOW}" "Backup do arquivo ${arquivo} efetuado"
+        fi
     done
 
-   # Salvando arquivos .class e .int 
-for prog in "${programas[@]}"; do
-    # Processa arquivos .class
-    if compgen -G "*.class" > /dev/null; then
-        for file in *.class; do
-            mv -f -- "${file}" "${E_EXEC}" >> "${LOG_ATU}"
-        done
-    fi
-    # Processa arquivos .int
-    if compgen -G "*.int" > /dev/null; then
-        for file in *.int; do
-          mv -f -- "${file}" "${E_EXEC}" >> "${LOG_ATU}"
-        done
-    fi
-
     # Processa arquivos .TEL
-    if compgen -G "*.TEL" > /dev/null; then
-        for file in *.TEL; do
-           mv -f -- "${file}" "${T_TELAS}" >> "${LOG_ATU}"
-        done
-    fi
-done
+    for programa in "${!programas[@]}"; do
+        extensao=".TEL"
+        arquivo="${T_TELAS}/${programas[$programa]}${extensao}"
+        if [ -f "${arquivo}" ]; then
+            "${cmd_zip}" -m -j "${programa_anterior}" "${arquivo}"
+            _mensagec "${YELLOW}" "Backup do arquivo ${arquivo} efetuado"
+        fi
+    done
 
-# Altera extensões e move arquivos para o diretório PROGS
-for f in "${NOMEPROG[@]}"; do
-  if [[ -f "${f}" ]]; then
-    # Renomeia o arquivo para extensão .bkp
-        backup_file="${f%.zip}.bkp"
-        if ! mv -f -- "${f}" "${PROGS}/${backup_file}"; then
-            M48="Erro ao renomear ${f} para ${backup_file}"
+    # Processa de descompactar e atualizar os programas. 
+    for arquivo in "${NOMEPROG[@]}"; do
+        if [[ ! -f "${arquivo}" ]]; then
             _linha
-            _mensagec "${RED}" "${M48}"
+            _mensagec "${RED}" "Erro: Arquivo de atualizacao ${arquivo} nao existe"
             _linha
             _press
             _principal
             return
         fi
-    fi
-done
+        # Descompacta o arquivo e registra no log
+        if ! "${cmd_unzip}" -o "${arquivo}" >> "${LOG_ATU}"; then
+            _linha
+            _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
+            _linha
+            _press
+            _principal
+            return
+        fi
+    done
+
+    # Salvando arquivos .class e .int 
+    for programa in "${programas[@]}"; do
+        # Processa arquivos .class
+        if compgen -G "*.class" > /dev/null; then
+            for arquivo in *.class; do
+                mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}"
+            done
+        fi
+        # Processa arquivos .int
+        if compgen -G "*.int" > /dev/null; then
+            for arquivo in *.int; do
+                mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}"
+            done
+        fi
+
+        # Processa arquivos .TEL
+        if compgen -G "*.TEL" > /dev/null; then
+            for arquivo in *.TEL; do
+                mv -f -- "${arquivo}" "${T_TELAS}" >> "${LOG_ATU}"
+            done
+        fi
+    done
+
+    # Altera extensões e move arquivos para o diretório PROGS
+    for arquivo in "${NOMEPROG[@]}"; do
+        if [[ -f "${arquivo}" ]]; then
+            # Renomeia o arquivo para extensão .bkp
+            backup_file="${arquivo%.zip}.bkp"
+            if ! mv -f -- "${arquivo}" "${PROGS}/${backup_file}"; then
+                _linha
+                _mensagec "${RED}" "Erro ao renomear ${arquivo} para ${backup_file}"
+                _linha
+                _press
+                _principal
+                return
+            fi
+        fi
+    done
 
     # Mensagem de conclusão
     _linha
-    _mensagec "${YELLOW}" "${M17}"
+    _mensagec "${YELLOW}" "Atualizacao concluida com sucesso"
     _linha
-
 }
 
 #-VOLTA DE PROGRAMA CONCLUIDA
@@ -1823,7 +1830,7 @@ _biblioteca () {
     M407="3${NORM} - Atualizacao OFF-Line       "
     M408="Escolha o tipo de Desatualizacao:       "
     M409="4${NORM} - Voltar antes da Biblioteca "
-    M410="9${NORM} - ${RED}Menu Anterior      "
+    M410="9${NORM} - ${RED}Menu Anterior     "
 
     printf "\n"
     _linha "="
@@ -3330,8 +3337,8 @@ _envrecarq () {
      clear
 ###-800-mensagens do Menu Envio e Retorno.
      M800="Menu de Enviar e Receber Arquivo(s)."
-     M802="1${NORM} - Enviar arquivo(s)    "
-     M803="2${NORM} - Receber arquivo(s)   "
+     M802="1${NORM} - Enviar arquivo(s)     "
+     M803="2${NORM} - Receber arquivo(s)    "
      M806="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
@@ -3574,7 +3581,7 @@ _update () {
      _mensagec "${GREEN}" "${M91}"
      _mensagec "${GREEN}" "${M92}"
      _linha 
-     cp -rfv atualiza.sh "${BACKUP}"
+     cp -rfv atualiza.sh "${BACKUP}" &> /dev/null
      cd "${PROGS}" || exit 
      wget -q -c "${link}" || exit
 
@@ -3598,6 +3605,7 @@ if [[ "${SERACESOFF}" != "" ]]; then
 fi
      cd "${PROGS}" || exit
      rm -rf "${PROGS}"/Atualiza-main
+     exit 1
 }
 
 # _parametros ()
