@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="14/01/2025"                                                                                                    #
+UPDATE="15/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -320,10 +320,10 @@ M12="Arquivo(s) recuperado(s)..."
 #M13="De *.zip para *.bkp"
 M14="Criando Backup.."
 M16="Backup Concluido!"
-M17="Atualizacao Completa"
+M17="Atualizacao Completa com sucesso!"
 M18="Arquivo(s) recuperado(s)..."
 #M20="Alterando a extensao da atualizacao"
-M24=".. BACKUP do programa efetuado .."
+#M24=".. BACKUP do programa efetuado .."
 M25="... Voltando versao anterior ..."
 #M26="... Agora, ATUALIZANDO ..."
 M27=" .. Backup Completo .."
@@ -1259,8 +1259,8 @@ _pacoteoff () {
 }
 
 _atupacote() {
-    local programa
-    local programa_anterior
+#    local programas
+   
     local arquivo
     local extensao
     local backup_file
@@ -1274,54 +1274,77 @@ _atupacote() {
         _principal
         return
     fi
+######
+    _mens_atualiza () {
+     #..   BACKUP do programa efetuado   ..
+     _linha 
+     _mensagec "${YELLOW}" "${M24}"
+     _linha 
+     _read_sleep 1
+    }
+
     # Processa programas antigos
-    for programa in "${!programas[@]}"; do
-        programa_anterior="${OLDS}/${programas[$programa]}-anterior.zip"
-        if [ -f "$programa_anterior" ]; then
+    for  f in "${!programas[@]}"; do
+        anterior="${OLDS}/${programas[f]}-anterior.zip"
+        if [ -f "$anterior" ]; then
             # Verifica se o arquivo de backup já existe
-            mv -f -- "${programa_anterior}" "${OLDS}/${UMADATA}-${programas[$programa]}-anterior.zip" >> "${LOG_ATU}" || {
+            if mv -f -- "${anterior}" "${OLDS}/${UMADATA}-${programas[f]}-anterior.zip" >> "${LOG_ATU}"; then
+                :
+            else
+                M49="Erro: Falha ao renomear o arquivo ${anterior}"
                 _linha
-                _mensagec "${RED}" "Erro: Falha ao renomear o arquivo ${programa_anterior}"
+                _mensagec "${RED}" "${M49}"
                 _linha
                 _press
                 _principal
                 return
-            }
+            fi
         fi
     done
 
-    # Processa arquivos .class
-    #if compgen -G "*.class" > /dev/null; then
-    for programa in "${!programas[@]}"; do
-        extensao=".class"
-        arquivo="${E_EXEC}/${programas[$programa]}${extensao}"
-        if [ -f "${arquivo}" ]; then
-            "${cmd_zip}" -m -j "${programa_anterior}" "${arquivo}"
-            _mensagec "${YELLOW}" "Backup do arquivo ${arquivo} efetuado"
+    for  f in "${!programas[@]}"; do
+        # Processa arquivos .class
+        EXT_CLASS=".class"
+        if [ -f "${E_EXEC}/${programas[f]}${EXT_CLASS}" ]; then
+            if ! "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas[f]}"*"${EXT_CLASS}"; then
+                _linha
+                _mensagec "${RED}" "Erro ao criar backup do arquivo ${programas[f]}${EXT_CLASS}"
+                _linha
+                _press
+                _principal
+                return
+            fi
+            _mens_atualiza
         fi
-    done
-    #fi
-    # Processa arquivos .int
-    for programa in "${!programas[@]}"; do
-        extensao=".int"
-        arquivo="${E_EXEC}/${programas[$programa]}${extensao}"
-        if [ -f "${arquivo}" ]; then
-            "${cmd_zip}" -m -j "${programa_anterior}" "${arquivo}"
-            _mensagec "${YELLOW}" "Backup do arquivo ${arquivo} efetuado"
+        # Processa arquivos .int
+        EXT_INT=".int"
+        if [ -f "${E_EXEC}/${programas[f]}${EXT_INT}" ]; then
+            if ! "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas[f]}${EXT_INT}"; then
+                _linha
+                _mensagec "${RED}" "Erro ao criar backup do arquivo ${programas[f]}${EXT_INT}"
+                _linha
+                _press
+                _principal
+                return
+            fi
+            _mens_atualiza
+        fi
+        # Processa arquivos .TEL
+        EXT_TEL=".TEL"
+        if [ -f "${T_TELAS}/${programas[f]}${EXT_TEL}" ]; then
+            if ! "${cmd_zip}" -m -j "${anterior}" "${T_TELAS}/${programas[f]}${EXT_TEL}"; then
+                _linha
+                _mensagec "${RED}" "Erro ao criar backup do arquivo ${programas[f]}${EXT_TEL}"
+                _linha
+                _press
+                _principal
+                return
+            fi
+            _mens_atualiza
         fi
     done
 
-    # Processa arquivos .TEL
-    for programa in "${!programas[@]}"; do
-        extensao=".TEL"
-        arquivo="${T_TELAS}/${programas[$programa]}${extensao}"
-        if [ -f "${arquivo}" ]; then
-            "${cmd_zip}" -m -j "${programa_anterior}" "${arquivo}"
-            _mensagec "${YELLOW}" "Backup do arquivo ${arquivo} efetuado"
-        fi
-    done
-
-    # Processa de descompactar e atualizar os programas. 
+    # Processa de descompactar e atualizar os programas
     for arquivo in "${NOMEPROG[@]}"; do
         if [[ ! -f "${arquivo}" ]]; then
             _linha
@@ -1331,7 +1354,6 @@ _atupacote() {
             _principal
             return
         fi
-        # Descompacta o arquivo e registra no log
         if ! "${cmd_unzip}" -o "${arquivo}" >> "${LOG_ATU}"; then
             _linha
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
@@ -1342,25 +1364,21 @@ _atupacote() {
         fi
     done
 
-    # Salvando arquivos .class e .int 
-    for programa in "${programas[@]}"; do
-        # Processa arquivos .class
-        if compgen -G "*.class" > /dev/null; then
-            for arquivo in *.class; do
-                mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}"
-            done
-        fi
-        # Processa arquivos .int
-        if compgen -G "*.int" > /dev/null; then
-            for arquivo in *.int; do
-                mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}"
-            done
-        fi
-
-        # Processa arquivos .TEL
-        if compgen -G "*.TEL" > /dev/null; then
-            for arquivo in *.TEL; do
-                mv -f -- "${arquivo}" "${T_TELAS}" >> "${LOG_ATU}"
+    # Salvando arquivos .class, .int, .TEL
+    for extensao in ".class" ".int" ".TEL"; do
+        if compgen -G "*${extensao}" > /dev/null; then
+            for arquivo in *"${extensao}"; do
+                if [[ "${extensao}" == ".TEL" ]]; then
+                    mv -f -- "${arquivo}" "${T_TELAS}" >> "${LOG_ATU}" || {
+                        _mensagec "${RED}" "Erro ao mover ${arquivo}"
+                        return
+                    }
+                else
+                    mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}" || {
+                        _mensagec "${RED}" "Erro ao mover ${arquivo}"
+                        return
+                    }
+                fi
             done
         fi
     done
@@ -1368,7 +1386,6 @@ _atupacote() {
     # Altera extensões e move arquivos para o diretório PROGS
     for arquivo in "${NOMEPROG[@]}"; do
         if [[ -f "${arquivo}" ]]; then
-            # Renomeia o arquivo para extensão .bkp
             backup_file="${arquivo%.zip}.bkp"
             if ! mv -f -- "${arquivo}" "${PROGS}/${backup_file}"; then
                 _linha
@@ -1383,10 +1400,10 @@ _atupacote() {
 
     # Mensagem de conclusão
     _linha
-    _mensagec "${YELLOW}" "Atualizacao concluida com sucesso"
+    _mensagec "${YELLOW}" "${M17}"
     _linha
 }
-
+ 
 #-VOLTA DE PROGRAMA CONCLUIDA
 # Mostra uma mensagem de fim de atualizacao de programa e pergunta se deseja voltar mais algum 
 # programa. Se sim, chama a funcao "_voltaprog" para voltar o programa, se nao, volta ao menu 
