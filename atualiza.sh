@@ -1878,7 +1878,7 @@ _biblioteca () {
     case ${OPCAO} in
         1) _transpc ;;
         2) _savatu ;;
-        3) _salva ;;
+        3) _atuoff ;;
         4) _voltabibli ;;
         9) clear; _principal ;;
         *) _biblioteca ;;
@@ -2019,23 +2019,32 @@ _savatu () {
 
     _scp_biblioteca
 }
-
+_atuoff () {
+    clear
+    _versao
+    if [[ "${SERACESOFF}" != "" ]]; then
+        _acessooff
+    fi  
+    _salva
+}
 #-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
 # _salva
 # 
 # Verifica se a atualizacao esta no diretorio atual, se nao estiver
 #   vai para o diretorio de atualizacao offline
 _salva () {
-    if [[ -z "${VERSAO}" ]]; then
-        _versao 
-    fi
-
+    clear
     _variaveis_atualiza
 
     M21="A atualizacao tem que esta no diretorio ""${TOOLS}"
     _linha 
     _mensagec "${YELLOW}" "${M21}"
     _linha 
+
+    if [[ -z "${sistema}" ]]; then
+        _mensagec "${RED}" "Erro: Variavel 'sistema' nao foi definida"
+        exit 1
+    fi
 
     if [[ "${sistema}" = "iscobol" ]]; then
         local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}" )
@@ -2044,6 +2053,10 @@ _salva () {
     fi
 
     for atu in "${atualizas[@]}"; do
+        if [[ -z "${atu}" ]]; then
+            _mensagec "${RED}" "Erro: Variavel 'atu' nao foi definida"
+            exit 1
+        fi
         if [[ ! -r "${atu}" ]]; then
             clear
             _linha 
@@ -2195,7 +2208,7 @@ _atubiblioteca
 _atubiblioteca () {
     # Atualização de Programas
     cd "${TOOLS}" || { echo "Erro: Diretorio ${TOOLS} nao encontrado."; exit 1; }
-
+    _variaveis_atualiza
     # Atualizando os programas
     for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
         if [[ -n "${arquivo}" && -r "${arquivo}" ]]; then
@@ -2203,10 +2216,7 @@ _atubiblioteca () {
             _mensagec "${YELLOW}" "${MENSAGEM_ATUALIZANDO}"
             _linha
             if _mensagec "${GREEN}" "${arquivo}"; then
-                "${cmd_unzip}" -o "${arquivo}" -d "${destino}" >> "${LOG_ATUALIZACAO}" 2>&1 || {
-                    _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
-                    continue
-                }
+             "${cmd_unzip}" -o "${arquivo}" -d "${destino}" >> "${LOG_ATU}"
             else
                 _mensagec "${RED}" "${MENSAGEM_ERRO}"
             fi
