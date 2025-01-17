@@ -1,5 +1,5 @@
 #!/usr/bin/env bash 
-#set -euo pipefail
+#set -uo pipefail
 #                                                                                                                      #
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -816,7 +816,6 @@ if [[ -n "${SERACESOFF}" ]]; then
     fi
     BAT="atualiza.bat"
     if [[ -f "${BAT}" ]]; then
-        echo "${BAT}"
         mv -f -- "${BAT}" "${destino}${SERACESOFF}"
     fi
 fi
@@ -1050,6 +1049,8 @@ programas=()
 
 # Função para validar nome do programa
 validar_nome() {
+     local programa="$1"
+    [[ -n "$programa" && "$programa" =~ ^[A-Z0-9]+$ ]]   
     [[ "$1" =~ ^[A-Z0-9]+$ ]]
 }
 
@@ -1515,6 +1516,7 @@ _voltaprog () {
             }
         fi
     done
+
     if ! cd "${TOOLS}/"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${TOOLS}."
         _principal
@@ -1551,7 +1553,7 @@ _volta_progx () {
           return 1
      fi
 
-     cd "${OLDS}"/ || return 1
+     cd "${OLDS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
      if ! "${cmd_unzip}" -j -o "${INI}" "sav/*/""${Vprog}"".*" -d "${TOOLS}" >> "${LOG_ATU}"; then
           _meiodatela
           _mensagec "${RED}" "Erro ao descompactar ${INI} para ${TOOLS}"
@@ -1616,7 +1618,7 @@ _volta_progy () {
 
     # Check if TOOLS directory exists
     if [[ -z "${TOOLS}" ]] || ! cd "${TOOLS}" ; then
-        echo "Erro: Diretorio ${TOOLS} nao encontrado."
+        printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n" 
         exit 1
     fi
 
@@ -1632,12 +1634,12 @@ _volta_progy () {
 
     # Handle file moving based on system type
     if [[ "${sistema}" = "iscobol" ]]; then
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \; || { echo "Erro ao mover arquivos XML."; return 1; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { echo "Erro ao mover arquivos TEL."; return 1; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \; || { echo "Erro ao mover arquivos CLASS."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \; || { printf "Erro ao mover arquivos XML."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { printf "Erro ao mover arquivos TEL."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \; || { printf "Erro ao mover arquivos CLASS."; return 1; }
     else
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { echo "Erro ao mover arquivos TEL."; return 1; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; || { echo "Erro ao mover arquivos INT."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { printf "Erro ao mover arquivos TEL."; return 1; }
+        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; || { printf "Erro ao mover arquivos INT."; return 1; }
     fi
 
     # Messages and confirmation
@@ -1723,7 +1725,7 @@ _volta_geral () {
     _mensagec "${YELLOW}" "${M03}"
     _linha 
     ANTVERSAO=$VERSAO
-    if ! echo "VERSAOANT=""${ANTVERSAO}" >> atualizac; then
+    if ! printf "VERSAOANT=""${ANTVERSAO}""%*s\n"  >> atualizac; then
         _meiodatela
         _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
         _linha 
@@ -2138,7 +2140,7 @@ _processo () {
                 esac
 
                 "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec zip -r -q "${OLDS}/${INI}" "{}" + || {
-                    echo "Erro: Falha ao compactar arquivos no diretório ${dir}"
+                    printf "Erro: Falha ao compactar arquivos no diretório ${dir}""%*s\n" 
                     continue
                 }
             else
@@ -2219,7 +2221,7 @@ _processo () {
 # Altera a versao da atualizacao e salva no diretorio /backuup como a extensao .bkp".
 _atubiblioteca () {
     # Atualização de Programas
-    cd "${TOOLS}" || { echo "Erro: Diretorio ${TOOLS} nao encontrado."; exit 1; }
+    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     _variaveis_atualiza
     # Atualizando os programas
     for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
@@ -2264,7 +2266,7 @@ _atubiblioteca () {
     _press
 
     VERSAO_ANTERIOR=$VERSAO
-    echo "VERSAOANT=${VERSAO_ANTERIOR}" >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
+    printf "VERSAOANT=${VERSAO_ANTERIOR}""%*s\n"  >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
     _principal
 }
 
@@ -2410,7 +2412,7 @@ _linux () {
 
     # Checando Externo IP
     if [[ -n "${SERACESOFF}" ]]; then
-        externalip=$(curl -s ipecho.net/plain || echo "Nao disponivel")
+        externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
         printf "${GREEN}""IP Externo :""${NORM}""${externalip}""%*s\n"
     fi
 
@@ -2618,12 +2620,7 @@ _temps () {
 # Exclui os arquivos temporarios da pasta "${DIRB}" com base na lista "atualizat".
 
 _limpeza () {
-    if [[ ! -d "${TOOLS}" ]]; then
-        printf "ERRO. Diretorio \"${TOOLS}\", Nao existe.%*s\n" >&2
-        exit 1
-    fi
-
-    cd "${TOOLS}" || exit
+    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
 
     #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
     #-TESTE Arquivos ----------------------------------------------------------------------------------#
@@ -2676,7 +2673,7 @@ _addlixo() {
         _meiodatela
         _mensagec "${RED}" "${M66}"
         _linha
-        cd "${TOOLS}"/ || exit 1
+        cd "${TOOLS}"/ || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
         _press
         _temps
         return
@@ -2887,7 +2884,7 @@ _rebuild1 () {
             while [[ "${arquivo}" =~ [^A-Z0-9] || -z "${arquivo}" ]]; do
                 _meiodatela
                 _mensagec "${RED}" "${M66}"
-                cd "${TOOLS}"/ || exit
+                cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
                 _press
                 _ferramentas
             done
@@ -2905,7 +2902,7 @@ _rebuild1 () {
         _mensagec "${YELLOW}" "${M18}"
         _linha
 
-        cd "${TOOLS}"/ || exit
+        cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     else
         _meiodatela
         M996="Recuperacao em desenvolvimento :"
@@ -2942,19 +2939,19 @@ _rebuild1 () {
 # Tratamento de erros:
 # - Sai com uma mensagem de erro se "atualizaj2" não puder ser acessado.
 _rebuildlista () {
-    cd "${TOOLS}"/ || exit
+    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     if [[ "${base2}" ]]; then
         _escolhe_base
     fi
     if [[ "${sistema}" = "iscobol" ]]; then
-        cd "${BASE1}"/ || exit
+        cd "${BASE1}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }  
         #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
         var_ano=$(date +%y)
         var_ano4=$(date +%Y)
         ls ATE"${var_ano}"*.dat > "${TOOLS}""/""atualizaj2"
         ls NFE?"${var_ano4}".*.dat >> "${TOOLS}""/""atualizaj2"
         _read_sleep 1
-        cd "-" || exit
+        cd "-" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
         #-Arquivos Ates e NFEs ----------------------------------------------------------------------------#
         if [[ ! -e "atualizaj2" ]]; then
             printf "ERRO. Arquivo atualizaj2, Nao existe no diretorio.\n" >&2
@@ -3077,8 +3074,7 @@ _backup () {
     fi
 
     DAYS2=$(find "${BACKUP}" -ctime -2 -name "${EMPRESA}"\*zip)
-    cd "${BASE1}" || exit
-
+    cd "${BASE1}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     if [[ -n "${DAYS2}" ]]; then
         M62="Ja existe um backup em ${BACKUP} nos ultimos dias."
         clear
@@ -3129,7 +3125,7 @@ _myself () {
     }
 
     _dobackup
-    echo "${YELLOW}""]pronto""${NORM}"
+    echo "${YELLOW}""] pronto.""${NORM}"
     printf "\n"
     _myself
 
@@ -3366,7 +3362,7 @@ if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
     _mensagec "${YELLOW}" "${M33}"
     _mensagec "${YELLOW}" "${M34}"
     _linha 
-    cd "${DIRBACK}" || exit
+    cd "${DIRBACK}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" "${VARQUIVO}*.*" >> "${LOG_ATU}"
     _read_sleep 1
     if ls -s "${VARQUIVO}"*.* >erro /dev/null 2>&1 ; then
@@ -3383,7 +3379,7 @@ if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
         _menubackup  
     fi
     mv -f "${VARQUIVO}"*.* "${BASE1}" >> "${LOG_ATU}" 
-    cd "${TOOLS}"/ || exit
+    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     clear
     #-"VOLTA DO ARQUIVO CONCLUIDA"
     _linha 
@@ -3399,10 +3395,10 @@ elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
     _mensagec "${YELLOW}" "${M33}"
     _mensagec "${YELLOW}" "${M34}"
     _linha 
-    cd "${DIRBACK}" || exit
+    cd "${DIRBACK}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" >> "${LOG_ATU}"
     mv -f -- *.* "${BASE1}" >> "${LOG_ATU}"
-    cd "${TOOLS}"/ || exit
+    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     clear
     #-"VOLTA DOS ARQUIVOS CONCLUIDA"
     _linha 
@@ -3648,7 +3644,7 @@ ERR_ISC="$destino""/sav/err_isc"
      done
 printf "\n\n"     
 _press
-cd "${TOOLS}"/ || exit
+cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
 _ferramentas
 }
 
@@ -3673,7 +3669,7 @@ _update () {
      _mensagec "${GREEN}" "${M92}"
      _linha 
      cp -rfv atualiza.sh "${BACKUP}" &> /dev/null
-     cd "${PROGS}" || exit 
+     cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
      wget -q -c "${link}" || exit
 
 #-Descompactando o programa baixado----------------------------------#
@@ -3684,7 +3680,7 @@ fi
      "${cmd_unzip}" -o "${atualizagit}" >> "${LOG_ATU}"
      _read_sleep 1
      "${cmd_find}" "${PROGS}" -name "${atualizagit}" -type f -delete 
-     cd "${PROGS}"/Atualiza-main || exit
+     cd "${PROGS}"/Atualiza-main || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
      #-Atualizando somente o atualiza.sh----------------------------------#
      chmod +x "setup.sh" "atualiza.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
@@ -3694,7 +3690,7 @@ if [[ -n "${SERACESOFF}" ]]; then
      SAOFF=${destino}${SERACESOFF}
      cp -f -n -- "${CMD_PSCP}" "${SAOFF}" >> "${LOG_ATU}"
 fi
-     cd "${PROGS}" || exit
+     cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
      rm -rf "${PROGS}"/Atualiza-main
      exit 1
 }
