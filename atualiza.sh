@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="15/01/2025"                                                                                                    #
+UPDATE="17/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -317,15 +317,15 @@ M06="Sera criado mais um backup para o periodo"
 M08="Opcao Invalida"
 M09="O programa tem que estar no diretorio"
 M12="Arquivo(s) recuperado(s)..."
-#M13="De *.zip para *.bkp"
+M13="De *.zip para *.bkp"
 M14="Criando Backup.."
 M16="Backup Concluido!"
 M17="Atualizacao Completa com sucesso!"
 M18="Arquivo(s) recuperado(s)..."
-#M20="Alterando a extensao da atualizacao"
-#M24=".. BACKUP do programa efetuado .."
+M20="Alterando a extensao da atualizacao"
+M24=".. BACKUP do programa efetuado .."
 M25="... Voltando versao anterior ..."
-#M26="... Agora, ATUALIZANDO ..."
+M26="... Agora, ATUALIZANDO ..."
 M27=" .. Backup Completo .."
 M28="Arquivo encontrado no diretorio"
 M29="Informe a senha do usuario do SCP"
@@ -690,7 +690,9 @@ fi
 #-Realiza o download via scp de um programa especifico do servidor da SAV para o diretorio atual.
 #-O parametro NOMEPROG e o nome do programa.
 _run_scp () {
-     "${cmd_scp}" -C -r -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
+    _mensagec "${YELLOW}" "${M29}"
+    _linha  
+    "${cmd_scp}" -C -r -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
 }
 
 # Esta função executa uma operação de cópia segura (SCP) para baixar
@@ -808,7 +810,7 @@ if [[ "${sistema}" = "iscobol" ]]; then
 fi
 
 # Verifica e cria diretório SERACESOFF se necessário
-if [[ "${SERACESOFF}" != " " ]]; then
+if [[ -n "${SERACESOFF}" ]]; then
     if ! [[ -d "${SERACESOFF}" ]]; then 
         mkdir -p "${destino}${SERACESOFF}"
     fi
@@ -1094,11 +1096,12 @@ while (( contador < MAX_REPETICOES )); do
     _mensagec "${GREEN}" "Compilacao adicionada: ${NOMEPROG[*]}"
     ((contador++))
     _linha
-done
+#done
 # Lista os programas armazenados
 _mensagec "${YELLOW}" "Lista de programas a serem baixados:"
-for progr in "${NOMEPROG[@]}"; do
-    _mensagec "${GREEN}" "$progr"
+    for progr in "${NOMEPROG[@]}"; do
+        _mensagec "${GREEN}" "$progr"
+    done
 done
 }
 
@@ -1119,6 +1122,7 @@ if (( ${#NOMEPROG[@]} > 0 )); then
     for arquivo in "${NOMEPROG[@]}"; do
         _linha
         _mensagec "${GREEN}" "Transferindo: $arquivo"
+        _linha
         _run_scp
     done
 else
@@ -1145,33 +1149,32 @@ fi
 #   0 se o arquivo foi movido com sucesso
 #   1 se ocorrer um erro
 _servacessoff () {
-    if [[ -z "${SERACESOFF}" ]]; then
-        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
-        return
-    fi
-
+    if [[ -n "${SERACESOFF}" ]]; then
+#        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
+#        return
+#    fi
     local SAOFF="${destino}${SERACESOFF}"
-
+fi
     if [[ ! -d "${SAOFF}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${SAOFF} nao existe"
         return
     fi
 
-    if [[ -z "${#NOMEPROG[@]}" ]]; then
+    if [[ -z "${NOMEPROG[0]}" ]]; then
         _mensagec "${RED}" "Erro: NOMEPROG nao está configurado"
         return
     fi
 
-    if [[ -f "${SAOFF}/${#NOMEPROG[@]}" ]]; then
+    if [[ -f "${SAOFF}/${NOMEPROG[0]}" ]]; then
         for arquivo in "${NOMEPROG[@]}"; do
             mv -f -- "${SAOFF}/${arquivo}" "." || exit 1
-            _mensagec "${RED}" "Erro ao mover ${arquivo}"
+            _mensagec "${YELLOW}" "Arquivo movido: ${arquivo}"
             return
        done
 
     else
         local M42="O programa a ser atualizado, ${NOMEPROG}"
-        local M422=" nao foi encontrado no diretorio ${SAOFF}"
+        local M422=" nao foi encontrado no diretorio ${TOOLS}"
         _linha
         _mensagec "${RED}" "${M42}"
         _mensagec "${RED}" "${M422}"
@@ -1203,8 +1206,6 @@ _pacoteon () {
     fi
     _qualprograma
     _baixarviascp 
-    _linha 
-     _mensagec "${YELLOW}" "${M29}"
     _linha 
     _atupacote
     _press 
@@ -1259,8 +1260,6 @@ _pacoteoff () {
 }
 
 _atupacote() {
-#    local programas
-   
     local arquivo
     local extensao
     local backup_file
@@ -1274,23 +1273,12 @@ _atupacote() {
         _principal
         return
     fi
-######
-    _mens_atualiza () {
-     #..   BACKUP do programa efetuado   ..
-     _linha 
-     _mensagec "${YELLOW}" "${M24}"
-     _linha 
-     _read_sleep 1
-    }
-
     # Processa programas antigos
     for  f in "${!programas[@]}"; do
         anterior="${OLDS}/${programas[f]}-anterior.zip"
         if [ -f "$anterior" ]; then
             # Verifica se o arquivo de backup já existe
-            if mv -f -- "${anterior}" "${OLDS}/${UMADATA}-${programas[f]}-anterior.zip" >> "${LOG_ATU}"; then
-                :
-            else
+            mv -f -- "${anterior}" "${OLDS}/${UMADATA}-${programas[f]}-anterior.zip" >> "${LOG_ATU}" ||{
                 M49="Erro: Falha ao renomear o arquivo ${anterior}"
                 _linha
                 _mensagec "${RED}" "${M49}"
@@ -1298,12 +1286,9 @@ _atupacote() {
                 _press
                 _principal
                 return
-            fi
+            }    
         fi
-    done
-
-    for  f in "${!programas[@]}"; do
-        # Processa arquivos .class
+        _mensagec "${YELLOW}" "Salvando programa antigo: ${programas[f]}"
         EXT_CLASS=".class"
         if [ -f "${E_EXEC}/${programas[f]}${EXT_CLASS}" ]; then
             if ! "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas[f]}"*"${EXT_CLASS}"; then
@@ -1314,7 +1299,6 @@ _atupacote() {
                 _principal
                 return
             fi
-            _mens_atualiza
         fi
         # Processa arquivos .int
         EXT_INT=".int"
@@ -1327,7 +1311,6 @@ _atupacote() {
                 _principal
                 return
             fi
-            _mens_atualiza
         fi
         # Processa arquivos .TEL
         EXT_TEL=".TEL"
@@ -1340,9 +1323,12 @@ _atupacote() {
                 _principal
                 return
             fi
-            _mens_atualiza
         fi
     done
+     _linha 
+     _mensagec "${YELLOW}" "${M24}"
+     _linha 
+     _read_sleep 1        
 
     # Processa de descompactar e atualizar os programas
     for arquivo in "${NOMEPROG[@]}"; do
@@ -1382,6 +1368,8 @@ _atupacote() {
             done
         fi
     done
+    _mensagec "${GREEN}" "${M26}"
+    _linha
 
     # Altera extensões e move arquivos para o diretório PROGS
     for arquivo in "${NOMEPROG[@]}"; do
@@ -1396,7 +1384,9 @@ _atupacote() {
                 return
             fi
         fi
-    done
+        _mensagec "${GREEN}" "${M20}"
+        _linha
+done
 
     # Mensagem de conclusão
     _linha
@@ -1532,57 +1522,6 @@ _voltaprog () {
     fi
     _atupacote
     _voltamaisprog
-}
-
-#-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
-# Esta função trata do processo de reversão do sistema para o estado anterior à atualização da biblioteca.
-# Ele solicita ao usuário a versão do backup a ser restaurada e verifica a existência do
-# arquivo de backup no diretório especificado. Se o backup não for encontrado, ele retorna ao menu anterior.
-# O usuário é questionado se deseja restaurar todos os programas para o estado anterior à atualização. Baseado em
-# resposta do usuário, ele restaura programas específicos ou todos os programas para suas versões anteriores.
-_voltabibli () {
-     clear
-     M02="Voltando a versao anterior do programa ""${prog}""..."
-     _meiodatela
-     _mensagec "${RED}" "${M62}"
-     _linha
-     read -rp "${YELLOW}""${MA2}""${NORM}" VERSAO
-     INI="backup-""${VERSAO}"".zip"
-     if [[ -z "${VERSAO}" ]]; then
-          _meiodatela
-          _mensagec "${RED}" "${M56}"
-          _linha
-          _press
-          INI=""
-          _principal
-          return
-     fi
-     if [[ ! -r "${OLDS}"/"${INI}" ]]; then
-          # -Backup da Biblioteca nao encontrado no diretorio
-          _linha 
-          _mensagec "${RED}" "${M46}"
-          _linha 
-          _press
-          INI=""
-          _principal
-          return
-     fi
-     MA3="Deseja volta todos os programas para antes da atualizacao? [N/s]:"
-     printf "\n"
-     read -rp "${YELLOW}${MA3}${NORM}" -n1 
-     printf "\n\n"
-     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-          _linha 
-          _volta_progx
-     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-          _linha 
-          _volta_geral
-     else
-          _opinvalida
-          _press
-          INI=""
-          _principal
-     fi
 }
 
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
@@ -1914,8 +1853,7 @@ _scp_biblioteca () {
           _mensagec "${RED}" "As variaveis SAVATU1, SAVATU2 e SAVATU3 nao foram informadas"
           exit 1
      fi
-_variaveis_atualiza
-
+     _variaveis_atualiza
      ATU1="${DESTINO2}""${ATUALIZA1}"
      ATU2="${DESTINO2}""${ATUALIZA2}"
      ATU3="${DESTINO2}""${ATUALIZA3}"
@@ -1934,20 +1872,65 @@ _variaveis_atualiza
      _salva
 }
 
-#-Acessa o menu de biblioteca no servidor OFF
-# 
-# _acessooff
-# 
 # Acessa o menu de biblioteca no servidor OFF.
 # Esta funcao e responsavel por acessar o menu de biblioteca no servidor OFF.
+# _acessooff: Access the OFF server's library and move update files to tools directory.
+#
+# This function checks if the directory for the OFF server's library (SAOFF) exists.
+# If it does not exist, it displays an error message and returns 1. If the directory
+# exists, it attempts to move update files from the SAOFF directory to the TOOLS directory.
+# The update files are determined based on the system type (iscobol or another system).
+# If any file move operation fails, an error message is displayed and the function returns 1.
+# If successful, messages indicating the progress of the operation are displayed.
+#
+# Globals:
+#   destino     - Base directory for the current operation.
+#   SERACESOFF  - Directory containing the OFF server's files.
+#   sistema     - Indicates the system type (e.g., iscobol).
+#   TOOLS       - Directory where tools are stored.
+#   ATUALIZA1   - Update file path for first update.
+#   ATUALIZA2   - Update file path for second update.
+#   ATUALIZA3   - Update file path for third update.
+#   ATUALIZA4   - Update file path for fourth update (used if system is iscobol).
+#
+# Returns:
+#   0 on success
+#   1 on error
+
 _acessooff () {
      #-Servidor OFF acesso
-     local M44="Acessando o menu de biblioteca do servidor OFF..."
+     local SAOFF="${destino}${SERACESOFF}"
+    if [[ ! -d "${SAOFF}" ]]; then
+        _mensagec "${RED}" "Erro: Diretório ${SAOFF} nao existe"
+        return 1
+    fi
+
+     local M44="Acessando biblioteca do servidor OFF..."
+
      _linha 
      _mensagec "${YELLOW}" "${M44}"
      _linha
-     _press  
-     _biblioteca
+
+    _variaveis_atualiza
+    if [[ "${sistema}" = "iscobol" ]]; then
+        local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}" )
+    else
+        local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" )
+    fi
+
+    for atu in "${atualizas[@]}"; do
+        if [[ -f "${SAOFF}/${atu}" ]]; then
+            if ! mv -f -- "${SAOFF}/${atu}" "${TOOLS}"; then
+                _mensagec "${RED}" "Erro ao mover arquivo ${atu}"
+                return 1
+            fi
+            local M45="Movendo biblioteca...${atu}"
+            _mensagec "${GREEN}" "${M45}"
+            _linha
+        fi
+    done
+    _read_sleep 2
+    _salva
 }
 
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
@@ -1965,7 +1948,7 @@ _transpc () {
         exit 1
     fi
 
-    if [[ "${SERACESOFF}" != "" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         _acessooff
     fi
 
@@ -1979,7 +1962,6 @@ _transpc () {
         _mensagec "${RED}" "Erro: DESTINO2 nao foi definido"
         exit 1
     fi
-
     _scp_biblioteca
 }
 
@@ -1992,7 +1974,7 @@ _transpc () {
 _savatu () {
     clear
     _versao
-    if [[ "${SERACESOFF}" != "" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         _acessooff
     fi
 
@@ -2016,22 +1998,45 @@ _savatu () {
     else
         DESTINO2="${DESTINO2SAVATUMF}"
     fi
-
     _scp_biblioteca
 }
+
+#
+# _atuoff
+#
+# Esta função é responsável por realizar a operação de atualização offline.
+# Ela limpa a tela, chama a função _versao para verificar a versão atual,
+# e se a variável SERACESOFF estiver definida, acessa o servidor OFF para
+# realizar a atualização. Por fim, salva a atualização chamando a função _salva.
+#
+# Variáveis globais:
+#   SERACESOFF - Indica se o servidor OFF está configurado para atualização.
+#   TOOLS      - Diretório onde os arquivos de ferramentas são armazenados.
+#
+# Retorna:
+#   Nenhum valor de retorno. Chama outras funções para realizar operações.
+#
+
 _atuoff () {
     clear
     _versao
-    if [[ "${SERACESOFF}" != "" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         _acessooff
     fi  
     _salva
 }
-#-Atualizacao offline a biblioteca deve esta no diretorio------------------------------------------# 
+
 # _salva
-# 
-# Verifica se a atualizacao esta no diretorio atual, se nao estiver
-#   vai para o diretorio de atualizacao offline
+#
+# Salva a atualizacao no diretorio tools.
+#
+# Esta funcao e responsavel por salvar a atualizacao no diretorio tools.
+# Ela verifica se o diretorio tools existe e tem permissao de leitura.
+# Se o diretorio tools nao existe ou nao tem permissao de leitura,
+# a funcao exibe uma mensagem de erro e sai.
+# Se o diretorio tools existe e tem permissao de leitura,
+# a funcao exibe uma mensagem informando que a atualizacao sera salva
+# e chama a funcao _processo para processar a atualizacao.
 _salva () {
     clear
     _variaveis_atualiza
@@ -2072,16 +2077,15 @@ _salva () {
     _processo
 }
 
-
-# Biblioteca sav em servidor sem acesso remoto#
-# _servacessofff
-# 
-# Verifica se a atualizacao esta no diretorio do servidor sem acesso remoto.
-# Se a atualizacao nao estiver no diretorio, sai do programa.
+    # _servacessofff: Verifica se a variável SERACESOFF está configurada e se o diretório existe.
+    #
+    # Se a variável SERACESOFF estiver configurada, exibe uma mensagem de erro e sai.
+    # Se o diretório SERACESOFF não existir, exibe uma mensagem de erro e sai.
+    # Senão, exibe uma mensagem informando que a atualização será salva e chama a função _salva.
 _servacessofff () {
     local atu
     
-    if [[ -z "${SERACESOFF}" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
         return
     fi
@@ -2101,105 +2105,113 @@ _servacessofff () {
 _salva
 }
 
-#-procedimento salvar os programas antes de atualizar----------------------------------------------# 
-#-ZIPANDO OS ARQUIVOS ANTERIORES
-#-..BACKUP COMPLETO..
+# _processo: Função que faz o backup dos arquivos antigos e
+#            chama a função _atubiblioteca para atualizar os arquivos.
 _processo () {
 
-#-ZIPANDO OS ARQUIVOS ANTERIORES...
-     _linha 
-     _mensagec "${YELLOW}" "${M01}"
-     _linha 
-     _read_sleep 1
-if [[ "${sistema}" = "iscobol" ]]; then
-     cd "${destino}""/" || exit
-     _mensagec "${GREEN}" "${M14}""${E_EXEC}"
-     if [[ -n "${cmd_find}" ]] && [[ -n "${OLDS}" ]] && [[ -n "${INI}" ]]; then
-         "${cmd_find}" "${exec}"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.brw" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
-     else
-         _linha 
-         _mensagec "${RED}" "${M45}"
-         _linha 
-         _read_sleep 2
-         _principal
-     fi
-     _mensagec "${GREEN}" "${M14}""${T_TELAS}"
-     if [[ -n "${cmd_find}" ]] && [[ -n "${OLDS}" ]] && [[ -n "${INI}" ]]; then
-         "${cmd_find}" "${telas}"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
-     else
-         _linha 
-         _mensagec "${RED}" "${M45}"
-         _linha 
-         _read_sleep 2
-         _principal
-     fi
-     _mensagec "${GREEN}" "${M14}""${X_XML}"
-     if [[ -n "${cmd_find}" ]] && [[ -n "${OLDS}" ]] && [[ -n "${INI}" ]]; then
-         "${cmd_find}" "${xml}"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
-     else
-         _linha 
-         _mensagec "${RED}" "${M45}"
-         _linha 
-         _read_sleep 2
-         _principal
-     fi
-     cd "${TOOLS}"/ || exit
-     clear
-else
-     cd "${destino}""/" || exit
-     _mensagec "${GREEN}" "${M14}""${E_EXEC}"
-     if [[ -n "${cmd_find}" ]] && [[ -n "${OLDS}" ]] && [[ -n "${INI}" ]]; then
-         "${cmd_find}" "${exec}""/" -type f \( -iname "*.int" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
-     else
-         _linha 
-         _mensagec "${RED}" "${M45}"
-         _linha 
-         _read_sleep 2
-         _principal
-     fi
+    #-ZIPANDO OS ARQUIVOS ANTERIORES...
+    _linha 
+    _mensagec "${YELLOW}" "${M01}"
+    _linha 
+    _read_sleep 1
 
-     _mensagec "${GREEN}" "${M14}""${T_TELAS}"
-     if [[ -n "${cmd_find}" ]] && [[ -n "${OLDS}" ]] && [[ -n "${INI}" ]]; then
-         "$cmd_find" "${telas}""/" -type f \( -iname "*.TEL" \) -exec zip -r -q "${OLDS}"/"${INI}" "{}" +;
-     else
-         _linha 
-         _mensagec "${RED}" "${M45}"
-         _linha 
-         _read_sleep 2
-         _principal
-     fi
-fi 
+    if [[ "${sistema}" = "iscobol" ]]; then
+        cd "${destino}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${destino}"; exit 1; }
+        
+        for dir in "${exec}" "${telas}" "${xml}"; do
+            _mensagec "${GREEN}" "${M14}${dir}"
+            if [[ -n "${cmd_find}" && -n "${OLDS}" && -n "${INI}" ]]; then
+                case "${dir}" in
+                    "${exec}")
+                        ext="*.class *.jpg *.png *.brw *.* *.dll"
+                        ;;
+                    "${telas}")
+                        ext="*.TEL"
+                        ;;
+                    "${xml}")
+                        ext="*.xml"
+                        ;;
+                    *)
+                        _mensagec "${RED}" "Erro: Tipo de diretório desconhecido: ${dir}"
+                        continue
+                        ;;
+                esac
 
-#-..BACKUP COMPLETO..
-     _linha 
-     _mensagec "${YELLOW}" "${M27}"
-     _linha 
-     _read_sleep 1
+                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec zip -r -q "${OLDS}/${INI}" "{}" + || {
+                    echo "Erro: Falha ao compactar arquivos no diretório ${dir}"
+                    continue
+                }
+            else
+                _linha 
+                _mensagec "${RED}" "${M45}"
+                _linha 
+                _read_sleep 2
+                _principal
+            fi
+        done
+        cd "${TOOLS}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${TOOLS}"; exit 1; }
+        clear
+    else
+        cd "${destino}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${destino}"; exit 1; }
+        
+        for dir in "${exec}" "${telas}"; do
+            _mensagec "${GREEN}" "${M14}${dir}"
+            if [[ -n "${cmd_find}" && -n "${OLDS}" && -n "${INI}" ]]; then
+                case "${dir}" in
+                    "${exec}")
+                        ext="*.int"
+                        ;;
+                    "${telas}")
+                        ext="*.TEL"
+                        ;;
+                    *)
+                        _mensagec "${RED}" "Erro: Tipo de diretório desconhecido: ${dir}"
+                        continue
+                        ;;
+                esac
 
-cd "${TOOLS}" || exit
-if [[ ! -r "${OLDS}"/"${INI}" ]]; then
-#-Backup nao encontrado no diretorio
-     _linha 
-     _mensagec "${RED}" "${M45}"
-     _linha 
-#-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
-     _read_sleep 2    
-     _meiodatela
-     read -rp "${YELLOW}""${M38}""${NORM}" -n1 
-     printf "\n\n"
-     if [[ -z "${REPLY}" ]]; then
-          _principal
-     elif [[ "${REPLY,,}" =~ ^[Nn]$ ]]; then
-          _principal
-     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-          _meiodatela
-          _mensagec "${YELLOW}" "${M39}"
-     else
-          _opinvalida
-          _principal
-     fi 
-fi
-_atubiblioteca 
+                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec zip -r -q "${OLDS}/${INI}" "{}" + || {
+                    _mensagec "${RED}" "Erro: Falha ao compactar arquivos no diretório ${dir}"
+                    continue
+                }
+            else
+                _linha 
+                _mensagec "${RED}" "${M45}"
+                _linha 
+                _read_sleep 2
+                _principal
+            fi
+        done
+    fi 
+
+    #-..BACKUP COMPLETO..
+    _linha 
+    _mensagec "${YELLOW}" "${M27}"
+    _linha 
+    _read_sleep 1
+
+    cd "${TOOLS}" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${TOOLS}"; exit 1; }
+    if [[ ! -r "${OLDS}/${INI}" ]]; then
+        #-Backup nao encontrado no diretorio
+        _linha 
+        _mensagec "${RED}" "${M45}"
+        _linha 
+        #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
+        _read_sleep 2    
+        _meiodatela
+        read -rp "${YELLOW}${M38}${NORM}" -n1 
+        printf "\n\n"
+        if [[ -z "${REPLY}" || "${REPLY,,}" =~ ^[Nn]$ ]]; then
+            _principal
+        elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
+            _meiodatela
+            _mensagec "${YELLOW}" "${M39}"
+        else
+            _opinvalida
+            _principal
+        fi 
+    fi
+    _atubiblioteca 
 }
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
 # 
@@ -2213,12 +2225,12 @@ _atubiblioteca () {
     for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
         if [[ -n "${arquivo}" && -r "${arquivo}" ]]; then
             _linha
-            _mensagec "${YELLOW}" "${MENSAGEM_ATUALIZANDO}"
+            _mensagec "${YELLOW}" "${M26}"
             _linha
             if _mensagec "${GREEN}" "${arquivo}"; then
              "${cmd_unzip}" -o "${arquivo}" -d "${destino}" >> "${LOG_ATU}"
             else
-                _mensagec "${RED}" "${MENSAGEM_ERRO}"
+                _mensagec "${RED}" "${M48}"
             fi
             _linha
             _read_sleep 2
@@ -2230,7 +2242,7 @@ _atubiblioteca () {
 
     # Atualização completa
     _linha
-    _mensagec "${YELLOW}" "${MENSAGEM_COMPLETA}"
+    _mensagec "${YELLOW}" "${M17}"
     _linha
 
     for arquivo_zip in *_"${VERSAO}".zip; do
@@ -2243,18 +2255,70 @@ _atubiblioteca () {
     mv -f -- *_"${VERSAO}".bkp "${BACKUP}" || _mensagec "${RED}" "Erro ao mover backups para ${BACKUP}"
 
     # Alterando a extensão da atualização de .zip para .bkp
-    mensagem_versao="Versão atualizada - ${VERSAO}"
+    M40="Versão atualizada - ${VERSAO}"
     _linha
-    _mensagec "${YELLOW}" "${MENSAGEM_EXTENSAO_ALTERADA}"
-    _mensagec "${YELLOW}" "${MENSAGEM_SALVA}"
-    _mensagec "${RED}" "${mensagem_versao}"
+    _mensagec "${YELLOW}" "${M20}"
+    _mensagec "${YELLOW}" "${M13}"
+    _mensagec "${RED}" "${M40}"
     _linha
     _press
 
     VERSAO_ANTERIOR=$VERSAO
-    echo "VERSAOANT=${VERSAO_ANTERIOR}" >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuração."
+    echo "VERSAOANT=${VERSAO_ANTERIOR}" >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
     _principal
 }
+
+#-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
+# Esta função trata do processo de reversão do sistema para o estado anterior à atualização da biblioteca.
+# Ele solicita ao usuário a versão do backup a ser restaurada e verifica a existência do
+# arquivo de backup no diretório especificado. Se o backup não for encontrado, ele retorna ao menu anterior.
+# O usuário é questionado se deseja restaurar todos os programas para o estado anterior à atualização. Baseado em
+# resposta do usuário, ele restaura programas específicos ou todos os programas para suas versões anteriores.
+_voltabibli () {
+     clear
+     M02="Voltando a versao anterior do programa ""${prog}""..."
+     _meiodatela
+     _mensagec "${RED}" "${M62}"
+     _linha
+     read -rp "${YELLOW}""${MA2}""${NORM}" VERSAO
+     INI="backup-""${VERSAO}"".zip"
+     if [[ -z "${VERSAO}" ]]; then
+          _meiodatela
+          _mensagec "${RED}" "${M56}"
+          _linha
+          _press
+          INI=""
+          _principal
+          return
+     fi
+     if [[ ! -r "${OLDS}"/"${INI}" ]]; then
+          # -Backup da Biblioteca nao encontrado no diretorio
+          _linha 
+          _mensagec "${RED}" "${M46}"
+          _linha 
+          _press
+          INI=""
+          _principal
+          return
+     fi
+     MA3="Deseja volta todos os programas para antes da atualizacao? [N/s]:"
+     printf "\n"
+     read -rp "${YELLOW}${MA3}${NORM}" -n1 
+     printf "\n\n"
+     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
+          _linha 
+          _volta_progx
+     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
+          _linha 
+          _volta_geral
+     else
+          _opinvalida
+          _press
+          INI=""
+          _principal
+     fi
+}
+
 
 #-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
 #
@@ -2345,7 +2409,7 @@ _linux () {
     printf "\n"
 
     # Checando Externo IP
-    if [[ "${SERACESOFF}" == "" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         externalip=$(curl -s ipecho.net/plain || echo "Nao disponivel")
         printf "${GREEN}""IP Externo :""${NORM}""${externalip}""%*s\n"
     fi
@@ -3185,7 +3249,7 @@ MA1="O backup \"""${VBACKUP}""\""
      _mensagec "${YELLOW}" "${MA1}"
      _linha 
 
-if [[ "${SERACESOFF}" != "" ]]; then 
+if [[ -n "${SERACESOFF}" ]]; then 
           SAOFF=${destino}${SERACESOFF}
           mv -f -- "${BACKUP}"/"${VBACKUP}" "${SAOFF}"
 MA11="Backup enviado para o diretorio:"   
@@ -3625,7 +3689,7 @@ fi
      chmod +x "setup.sh" "atualiza.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
      mv -f -- "setup.sh" "${TOOLS}" >> "${LOG_ATU}"
-if [[ "${SERACESOFF}" != "" ]]; then 
+if [[ -n "${SERACESOFF}" ]]; then 
      local CMD_PSCP="pscp"     
      SAOFF=${destino}${SERACESOFF}
      cp -f -n -- "${CMD_PSCP}" "${SAOFF}" >> "${LOG_ATU}"
