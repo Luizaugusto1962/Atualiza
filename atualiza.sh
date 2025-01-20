@@ -1066,9 +1066,13 @@ while (( contador < MAX_REPETICOES )); do
     
     # Verifica se foi digitado ENTER ou espaço
     if [[ -z "${programa}" ]]; then
+        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo..."
         break
     fi
-
+    if [[ "${programa}" == " " ]]; then
+        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo..."
+        break
+    fi
     # Verifica se o nome do programa é válido
     if ! validar_nome "$programa"; then
         _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
@@ -1086,7 +1090,7 @@ while (( contador < MAX_REPETICOES )); do
     elif [[ "$tipo_compilacao" == "2" ]]; then
         compila=${programa}${mclass}".zip"
     else
-        _mensagec "${RED}" "Erro: Opcao de compilacao invalida."
+        _mensagec "${RED}" "Erro: Opcao de compilacao invalida Digite 1 ou 2."
         continue
     fi
     # Armazena o resultado
