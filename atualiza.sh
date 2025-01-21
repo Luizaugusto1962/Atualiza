@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="17/01/2025"                                                                                                    #
+UPDATE="21/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -810,7 +810,7 @@ if [[ "${sistema}" = "iscobol" ]]; then
 fi
 
 # Verifica e cria diretório SERACESOFF se necessário
-if [[ -n "${SERACESOFF}" ]]; then
+if [[ -z "${SERACESOFF}" ]]; then
     if ! [[ -d "${SERACESOFF}" ]]; then 
         mkdir -p "${destino}${SERACESOFF}"
     fi
@@ -1136,57 +1136,23 @@ _mensagec "${GREEN}" "Processo finalizado."
 fi
 }
 
-# _servacessoff: Move o programa de atualizacao de um diretorio local para o diretorio atual.
-#
-# Se o diretorio SERACESOFF estiver configurado, este metodo move o programa
-# de atualizacao do diretorio SERACESOFF para o diretorio atual, caso o
-# arquivo exista. Se o arquivo nao existir, exibe uma mensagem de erro e
-# volta para o menu principal.
-#
-# Argumentos:
-#   Nenhum
-#
-# Variaveis de ambiente:
-#   SERACESOFF: diretorio onde estao os arquivos a serem atualizados
-#   NOMEPROG: lista de nomes de programas a serem atualizados
-#
-# Retorna:
-#   0 se o arquivo foi movido com sucesso
-#   1 se ocorrer um erro
 _servacessoff () {
-    if [[ -n "${SERACESOFF}" ]]; then
-#        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
-#        return
-#    fi
+    if [[ -z "${SERACESOFF}" ]]; then
+        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
+        return
+    fi
     local SAOFF="${destino}${SERACESOFF}"
-fi
+
     if [[ ! -d "${SAOFF}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${SAOFF} nao existe"
         return
     fi
 
-    if [[ -z "${NOMEPROG[0]}" ]]; then
-        _mensagec "${RED}" "Erro: NOMEPROG nao está configurado"
-        return
-    fi
-
-    if [[ -f "${SAOFF}/${NOMEPROG[0]}" ]]; then
-        for arquivo in "${NOMEPROG[@]}"; do
-            mv -f -- "${SAOFF}/${arquivo}" "." || exit 1
-            _mensagec "${YELLOW}" "Arquivo movido: ${arquivo}"
-            return
-       done
-
-    else
-        local M42="O programa a ser atualizado, ${NOMEPROG}"
-        local M422=" nao foi encontrado no diretorio ${TOOLS}"
-        _linha
-        _mensagec "${RED}" "${M42}"
-        _mensagec "${RED}" "${M422}"
-        _linha
+    for arquivo in "${SAOFF}"/*.zip; do
+        mv -f -- "${arquivo}" "." || exit 1
         _press
-        _principal
-    fi
+        _mensagec "${YELLOW}" "Arquivo movido: ${arquivo}"
+    done
 }
 
 # _pacoteon: Realiza a atualização de um programa em um servidor com acesso à rede externa.
@@ -1201,14 +1167,6 @@ fi
 # - Volta para o menu principal.
 
 _pacoteon () {
-    if [[ -n "${SERACESOFF}" ]]; then
-        _linha 
-        _mensagec "${RED}" "Erro: Variavel SERACESOFF esta vazia"
-        _linha
-        _press  
-        _principal
-        return
-    fi
     _qualprograma
     _baixarviascp 
     _linha 
@@ -1230,6 +1188,12 @@ _pacoteon () {
     # e o usuário é retornado ao menu principal.
 
 _pacoteoff () {
+    if [[ -z "${SERACESOFF}" ]]; then
+        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
+        return
+    fi    
+    _servacessoff
+    
     # Solicita o nome do programa a ser atualizado
     if ! _qualprograma; then
         return
@@ -1240,15 +1204,6 @@ _pacoteoff () {
     _mensagec "${YELLOW}" "${M09}"
     _linha
     _read_sleep 1
-
-    # Verifica se o diretório de acesso off está configurado
-    if ! _servacessoff; then
-        _mensagec "${RED}" "Erro: Diretorio de acesso off nao configurado corretamente."
-        _linha
-        _press
-        _principal
-        return
-    fi
 
     # Atualiza o pacote
     if ! _atupacote; then
@@ -1279,7 +1234,7 @@ _atupacote() {
         return
     fi
     # Processa programas antigos
-    for  f in "${!programas[@]}"; do
+for  f in "${!programas[@]}"; do
         anterior="${OLDS}/${programas[f]}-anterior.zip"
         if [ -f "$anterior" ]; then
             # Verifica se o arquivo de backup já existe
@@ -1329,11 +1284,11 @@ _atupacote() {
                 return
             fi
         fi
-    done
-     _linha 
-     _mensagec "${YELLOW}" "${M24}"
-     _linha 
-     _read_sleep 1        
+done
+    _linha 
+    _mensagec "${YELLOW}" "${M24}"
+    _linha 
+    _read_sleep 1        
 
     # Processa de descompactar e atualizar os programas
     for arquivo in "${NOMEPROG[@]}"; do
@@ -1391,7 +1346,7 @@ _atupacote() {
         fi
         _mensagec "${GREEN}" "${M20}"
         _linha
-done
+    done
 
     # Mensagem de conclusão
     _linha
@@ -1417,14 +1372,14 @@ _voltamaisprog () {
      read -rp "${YELLOW}""${M37}""${NORM}" -n1  REPLY
      printf "\n\n"
      if [[ -z "${REPLY}" ]]; then
-          _principal
+        _principal
      elif [[ "${REPLY,,}" =~ ^[Nn]$ ]]; then
           _principal
      elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
           if [[ "${OPCAO}" = 1 ]]; then
-               _voltaprog
+             _voltaprog
           else
-               _principal
+             _principal
           fi
      else
           _opinvalida	 
@@ -1450,7 +1405,6 @@ _voltamaisprog () {
 # Opcoes:
 #   Qualquer tecla - Desatualiza o programa
 _voltaprog () {
-
     # Variáveis
     MAX_REPETICOES=3
     contador=0
@@ -1954,7 +1908,7 @@ _transpc () {
         exit 1
     fi
 
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ -z "${SERACESOFF}" ]]; then
         _acessooff
     fi
 
@@ -1980,7 +1934,7 @@ _transpc () {
 _savatu () {
     clear
     _versao
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ -z "${SERACESOFF}" ]]; then
         _acessooff
     fi
 
@@ -2026,7 +1980,7 @@ _savatu () {
 _atuoff () {
     clear
     _versao
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ -z "${SERACESOFF}" ]]; then
         _acessooff
     fi  
     _salva
@@ -2083,33 +2037,6 @@ _salva () {
     _processo
 }
 
-    # _servacessofff: Verifica se a variável SERACESOFF está configurada e se o diretório existe.
-    #
-    # Se a variável SERACESOFF estiver configurada, exibe uma mensagem de erro e sai.
-    # Se o diretório SERACESOFF não existir, exibe uma mensagem de erro e sai.
-    # Senão, exibe uma mensagem informando que a atualização será salva e chama a função _salva.
-_servacessofff () {
-    local atu
-    
-    if [[ -n "${SERACESOFF}" ]]; then
-        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
-        return
-    fi
-
-    SAOFF="${destino}${SERACESOFF}/"
-
-    if [[ ! -d "${SAOFF}" ]]; then
-        _mensagec "${RED}" "Erro: Diretorio ${SAOFF} nao existe"
-        return
-    fi
-
-    M42="A atualização nao foi encontrada no diretorio ${SAOFF}"
-
-    _linha
-    _mensagec "${YELLOW}" "${M21}"
-    _linha
-_salva
-}
 
 # _processo: Função que faz o backup dos arquivos antigos e
 #            chama a função _atubiblioteca para atualizar os arquivos.
@@ -2415,7 +2342,7 @@ _linux () {
     printf "\n"
 
     # Checando Externo IP
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ -z "${SERACESOFF}" ]]; then
         externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
         printf "${GREEN}""IP Externo :""${NORM}""${externalip}""%*s\n"
     fi
@@ -3152,7 +3079,7 @@ _myself () {
             _ferramentas
             return ;;
         [Ss])
-            if [[ -n "${SERACESOFF}" ]]; then
+            if [[ -z "${SERACESOFF}" ]]; then
                 SAOFF=${destino}${SERACESOFF}
                 mv -f -- "${BACKUP}/${VBACKUP}" "${SAOFF}"
                 MA11="Backup enviado para o diretorio:"
@@ -3249,7 +3176,7 @@ MA1="O backup \"""${VBACKUP}""\""
      _mensagec "${YELLOW}" "${MA1}"
      _linha 
 
-if [[ -n "${SERACESOFF}" ]]; then 
+if [[ -z "${SERACESOFF}" ]]; then 
           SAOFF=${destino}${SERACESOFF}
           mv -f -- "${BACKUP}"/"${VBACKUP}" "${SAOFF}"
 MA11="Backup enviado para o diretorio:"   
@@ -3664,7 +3591,7 @@ _ferramentas
 # O programa sempre sera atualizado via internet, caso o servidor tenha
 # acesso a rede.
 _update () {
- 
+ if [[ "${SERACESOFF}" != "" ]]; then 
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
@@ -3689,14 +3616,12 @@ fi
      chmod +x "setup.sh" "atualiza.sh"
      mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
      mv -f -- "setup.sh" "${TOOLS}" >> "${LOG_ATU}"
-if [[ -n "${SERACESOFF}" ]]; then 
-     local CMD_PSCP="pscp"     
-     SAOFF=${destino}${SERACESOFF}
-     cp -f -n -- "${CMD_PSCP}" "${SAOFF}" >> "${LOG_ATU}"
-fi
      cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
      rm -rf "${PROGS}"/Atualiza-main
      exit 1
+else
+    cp -f -n -- *.sh "${SAOFF}" >> "${LOG_ATU}"
+fi
 }
 
 # _parametros ()
