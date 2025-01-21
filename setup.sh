@@ -1,6 +1,8 @@
 #!/usr/bin/env bash 
-# shellcheck disable=SC1017
-#versao de 13/01/2025
+#
+#
+#versao de 21/01/2025
+
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
 
@@ -46,7 +48,7 @@ if %op% equ 4 goto:PSCP
 if %op% equ 0 goto:EOF
 
 :OPCAO
-clear
+cls
 set sn=0
 echo %line% 
 echo Baixar mais algum programa da SAV.
@@ -63,13 +65,13 @@ set sn=""
 echo %line% 
 echo Programa compilado em qual modos? :
 echo %line% 
-echo	[N]- Normal [D]- Debug     
+echo	[1]- Normal [2]- Debug     
 echo.
 set /p sn=Selecione a opcao ... 
 echo.
 if %sn% equ 0 goto EOF
-if %sn% equ N goto NORMAL 
-if %sn% equ D goto DEBUG
+if %sn% equ 1 goto NORMAL 
+if %sn% equ 2 goto DEBUG
 
 :NORMAL
 echo.
