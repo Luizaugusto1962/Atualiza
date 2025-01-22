@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="21/01/2025"                                                                                                    #
+UPDATE="22/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3591,7 +3591,8 @@ _ferramentas
 # O programa sempre sera atualizado via internet, caso o servidor tenha
 # acesso a rede.
 _update () {
- if [[ "${SERACESOFF}" != "" ]]; then 
+local SAOFF="${destino}${SERACESOFF}"
+if [[ -z "${SERACESOFF}" ]]; then 
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
@@ -3605,26 +3606,39 @@ _update () {
 
 #-Descompactando o programa baixado----------------------------------#
 DEFAULT_ATUALIZAGIT="atualiza.zip"
-if [[ -z "${atualizagit}" ]]; then
-     atualizagit="${DEFAULT_ATUALIZAGIT}"
-fi
+    if [[ -z "${atualizagit}" ]]; then
+         atualizagit="${DEFAULT_ATUALIZAGIT}"
+    fi
      "${cmd_unzip}" -o "${atualizagit}" >> "${LOG_ATU}"
      _read_sleep 1
      "${cmd_find}" "${PROGS}" -name "${atualizagit}" -type f -delete 
      cd "${PROGS}"/Atualiza-main || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
      #-Atualizando somente o atualiza.sh----------------------------------#
-     chmod +x "setup.sh" "atualiza.sh"
-     mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
-     mv -f -- "setup.sh" "${TOOLS}" >> "${LOG_ATU}"
-     cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-     rm -rf "${PROGS}"/Atualiza-main
-     exit 1
+     if [[ -f "atualiza.sh" && -f "setup.sh" ]]; then
+         chmod +x "setup.sh" "atualiza.sh"
+         mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
+         mv -f -- "setup.sh" "${TOOLS}" >> "${LOG_ATU}"
+         cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
+         rm -rf "${PROGS}"/Atualiza-main
+         exit 1
+     else
+         _mensagec "${RED}" "Erro: Arquivos atualiza.sh e setup.sh, nao encontrados na pasta ${PROGS}/Atualiza-main"
+         exit 1
+     fi
 else
-    cp -f -n -- *.sh "${SAOFF}" >> "${LOG_ATU}"
+    for pacoteoff in "atualiza.sh" "setup.sh" "atualizaj" "atualizat"; do
+        if [[ -f "${SAOFF}/${pacoteoff}" ]]; then
+            mv -f -- "${SAOFF}/${pacoteoff}" "${TOOLS}" >> "${LOG_ATU}"
+            chmod 777 "$pacoteoff"  
+        else
+            _mensagec "${RED}" "Erro: Arquivo ${pacoteoff} nao encontrado na pasta ${SAOFF}"
+        fi
+    done
+    chmod +x "*.sh"
 fi
 }
 
-# _parametros ()
+#_parametros ()
 # Mostra os parametros de configuracao do sistema, base de dados, diretorios
 # do atualiza.sh, base principal, segunda base, terceira base, executaveis,
 # telas, xmls, logs, olds, progs, backup, sistema em uso, bibliotecas
