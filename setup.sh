@@ -122,6 +122,7 @@ set sn=""
 set op=""
 set class=""
 set mclass=""
+set SAVATU=""
 set SAVATU1=""
 set SAVATU2=""
 set SAVATU3=""
@@ -181,10 +182,12 @@ _ISCOBOL () {
         echo "exec=sav/classes" 
         echo "telas=sav/tel_isc"
         echo "xml=sav/xml" 
+        class="${VERCLASS}""_*_"
         classA="${VERCLASS}""_classA_"
         classB="${VERCLASS}""_classB_"
         classC="${VERCLASS}""_tel_isc_"
         classD="${VERCLASS}""_xml_"
+        echo "SAVATU=tempSAV_""${class}"
         echo "SAVATU1=tempSAV_""${classA}"
         echo "SAVATU2=tempSAV_""${classB}"
         echo "SAVATU3=tempSAV_""${classC}"
@@ -340,7 +343,7 @@ echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF [S ou N] ->" -n1 OFF 
 echo
 if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
-        echo "SERACESOFF="""  >> atualizac
+        echo "SERACESOFF=" >> atualizac
 elif [[ "${OFF}" =~ ^[Ss]$ ]]; then
         echo "SERACESOFF=/sav/portalsav/Atualiza"  >> atualizac
 fi
