@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="22/01/2025"                                                                                                    #
+UPDATE="27/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -33,7 +33,7 @@ UPDATE="22/01/2025"                                                             
 #                                                                                                                      #
 #      1 - Atualizacao de Programas                                                                                    #
 #            1.1 - ON-Line                                                                                             #
-#      Acessa o servidor da SAV via scp com o usuario ATUALIZA                                                         #
+#      Acessa o servidor da SAV via rsync com o usuario ATUALIZA                                                         #
 #      Faz um backup do programa que esta em uso e salva na pasta ?/sav/tmp/olds                                       #
 #      com o nome "Nome do programa-anterior.zip" descompacta o novo no diretorio                                      #
 #      dos programa e salva o a atualizacao na pasta ?/sav/tmp/progs.                                                  #
@@ -115,10 +115,10 @@ resetando () {
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
-unset -v olds progs backup sistema SAVATU1 SAVATU2 SAVATU3 SAVATU4
+unset -v olds progs backup sistema SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
 unset -v E_EXEC T_TELAS X_XML NOMEPROG CCC MXX
-unset -v cmd_unzip cmd_zip cmd_find cmd_scp cmd_who VBACKUP ARQUIVO 
+unset -v cmd_unzip cmd_zip cmd_find cmd_who VBACKUP ARQUIVO 
 unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 
 tput sgr0; exit 
 }
@@ -143,6 +143,7 @@ olds="${olds:-}" # Caminho do diretorio dos arquivos de backup.
 progs="${progs:-}" # Caminho do diretorio dos programas.
 backup="${backup:-}" # Caminho do diretorio de backup.
 sistema="${sistema:-}" # Tipo de sistema que esta sendo usado (iscobol ou isam).
+SAVATU="${SAVATU:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU1="${SAVATU1:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU2="${SAVATU2:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU3="${SAVATU3:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
@@ -155,14 +156,13 @@ VERSAOANT="${VERSAOANT:-}" # Variavel que define a versao do programa anterior.
 cmd_unzip="${cmd_unzip:-}" # Comando para descompactar arquivos.
 cmd_zip="${cmd_zip:-}" # Comando para compactar arquivos.
 cmd_find="${cmd_find:-}" # Comando para buscar arquivos.
-cmd_scp="${cmd_scp:-}" # Comando para transferir arquivos via scp.
 cmd_who="${cmd_who:-}" # Comando para saber quem esta logado no sistema.
 VBACKUP="${VBACKUP:-}" # Variavel que define se sera realizado backup.
 ARQUIVO="${ARQUIVO:-}" # Variavel que define o nome do arquivo a ser baixado.
 PEDARQ="${PEDARQ:-}" # Variavel que define se sera realizado o pedido de arquivos.
 prog="${prog:-}" # Variavel que define o nome do programa a ser baixado.
-PORTA="${PORTA:-}" # Variavel que define a porta a ser usada para scp.
-USUARIO="${USUARIO:-}" # Variavel que define o usuario a ser usado para scp.
+PORTA="${PORTA:-}" # Variavel que define a porta a ser usada para rsync.
+USUARIO="${USUARIO:-}" # Variavel que define o usuario a ser usado para rsync.
 IPSERVER="${IPSERVER:-}" # Variavel que define o ip do servidor da SAV.
 DESTINO2="${DESTINO2:-}" # Variavel que define o caminho do diretorio da biblioteca do servidor da SAV.
 
@@ -283,18 +283,6 @@ if [[ -z "${cmd_find}" ]]; then
         exit 1
     fi
 fi
-
-# Comando para transferencia de arquivos via rede
-DEFAULT_SCP="scp"
-if [[ -z "${cmd_scp}" ]]; then
-    if [[ -n "${DEFAULT_SCP}" ]]; then
-        cmd_scp="${DEFAULT_SCP}"
-    else
-        printf "Erro: Variavel de ambiente cmd_scp nao esta configurada.\n"
-        exit 1
-    fi
-fi
-
 # Comando para verificar de usuario 
 DEFAULT_WHO="who"
 if [[ -z "${cmd_who}" ]]; then
@@ -328,7 +316,7 @@ M25="... Voltando versao anterior ..."
 M26="... Agora, ATUALIZANDO ..."
 M27=" .. Backup Completo .."
 M28="Arquivo encontrado no diretorio"
-M29="Informe a senha do usuario do SCP"
+M29="Informe a senha para o usuario do rsync:"
 M33="Voltando Backup anterior  ..."
 M35="Deseja voltar todos os ARQUIVOS do Backup ? [N/s]:"
 M36="<< ... Pressione qualquer tecla para continuar ... >>"
@@ -577,11 +565,11 @@ fi
 jut="$SAVISC""$JUTIL"
 
 
-#-Configuracao para acesso ao scp------------------------------------------------------------------#
-# Variaveis de configuracao para acesso ao servidor via scp
-# PORTA - Porta a ser usada para acesso ao servidor via scp
-# USUARIO - Usuario a ser usado para acesso ao servidor via scp
-# IPSERVER - IP do servidor a ser acessado via scp
+#-Configuracao para acesso ao rsync------------------------------------------------------------------#
+# Variaveis de configuracao para acesso ao servidor via rsync
+# PORTA - Porta a ser usada para acesso ao servidor via rsync
+# USUARIO - Usuario a ser usado para acesso ao servidor via rsync
+# IPSERVER - IP do servidor a ser acessado via rsync
 
 # Valor padrao para a porta
 DEFAULT_PORTA="41122"
@@ -648,7 +636,7 @@ if [[ -z "${ENVIABACK}" ]]; then
 fi
 ## ------- Parametro para a atualizacao de biblioteca ----------------------------
 # Variáveis para armazenar os caminhos de destino dos programas/biblioteca
-# que serão baixados via SCP.
+# que serão baixados via rsync.
 DESTINO2SERVER="/u/varejo/man/"  # Caminho do servidor da SAV com os programas.
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
@@ -659,56 +647,32 @@ DESTINO2TRANSPC="/u/varejo/trans_pc/"
 # Caso elas não estejam setadas, o programa exibe uma mensagem de erro e sai.
 
 # DESTINO2SERVER: Caminho do servidor da SAV com os programas.
-# Utilizado para baixar os programas via SCP.
+# Utilizado para baixar os programas via rsync.
 if [[ -z "${DESTINO2SERVER}" ]]; then
     printf "Erro: Variavel de ambiente DESTINO2SERVER nao esta configurada.\n"
     exit 1
 fi
 
 # DESTINO2SAVATUISC: Caminho do diretorio de destino dos programas ISCobol.
-# Utilizado para baixar os programas ISCobol via SCP.
+# Utilizado para baixar os programas ISCobol via rsync.
 if [[ -z "${DESTINO2SAVATUISC}" ]]; then
     printf "Erro: Variavel de ambiente DESTINO2SAVATUISC nao esta configurada.\n"
     exit 1
 fi
 
 # DESTINO2SAVATUMF: Caminho do diretorio de destino dos programas Isam.
-# Utilizado para baixar os programas Isam via SCP.
+# Utilizado para baixar os programas Isam via rsync.
 if [[ -z "${DESTINO2SAVATUMF}" ]]; then
     printf "Erro: Variavel de ambiente DESTINO2SAVATUMF nao esta configurada.\n"
     exit 1
 fi
 
 # DESTINO2TRANSPC: Caminho do diretorio de destino dos programas de transpote.
-# Utilizado para baixar os programas de transpote via SCP.
+# Utilizado para baixar os programas de transpote via rsync.
 if [[ -z "${DESTINO2TRANSPC}" ]]; then
     printf "Erro: Variavel de ambiente DESTINO2TRANSPC nao esta configurada.\n"
     exit 1
 fi
-
-#-Processo do scp----------------------------------------------------------------------------------#
-#-Realiza o download via scp de um programa especifico do servidor da SAV para o diretorio atual.
-#-O parametro NOMEPROG e o nome do programa.
-_run_scp () {
-    _mensagec "${YELLOW}" "${M29}"
-    _linha  
-    "${cmd_scp}" -C -r -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
-}
-
-# Esta função executa uma operação de cópia segura (SCP) para baixar
-# uma versão específica de um programa de biblioteca do servidor SAV.
-# Utiliza o comando SCP configurado com opções de compactação e recursivas.
-# O programa é identificado por sua versão e variáveis ​​atu, e o
-# destino é construído usando-os junto com o caminho DESTINO2.
-#-Download de um programa da biblioteca via scp
-#-Realiza o download via scp de um programa especifico da biblioteca do servidor da SAV para o
-#-diretorio atual.
-#-O parametro atu e a variavel de ambiente que define o tipo de biblioteca ( Iscobol ou Isam )
-#-O parametro VERSAO e o nome do arquivo sem a extensao.
-#-O destino e construdo usando o caminho DESTINO2 e o nome do programa.
-_run_scp2 () {     
-     "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${atu}" . 
-}
 
 #-Funcao de sleep----------------------------------------------------------------------------------#
 # Esta função pausa a execução por um número especificado de segundos.
@@ -973,7 +937,7 @@ _principal () {
 	_mensagec "${GREEN}" "${M107}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M108}"
-	printf "\n"
+	printf "\n\n"
 	_mensagec "${GREEN}" "${M109}"
      printf "\n"
      _linha "="
@@ -1013,11 +977,11 @@ _atualizacao () {
 	_mensagec "${GREEN}" "${M203}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M204}"
-	printf "\n"
+	printf "\n\n"
 	_mensagec "${PURPLE}" "${M205}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M206}"
-	printf "\n"
+	printf "\n\n"
 	_mensagec "${GREEN}" "${M209}"
 	printf "\n"        
 	_linha "="
@@ -1110,37 +1074,57 @@ _mensagec "${YELLOW}" "Lista de programas a serem baixados:"
 done
 }
 
-# Esta função verifica se há nomes de programas armazenados na lista NOMEPROG e,
-# se houver, exibe-os e inicia o processo de transferência via SCP para cada arquivo.
-# Caso contrário, informa que nenhum valor foi armazenado e finaliza o processo.
-
-_baixarviascp () {
-# Exibe os resultados finais se houver
-if (( ${#NOMEPROG[@]} > 0 )); then
-    _mensagec "${YELLOW}" "Resultados armazenados:"
-    _linha
-    _mensagec "${GREEN}" "${NOMEPROG[@]}"
-
-    # Realiza o SCP
-    _linha
-    _mensagec "${YELLOW}" "Realizando SCP dos arquivos..."
-    for arquivo in "${NOMEPROG[@]}"; do
+# _baixarviarsync - Realiza o RSYNC dos arquivos de compilacao
+#
+# Exibe os resultados finais se houver e realiza o RSYNC dos arquivos
+# de compilacao, transferindo-os do servidor remoto para o local.
+#
+# Opcoes:
+#   NAO TEM
+#
+# Variaveis:
+#   NOMEPROG - Array de strings com os nomes dos arquivos a serem baixados
+#   DESTINO2SERVER - Caminho do servidor remoto com os arquivos a serem baixados
+#   PORTA - Numero da porta a ser usada para acesso ao servidor via RSYNC
+#   USUARIO - Usuario a ser usado para acesso ao servidor via RSYNC
+#   IPSERVER - IP do servidor a ser acessado via RSYNC
+_baixarviarsync () {
+  
+    # Exibe os resultados finais se houver
+    if (( ${#NOMEPROG[@]} > 0 )); then
+        _mensagec "${YELLOW}" "Resultados armazenados:"
         _linha
-        _mensagec "${GREEN}" "Transferindo: $arquivo"
+        _mensagec "${GREEN}" "${NOMEPROG[@]}"
+
+        # Realiza o RSYNC
         _linha
-        _run_scp
-    done
-else
-_mensagec "${RED}" "Nenhum valor armazenado."
-_mensagec "${GREEN}" "Processo finalizado."
-fi
+        _mensagec "${YELLOW}" "Realizando RSYNC dos arquivos..."
+        for arquivo in "${NOMEPROG[@]}"; do
+            _linha
+            _mensagec "${GREEN}" "Transferindo: $arquivo"
+            _linha
+            _mensagec "${YELLOW}" "${M29}"
+            _linha  
+            rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
+        done
+    else
+        _mensagec "${RED}" "Nenhum valor armazenado."
+        _mensagec "${GREEN}" "Processo finalizado."
+    fi
 }
 
+    # _servacessoff - Move arquivos do diretorio SERACESOFF para o diretorio atual
+    #
+    # Move os arquivos do diretorio SERACESOFF para o diretorio atual.
+    #
+    # Opcoes:
+    #   NAO TEM
+    #
+    # Variaveis:
+    #   SERACESOFF - Caminho do diretorio SERACESOFF
+    #   destino - Caminho do diretorio raiz
 _servacessoff () {
-    if [[ -z "${SERACESOFF}" ]]; then
-        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
-        return
-    fi
+    if [[ "${SERACESOFF}" != "" ]]; then
     local SAOFF="${destino}${SERACESOFF}"
 
     if [[ ! -d "${SAOFF}" ]]; then
@@ -1148,27 +1132,35 @@ _servacessoff () {
         return
     fi
 
-    for arquivo in "${SAOFF}"/*.zip; do
-        mv -f -- "${arquivo}" "." || exit 1
-        _press
-        _mensagec "${YELLOW}" "Arquivo movido: ${arquivo}"
-    done
+     for arquivo in "${SAOFF}/""${NOMEPROG[@]}"; do
+     mv -f -- "${SAOFF}/${arquivo}" "." 
+     done
+M42="O programa a ser atualizado, ""${NOMEPROG[*]}"
+M422=" nao foi encontrado no diretorio ""${SAOFF}" 
+     _linha 
+     _mensagec "${RED}" "${M42}"
+     _mensagec "${RED}" "${M422}"
+     _linha 
+     _press
+     _principal       
+fi
 }
 
-# _pacoteon: Realiza a atualização de um programa em um servidor com acesso à rede externa.
-#
-# Este método:
-# - Verifica se a variável SERACESOFF está configurada.
-# - Solicita o nome do programa a ser atualizado com o método _qualprograma.
-# - Baixa o arquivo de atualização via SCP com o método _baixarviascp.
-# - Exibe uma mensagem informando que a atualização está em andamento.
-# - Chama o método _atupacote para atualizar o programa.
-# - Aguarda um pressionamento de tecla.
-# - Volta para o menu principal.
-
+    # _pacoteon: Realiza a atualização de um programa em um ambiente online.
+    #
+    # Este método:
+    # - Solicita o nome do programa a ser atualizado utilizando o método _qualprograma.
+    # - Exibe uma mensagem indicando que a atualização está em andamento.
+    # - Realiza o download do pacote via RSYNC.
+    # - Atualiza o pacote chamando o método _atupacote.
+    # - Aguarda um pressionamento de tecla e retorna ao menu principal.
+    #
+    # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
+    # e o usuário é retornado ao menu principal.
 _pacoteon () {
     _qualprograma
-    _baixarviascp 
+#    _baixarviascp
+    _baixarviarsync
     _linha 
     _atupacote
     _press 
@@ -1178,15 +1170,15 @@ _pacoteon () {
     # _pacoteoff: Realiza a atualização de um programa em um ambiente offline.
     #
     # Este método:
+    # - Verifica se o diretório SERACESOFF existe e está configurado.
+    # - Move os arquivos do diretório SERACESOFF para o diretório atual.
     # - Solicita o nome do programa a ser atualizado utilizando o método _qualprograma.
     # - Exibe uma mensagem indicando que a atualização está em andamento.
-    # - Verifica se o diretório de acesso offline está configurado corretamente com o método _servacessoff.
     # - Atualiza o pacote chamando o método _atupacote.
     # - Aguarda um pressionamento de tecla e retorna ao menu principal.
     #
     # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
     # e o usuário é retornado ao menu principal.
-
 _pacoteoff () {
     if [[ -z "${SERACESOFF}" ]]; then
         _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
@@ -1219,6 +1211,16 @@ _pacoteoff () {
     _principal
 }
 
+    # Atualiza os pacotes de programa.
+    #
+    # Essa função processa os arquivos de atualização de programas,
+    # descompactando e atualizando os arquivos de programa antigos.
+    # Os arquivos de programa antigos são salvos no diretório de backup
+    # (OLDS) com o nome do arquivo seguido de "-anterior.zip".
+    # A função também move os arquivos .class, .int e .TEL para os
+    # diretórios E_EXEC e T_TELAS, respectivamente.
+    # Caso ocorra algum erro, uma mensagem de erro é exibida e o
+    # usuário é retornado ao menu principal.
 _atupacote() {
     local arquivo
     local extensao
@@ -1354,10 +1356,14 @@ done
     _linha
 }
  
-#-VOLTA DE PROGRAMA CONCLUIDA
-# Mostra uma mensagem de fim de atualizacao de programa e pergunta se deseja voltar mais algum 
-# programa. Se sim, chama a funcao "_voltaprog" para voltar o programa, se nao, volta ao menu 
-# principal.
+    # _voltamaisprog: Prompt user for additional program updates.
+    #
+    # This function concludes the program rollback process by displaying a message and
+    # optionally prompts the user if they wish to update additional programs. If the user
+    # chooses to update more programs and the option is set to 1, it calls the _voltaprog
+    # function. Otherwise, it returns to the main menu. If the input is invalid, an error
+    # message is displayed, and the user is returned to the main menu.
+
 _voltamaisprog () {
 #-VOLTA DE PROGRAMA CONCLUIDA
      _linha 
@@ -1698,6 +1704,8 @@ _volta_geral () {
 
 _versao () {
     _linha 
+    _mensagec "${YELLOW}" "${M55}"
+    _linha
     printf "\n"
     read -rp "${GREEN}${M57}${NORM}" VERSAO
     if [[ -z "${VERSAO}" ]]; then
@@ -1732,10 +1740,7 @@ _biblioteca () {
     local INI
     VERSAO=" " # Variavel que define a versao do programa.
 #    clear
-    _meiodatela
-    _mensagec "${RED}" "${M55}"
-    _linha
-    printf "\n"
+   
     clear
     M401="Menu da Biblioteca"
     M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
@@ -1764,11 +1769,11 @@ _biblioteca () {
     _mensagec "${GREEN}" "${M406}"
     printf "\n"
     _mensagec "${GREEN}" "${M407}"
-    printf "\n"
+    printf "\n\n"
     _mensagec "${PURPLE}" "${M408}"
     printf "\n"
     _mensagec "${GREEN}" "${M409}"
-    printf "\n"
+    printf "\n\n"
     _mensagec "${GREEN}" "${M410}"
     printf "\n"        
     _linha "="
@@ -1784,52 +1789,31 @@ _biblioteca () {
     esac
 }
 _variaveis_atualiza () {
-
-     ATUALIZA1="${SAVATU1}""${VERSAO}".zip
-     ATUALIZA2="${SAVATU2}""${VERSAO}".zip
-     ATUALIZA3="${SAVATU3}""${VERSAO}".zip
-     ATUALIZA4="${SAVATU4}""${VERSAO}".zip
+     ATUALIZA1="${SAVATU1}${VERSAO}.zip"
+     ATUALIZA2="${SAVATU2}${VERSAO}.zip"
+     ATUALIZA3="${SAVATU3}${VERSAO}.zip"
+     ATUALIZA4="${SAVATU4}${VERSAO}.zip"
 }
-#-Processo de recepcao da biblioteca---------------------------------------------------------------#
-#-Recebe a biblioteca da SAV atraves do scp
-# 
-# _scp_biblioteca
-# 
-# Recebe a biblioteca da SAV atraves do scp.
-# Esta funcao e responsavel por receber a biblioteca da SAV atraves do scp.
-_scp_biblioteca () {
+# _rsync_biblioteca - Realiza o RSYNC da biblioteca do servidor OFF.
+#
+# Sincroniza a biblioteca do servidor OFF com a local.
+#
+# Opcoes:
+#   NAO TEM
+#
+# Variaveis:
+#   USUARIO - Usuario a ser usado para acesso ao servidor via RSYNC
+#   IPSERVER - IP do servidor a ser acessado via RSYNC
+#   PORTA - Numero da porta a ser usada para acesso ao servidor via RSYNC
+#   DESTINO2 - Caminho do diretorio remoto com a biblioteca a ser baixada
+#   SAVATU - Caminho do diretorio local com a biblioteca a ser baixada
+#   VERSAO - Versao do sistema que esta sendo usado
+_rsync_biblioteca () {
+    local source="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
+    local destino="."
 
-     if [[ -z "${DESTINO2}" ]]; then
-          _mensagec "${RED}" "O destino da biblioteca nao foi informado"
-          exit 1
-     fi
-
-     if [[ -z "${VERSAO}" ]]; then
-          _mensagec "${RED}" "A versao da biblioteca nao foi informada"
-          exit 1
-     fi
-
-     if [[ -z "${SAVATU1}" || -z "${SAVATU2}" || -z "${SAVATU3}" ]]; then
-          _mensagec "${RED}" "As variaveis SAVATU1, SAVATU2 e SAVATU3 nao foram informadas"
-          exit 1
-     fi
-     _variaveis_atualiza
-     ATU1="${DESTINO2}""${ATUALIZA1}"
-     ATU2="${DESTINO2}""${ATUALIZA2}"
-     ATU3="${DESTINO2}""${ATUALIZA3}"
-     ATU4="${DESTINO2}""${ATUALIZA4}"
-     if [[ -z "${sistema}" ]]; then
-          _mensagec "${RED}" "A variavel sistema nao foi informada"
-          exit 1
-     fi
-
-     if [[ "${sistema}" = "iscobol" ]]; then
-          atu=("${ATU1} ${ATU2} ${ATU3} ${ATU4}")
-     else
-          atu=("${ATU1} ${ATU2} ${ATU3}")
-     fi
-     _run_scp2
-     _salva
+    rsync -avzP -e "ssh -p ${PORTA}" "${source}" "${destino}"
+    _salva
 }
 
 # Acessa o menu de biblioteca no servidor OFF.
@@ -1858,39 +1842,35 @@ _scp_biblioteca () {
 #   1 on error
 
 _acessooff () {
-     #-Servidor OFF acesso
-     local SAOFF="${destino}${SERACESOFF}"
-    if [[ ! -d "${SAOFF}" ]]; then
-        _mensagec "${RED}" "Erro: Diretório ${SAOFF} nao existe"
-        return 1
-    fi
+    local off_directory="${destino}${SERACESOFF}"
+if [[ -n "${SERACESOFF}" ]]; then
+#if [[ "${off_directory}" == "${destino}"]]; then
+        _mensagec "${YELLOW}" "Acessando biblioteca do servidor OFF..."
+        _linha
+        _variaveis_atualiza
+    local -a update_files
 
-     local M44="Acessando biblioteca do servidor OFF..."
-
-     _linha 
-     _mensagec "${YELLOW}" "${M44}"
-     _linha
-
-    _variaveis_atualiza
-    if [[ "${sistema}" = "iscobol" ]]; then
-        local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}" )
+    if [[ "${sistema}" == "iscobol" ]]; then
+        update_files=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}" )
     else
-        local -a atualizas=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" )
+        update_files=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" )
     fi
 
-    for atu in "${atualizas[@]}"; do
-        if [[ -f "${SAOFF}/${atu}" ]]; then
-            if ! mv -f -- "${SAOFF}/${atu}" "${TOOLS}"; then
-                _mensagec "${RED}" "Erro ao mover arquivo ${atu}"
+    for file in "${update_files[@]}"; do
+        if [[ -f "${off_directory}/${file}" ]]; then
+            if ! mv -f -- "${off_directory}/${file}" "${TOOLS}"; then
+                _mensagec "${RED}" "Erro ao mover arquivo ${file}"
                 return 1
             fi
-            local M45="Movendo biblioteca...${atu}"
-            _mensagec "${GREEN}" "${M45}"
+            _mensagec "${GREEN}" "Movendo biblioteca...${file}"
             _linha
         fi
     done
+
     _read_sleep 2
     _salva
+fi    
+
 }
 
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
@@ -1904,12 +1884,18 @@ _transpc () {
     clear
     _versao 
     if [[ -z "${DESTINO2TRANSPC}" ]]; then
+        _linha
         _mensagec "${RED}" "Erro: DESTINO2TRANSPC nao foi definido"
+        _press
         exit 1
     fi
 
-    if [[ -z "${SERACESOFF}" ]]; then
-        _acessooff
+    if [[ -n "${SERACESOFF}" ]]; then
+        _linha
+            _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF, ativo"
+        _linha
+        _press
+        _biblioteca
     fi
 
     _linha
@@ -1922,7 +1908,7 @@ _transpc () {
         _mensagec "${RED}" "Erro: DESTINO2 nao foi definido"
         exit 1
     fi
-    _scp_biblioteca
+    _rsync_biblioteca
 }
 
 #-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
@@ -1934,31 +1920,38 @@ _transpc () {
 _savatu () {
     clear
     _versao
-    if [[ -z "${SERACESOFF}" ]]; then
-        _acessooff
-    fi
-
-    # -Informe a senha do usuario do scp
-    _linha
-    _mensagec "${YELLOW}" "${M29}"
-    _linha
-
     if [[ -z "${DESTINO2SAVATUISC}" ]]; then
         _mensagec "${RED}" "Erro: DESTINO2SAVATUISC nao foi definido"
+        _press
         exit 1
     fi
 
     if [[ -z "${DESTINO2SAVATUMF}" ]]; then
+        _linha
         _mensagec "${RED}" "Erro: DESTINO2SAVATUMF nao foi definido"
         exit 1
     fi
-
+   if [[ -n "${SERACESOFF}" ]]; then
+        _linha
+            _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF, ativo"
+        _linha
+        _press
+        _biblioteca
+    fi
+    _linha
+    _mensagec "${YELLOW}" "${M29}"
+    _linha
     if [[ "${sistema}" = "iscobol" ]]; then
         DESTINO2="${DESTINO2SAVATUISC}"
     else
         DESTINO2="${DESTINO2SAVATUMF}"
     fi
-    _scp_biblioteca
+    
+    if [[ -z "${DESTINO2}" ]]; then
+        _mensagec "${RED}" "Erro: DESTINO2 nao foi definido"
+        exit 1
+    fi
+    _rsync_biblioteca
 }
 
 #
@@ -2403,8 +2396,8 @@ _ferramentas () {
     M505="3${NORM} - Rotina de Backup        "
     M506="4${NORM} - Envia e Recebe Arquivos "
     M507="5${NORM} - Expurgador de Arquivos  "
-    M508="7${NORM} - Parametros              "
-    M509="8${NORM} - Update                  "	
+    M508="6${NORM} - Parametros              "
+    M509="7${NORM} - Update                  "	
     M510="9${NORM} - ${RED}Menu Anterior  "
     _linha "="
     _mensagec "${RED}" "${M501}"
@@ -2422,7 +2415,7 @@ _ferramentas () {
         _mensagec "${GREEN}" "${M508}"
         printf "\n"
         _mensagec "${GREEN}" "${M509}"
-        printf "\n"
+        printf "\n\n"
         _mensagec "${GREEN}" "${M510}"
         printf "\n"
         _linha "="
@@ -2431,8 +2424,8 @@ _ferramentas () {
             1) _temps        ;;
             4) _envrecarq    ;;
             5) _expurgador   ;;          
-            7) _parametros   ;;
-            8) _update       ;;
+            6) _parametros   ;;
+            7) _update       ;;
             9) clear ; _principal ;;
             *) _ferramentas ;;
         esac
@@ -2450,7 +2443,7 @@ _ferramentas () {
         _mensagec "${GREEN}" "${M508}"
         printf "\n"
         _mensagec "${GREEN}" "${M509}"
-        printf "\n"
+        printf "\n\n"
     fi
     _mensagec "${GREEN}" "${M510}"
     printf "\n"
@@ -2462,8 +2455,8 @@ _ferramentas () {
         3) _menubackup   ;;
         4) _envrecarq    ;;
         5) _expurgador   ;;
-        7) _parametros   ;;
-        8) _update       ;;
+        6) _parametros   ;;
+        7) _update       ;;
         9) clear ; _principal ;;
         *) _ferramentas ;;
     esac
@@ -2530,7 +2523,7 @@ _temps () {
     _mensagec "${GREEN}" "${M901}"
     printf "\n"
     _mensagec "${GREEN}" "${M902}"
-    printf "\n"
+    printf "\n\n"
     _mensagec "${GREEN}" "${M909}"
     printf "\n"
     _linha "="
@@ -2646,7 +2639,7 @@ _rebuild () {
 	_mensagec "${GREEN}" "${M603}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M604}"
-	printf "\n"
+	printf "\n\n"
      _mensagec "${GREEN}" "${M605}"
      printf "\n"
      _linha "="
@@ -2689,7 +2682,7 @@ fi
 	_mensagec "${GREEN}" "${M902}"
 	printf "\n"
      _mensagec "${GREEN}" "${M903}"
-     printf "\n"
+     printf "\n\n"
      _mensagec "${GREEN}" "${M909}"
      printf "\n"
      _linha "="
@@ -2969,7 +2962,7 @@ _menubackup () { while true ; do
 	_mensagec "${GREEN}" "${M703}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M704}"
-     printf "\n"
+     printf "\n\n"
 	_mensagec "${GREEN}" "${M705}"
      printf "\n"       
 	_linha "="
@@ -3105,7 +3098,8 @@ _myself () {
             _linha
             _mensagec "${YELLOW}" "${M29}"
             _linha
-            "${cmd_scp}" -r -P "${PORTA}" "${BACKUP}/${ARQ}" "${USUARIO}@${IPSERVER}:/${ENVBASE}"
+            rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${ARQ}" "${USUARIO}@${IPSERVER}:/${ENVBASE}"
+ #           scp -r -P "${PORTA}" "${BACKUP}/${ARQ}" "${USUARIO}@${IPSERVER}:/${ENVBASE}"
             M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
             _linha
             _mensagec "${YELLOW}" "${M15}"
@@ -3207,13 +3201,13 @@ elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
      _ferramentas 
      done
      fi
-#-Informe a senha do usuario do scp
+#-Informe a senha do usuario do rsync
      _linha 
      _mensagec "${YELLOW}""${M29}"
      _linha 
      if [[ -n "${IPSERVER}" && -n "${PORTA}" ]]; then
-          "${cmd_scp}" -r -P "${PORTA}" "${BACKUP}""/""${VBACKUP}" "${USUARIO}"@"${IPSERVER}":/"${ENVBASE}" 
-M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
+       rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}""/""${VBACKUP}" "${USUARIO}"@"${IPSERVER}":/"${ENVBASE}" 
+     M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
      _linha 
      _mensagec "${YELLOW}" "${M15}"
      _linha 
@@ -3368,7 +3362,7 @@ _envrecarq () {
 	_mensagec "${GREEN}" "${M802}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M803}"
-	printf "\n"
+	printf "\n\n"
 	_mensagec "${GREEN}" "${M806}"
      printf "\n"       
 	_linha "="
@@ -3464,11 +3458,11 @@ if [[ -z "${ENVBASE}" ]]; then
      _press    
      _envrecarq 
 fi
-#-Informe a senha do usuario do scp
+#-Informe a senha do usuario do rsync
      _linha 
      _mensagec "${YELLOW}" "${M29}"
      _linha 
-     "${cmd_scp}" -r -P "${PORTA}" "${DIRENVIA}"/"${EENVIA}" "${USUARIO}"@"${IPSERVER}":"${ENVBASE}" 
+     rsync -avzP -e "ssh -p ${PORTA}" "${DIRENVIA}"/"${EENVIA}" "${USUARIO}"@"${IPSERVER}":"${ENVBASE}" 
 M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
      _linha 
      _mensagec "${YELLOW}" "${M15}"
@@ -3480,10 +3474,10 @@ M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
 ##---recebe_avulso-------------------------------------
 # _recebe_avulso()
 # 
-# Recebe um arquivo avulso via scp do servidor da SAV.
+# Recebe um arquivo avulso via rsync do servidor da SAV.
 # 
 # - Informe a origem, nome do arquivo e o destino do arquivo.
-# - O usuario do scp sera o mesmo do usuario do atualiza.sh.
+# - O usuario do rsync sera o mesmo do usuario do atualiza.sh.
 # - O diretorio do arquivo recebido sera o mesmo do diretorio do atualiza.sh.
 _recebe_avulso () {
      clear
@@ -3526,11 +3520,11 @@ M995="Diretorio nao foi encontrado no servidor"
      _envrecarq
 fi
 
-#-Informe a senha do usuario do scp
+#-Informe a senha do usuario do rsync
      _linha 
      _mensagec "${YELLOW}" "${M29}"
      _linha 
-     "${cmd_scp}" -r -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/". 
+    rsync -avzP -e "ssh -p ${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/". 
 M15="Arquivo enviado para a pasta, \"""${EDESTINO}""\"."
      _linha 
      _mensagec "${YELLOW}" "${M15}"
