@@ -26,10 +26,9 @@ UPDATE="27/01/2025"                                                             
 # Menus                                                                                                                #
 # 1 - Atualizacao de Programas                                                                                         #
 # 2 - Atualizacao de Biblioteca                                                                                        #
-# 3 - Desatualizando                                                                                                   #
-# 4 - Versao do Iscobol                                                                                                #
-# 5 - Versao do Linux                                                                                                  #
-# 6 - Ferramentas                                                                                                      #
+# 3- Versao do Iscobol                                                                                                #
+# 4- Versao do Linux                                                                                                  #
+# 5- Ferramentas                                                                                                      #
 #                                                                                                                      #
 #      1 - Atualizacao de Programas                                                                                    #
 #            1.1 - ON-Line                                                                                             #
@@ -40,6 +39,10 @@ UPDATE="27/01/2025"                                                             
 #            1.2 - OFF-Line                                                                                            #
 #      Atualiza o arquivo de programa ".zip" que deve ter sido colocado em ?/sav/tmp.                                  #
 #      O processo de atualizacao e identico ao passo acima.                                                            #
+#            1.3  Voltar programa Atualizado                                                                          #
+#      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com o nome de ("programa"-anterior.zip)             #
+#      na pasta dos programas.                                                                                         #
+
 #                                                                                                                      #
 #      2 - Atualizacao de Biblioteca                                                                                   #
 #            2.1 - Atualizacao do Transpc                                                                              #
@@ -55,54 +58,48 @@ UPDATE="27/01/2025"                                                             
 #            2.3 - Atualizacao9 OFF-Line                                                                               #
 #      Atualiza a biblioteca que deve estar salva no diretorio ?/sav/tmp                                               #
 #      Mesmo procedimento acima.                                                                                       #
-#                                                                                                                      #
-#      3 - Desatualizando                                                                                              #
-#            3.1 - Voltar programa Atualizado                                                                          #
-#      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com o nome de ("programa"-anterior.zip)             #
-#      na pasta dos programas.                                                                                         #
-#                                                                                                                      #
-#            3.2 - Voltar antes da Biblioteca                                                                          #
+#            2.4 - Voltar antes da Biblioteca                                                                          #
 #      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com nome ("backup-versao da biblioteca".zip)        #
 #      na pasta dos programas.                                                                                         #
 #                                                                                                                      #
-#      4 - Versao do Iscobol                                                                                           #
+#      3 - Versao do Iscobol                                                                                           #
 #            Verifica qual a versao do iscobol que esta sendo usada.                                                   #
 #                                                                                                                      #
-#      5 - Versao do Linux                                                                                             #
+#      4 - Versao do Linux                                                                                             #
 #            Verifica qual o Linux em uso.                                                                             #
 #                                                                                                                      #
-#      6 - Ferramentas                                                                                                 #
-#           6.1 - Limpar Temporarios                                                                                   #
-#               6.1.1 - Le os arquivos da lista "atualizat" compactando na pasta ?/sav/tmp/backup                      #
+#      5 - Ferramentas                                                                                                 #
+#           5.1 - Limpar Temporarios                                                                                   #
+#               5.1.1 - Le os arquivos da lista "atualizat" compactando na pasta ?/sav/tmp/backup                      #
 #                       com o nome de Temp(dia+mes+ano) e excluindo da pasta de dados.                                 #
-#               6.1.2 - Adiciona arquivos no "ATUALIZAT"                                                               #
+#               5.1.2 - Adiciona arquivos no "ATUALIZAT"                                                               #
 #                                                                                                                      #
-#           6.2 - Recuperar arquivos                                                                                   #
-#               6.2.1 - Um arquivo ou Todos                                                                            #
+#           5.2 - Recuperar arquivos                                                                                   #
+#               5.2.1 - Um arquivo ou Todos                                                                            #
 #                   Opcao pede para informa um arquivo especifico, somente o nome sem a extensao                       #
 #                   ou se deixar em branco o nome do arquivo vai recuperar todos os arquivos com as extens es,         #
 #                   "*.ARQ.dat" "*.DAT.dat" "*.LOG.dat" "*.PAN.dat"                                                    #
 #                                                                                                                      #
-#               6.2.2 - Arquivos Principais                                                                            #
+#               5.2.2 - Arquivos Principais                                                                            #
 #                   Roda o Jtuil somente nos arquivos que estao na lista "atualizaj"                                   #
 #                                                                                                                      #
-#           6.3 - Backup da base de dados                                                                              #
-#               6.3.1 - Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                            #
-#               6.3.2 - Restaura Backup da base de dados                                                               #
-#               6.3.3 - Enviar Backup selecionado                                                                      #
+#           5.3 - Backup da base de dados                                                                              #
+#               5.3.1 - Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                            #
+#               5.3.2 - Restaura Backup da base de dados                                                               #
+#               5.3.3 - Enviar Backup selecionado                                                                      #
 #                                                                                                                      #  
-#           6.4 - Envia e Recebe Arquivos "Avulsos"                                                                    #
-#               6.4.1 - Enviar arquivo(s)                                                                              #
-#               6.4.2 - Receber arquivo(s)                                                                             #
+#           5.4 - Envia e Recebe Arquivos "Avulsos"                                                                    #
+#               5.4.1 - Enviar arquivo(s)                                                                              #
+#               5.4.2 - Receber arquivo(s)                                                                             #
 #                                                                                                                      #
-#           6.5 - Expurgador de arquivos                                                                               #
+#           5.5 - Expurgador de arquivos                                                                               #
 #               Excluir, zips e bkps com mais de 30 dias processado dos diretorios:                                    #
 #                /backup, /olds /progs e /logs                                                                         #
 #                                                                                                                      # 
-#           6.7 - Parametros                                                                                           #    
+#           5.6 - Parametros                                                                                           #    
 #                 Variaves e caminhos necessarios para o funcionamento do atualiza.sh                                  # 
 #                                                                                                                      # 
-#           6.8 - Update                                                                                               #
+#           5.7 - Update                                                                                               #
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#
@@ -232,7 +229,7 @@ _check_instalado() {
     local Z1="Aparentemente falta algum programa que nao esta instalado nesta distribuicao."
 
     # Informe abaixo no comando for se precisar informar mais algum programa a ser checado.
-    for prog in zip unzip; do
+    for prog in zip unzip rsync wget; do
         if ! command -v "${prog}" &> /dev/null; then
             printf "\n"
             printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "${Z1}" ;printf "%*s""${NORM}"
@@ -1181,21 +1178,19 @@ _pacoteon () {
     # e o usuário é retornado ao menu principal.
 _pacoteoff () {
     if [[ -z "${SERACESOFF}" ]]; then
-        _mensagec "${RED}" "Erro: SERACESOFF nao está configurado"
-        return
-    fi    
-    _servacessoff
-    
+            # Exibe mensagem de atualização
+    _linha
+    _mensagec "${YELLOW}" "${M09}"
+    _linha
+    _read_sleep 1
+    else   
+       _servacessoff
+    fi
     # Solicita o nome do programa a ser atualizado
     if ! _qualprograma; then
         return
     fi
 
-    # Exibe mensagem de atualização
-    _linha
-    _mensagec "${YELLOW}" "${M09}"
-    _linha
-    _read_sleep 1
 
     # Atualiza o pacote
     if ! _atupacote; then
@@ -2044,17 +2039,17 @@ _processo () {
     if [[ "${sistema}" = "iscobol" ]]; then
         cd "${destino}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${destino}"; exit 1; }
         
-        for dir in "${exec}" "${telas}" "${xml}"; do
+        for dir in "${E_EXEC}" "${T_TELAS}" "${X_XML}"; do
             _mensagec "${GREEN}" "${M14}${dir}"
             if [[ -n "${cmd_find}" && -n "${OLDS}" && -n "${INI}" ]]; then
                 case "${dir}" in
-                    "${exec}")
+                    "${E_EXEC}")
                         ext="*.class *.jpg *.png *.brw *.* *.dll"
                         ;;
-                    "${telas}")
+                    "${T_TELAS}")
                         ext="*.TEL"
                         ;;
-                    "${xml}")
+                    "${X_XML}")
                         ext="*.xml"
                         ;;
                     *)
@@ -2080,14 +2075,14 @@ _processo () {
     else
         cd "${destino}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${destino}"; exit 1; }
         
-        for dir in "${exec}" "${telas}"; do
+        for dir in "${E_EXEC}" "${T_TELAS}"; do
             _mensagec "${GREEN}" "${M14}${dir}"
             if [[ -n "${cmd_find}" && -n "${OLDS}" && -n "${INI}" ]]; then
                 case "${dir}" in
-                    "${exec}")
+                    "${E_EXEC}")
                         ext="*.int"
                         ;;
-                    "${telas}")
+                    "${T_TELAS}")
                         ext="*.TEL"
                         ;;
                     *)
