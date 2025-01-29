@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="28/01/2025"                                                                                                    #
+UPDATE="29/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -310,7 +310,7 @@ M18="Arquivo(s) recuperado(s)..."
 M20="Alterando a extensao da atualizacao"
 M24=".. BACKUP do programa efetuado .."
 M25="... Voltando versao anterior ..."
-M26="... Agora, ATUALIZANDO ..."
+M26="... Agora, ATUALIZANDO os programas ..."
 M27=" .. Backup Completo .."
 M28="Arquivo encontrado no diretorio"
 M29="Informe a senha para o usuario do rsync:"
@@ -1206,6 +1206,17 @@ _pacoteoff () {
     _principal
 }
 
+# Obtém a data e hora de modificação do arquivo novo
+_data_do_arquivo () {
+arquivo_novo="${arquivo}"
+data_novo=$(stat -c %y "${E_EXEC}"/"$arquivo_novo")
+# Formata a data e hora para dia/mês/ano e horário
+data_formatada_novo=$(date -d "$data_novo" +"%d/%m/%Y %H:%M:%S")
+    _mensagec "${GREEN}" "Nome do programa: ""$arquivo_novo"
+    _mensagec "${YELLOW}" "Data do programa: ""$data_formatada_novo"
+    _linha
+    _read_sleep 1
+}
     # Atualiza os pacotes de programa.
     #
     # Essa função processa os arquivos de atualização de programas,
@@ -1317,7 +1328,8 @@ done
                         return
                     }
                 else
-                    mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}" || {
+                    mv -f -- "${arquivo}" "${E_EXEC}" >> "${LOG_ATU}"
+                        _data_do_arquivo || {
                         _mensagec "${RED}" "Erro ao mover ${arquivo}"
                         return
                     }
@@ -1327,6 +1339,8 @@ done
     done
     _mensagec "${GREEN}" "${M26}"
     _linha
+    
+
 
     # Altera extensões e move arquivos para o diretório PROGS
     for arquivo in "${NOMEPROG[@]}"; do
