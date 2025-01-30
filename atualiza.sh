@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="29/01/2025"                                                                                                    #
+UPDATE="30/01/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1156,7 +1156,6 @@ fi
     # e o usuário é retornado ao menu principal.
 _pacoteon () {
     _qualprograma
-#    _baixarviascp
     _baixarviarsync
     _linha 
     _atupacote
@@ -1207,15 +1206,25 @@ _pacoteoff () {
 }
 
 # Obtém a data e hora de modificação do arquivo novo
+    # Exibe a data e hora de modificação do arquivo novo
+    #
+    # Exibe uma mensagem com o nome do arquivo e a data e hora de modificação
+    # do arquivo novo.
+    #
+    # Argumentos:
+    #   Nenhum
+    #
+    # Retorno:
+    #   Nenhum
 _data_do_arquivo () {
-arquivo_novo="${arquivo}"
-data_novo=$(stat -c %y "${E_EXEC}"/"$arquivo_novo")
-# Formata a data e hora para dia/mês/ano e horário
-data_formatada_novo=$(date -d "$data_novo" +"%d/%m/%Y %H:%M:%S")
-    _mensagec "${GREEN}" "Nome do programa: ""$arquivo_novo"
-    _mensagec "${YELLOW}" "Data do programa: ""$data_formatada_novo"
+    local novo_arquivo="${arquivo}"
+    local data_modificacao
+    data_modificacao=$(stat -c %y "${E_EXEC}/${novo_arquivo}")
+    local data_formatada
+    data_formatada=$(date -d "$data_modificacao" +"%d/%m/%Y %H:%M:%S")
+    _mensagec "${GREEN}" "Nome do programa: ${novo_arquivo}"
+    _mensagec "${YELLOW}" "Data do programa: ${data_formatada}"
     _linha
-    _read_sleep 1
 }
     # Atualiza os pacotes de programa.
     #
@@ -1235,11 +1244,11 @@ _atupacote() {
     # Verifica se o programa existe
     if (( ${#NOMEPROG[@]} == 0 )) || [[ ! -f "${NOMEPROG[0]}" ]]; then
         _linha
-        _mensagec "${RED}" "Programa(s) nao encontrado(s) no diretorio"
+        _mensagec "${RED}" "Um deste(s) programa(s) ${NOMEPROG[*]} nao foram encontrado(s) no diretorio"
         _linha
         _press
-        _principal
-        return
+    #    _principal
+    #    return
     fi
     # Processa programas antigos
 for  f in "${!programas[@]}"; do
@@ -1305,16 +1314,12 @@ done
             _mensagec "${RED}" "Erro: Arquivo de atualizacao ${arquivo} nao existe"
             _linha
             _press
-            _principal
-            return
         fi
         if ! "${cmd_unzip}" -o "${arquivo}" >> "${LOG_ATU}"; then
             _linha
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
             _linha
             _press
-            _principal
-            return
         fi
     done
 
