@@ -1121,7 +1121,7 @@ _baixarviarsync () {
     #   SERACESOFF - Caminho do diretorio SERACESOFF
     #   destino - Caminho do diretorio raiz
 _servacessoff () {
-    if [[ "${SERACESOFF}" != "" ]]; then
+if [[ "${SERACESOFF}" != "" ]]; then
     local SAOFF="${destino}${SERACESOFF}"
 
     if [[ ! -d "${SAOFF}" ]]; then
@@ -1129,17 +1129,20 @@ _servacessoff () {
         return
     fi
 
-     for arquivo in "${SAOFF}/""${NOMEPROG[@]}"; do
-     mv -f -- "${SAOFF}/${arquivo}" "." 
-     done
-M42="O programa a ser atualizado, ""${NOMEPROG[*]}"
-M422=" nao foi encontrado no diretorio ""${SAOFF}" 
+    for arquivo in "${SAOFF}/""${NOMEPROG[@]}"; do
+     if [[ -f "${arquivo}" ]]; then
+        mv -f -- "${arquivo}" "." 
+     else
+    M42="O programa a ser atualizado, ""${NOMEPROG[*]}"
+    M422=" nao foi encontrado no diretorio ""${SAOFF}" 
      _linha 
      _mensagec "${RED}" "${M42}"
      _mensagec "${RED}" "${M422}"
      _linha 
      _press
-     _principal       
+     _principal
+     fi 
+    done
 fi
 }
 
@@ -1176,20 +1179,15 @@ _pacoteon () {
     # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
     # e o usuário é retornado ao menu principal.
 _pacoteoff () {
-    if [[ -z "${SERACESOFF}" ]]; then
-            # Exibe mensagem de atualização
-    _linha
-    _mensagec "${YELLOW}" "${M09}"
-    _linha
-    _read_sleep 1
-    else   
-       _servacessoff
-    fi
     # Solicita o nome do programa a ser atualizado
     if ! _qualprograma; then
         return
     fi
-
+     _linha
+     _mensagec "${YELLOW}" "${M09}"
+     _linha
+     _read_sleep 1
+     _servacessoff
 
     # Atualiza o pacote
     if ! _atupacote; then
@@ -3086,10 +3084,10 @@ _myself () {
             _ferramentas
             return ;;
         [Ss])
-            if [[ -z "${SERACESOFF}" ]]; then
-                SAOFF=${destino}${SERACESOFF}
-                mv -f -- "${BACKUP}/${VBACKUP}" "${SAOFF}"
-                MA11="Backup enviado para o diretorio:"
+            if [[ "${SERACESOFF}" != "" ]]; then
+                local SAOFF=${destino}${SERACESOFF}
+                mv -f -- "${BACKUP}/${ARQ}" "${SAOFF}"
+                MA11="Backup enviado para o diretorio:${SAOFF}"
                 _linha
                 _mensagec "${YELLOW}" "${MA11}"
                 _linha
@@ -3113,7 +3111,6 @@ _myself () {
             _mensagec "${YELLOW}" "${M29}"
             _linha
             rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${ARQ}" "${USUARIO}@${IPSERVER}:/${ENVBASE}"
- #           scp -r -P "${PORTA}" "${BACKUP}/${ARQ}" "${USUARIO}@${IPSERVER}:/${ENVBASE}"
             M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
             _linha
             _mensagec "${YELLOW}" "${M15}"
@@ -3183,16 +3180,16 @@ MA1="O backup \"""${VBACKUP}""\""
      _linha
      _mensagec "${YELLOW}" "${MA1}"
      _linha 
-
-if [[ -z "${SERACESOFF}" ]]; then 
-          SAOFF=${destino}${SERACESOFF}
-          mv -f -- "${BACKUP}"/"${VBACKUP}" "${SAOFF}"
+###
+if [[ "${SERACESOFF}" != "" ]]; then
+    SAOFF=${destino}${SERACESOFF}
+    mv -f -- "${BACKUP}"/"${VBACKUP}" "${SAOFF}"
 MA11="Backup enviado para o diretorio:"   
-     _linha
-     _mensagec "${YELLOW}" "${MA11}"
-     _linha 
-          _press    
-     _ferramentas 
+    _linha
+    _mensagec "${YELLOW}" "${MA11}"
+    _linha 
+    _press    
+    _ferramentas 
 fi
 
      _linha 
@@ -3246,7 +3243,6 @@ fi
 # resposta do usuário, ele restaura arquivos específicos ou todos os arquivos para suas versões anteriores.
 _unbackup () {
 local DIRBACK="${BACKUP}"/dados
-local VBACKUP="${EMPRESA}"_"${VBACK}"".zip"
 
 if [[ ! -d "${DIRBACK}" ]]; then
     M22=".. Criando o diretorio temp do backup em ${DIRBACK}.." 
@@ -3262,6 +3258,7 @@ _mensagec "${RED}" "${M53}"
 _linha
 MA9="         1- Informe somente a data do BACKUP: " 
 read -rp "${YELLOW}${MA9}${NORM}" VBACK
+local VBACKUP="${EMPRESA}"_"${VBACK}"".zip"
 while [[ -f "${VBACKUP}" || -z "${VBACKUP}" ]]; do 
     clear
     _meiodatela
@@ -3286,7 +3283,7 @@ read -rp "${YELLOW}${M35}${NORM}" -n1
 printf "\n\n"
 
 if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-    MB1="       2- Informe o somente nome do arquivo em maiusculo: "
+    MB1="       2- Informe o somente nome do arquivo em maiusculo e a sem extensao: "
     read -rp "${YELLOW}${MB1}${NORM}" VARQUIVO
     while [[ "${VARQUIVO}" =~ [^A-Z0-9] || -z "${VARQUIVO}" ]] ; do
         _mensagec "${RED}" "${M71}"
@@ -3301,10 +3298,9 @@ if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
     _mensagec "${YELLOW}" "${M33}"
     _mensagec "${YELLOW}" "${M34}"
     _linha 
-    cd "${DIRBACK}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" "${VARQUIVO}*.*" >> "${LOG_ATU}"
+    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" "${VARQUIVO}*.*" -d "${BASE1}" >> "${LOG_ATU}"
     _read_sleep 1
-    if ls -s "${VARQUIVO}"*.* >erro /dev/null 2>&1 ; then
+    if ls -s "${BASE1}/${VARQUIVO}"*.* >erro /dev/null 2>&1 ; then
         #-"Arquivo encontrado no diretorio"
         _linha 
         _mensagec "${YELLOW}" "${M28}"
@@ -3317,9 +3313,7 @@ if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
         _press 
         _menubackup  
     fi
-    mv -f "${VARQUIVO}"*.* "${BASE1}" >> "${LOG_ATU}" 
-    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-    clear
+        clear
     #-"VOLTA DO ARQUIVO CONCLUIDA"
     _linha 
     _mensagec "${YELLOW}" "${M04}"
@@ -3334,10 +3328,7 @@ elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
     _mensagec "${YELLOW}" "${M33}"
     _mensagec "${YELLOW}" "${M34}"
     _linha 
-    cd "${DIRBACK}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" >> "${LOG_ATU}"
-    mv -f -- *.* "${BASE1}" >> "${LOG_ATU}"
-    cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
+    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" -d "${BASE1}" >> "${LOG_ATU}"
     clear
     #-"VOLTA DOS ARQUIVOS CONCLUIDA"
     _linha 
