@@ -1027,11 +1027,11 @@ while (( contador < MAX_REPETICOES )); do
     
     # Verifica se foi digitado ENTER ou espaço
     if [[ -z "${programa}" ]]; then
-        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo..."
+        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo ou Continuando..."
         break
     fi
     if [[ "${programa}" == " " ]]; then
-        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo..."
+        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo ou Continuando..."
         break
     fi
     # Verifica se o nome do programa é válido
