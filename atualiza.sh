@@ -1824,8 +1824,8 @@ _variaveis_atualiza () {
 #   destino - Caminho do diretorio local onde o arquivo sera salvo
 _rsync_biblioteca() {
     local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
-    
-    rsync -avzP -e "ssh -p ${PORTA}" "${src}" .
+    local dst="."
+    rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
     _salva
 }
 
@@ -2578,8 +2578,8 @@ _limpeza () {
         _meiodatela
         _messagec RED "${M63}"
     fi
-    for base in $base $base2 $base3; do
-        DIRB="${destino}${base}/"
+    for bases in $base $base2 $base3; do
+        local DIRB="${destino}${bases}/"
         if [[ -d "${DIRB}" ]]; then
             _limpando
             _press
