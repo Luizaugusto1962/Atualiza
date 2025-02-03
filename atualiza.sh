@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="30/01/2025"                                                                                                    #
+UPDATE="03/02/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1806,23 +1806,24 @@ _variaveis_atualiza () {
      ATUALIZA3="${SAVATU3}${VERSAO}.zip"
      ATUALIZA4="${SAVATU4}${VERSAO}.zip"
 }
-# _rsync_biblioteca - Realiza o RSYNC da biblioteca do servidor OFF.
+
+# _rsync_biblioteca - Realiza o RSYNC da biblioteca
 #
-# Sincroniza a biblioteca do servidor OFF com a local.
+# RSYNC the library from the OFF server and save the zip file to the local destination.
 #
-# Opcoes:
+# Parameters:
 #   NAO TEM
 #
-# Variaveis:
+# Variables:
 #   USUARIO - Usuario a ser usado para acesso ao servidor via RSYNC
 #   IPSERVER - IP do servidor a ser acessado via RSYNC
 #   PORTA - Numero da porta a ser usada para acesso ao servidor via RSYNC
-#   DESTINO2 - Caminho do diretorio remoto com a biblioteca a ser baixada
-#   SAVATU - Caminho do diretorio local com a biblioteca a ser baixada
-#   VERSAO - Versao do sistema que esta sendo usado
+#   DESTINO2 - Caminho do servidor remoto com a biblioteca a ser baixada
+#   SAVATU - Caminho do diretorio da biblioteca no servidor remoto
+#   VERSAO - Versao do programa a ser baixado
+#   destino - Caminho do diretorio local onde o arquivo sera salvo
 _rsync_biblioteca () {
     local source="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
-    local destino="."
 
     rsync -avzP -e "ssh -p ${PORTA}" "${source}" "${destino}"
     _salva
@@ -1856,7 +1857,6 @@ _rsync_biblioteca () {
 _acessooff () {
     local off_directory="${destino}${SERACESOFF}"
 if [[ -n "${SERACESOFF}" ]]; then
-#if [[ "${off_directory}" == "${destino}"]]; then
         _mensagec "${YELLOW}" "Acessando biblioteca do servidor OFF..."
         _linha
         _variaveis_atualiza
