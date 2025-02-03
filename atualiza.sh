@@ -1822,10 +1822,10 @@ _variaveis_atualiza () {
 #   SAVATU - Caminho do diretorio da biblioteca no servidor remoto
 #   VERSAO - Versao do programa a ser baixado
 #   destino - Caminho do diretorio local onde o arquivo sera salvo
-_rsync_biblioteca () {
-    local source="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
-
-    rsync -avzP -e "ssh -p ${PORTA}" "${source}" "${destino}"
+_rsync_biblioteca() {
+    local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
+    
+    rsync -avzP -e "ssh -p ${PORTA}" "${src}" .
     _salva
 }
 
