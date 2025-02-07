@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="03/02/2025"                                                                                                    #
+UPDATE="05/02/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -448,7 +448,7 @@ else
      exit
 fi
 
-# base - Diretorio da Base de dados
+# base - Diretorio da Base de dados principal
 if [[ -n "${base}" ]]; then
      _mensagec "${CYAN}" "${M81}"
 else
@@ -771,12 +771,13 @@ if [[ "${sistema}" = "iscobol" ]]; then
 fi
 
 # Verifica e cria diretório SERACESOFF se necessário
-if [[ -z "${SERACESOFF}" ]]; then
+if [[ -n "${SERACESOFF}" ]]; then
     if ! [[ -d "${SERACESOFF}" ]]; then 
         mkdir -p "${destino}${SERACESOFF}"
     fi
+    _read_sleep 0,30
     BAT="atualiza.bat"
-    if [[ -f "${BAT}" ]]; then
+    if [[ -f "${TOOLS}/${BAT}" ]]; then
         mv -f -- "${BAT}" "${destino}${SERACESOFF}"
     fi
 fi
@@ -902,9 +903,10 @@ _principal () {
      tput clear
 	printf "\n"
 #-100-mensagens do Menu Principal. ----------------------------------------------------------------#	
-	M101="Menu de Opcoes""   -   Versao: ""${BLUE}""${UPDATE}""${NORM}"
-	M102=".. Sistema: ""${sistema}"" ..  =  ..Empresa: ""${EMPRESA}"" .."
-	M103="Escolha a opcao:   "
+	M101="Menu Principal""  =  Versao: ""${BLUE}""${UPDATE}""${NORM}"
+	M1102=".. Empresa: ${EMPRESA} .."
+    M102=".. Sistema: ${sistema} .."
+    M103="Escolha a opcao:   "
 	M104="1${NORM} - Programas                "
     M105="2${NORM} - Biblioteca               " 
 	M111="3${NORM} - Versao do Iscobol        "
@@ -917,8 +919,10 @@ _principal () {
 	_linha "="
 	_mensagec "${RED}" "${M101}"
 	_linha
+    _mensagec "${WHITE}" "${M1102}"
+    _linha
 	_mensagec "${CYAN}" "${M102}"
-	_linha "="
+    _linha "="
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M104}"
@@ -1985,7 +1989,7 @@ _savatu () {
 _atuoff () {
     clear
     _versao
-    if [[ -z "${SERACESOFF}" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         _acessooff
     fi  
     _salva
@@ -2347,7 +2351,7 @@ _linux () {
     printf "\n"
 
     # Checando Externo IP
-    if [[ -z "${SERACESOFF}" ]]; then
+    if [[ -n "${SERACESOFF}" ]]; then
         externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
         printf "${GREEN}""IP Externo :""${NORM}""${externalip}""%*s\n"
     fi
@@ -2727,10 +2731,12 @@ fi
 }
 
 # Configura BASE1 com o caminho para o banco de dados primário.
+# Configura BASE1 com o caminho para o banco de dados prim rio.
 #
-# Esta função define a variável BASE1 para o caminho concatenado
-# composto pelas variáveis ​​`destino` e `base`, que representa
-# Configura BASE1 com o caminho para o banco de dados primário.
+# Verifica se as variaveis de ambiente destino e base estao configuradas.
+# Caso nao estejam, exibe uma mensagem de erro e sai do programa.
+# Caso estejam, define a variavel BASE1 com o valor de destino concatenado
+# com o valor de base.
 _dbase1 () {
     if [[ -z "${destino}" || -z "${base}" ]]; then
         printf "Erro: Variaveis de ambiente destino ou base nao estao configuradas.\n"
@@ -3076,6 +3082,9 @@ _myself () {
     _linha
     _mensagec "${YELLOW}" "${M16}"
     _linha
+    MA116="Backup sera enviado para o diretorio: ${ENVIABACK}"
+        _mensagec "${YELLOW}" "${MA116}"
+    _linha
     read -rp "${YELLOW}${M40}${NORM}" -n1
     printf "\n\n"
 
@@ -3242,7 +3251,7 @@ fi
 # O usuário é questionado se deseja restaurar todos os arquivos para o estado anterior à atualização. Baseado em
 # resposta do usuário, ele restaura arquivos específicos ou todos os arquivos para suas versões anteriores.
 _unbackup () {
-local DIRBACK="${BACKUP}"/dados
+local DIRBACK="${BACKUP}"
 
 if [[ ! -d "${DIRBACK}" ]]; then
     M22=".. Criando o diretorio temp do backup em ${DIRBACK}.." 
@@ -3591,7 +3600,7 @@ _ferramentas
 # acesso a rede.
 _update () {
 local SAOFF="${destino}${SERACESOFF}"
-if [[ -z "${SERACESOFF}" ]]; then 
+if [[ -n "${SERACESOFF}" ]]; then 
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
