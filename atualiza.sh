@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="05/02/2025"                                                                                                    #
+UPDATE="10/02/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1246,13 +1246,12 @@ _atupacote() {
     # Verifica se o programa existe
     if (( ${#NOMEPROG[@]} == 0 )) || [[ ! -f "${NOMEPROG[0]}" ]]; then
         _linha
-        _mensagec "${RED}" "Um deste(s) programa(s) ${NOMEPROG[*]} nao foram encontrado(s) no diretorio"
+        _mensagec "${RED}" "Um deste(s) programa(s) ${NOMEPROG[*]} nao encontrado(s) no diretorio"
         _linha
         _press
-    #    _principal
-    #    return
+        _principal
     fi
-    # Processa programas antigos
+# Processa programas antigos
 for  f in "${!programas[@]}"; do
         anterior="${OLDS}/${programas[f]}-anterior.zip"
         if [ -f "$anterior" ]; then
@@ -1307,7 +1306,8 @@ done
     _linha 
     _mensagec "${YELLOW}" "${M24}"
     _linha 
-    _read_sleep 1        
+    _read_sleep 1      
+    #fi      
 
     # Processa de descompactar e atualizar os programas
     for arquivo in "${NOMEPROG[@]}"; do
