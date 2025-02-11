@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="10/02/2025"                                                                                                    #
+UPDATE="11/02/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -393,6 +393,24 @@ _mensagec () {
     printf "%*s""${CCC}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "${MXX}" ;printf "%*s""${NORM}"
 }
 
+_mensaged () {
+    local COR="${1}"
+    local mensagem="${2}"
+#    local posicao_inicio="${1}"
+    # Mensagem a ser impressa
+#mensagem="Alinhado à Direita"
+
+# Obtém a largura do terminal
+largura_terminal=$(tput cols)
+
+# Calcula a posição inicial para imprimir a mensagem à direita
+largura_mensagem=${#mensagem}
+posicao_inicio=$((largura_terminal - largura_mensagem))
+
+# Imprime a mensagem alinhada à direita
+printf "%*s""${COR}" ;printf "%${posicao_inicio}s%s\n" "" "$mensagem" ;printf "%*s""${NORM}"
+    
+}
 #-Variavel para identificar -----------------------------------------------------------------------#
 ## Inicializa a variável DEFAULT_VERSAO como uma string vazia
 DEFAULT_VERSAO=""
@@ -506,7 +524,6 @@ else
      printf "%*s""Diretorio da destino nao encontrado ""${T_TELAS}""...  \n"
      exit
 fi
-
 X_XML=${destino}"/"${xml}
 if [[ -n "${X_XML}" ]] && [[ -d "${X_XML}" ]]; then
      # Diretorio da destino encontrado
@@ -885,6 +902,19 @@ if [[ -z "${UMADATA}" ]]; then
     exit 1
 fi
 
+if [[ -f notepad.txt ]]; then
+FILE="notepad.txt"
+    clear
+    if [[ -f "$FILE" ]]; then
+        if [[ -s "$FILE" ]]; then
+            _mensagec "${YELLOW}" "=== Notas armazenadas ==="
+            cat "$FILE"
+            _linha
+        fi    
+    _press
+    fi
+fi    
+
 clear
 
 # _principal () - Funcao principal do programa
@@ -903,7 +933,7 @@ _principal () {
      tput clear
 	printf "\n"
 #-100-mensagens do Menu Principal. ----------------------------------------------------------------#	
-	M101="Menu Principal""  =  Versao: ""${BLUE}""${UPDATE}""${NORM}"
+	M101="Menu Principal"
 	M1102=".. Empresa: ${EMPRESA} .."
     M102=".. Sistema: ${sistema} .."
     M103="Escolha a opcao:   "
@@ -922,7 +952,7 @@ _principal () {
     _mensagec "${WHITE}" "${M1102}"
     _linha
 	_mensagec "${CYAN}" "${M102}"
-    _linha "="
+    _linha 
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M104}"
@@ -940,19 +970,20 @@ _principal () {
 	_mensagec "${GREEN}" "${M108}"
 	printf "\n\n"
 	_mensagec "${GREEN}" "${M109}"
-     printf "\n"
-     _linha "="
-     read -rp "${YELLOW}${M110}${NORM}" OPCAO
+    printf "\n"
+    _mensaged "${BLUE}" "${UPDATE}"
+    _linha "="
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
-     case ${OPCAO} in
-          1) _atualizacao   ;;
-          2) _biblioteca    ;;
-          3) _iscobol       ;;
-          4) _linux         ;;
-          5) _ferramentas   ;;
-          9) clear ; resetando ;;
+    case ${OPCAO} in
+        1) _atualizacao   ;;
+        2) _biblioteca    ;;
+        3) _iscobol       ;;
+        4) _linux         ;;
+        5) _ferramentas   ;;
+        9) clear ; resetando ;;
           *) clear ; _principal ;;
-     esac
+    esac
 }
 #-Procedimento da atualizacao de programas---------------------------------------------------------# 
 ### _atualizacao
@@ -1775,7 +1806,7 @@ _biblioteca () {
     _linha 
     _mensagec "${RED}" "${M402}"
     _linha 
-    _mensagec "${RED}" "${M403}"
+    _mensagec "${BLUE}" "${M403}"
     _linha "="
     printf "\n"
     _mensagec "${PURPLE}" "${M404}"
@@ -2413,8 +2444,9 @@ _ferramentas () {
     M506="4${NORM} - Envia e Recebe Arquivos "
     M507="5${NORM} - Expurgador de Arquivos  "
     M508="6${NORM} - Parametros              "
-    M509="7${NORM} - Update                  "	
-    M510="9${NORM} - ${RED}Menu Anterior  "
+    M509="7${NORM} - Update                  "
+    M510="8${NORM} - Lembretes               "	
+    M511="9${NORM} - ${RED}Menu Anterior  "
     _linha "="
     _mensagec "${RED}" "${M501}"
     _linha 
@@ -2431,8 +2463,10 @@ _ferramentas () {
         _mensagec "${GREEN}" "${M508}"
         printf "\n"
         _mensagec "${GREEN}" "${M509}"
-        printf "\n\n"
+        printf "\n"
         _mensagec "${GREEN}" "${M510}"
+        printf "\n\n"
+        _mensagec "${GREEN}" "${M511}"
         printf "\n"
         _linha "="
         read -rp "${YELLOW}${M110}${NORM}" OPCAOB
@@ -2442,6 +2476,7 @@ _ferramentas () {
             5) _expurgador   ;;          
             6) _parametros   ;;
             7) _update       ;;
+            8) _lembretes   ;;
             9) clear ; _principal ;;
             *) _ferramentas ;;
         esac
@@ -2459,9 +2494,11 @@ _ferramentas () {
         _mensagec "${GREEN}" "${M508}"
         printf "\n"
         _mensagec "${GREEN}" "${M509}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M510}"
         printf "\n\n"
     fi
-    _mensagec "${GREEN}" "${M510}"
+    _mensagec "${GREEN}" "${M511}"
     printf "\n"
     _linha "="
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
@@ -2473,6 +2510,7 @@ _ferramentas () {
         5) _expurgador   ;;
         6) _parametros   ;;
         7) _update       ;;
+        8) _lembretes    ;;
         9) clear ; _principal ;;
         *) _ferramentas ;;
     esac
@@ -3685,6 +3723,112 @@ printf "${GREEN}""Variavel da mclasse: ""${NORM}""${mclass}""%*s\n"
 _linha
 _press
 _ferramentas
+}
+_lembretes () {
+clear
+# Nome do arquivo onde as notas serão salvas.
+FILE="notepad.txt"
+
+# Função para escrever uma nova nota.
+_escrever_nota() {
+    clear
+    if [[ ! -f "$FILE" ]]; then
+        _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
+        return 1
+    fi
+    _linha
+    _mensagec "${YELLOW}" "Digite sua nota (pressione Ctrl+D para finalizar):"
+    _linha
+   
+    # Ler a entrada e adiciona ao arquivo.
+    if ! cat >> "$FILE"; then
+        _mensagec "${RED}" "Erro: Nao foi possivel gravar a nota!"
+        return 1
+    fi
+
+    echo "Nota gravada com sucesso!"
+    sleep 2
+}
+
+# Função para visualizar as notas.
+_visualizar_notas() {
+    clear
+    if [[ -f "$FILE" ]]; then
+        if [[ -s "$FILE" ]]; then
+            _mensagec "${YELLOW}" "=== Notas armazenadas ==="
+            cat "$FILE"
+            _linha
+        else
+            _mensagec "${YELLOW}" "Nenhuma nota encontrada!"
+        fi
+    else
+        _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
+    fi
+    read -rp "Pressione Enter para continuar..."
+}
+
+# Função para editar as notas utilizando um editor de texto.
+_editar_nota() {
+    clear
+    if [[ -z "$FILE" ]]; then
+        _mensagec "${RED}" "Erro: Caminho do arquivo nao está definido!"
+        return 1
+    fi
+
+    if [[ -f "$FILE" ]]; then
+        # Abre o arquivo no editor padrão definido na variável EDITOR ou no nano, se não houver.
+        if ! ${EDITOR:-nano} "$FILE"; then
+            _mensagec "${RED}" "Erro ao abrir o editor!"
+            return 1
+        fi
+    else
+        _mensagec "${YELLOW}" "Nenhuma nota encontrada para editar!"
+        sleep 2
+    fi
+}
+
+# Loop principal do menu.
+while true; do
+clear 
+###-800-mensagens do Menu Envio e Retorno.
+     M800="====== Bloco de Notas ======    " 
+     M802="1${NORM} - Escrever nova nota   "
+     M803="2${NORM} - Visualizar notas     "
+     M804="3${NORM} - Editar notas         "
+     M806="9${NORM} - ${RED}Menu Anterior"
+	printf "\n"
+	_linha "="
+	_mensagec "${RED}" "${M800}"
+	_linha 
+	printf "\n"
+	_mensagec "${PURPLE}" "${M103}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M802}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M803}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M804}"
+	printf "\n\n"    
+	_mensagec "${GREEN}" "${M806}"
+     printf "\n"       
+	_linha "="
+     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+     case ${OPCAO} in
+        1)
+            _escrever_nota
+            ;;
+        2)
+            _visualizar_notas
+            ;;
+        3)
+            _editar_nota
+            ;;
+        9) clear ; _ferramentas 
+            ;;
+        *) _ferramentas 
+            ;;    
+    esac
+done
 }
 
 _principal
