@@ -902,8 +902,8 @@ if [[ -z "${UMADATA}" ]]; then
     exit 1
 fi
 
-if [[ -f notepad.txt ]]; then
-FILE="notepad.txt"
+if [[ -f atualizal ]]; then
+FILE="atualizal"
     clear
     if [[ -f "$FILE" ]]; then
         if [[ -s "$FILE" ]]; then
@@ -3727,26 +3727,18 @@ _ferramentas
 _lembretes () {
 clear
 # Nome do arquivo onde as notas serão salvas.
-FILE="notepad.txt"
+local FILE="atualizal"
 
 # Função para escrever uma nova nota.
 _escrever_nota() {
     clear
-    if [[ ! -f "$FILE" ]]; then
-        _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
-        return 1
-    fi
     _linha
     _mensagec "${YELLOW}" "Digite sua nota (pressione Ctrl+D para finalizar):"
     _linha
    
     # Ler a entrada e adiciona ao arquivo.
-    if ! cat >> "$FILE"; then
-        _mensagec "${RED}" "Erro: Nao foi possivel gravar a nota!"
-        return 1
-    fi
-
-    echo "Nota gravada com sucesso!"
+     cat >> "$FILE"
+        _mensagec "${YELLOW}" "Nota gravada com sucesso!"
     sleep 2
 }
 
@@ -3764,16 +3756,12 @@ _visualizar_notas() {
     else
         _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
     fi
-    read -rp "Pressione Enter para continuar..."
+    _press
 }
 
 # Função para editar as notas utilizando um editor de texto.
 _editar_nota() {
     clear
-    if [[ -z "$FILE" ]]; then
-        _mensagec "${RED}" "Erro: Caminho do arquivo nao está definido!"
-        return 1
-    fi
 
     if [[ -f "$FILE" ]]; then
         # Abre o arquivo no editor padrão definido na variável EDITOR ou no nano, se não houver.
