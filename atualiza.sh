@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="11/02/2025"                                                                                                    #
+UPDATE="12/02/2025"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2089,7 +2089,7 @@ _processo () {
     _read_sleep 1
 
     if [[ "${sistema}" = "iscobol" ]]; then
-        cd "${destino}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${destino}"; exit 1; }
+        cd "${destino}/" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${destino}"; exit 1; }
         
         for dir in "${E_EXEC}" "${T_TELAS}" "${X_XML}"; do
             _mensagec "${GREEN}" "${M14}${dir}"
@@ -2122,10 +2122,10 @@ _processo () {
                 _principal
             fi
         done
-        cd "${TOOLS}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${TOOLS}"; exit 1; }
+        cd "${TOOLS}/" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${TOOLS}"; exit 1; }
         clear
     else
-        cd "${destino}/" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${destino}"; exit 1; }
+        cd "${destino}/" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${destino}"; exit 1; }
         
         for dir in "${E_EXEC}" "${T_TELAS}"; do
             _mensagec "${GREEN}" "${M14}${dir}"
@@ -2163,7 +2163,7 @@ _processo () {
     _linha 
     _read_sleep 1
 
-    cd "${TOOLS}" || { _mensagec "${RED}" "Erro: Não foi possível acessar o diretório ${TOOLS}"; exit 1; }
+    cd "${TOOLS}" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${TOOLS}"; exit 1; }
     if [[ ! -r "${OLDS}/${INI}" ]]; then
         #-Backup nao encontrado no diretorio
         _linha 
@@ -2228,7 +2228,7 @@ _atubiblioteca () {
     mv -f -- *_"${VERSAO}".bkp "${BACKUP}" || _mensagec "${RED}" "Erro ao mover backups para ${BACKUP}"
 
     # Alterando a extensão da atualização de .zip para .bkp
-    M40="Versão atualizada - ${VERSAO}"
+    M40="Versao atualizada - ${VERSAO}"
     _linha
     _mensagec "${YELLOW}" "${M20}"
     _mensagec "${YELLOW}" "${M13}"
@@ -3747,14 +3747,16 @@ _visualizar_notas() {
     clear
     if [[ -f "$FILE" ]]; then
         if [[ -s "$FILE" ]]; then
-            _mensagec "${YELLOW}" "=== Notas armazenadas ==="
+            _mensagec "${YELLOW}" "=== Nota armazenada ==="
             cat "$FILE"
             _linha
         else
             _mensagec "${YELLOW}" "Nenhuma nota encontrada!"
+            _linha
         fi
     else
         _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
+        _linha
     fi
     _press
 }
@@ -3775,15 +3777,28 @@ _editar_nota() {
     fi
 }
 
+# Função para excluir uma nota específica.
+_excluir_nota() {
+    if [[ ! -f "${FILE}" ]]; then
+        _mensagec "${YELLOW}" "Nenhuma nota encontrada para excluir!"
+        sleep 2
+        return
+    fi
+    "${cmd_find}" "${TOOLS}" -name "${FILE}" -exec rm -rf {} \; || { printf "Erro ao mover arquivos."; return 1; }
+    _mensagec "${RED}" "Nota excluida com sucesso!"
+    sleep 2
+}
+
 # Loop principal do menu.
 while true; do
 clear 
 ###-800-mensagens do Menu Envio e Retorno.
-     M800="====== Bloco de Notas ======    " 
-     M802="1${NORM} - Escrever nova nota   "
-     M803="2${NORM} - Visualizar notas     "
-     M804="3${NORM} - Editar notas         "
-     M806="9${NORM} - ${RED}Menu Anterior"
+    M800="====== Bloco de Notas ======    " 
+    M802="1${NORM} - Escrever nova nota   "
+    M803="2${NORM} - Visualizar nota      "
+    M804="3${NORM} - Editar nota          "
+    M805="4${NORM} - Apagar nota          "
+    M806="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
 	_mensagec "${RED}" "${M800}"
@@ -3796,12 +3811,14 @@ clear
 	_mensagec "${GREEN}" "${M803}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M804}"
+    printf "\n"
+	_mensagec "${GREEN}" "${M805}"
 	printf "\n\n"    
 	_mensagec "${GREEN}" "${M806}"
-     printf "\n"       
+    printf "\n"       
 	_linha "="
-     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
-     case ${OPCAO} in
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+    case ${OPCAO} in
         1)
             _escrever_nota
             ;;
@@ -3811,6 +3828,9 @@ clear
         3)
             _editar_nota
             ;;
+        4)
+            _excluir_nota
+            ;;     
         9) clear ; _ferramentas 
             ;;
         *) _ferramentas 
