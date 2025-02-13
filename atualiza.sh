@@ -10,10 +10,10 @@
 #  (_______/ (__\_|_)(_______/       \__|    \_______)|___|\__/|___|(___/    \___)    (_______/(___/    \___)\__/      #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
-##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                               #
-##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                              #
+##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
+##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="12/02/2025"                                                                                                    #
+UPDATE="13/02/2025.01"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -22,27 +22,26 @@ UPDATE="12/02/2025"                                                             
 # "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                        #
 # "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                      #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
-# "setup.sh"   = Configurador  para criar os arquivos atualizac e atualizap                                             #
+# "setup.sh"   = Configurador  para criar os arquivos atualizac e atualizap                                            #
 # Menus                                                                                                                #
 # 1 - Atualizacao de Programas                                                                                         #
 # 2 - Atualizacao de Biblioteca                                                                                        #
-# 3- Versao do Iscobol                                                                                                #
-# 4- Versao do Linux                                                                                                  #
-# 5- Ferramentas                                                                                                      #
+# 3- Versao do Iscobol                                                                                                 #
+# 4- Versao do Linux                                                                                                   #
+# 5- Ferramentas                                                                                                       #
 #                                                                                                                      #
 #      1 - Atualizacao de Programas                                                                                    #
 #            1.1 - ON-Line                                                                                             #
-#      Acessa o servidor da SAV via rsync com o usuario ATUALIZA                                                         #
+#      Acessa o servidor da SAV via rsync com o usuario ATUALIZA                                                       #
 #      Faz um backup do programa que esta em uso e salva na pasta ?/sav/tmp/olds                                       #
 #      com o nome "Nome do programa-anterior.zip" descompacta o novo no diretorio                                      #
 #      dos programa e salva o a atualizacao na pasta ?/sav/tmp/progs.                                                  #
 #            1.2 - OFF-Line                                                                                            #
 #      Atualiza o arquivo de programa ".zip" que deve ter sido colocado em ?/sav/tmp.                                  #
 #      O processo de atualizacao e identico ao passo acima.                                                            #
-#            1.3  Voltar programa Atualizado                                                                          #
+#            1.3  Voltar programa Atualizado                                                                           #
 #      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com o nome de ("programa"-anterior.zip)             #
 #      na pasta dos programas.                                                                                         #
-
 #                                                                                                                      #
 #      2 - Atualizacao de Biblioteca                                                                                   #
 #            2.1 - Atualizacao do Transpc                                                                              #
@@ -102,7 +101,10 @@ UPDATE="12/02/2025"                                                             
 #           5.7 - Update                                                                                               #
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
-#--------------------------------------------------------------------------------------------------#
+#           5.8 - Lembretes                                                                                            #
+#                                                                                                                      #
+#----------------------------------------------------------------------------------------------------------------------#
+
 
 #Zerando variaves utilizadas 
 # resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
@@ -917,115 +919,6 @@ fi
 
 clear
 
-# _principal () - Funcao principal do programa
-# Mostra o menu principal com as opcoes de atualizacao de programas, biblioteca, desatualizando,
-# versao do iscobol, versao do linux e ferramentas. Chama a funcao escolhida pelo usuario.
-# 
-# Opcoes:
-# 1 - Atualizacao de Programas
-# 2 - Atualizacao de Biblioteca
-# 3 - Desatualizando
-# 4 - Versao do Iscobol
-# 5 - Versao do Linux
-# 6 - Ferramentas
-# 9 - Sair
-_principal () { 
-     tput clear
-	printf "\n"
-#-100-mensagens do Menu Principal. ----------------------------------------------------------------#	
-	M101="Menu Principal"
-	M1102=".. Empresa: ${EMPRESA} .."
-    M102=".. Sistema: ${sistema} .."
-    M103="Escolha a opcao:   "
-	M104="1${NORM} - Programas                "
-    M105="2${NORM} - Biblioteca               " 
-	M111="3${NORM} - Versao do Iscobol        "
-	M112="3${NORM} - Funcao nao disponivel    "
-	M107="4${NORM} - Versao do Linux          "
-    M108="5${NORM} - Ferramentas              "
-    M109="9${NORM} - ${RED}Sair            "
-    M110=" Digite a opcao desejada -> " 
-
-	_linha "="
-	_mensagec "${RED}" "${M101}"
-	_linha
-    _mensagec "${WHITE}" "${M1102}"
-    _linha
-	_mensagec "${CYAN}" "${M102}"
-    _linha 
-	_mensagec "${PURPLE}" "${M103}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M104}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M105}"
-	printf "\n"
-        if [[ "${sistema}" = "iscobol" ]]; then
-        _mensagec "${GREEN}" "${M111}"
-        else
-        _mensagec "${GREEN}" "${M112}"
-        fi
-	printf "\n"
-	_mensagec "${GREEN}" "${M107}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M108}"
-	printf "\n\n"
-	_mensagec "${GREEN}" "${M109}"
-    printf "\n"
-    _mensaged "${BLUE}" "${UPDATE}"
-    _linha "="
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO
-
-    case ${OPCAO} in
-        1) _atualizacao   ;;
-        2) _biblioteca    ;;
-        3) _iscobol       ;;
-        4) _linux         ;;
-        5) _ferramentas   ;;
-        9) clear ; resetando ;;
-          *) clear ; _principal ;;
-    esac
-}
-#-Procedimento da atualizacao de programas---------------------------------------------------------# 
-### _atualizacao
-# Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
-# Chama a funcao escolhida pelo usuario.
-_atualizacao () { 
-     clear
-###   200-mensagens do Menu Programas.
-     M201="Menu de Programas "
-     M202="Escolha o tipo de Acao:"
-     M203="1${NORM} - Programa ou Pacote ON-Line    "
-     M204="2${NORM} - Programa ou Pacote em OFF-Line"
-     M205="Escolha o tipo de Desatualizacao:         "
-     M206="3${NORM} - Voltar programa Atualizado    "
-     M209="9${NORM} - ${RED}Menu Anterior        "
-     printf "\n"
-	_linha "="
-	_mensagec "${RED}" "${M201}"
-	_linha
-	printf "\n"
-	_mensagec "${PURPLE}" "${M202}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M203}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M204}"
-	printf "\n\n"
-	_mensagec "${PURPLE}" "${M205}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M206}"
-	printf "\n\n"
-	_mensagec "${GREEN}" "${M209}"
-	printf "\n"        
-	_linha "="
-     read -rp "${YELLOW}${M110}${NORM}" OPCAO
-     case ${OPCAO} in
-          1) _pacoteon ;;
-          2) _pacoteoff ;;
-          3) _voltaprog ;;
-          9) clear ; _principal ;;
-          *) _principal ;;
-     esac
-}
 
 
 # Esta função solicita que o usuário insira o nome de um programa em letras maiúsculas para ser atualizado.
@@ -1775,66 +1668,6 @@ _versao () {
         return 1
     fi
 }
-#-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
-# 
-# _biblioteca
-# 
-# Atualiza a biblioteca da SAV.
-# Esta funcao e responsavel por atualizar a biblioteca da SAV.
-
-_biblioteca () { 
-    local OPCAO
-    local INI
-    VERSAO=" " # Variavel que define a versao do programa.
-#    clear
-   
-    clear
-    M401="Menu da Biblioteca"
-    M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
-    M403="Anterior - ${NORM}${PURPLE}${VERSAOANT}"
-    M404="Escolha o local da Biblioteca:        "
-    M405="1${NORM} - Atualizacao do Transpc     "
-    M406="2${NORM} - Atualizacao do Savatu      "
-    M407="3${NORM} - Atualizacao OFF-Line       "
-    M408="Escolha o tipo de Desatualizacao:       "
-    M409="4${NORM} - Voltar antes da Biblioteca "
-    M410="9${NORM} - ${RED}Menu Anterior     "
-
-    printf "\n"
-    _linha "="
-    _mensagec "${RED}" "${M401}"
-    _linha 
-    _mensagec "${RED}" "${M402}"
-    _linha 
-    _mensagec "${BLUE}" "${M403}"
-    _linha "="
-    printf "\n"
-    _mensagec "${PURPLE}" "${M404}"
-    printf "\n"
-    _mensagec "${GREEN}" "${M405}"
-    printf "\n"
-    _mensagec "${GREEN}" "${M406}"
-    printf "\n"
-    _mensagec "${GREEN}" "${M407}"
-    printf "\n\n"
-    _mensagec "${PURPLE}" "${M408}"
-    printf "\n"
-    _mensagec "${GREEN}" "${M409}"
-    printf "\n\n"
-    _mensagec "${GREEN}" "${M410}"
-    printf "\n"        
-    _linha "="
-
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO
-    case ${OPCAO} in
-        1) _transpc ;;
-        2) _savatu ;;
-        3) _atuoff ;;
-        4) _voltabibli ;;
-        9) clear; _principal ;;
-        *) _biblioteca ;;
-    esac
-}
 _variaveis_atualiza () {
      ATUALIZA1="${SAVATU1}${VERSAO}.zip"
      ATUALIZA2="${SAVATU2}${VERSAO}.zip"
@@ -2292,6 +2125,108 @@ _voltabibli () {
      fi
 }
 
+#-Procedimento da atualizacao de programas---------------------------------------------------------# 
+### _atualizacao
+# Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
+# Chama a funcao escolhida pelo usuario.
+_atualizacao () { 
+     clear
+###   200-mensagens do Menu Programas.
+     M201="Menu de Programas "
+     M202="Escolha o tipo de Acao:"
+     M203="1${NORM} - Programa ou Pacote ON-Line    "
+     M204="2${NORM} - Programa ou Pacote em OFF-Line"
+     M205="Escolha o tipo de Desatualizacao:         "
+     M206="3${NORM} - Voltar programa Atualizado    "
+     M209="9${NORM} - ${RED}Menu Anterior        "
+     printf "\n"
+	_linha "="
+	_mensagec "${RED}" "${M201}"
+	_linha
+	printf "\n"
+	_mensagec "${PURPLE}" "${M202}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M203}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M204}"
+	printf "\n\n"
+	_mensagec "${PURPLE}" "${M205}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M206}"
+	printf "\n\n"
+	_mensagec "${GREEN}" "${M209}"
+	printf "\n"        
+	_linha "="
+     read -rp "${YELLOW}${M110}${NORM}" OPCAO
+     case ${OPCAO} in
+          1) _pacoteon ;;
+          2) _pacoteoff ;;
+          3) _voltaprog ;;
+          9) clear ; _principal ;;
+          *) _principal ;;
+     esac
+}
+
+#-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
+# 
+# _biblioteca
+# 
+# Atualiza a biblioteca da SAV.
+# Esta funcao e responsavel por atualizar a biblioteca da SAV.
+
+_biblioteca () { 
+    local OPCAO
+    local INI
+    VERSAO=" " # Variavel que define a versao do programa.
+#    clear
+   
+    clear
+    M401="Menu da Biblioteca"
+    M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
+    M403="Anterior - ${NORM}${PURPLE}${VERSAOANT}"
+    M404="Escolha o local da Biblioteca:        "
+    M405="1${NORM} - Atualizacao do Transpc     "
+    M406="2${NORM} - Atualizacao do Savatu      "
+    M407="3${NORM} - Atualizacao OFF-Line       "
+    M408="Escolha o tipo de Desatualizacao:       "
+    M409="4${NORM} - Voltar antes da Biblioteca "
+    M410="9${NORM} - ${RED}Menu Anterior     "
+
+    printf "\n"
+    _linha "="
+    _mensagec "${RED}" "${M401}"
+    _linha 
+    _mensagec "${RED}" "${M402}"
+    _linha 
+    _mensagec "${BLUE}" "${M403}"
+    _linha "="
+    printf "\n"
+    _mensagec "${PURPLE}" "${M404}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M405}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M406}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M407}"
+    printf "\n\n"
+    _mensagec "${PURPLE}" "${M408}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M409}"
+    printf "\n\n"
+    _mensagec "${GREEN}" "${M410}"
+    printf "\n"        
+    _linha "="
+
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+    case ${OPCAO} in
+        1) _transpc ;;
+        2) _savatu ;;
+        3) _atuoff ;;
+        4) _voltabibli ;;
+        9) clear; _principal ;;
+        *) _biblioteca ;;
+    esac
+}
 
 #-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
 #
@@ -2429,92 +2364,6 @@ _linux () {
     _principal
 }
 
-### _ferramentas
-# 
-# Mostra o menu das ferramentas 
-# 
-_ferramentas () {
-    tput clear
-    printf "\n"
-    ###-500-mensagens do Menu Ferramentas.
-    M501="Menu das Ferramentas"
-    M503="1${NORM} - Temporarios             "
-    M504="2${NORM} - Recuperar Arquivos      "
-    M505="3${NORM} - Rotina de Backup        "
-    M506="4${NORM} - Envia e Recebe Arquivos "
-    M507="5${NORM} - Expurgador de Arquivos  "
-    M508="6${NORM} - Parametros              "
-    M509="7${NORM} - Update                  "
-    M510="8${NORM} - Lembretes               "	
-    M511="9${NORM} - ${RED}Menu Anterior  "
-    _linha "="
-    _mensagec "${RED}" "${M501}"
-    _linha 
-    printf "\n"
-    _mensagec "${PURPLE}" "${M103}"
-    printf "\n"
-    if [[ "${BANCO}" = "s" ]]; then
-        _mensagec "${GREEN}" "${M503}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M506}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M507}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M508}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M509}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M510}"
-        printf "\n\n"
-        _mensagec "${GREEN}" "${M511}"
-        printf "\n"
-        _linha "="
-        read -rp "${YELLOW}${M110}${NORM}" OPCAOB
-        case ${OPCAOB} in
-            1) _temps        ;;
-            4) _envrecarq    ;;
-            5) _expurgador   ;;          
-            6) _parametros   ;;
-            7) _update       ;;
-            8) _lembretes   ;;
-            9) clear ; _principal ;;
-            *) _ferramentas ;;
-        esac
-    else
-        _mensagec "${GREEN}" "${M503}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M504}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M505}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M506}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M507}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M508}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M509}"
-        printf "\n"
-        _mensagec "${GREEN}" "${M510}"
-        printf "\n\n"
-    fi
-    _mensagec "${GREEN}" "${M511}"
-    printf "\n"
-    _linha "="
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO
-    case ${OPCAO} in
-        1) _temps        ;;
-        2) _rebuild      ;;
-        3) _menubackup   ;;
-        4) _envrecarq    ;;
-        5) _expurgador   ;;
-        6) _parametros   ;;
-        7) _update       ;;
-        8) _lembretes    ;;
-        9) clear ; _principal ;;
-        *) _ferramentas ;;
-    esac
-}
 
 # _varrendo_arquivo: compacta arquivos temporarios no diretorio "${DIRB}" que contenham o nome "${line}" e move para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}"
 # 
@@ -2551,44 +2400,6 @@ M11="Movendo arquivos Temporarios do diretorio = ""${DIRB}"
 _linha 
 _mensagec "${YELLOW}" "${M11}"
 _linha
-}
-
-# _temps: Menu de Limpeza
-#
-# Mostra o menu de limpeza de arquivos temporarios com opcoes de:
-# - Limpar todos os arquivos temporarios no diretorio "${DIRB}".
-# - Adicionar arquivos na lista "atualizat" para serem excluidos no diretorio "${DIRB}".
-# - Voltar ao menu anterior.
-
-_temps () {
-    clear
-    M900="Menu de Limpeza"
-    M901="1${NORM} - Limpeza dos Arquivos Temporarios"
-    M902="2${NORM} - Adicionar Arquivos no ATUALIZAT "
-    M909="9${NORM} - ${RED}Menu Anterior          "
-
-    printf "\n"
-    _linha "="
-    _mensagec "${RED}" "${M900}"
-    _linha 
-    printf "\n"
-    _mensagec "${PURPLE}" "${M103}"
-    printf "\n"
-    _mensagec "${GREEN}" "${M901}"
-    printf "\n"
-    _mensagec "${GREEN}" "${M902}"
-    printf "\n\n"
-    _mensagec "${GREEN}" "${M909}"
-    printf "\n"
-    _linha "="
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO
-
-    case ${OPCAO} in
-        1)  _limpeza ;;
-        2)  _addlixo ;;
-        9)  clear ; _ferramentas ;;
-        *) _ferramentas ;;
-    esac    
 }
 
 # _limpeza: Limpeza de arquivos temporarios
@@ -2665,49 +2476,76 @@ _addlixo() {
     _temps
 }
 
-#-Rotina de recuperar arquivos---------------------------------------------------------------------#
-# _rebuild: Recupera arquivo(s) do backup.
+# _temps: Menu de Limpeza
 #
-# Pergunta ao usuario qual a opcao para recuperar o(s) arquivo(s):
-#   1 - Um arquivo ou Todos
-#   2 - Arquivos Principais
-#   9 - Menu Anterior
+# Mostra o menu de limpeza de arquivos temporarios com opcoes de:
+# - Limpar todos os arquivos temporarios no diretorio "${DIRB}".
+# - Adicionar arquivos na lista "atualizat" para serem excluidos no diretorio "${DIRB}".
+# - Voltar ao menu anterior.
 
-_rebuild () { 
-    if [[ -e "${TOOLS}"/"atualizaj2" ]]; then
-        rm -rf "${TOOLS}"/"atualizaj2"
-    fi
+_temps () {
     clear
-###-600-mensagens do Menu Rebuild.
-    M601="Menu de Recuperacao de Arquivo(s)."
-	M603="1${NORM} - Um arquivo ou Todos   "
-	M604="2${NORM} - Arquivos Principais   "
-    M605="9${NORM} - ${RED}Menu Anterior"
-	printf "\n"
-	_linha "="
-	_mensagec "${RED}" "${M601}"
-	_linha 
-	printf "\n"
-	_mensagec "${PURPLE}" "${M103}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M603}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M604}"
-	printf "\n\n"
-     _mensagec "${GREEN}" "${M605}"
-     printf "\n"
-     _linha "="
-     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
-     case ${OPCAO} in
-     1) _rebuild1 ;;
-     2) _rebuildlista ;;
-     9) clear ; _ferramentas ;;
-     *) _ferramentas ;;
-     esac
+    M900="Menu de Limpeza"
+    M901="1${NORM} - Limpeza dos Arquivos Temporarios"
+    M902="2${NORM} - Adicionar Arquivos no ATUALIZAT "
+    M909="9${NORM} - ${RED}Menu Anterior          "
+
+    printf "\n"
+    _linha "="
+    _mensagec "${RED}" "${M900}"
+    _linha 
+    printf "\n"
+    _mensagec "${PURPLE}" "${M103}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M901}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M902}"
+    printf "\n\n"
+    _mensagec "${GREEN}" "${M909}"
+    printf "\n"
+    _linha "="
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+
+    case ${OPCAO} in
+        1)  _limpeza ;;
+        2)  _addlixo ;;
+        9)  clear ; _ferramentas ;;
+        *) _ferramentas ;;
+    esac    
 }
 
+# Configura BASE1 com o caminho para o banco de dados primário.
+# Configura BASE1 com o caminho para o banco de dados prim rio.
+#
+# Verifica se as variaveis de ambiente destino e base estao configuradas.
+# Caso nao estejam, exibe uma mensagem de erro e sai do programa.
+# Caso estejam, define a variavel BASE1 com o valor de destino concatenado
+# com o valor de base.
+_dbase1 () {
+    if [[ -z "${destino}" || -z "${base}" ]]; then
+        printf "Erro: Variaveis de ambiente destino ou base nao estao configuradas.\n"
+        exit 1
+    fi
+    BASE1="${destino}${base}"
+}
 
+# Configura BASE2 com o caminho para o banco de dados secundário.
+_dbase2 () {
+    if [[ -z "${destino}" || -z "${base2}" ]]; then
+        printf "Erro: Variaveis de ambiente destino ou base2 nao estao configuradas.\n"
+        exit 1
+    fi
+    BASE1="${destino}${base2}"
+}
 
+# Configura BASE3 com o caminho para o banco de dados terciário.
+_dbase3 () {
+    if [[ -z "${destino}" || -z "${base3}" ]]; then
+        printf "Erro: Variaveis de ambiente destino ou base3 nao estao configuradas.\n"
+        exit 1
+    fi
+    BASE1="${destino}${base3}"
+}
 # Funcao para escolher qual base ser  utilizada.
 #
 # Permite ao usuario escolher qual base ser utilizada. 
@@ -2766,39 +2604,6 @@ if [[ ! "${base3}" ]]; then
      esac    
 
 fi    
-}
-
-# Configura BASE1 com o caminho para o banco de dados primário.
-# Configura BASE1 com o caminho para o banco de dados prim rio.
-#
-# Verifica se as variaveis de ambiente destino e base estao configuradas.
-# Caso nao estejam, exibe uma mensagem de erro e sai do programa.
-# Caso estejam, define a variavel BASE1 com o valor de destino concatenado
-# com o valor de base.
-_dbase1 () {
-    if [[ -z "${destino}" || -z "${base}" ]]; then
-        printf "Erro: Variaveis de ambiente destino ou base nao estao configuradas.\n"
-        exit 1
-    fi
-    BASE1="${destino}${base}"
-}
-
-# Configura BASE2 com o caminho para o banco de dados secundário.
-_dbase2 () {
-    if [[ -z "${destino}" || -z "${base2}" ]]; then
-        printf "Erro: Variaveis de ambiente destino ou base2 nao estao configuradas.\n"
-        exit 1
-    fi
-    BASE1="${destino}${base2}"
-}
-
-# Configura BASE3 com o caminho para o banco de dados terciário.
-_dbase3 () {
-    if [[ -z "${destino}" || -z "${base3}" ]]; then
-        printf "Erro: Variaveis de ambiente destino ou base3 nao estao configuradas.\n"
-        exit 1
-    fi
-    BASE1="${destino}${base3}"
 }
 
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
@@ -2991,54 +2796,72 @@ _rebuildlista () {
     _rebuild
 }
 
-# _menubackup () - Menu de Backup(s).
+
+#-Rotina de recuperar arquivos---------------------------------------------------------------------#
+# _rebuild: Recupera arquivo(s) do backup.
 #
-# Mostra opcoes:
-# 1 - Faz backup da base de dados.
-# 2 - Restaura backup da base de dados.
-# 3 - Envia backup.
-# 9 - Volta ao menu anterior.
-_menubackup () { while true ; do
-     clear
-###-700-mensagens do Menu Backup.
-     M700="Menu de Backup(s)."
-     M702="1${NORM} - Backup da base de dados          "
-     M703="2${NORM} - Restaurar Backup da base de dados"
-     M704="3${NORM} - Enviar Backup                    "
-     M705="9${NORM} - ${RED}Menu Anterior           "
+# Pergunta ao usuario qual a opcao para recuperar o(s) arquivo(s):
+#   1 - Um arquivo ou Todos
+#   2 - Arquivos Principais
+#   9 - Menu Anterior
+
+_rebuild () { 
+    if [[ -e "${TOOLS}"/"atualizaj2" ]]; then
+        rm -rf "${TOOLS}"/"atualizaj2"
+    fi
+    clear
+###-600-mensagens do Menu Rebuild.
+    M601="Menu de Recuperacao de Arquivo(s)."
+	M603="1${NORM} - Um arquivo ou Todos   "
+	M604="2${NORM} - Arquivos Principais   "
+    M605="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
 	_linha "="
-	_mensagec "${RED}" "${M700}"
+	_mensagec "${RED}" "${M601}"
 	_linha 
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
-	_mensagec "${GREEN}" "${M702}"
+	_mensagec "${GREEN}" "${M603}"
 	printf "\n"
-	_mensagec "${GREEN}" "${M703}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M704}"
-     printf "\n\n"
-	_mensagec "${GREEN}" "${M705}"
-     printf "\n"       
-	_linha "="
+	_mensagec "${GREEN}" "${M604}"
+	printf "\n\n"
+     _mensagec "${GREEN}" "${M605}"
+     printf "\n"
+     _linha "="
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
      case ${OPCAO} in
-     1) _backup       ;;
-     2) _unbackup     ;;
-     3) _backupavulso ;;
+     1) _rebuild1 ;;
+     2) _rebuildlista ;;
      9) clear ; _ferramentas ;;
      *) _ferramentas ;;
      esac
-     done
 }
 
-#-Rotina de backup com opcao de envio da a SAV-----------------------------------------------------#
-#      1 - Faz backup da base de dados.
-#      2 - Restaura backup da base de dados.
-#      3 - Envia backup.
-#      9 - Volta ao menu anterior.
-#
+
+    #----------------------------------------------------------------------------------------------
+    # _backup
+    #----------------------------------------------------------------------------------------------
+    # 
+    # Realiza um backup dos arquivos de dados do sistema.
+    #
+    # Verifica se o diretorio de backup existe, senao cria.
+    # Verifica se ja existe um backup em ${BACKUP} com menos de 2 dias.
+    # Se sim, pergunta se deseja continuar o backup, se nao, sai.
+    # Se nao, continua o backup.
+    # 
+    # Dependências:
+    # - A função requires acesso ao diretorio ${BACKUP}.
+    #
+    # Pré-condições:
+    # - O sistema deve estar configurado como um dos sistemas suportados.
+    #
+    # Pós-condições:
+    # - O backup dos arquivos de dados do sistema eh realizado.
+    #
+    # Tratamento de erros:
+    # - Sai com uma mensagem de erro se o diretorio ${BACKUP} nao puder ser acessado.
+    # - Sai com uma mensagem de erro se o comando de backup nao puder ser executado.
 _backup () {
     clear
     if [[ -n "${base2}" ]]; then
@@ -3388,43 +3211,46 @@ fi
 _ferramentas
 }
 
-#-Envia e receber arquivos-------------------------------------------------------------------------#
-###-Funcao _envrecarq---------------------------------------------------------------
-##  Menu de Envio e Retorno de Arquivos.
-##  Chama as funcoes _envia_avulso() e _recebe_avulso() para o envio e recebimento de arquivos.
-##  Opcoes:
-##  1 - Envia arquivo(s)
-##  2 - Recebe arquivo(s)
-##  9 - Menu Anterior
-##-----------------------------------------------------------------------------------------------
-_envrecarq () { 
+# _menubackup () - Menu de Backup(s).
+#
+# Mostra opcoes:
+# 1 - Faz backup da base de dados.
+# 2 - Restaura backup da base de dados.
+# 3 - Envia backup.
+# 9 - Volta ao menu anterior.
+_menubackup () { while true ; do
      clear
-###-800-mensagens do Menu Envio e Retorno.
-     M800="Menu de Enviar e Receber Arquivo(s)."
-     M802="1${NORM} - Enviar arquivo(s)     "
-     M803="2${NORM} - Receber arquivo(s)    "
-     M806="9${NORM} - ${RED}Menu Anterior"
+###-700-mensagens do Menu Backup.
+     M700="Menu de Backup(s)."
+     M702="1${NORM} - Backup da base de dados          "
+     M703="2${NORM} - Restaurar Backup da base de dados"
+     M704="3${NORM} - Enviar Backup                    "
+     M705="9${NORM} - ${RED}Menu Anterior           "
 	printf "\n"
 	_linha "="
-	_mensagec "${RED}" "${M800}"
+	_mensagec "${RED}" "${M700}"
 	_linha 
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
-	_mensagec "${GREEN}" "${M802}"
+	_mensagec "${GREEN}" "${M702}"
 	printf "\n"
-	_mensagec "${GREEN}" "${M803}"
-	printf "\n\n"
-	_mensagec "${GREEN}" "${M806}"
+	_mensagec "${GREEN}" "${M703}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M704}"
+     printf "\n\n"
+	_mensagec "${GREEN}" "${M705}"
      printf "\n"       
 	_linha "="
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
      case ${OPCAO} in
-     1) _envia_avulso    ;;
-     2) _recebe_avulso   ;;
+     1) _backup       ;;
+     2) _unbackup     ;;
+     3) _backupavulso ;;
      9) clear ; _ferramentas ;;
      *) _ferramentas ;;
      esac
+     done
 }
 
 ###---_envia_avulso-------------------------------------------------------------
@@ -3585,6 +3411,45 @@ M15="Arquivo enviado para a pasta, \"""${EDESTINO}""\"."
 _envrecarq      
 }
 
+
+###-Funcao _envrecarq---------------------------------------------------------------
+##  Menu de Envio e Retorno de Arquivos.
+##  Chama as funcoes _envia_avulso() e _recebe_avulso() para o envio e recebimento de arquivos.
+##  Opcoes:
+##  1 - Envia arquivo(s)
+##  2 - Recebe arquivo(s)
+##  9 - Menu Anterior
+##-----------------------------------------------------------------------------------------------
+_envrecarq () { 
+     clear
+###-800-mensagens do Menu Envio e Retorno.
+     M800="Menu de Enviar e Receber Arquivo(s)."
+     M802="1${NORM} - Enviar arquivo(s)     "
+     M803="2${NORM} - Receber arquivo(s)    "
+     M806="9${NORM} - ${RED}Menu Anterior"
+	printf "\n"
+	_linha "="
+	_mensagec "${RED}" "${M800}"
+	_linha 
+	printf "\n"
+	_mensagec "${PURPLE}" "${M103}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M802}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M803}"
+	printf "\n\n"
+	_mensagec "${GREEN}" "${M806}"
+     printf "\n"       
+	_linha "="
+     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+     case ${OPCAO} in
+     1) _envia_avulso    ;;
+     2) _recebe_avulso   ;;
+     9) clear ; _ferramentas ;;
+     *) _ferramentas ;;
+     esac
+}
+
 ########################################################
 # Limpando arquivos de atualizacao com mais de 30 dias #
 ########################################################
@@ -3638,7 +3503,7 @@ _ferramentas
 # acesso a rede.
 _update () {
 local SAOFF="${destino}${SERACESOFF}"
-if [[ -n "${SERACESOFF}" ]]; then 
+if [[ -z "${SERACESOFF}" ]]; then 
      link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
      clear
      printf "\n\n"
@@ -3672,15 +3537,29 @@ DEFAULT_ATUALIZAGIT="atualiza.zip"
          exit 1
      fi
 else
-    for pacoteoff in "atualiza.sh" "setup.sh" "atualizaj" "atualizat"; do
-        if [[ -f "${SAOFF}/${pacoteoff}" ]]; then
-            mv -f -- "${SAOFF}/${pacoteoff}" "${TOOLS}" >> "${LOG_ATU}"
-            chmod 777 "$pacoteoff"  
+    local atualiza="atualiza.zip"
+    cd "${SAOFF}" || { printf "Erro: Diretorio ${SAOFF} nao encontrado.""%*s\n"; exit 1; }  
+    if [[ -f "${atualiza}" ]]; then
+    "${cmd_unzip}" -o "${atualiza}" >> "${LOG_ATU}"
+    _read_sleep 1
+    "${cmd_find}" "${SAOFF}" -name "${atualiza}" -type f -delete
+    for programas in "atualiza.sh" "setup.sh" "atualizaj" "atualizat"; do
+        if [[ -f "${programas}" ]]; then
+            chmod 777 "$programas" 
+            mv -f -- "${programas}" "${TOOLS}" >> "${LOG_ATU}"
         else
-            _mensagec "${RED}" "Erro: Arquivo ${pacoteoff} nao encontrado na pasta ${SAOFF}"
+            _mensagec "${RED}" "Erro: Arquivo ${programas} nao encontrado na pasta ${SAOFF}"
         fi
     done
-    chmod +x "*.sh"
+    else
+        printf "\n\n"
+        _linha
+        _mensagec "${RED}" "Erro: Arquivo ${atualiza} nao encontrado na pasta ${SAOFF}"
+        _linha
+        _press
+        _principal
+    fi
+cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }  
 fi
 }
 
@@ -3724,6 +3603,7 @@ _linha
 _press
 _ferramentas
 }
+
 _lembretes () {
 clear
 # Nome do arquivo onde as notas serão salvas.
@@ -3792,7 +3672,7 @@ _excluir_nota() {
 # Loop principal do menu.
 while true; do
 clear 
-###-800-mensagens do Menu Envio e Retorno.
+###-800-mensagens do Menu Bloco de anotacao.
     M800="====== Bloco de Notas ======    " 
     M802="1${NORM} - Escrever nova nota   "
     M803="2${NORM} - Visualizar nota      "
@@ -3838,6 +3718,163 @@ clear
     esac
 done
 }
+
+### _ferramentas
+# 
+# Mostra o menu das ferramentas 
+# 
+_ferramentas () {
+    tput clear
+    printf "\n"
+    ###-500-mensagens do Menu Ferramentas.
+    M501="Menu das Ferramentas"
+    M503="1${NORM} - Temporarios             "
+    M504="2${NORM} - Recuperar Arquivos      "
+    M505="3${NORM} - Rotina de Backup        "
+    M506="4${NORM} - Envia e Recebe Arquivos "
+    M507="5${NORM} - Expurgador de Arquivos  "
+    M508="6${NORM} - Parametros              "
+    M509="7${NORM} - Update                  "
+    M510="8${NORM} - Lembretes               "	
+    M511="9${NORM} - ${RED}Menu Anterior  "
+    _linha "="
+    _mensagec "${RED}" "${M501}"
+    _linha 
+    printf "\n"
+    _mensagec "${PURPLE}" "${M103}"
+    printf "\n"
+    if [[ "${BANCO}" = "s" ]]; then
+        _mensagec "${GREEN}" "${M503}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M506}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M507}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M508}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M509}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M510}"
+        printf "\n\n"
+        _mensagec "${GREEN}" "${M511}"
+        printf "\n"
+        _linha "="
+        read -rp "${YELLOW}${M110}${NORM}" OPCAOB
+        case ${OPCAOB} in
+            1) _temps        ;;
+            4) _envrecarq    ;;
+            5) _expurgador   ;;          
+            6) _parametros   ;;
+            7) _update       ;;
+            8) _lembretes   ;;
+            9) clear ; _principal ;;
+            *) _ferramentas ;;
+        esac
+    else
+        _mensagec "${GREEN}" "${M503}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M504}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M505}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M506}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M507}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M508}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M509}"
+        printf "\n"
+        _mensagec "${GREEN}" "${M510}"
+        printf "\n\n"
+    fi
+    _mensagec "${GREEN}" "${M511}"
+    printf "\n"
+    _linha "="
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+    case ${OPCAO} in
+        1) _temps        ;;
+        2) _rebuild      ;;
+        3) _menubackup   ;;
+        4) _envrecarq    ;;
+        5) _expurgador   ;;
+        6) _parametros   ;;
+        7) _update       ;;
+        8) _lembretes    ;;
+        9) clear ; _principal ;;
+        *) _ferramentas ;;
+    esac
+}
+
+# _principal () - Funcao principal do programa
+# Mostra o menu principal com as opcoes de atualizacao de programas, biblioteca, desatualizando,
+# versao do iscobol, versao do linux e ferramentas. Chama a funcao escolhida pelo usuario.
+# 
+# Opcoes:
+# 1 - Atualizacao de Programas
+# 2 - Atualizacao de Biblioteca
+# 3 - Desatualizando
+# 4 - Versao do Iscobol
+# 5 - Versao do Linux
+# 6 - Ferramentas
+# 9 - Sair
+_principal () { 
+     tput clear
+	printf "\n"
+#-100-mensagens do Menu Principal. ----------------------------------------------------------------#	
+	M101="Menu Principal"
+	M1102=".. Empresa: ${EMPRESA} .."
+    M102=".. Sistema: ${sistema} .."
+    M103="Escolha a opcao:   "
+	M104="1${NORM} - Programas                "
+    M105="2${NORM} - Biblioteca               " 
+	M111="3${NORM} - Versao do Iscobol        "
+	M112="3${NORM} - Funcao nao disponivel    "
+	M107="4${NORM} - Versao do Linux          "
+    M108="5${NORM} - Ferramentas              "
+    M109="9${NORM} - ${RED}Sair            "
+    M110=" Digite a opcao desejada -> " 
+
+	_linha "="
+	_mensagec "${RED}" "${M101}"
+	_linha
+    _mensagec "${WHITE}" "${M1102}"
+    _linha
+	_mensagec "${CYAN}" "${M102}"
+    _linha 
+	_mensagec "${PURPLE}" "${M103}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M104}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M105}"
+	printf "\n"
+        if [[ "${sistema}" = "iscobol" ]]; then
+        _mensagec "${GREEN}" "${M111}"
+        else
+        _mensagec "${GREEN}" "${M112}"
+        fi
+	printf "\n"
+	_mensagec "${GREEN}" "${M107}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M108}"
+	printf "\n\n"
+	_mensagec "${GREEN}" "${M109}"
+    printf "\n"
+    _mensaged "${BLUE}" "${UPDATE}"
+    _linha "="
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+
+    case ${OPCAO} in
+        1) _atualizacao   ;;
+        2) _biblioteca    ;;
+        3) _iscobol       ;;
+        4) _linux         ;;
+        5) _ferramentas   ;;
+        9) clear ; resetando ;;
+          *) clear ; _principal ;;
+    esac
+}
+
 
 _principal
 
