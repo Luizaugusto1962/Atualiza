@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 27/01/2025
+#versao de 13/02/2025
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
@@ -110,7 +110,7 @@ call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%S
 goto MENU
 
 :Tools
-start chrome https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip
+start chrome https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip
 goto MENU
 
 :PSCP
