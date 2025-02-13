@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/02/2025-01"                                                                                                    #
+UPDATE="13/02/2025-02"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3543,7 +3543,7 @@ else
     "${cmd_unzip}" -o "${atualiza}" >> "${LOG_ATU}"
     _read_sleep 1
     "${cmd_find}" "${SAOFF}" -name "${atualiza}" -type f -delete
-    for programas in "atualiza.sh" "setup.sh" "atualizaj" "atualizat"; do
+    for programas in "atualiza.sh" "setup.sh"; do
         if [[ -f "${programas}" ]]; then
             chmod 777 "$programas" 
             mv -f -- "${programas}" "${TOOLS}" >> "${LOG_ATU}"
@@ -3628,6 +3628,7 @@ _visualizar_notas() {
     if [[ -f "$FILE" ]]; then
         if [[ -s "$FILE" ]]; then
             _mensagec "${YELLOW}" "=== Nota armazenada ==="
+            _linha
             cat "$FILE"
             _linha
         else
