@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/02/2025-02"                                                                                                    #
+UPDATE="17/02/2025-00"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -730,10 +730,11 @@ _press () {
 # na largura atual do terminal.
 _linha () {
      local Traco=${1:-'-'}
+     local CCC="${2}"
 # quantidade de tracos por linha
      printf -v Espacos "%$(tput cols)s""" 
      linhas=${Espacos// /$Traco}
-	printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas"
+	printf "%*s""${CCC}" ;printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas" ;printf "%*s""${NORM}"
 }
 
 #   Opção Invalida
@@ -918,8 +919,6 @@ FILE="atualizal"
 fi    
 
 clear
-
-
 
 # Esta função solicita que o usuário insira o nome de um programa em letras maiúsculas para ser atualizado.
 # Ele valida a entrada para garantir que ela consista apenas em letras maiúsculas e números.
@@ -2140,7 +2139,7 @@ _atualizacao () {
      M206="3${NORM} - Voltar programa Atualizado    "
      M209="9${NORM} - ${RED}Menu Anterior        "
      printf "\n"
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M201}"
 	_linha
 	printf "\n"
@@ -2156,7 +2155,7 @@ _atualizacao () {
 	printf "\n\n"
 	_mensagec "${GREEN}" "${M209}"
 	printf "\n"        
-	_linha "="
+	_linha "=" "${GREEN}"
      read -rp "${YELLOW}${M110}${NORM}" OPCAO
      case ${OPCAO} in
           1) _pacoteon ;;
@@ -2193,7 +2192,7 @@ _biblioteca () {
     M410="9${NORM} - ${RED}Menu Anterior     "
 
     printf "\n"
-    _linha "="
+    _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M401}"
     _linha 
     _mensagec "${RED}" "${M402}"
@@ -2215,7 +2214,7 @@ _biblioteca () {
     printf "\n\n"
     _mensagec "${GREEN}" "${M410}"
     printf "\n"        
-    _linha "="
+    _linha "=" "${GREEN}"
 
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
     case ${OPCAO} in
@@ -2491,7 +2490,7 @@ _temps () {
     M909="9${NORM} - ${RED}Menu Anterior          "
 
     printf "\n"
-    _linha "="
+    _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M900}"
     _linha 
     printf "\n"
@@ -2503,7 +2502,7 @@ _temps () {
     printf "\n\n"
     _mensagec "${GREEN}" "${M909}"
     printf "\n"
-    _linha "="
+    _linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
     case ${OPCAO} in
@@ -2563,7 +2562,7 @@ else
 fi
     M909="9${NORM} - ${RED}Menu Anterior "
     printf "\n"
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M900}"
 	_linha 
 	printf "\n"
@@ -2577,7 +2576,7 @@ fi
      printf "\n\n"
      _mensagec "${GREEN}" "${M909}"
      printf "\n"
-     _linha "="
+     _linha "=" "${GREEN}"
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
 if [[ ! "${base3}" ]]; then
      case ${OPCAO} in
@@ -2621,7 +2620,7 @@ _jutill () {
                 _mensagec "${RED}" "Erro: Falha ao reconstruir o arquivo ${arquivo}."
                 return 1
             fi
-            _linha
+            _linha "-" "${GREEN}"
         else
             _mensagec "${RED}" "Erro: Jutil nao encontrado."
             return 1
@@ -2648,11 +2647,11 @@ _rebuild1 () {
         _linha
         read -rp "${YELLOW}Informe o nome do arquivo: ${NORM}" arquivo
 
-        _linha
+        _linha "-" "${BLUE}"
         if [[ -z "${arquivo}" ]]; then
             _meiodatela
             _mensagec "${RED}" "${M65}"
-            _linha
+            _linha "-" "${YELLOW}"
             if [[ -d "${base_to_use}" ]]; then
                 local -a files=("${base_to_use}"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat})
                 for arquivo in "${files[@]}"; do
@@ -2680,10 +2679,10 @@ _rebuild1 () {
                 else
                     _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado."
                 fi
-                _linha
+                _linha "-" "${GREEN}"
             done
         fi
-        _linha
+        _linha "-" "${YELLOW}"
         _mensagec "${YELLOW}" "${M18}"
         _linha
 
@@ -2783,7 +2782,7 @@ _rebuildlista () {
             fi
         done < atualizaj2
     #-Lista de Arquivo(s) recuperado(s)... 
-        _linha 
+        _linha "-" "${YELLOW}"
         _mensagec "${YELLOW}" "${M12}"
         _linha 
     #     _press
@@ -2816,7 +2815,7 @@ _rebuild () {
 	M604="2${NORM} - Arquivos Principais   "
     M605="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M601}"
 	_linha 
 	printf "\n"
@@ -2828,7 +2827,7 @@ _rebuild () {
 	printf "\n\n"
      _mensagec "${GREEN}" "${M605}"
      printf "\n"
-     _linha "="
+     _linha "=" "${GREEN}"
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
      case ${OPCAO} in
      1) _rebuild1 ;;
@@ -3227,7 +3226,7 @@ _menubackup () { while true ; do
      M704="3${NORM} - Enviar Backup                    "
      M705="9${NORM} - ${RED}Menu Anterior           "
 	printf "\n"
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M700}"
 	_linha 
 	printf "\n"
@@ -3241,7 +3240,7 @@ _menubackup () { while true ; do
      printf "\n\n"
 	_mensagec "${GREEN}" "${M705}"
      printf "\n"       
-	_linha "="
+	_linha "=" "${GREEN}"
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
      case ${OPCAO} in
      1) _backup       ;;
@@ -3428,7 +3427,7 @@ _envrecarq () {
      M803="2${NORM} - Receber arquivo(s)    "
      M806="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M800}"
 	_linha 
 	printf "\n"
@@ -3440,7 +3439,7 @@ _envrecarq () {
 	printf "\n\n"
 	_mensagec "${GREEN}" "${M806}"
      printf "\n"       
-	_linha "="
+	_linha "=" "${GREEN}"
      read -rp "${YELLOW}${M110}${NORM}" OPCAO	
      case ${OPCAO} in
      1) _envia_avulso    ;;
@@ -3571,7 +3570,7 @@ fi
 # enviar o backup, e o diretorio do servidor OFF.
 _parametros () {
      clear
-     _linha
+     _linha "=" "${GREEN}"
 printf "${GREEN}""Sistema e banco de dados: ""${NORM}""${BANCO}""%*s\n"     
 printf "${GREEN}""O diretorio raiz e: ""${NORM}""${destino}""%*s\n"
 printf "${GREEN}""O diretorio do atualiza.sh: ""${NORM}""${destino}""${pasta}""%*s\n"
@@ -3590,16 +3589,16 @@ printf "${GREEN}""Biblioteca sendo usada 1: ""${NORM}""${SAVATU1}""%*s\n"
 printf "${GREEN}""Biblioteca sendo usada 2: ""${NORM}""${SAVATU2}""%*s\n"
 printf "${GREEN}""Biblioteca sendo usada 3: ""${NORM}""${SAVATU3}""%*s\n"
 printf "${GREEN}""Biblioteca sendo usada 4: ""${NORM}""${SAVATU4}""%*s\n"
-_linha
+_linha "=" "${GREEN}"
 _press
 clear
-_linha
+_linha  "=" "${GREEN}"
 printf "${GREEN}""O diretorio para onde enviar o backup: ""${NORM}""${ENVIABACK}""%*s\n"
 printf "${GREEN}""O diretorio Servidor OFF: ""${NORM}""${SERACESOFF}""%*s\n"
 printf "${GREEN}""Versao anterior da Biblioteca: ""${NORM}""${VERSAOANT}""%*s\n"
 printf "${GREEN}""Variavel da classe: ""${NORM}""${class}""%*s\n"
 printf "${GREEN}""Variavel da mclasse: ""${NORM}""${mclass}""%*s\n"
-_linha
+_linha  "=" "${GREEN}"
 _press
 _ferramentas
 }
@@ -3681,7 +3680,7 @@ clear
     M805="4${NORM} - Apagar nota          "
     M806="9${NORM} - ${RED}Menu Anterior"
 	printf "\n"
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M800}"
 	_linha 
 	printf "\n"
@@ -3697,7 +3696,7 @@ clear
 	printf "\n\n"    
 	_mensagec "${GREEN}" "${M806}"
     printf "\n"       
-	_linha "="
+	_linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
     case ${OPCAO} in
         1)
@@ -3738,7 +3737,7 @@ _ferramentas () {
     M509="7${NORM} - Update                  "
     M510="8${NORM} - Lembretes               "	
     M511="9${NORM} - ${RED}Menu Anterior  "
-    _linha "="
+    _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M501}"
     _linha 
     printf "\n"
@@ -3759,7 +3758,7 @@ _ferramentas () {
         printf "\n\n"
         _mensagec "${GREEN}" "${M511}"
         printf "\n"
-        _linha "="
+        _linha "=" "${GREEN}"
         read -rp "${YELLOW}${M110}${NORM}" OPCAOB
         case ${OPCAOB} in
             1) _temps        ;;
@@ -3791,7 +3790,7 @@ _ferramentas () {
     fi
     _mensagec "${GREEN}" "${M511}"
     printf "\n"
-    _linha "="
+    _linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
     case ${OPCAO} in
         1) _temps        ;;
@@ -3836,7 +3835,7 @@ _principal () {
     M109="9${NORM} - ${RED}Sair            "
     M110=" Digite a opcao desejada -> " 
 
-	_linha "="
+	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M101}"
 	_linha
     _mensagec "${WHITE}" "${M1102}"
@@ -3862,7 +3861,7 @@ _principal () {
 	_mensagec "${GREEN}" "${M109}"
     printf "\n"
     _mensaged "${BLUE}" "${UPDATE}"
-    _linha "="
+    _linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
     case ${OPCAO} in
