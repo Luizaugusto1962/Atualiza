@@ -8,7 +8,7 @@
 - Limpa arquivos Temporários
 - Recupera arquivos avulso ou os principais
 
-    Rotina para atualizar programas e bibliotecas da SAV
+    Rotina para atualizar programas e bibliotecas da SAV 
     Feito por Luiz Augusto.
     email [luizaugusto@sav.com.br](mailto:luizaugusto@sav.com.br)
 
