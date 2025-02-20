@@ -8,10 +8,9 @@
 - Limpa arquivos Temporários
 - Recupera arquivos avulso ou os principais
 
-    Rotina para atualizar programas e bibliotecas da SAV.
-    
-    Feito por Luiz Augusto.
-    email [luizaugusto@sav.com.br](mailto:luizaugusto@sav.com.br)
+Rotina para atualizar programas e bibliotecas da SAV.
+Feito por Luiz Augusto.
+email [luizaugusto@sav.com.br](mailto:luizaugusto@sav.com.br)
 
 Menus
 
@@ -41,19 +40,23 @@ Menus
      na pasta dos programas.
 
      2 - Atualização de Biblioteca                                                                          
+
            2.1 - Atualização do Transpc                                                                     
      Atualiza a biblioteca que esta no diretório /u/varejo/trans_pc/ do servidor da SAV.                    
      Faz um backup de todos os programas que esta em uso e salva na pasta ?/sav/tmp/olds                    
      com o nome "backup-(versão Informada).zip" descompacta os novos no diretório                           
      dos programas e salva os zips da biblioteca na pasta ?/sav/tmp/biblioteca mudando a                    
      extensão de .zip para .bkp.                                                                            
+
            2.2 - Atualização do Savatu                                                                      
      Atualiza a biblioteca que esta no diretório /home/savatu/biblioteca/temp/(diretório                    
      conforme  sistema que esta sendo usado.                                                                
      Mesmo procedimento acima.                                                                              
+
            2.3 - Atualização  OFF-Line                                                                      
      Atualiza a biblioteca que deve estar salva no diretório ?/sav/tmp                                      
      Mesmo procedimento acima.                                                                              
+
            2.4 - Voltar antes da Biblioteca                                                                 
      Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com nome ("backup-Versão da biblioteca".zip
      na pasta dos programas.                                                                                
@@ -68,6 +71,7 @@ Menus
           5.1 - Limpar Temporários                                                                          
               5.1.1 - Le os arquivos da lista "atualizat" compactando na pasta ?/sav/tmp/backup             
                       com o nome de Temp(dia+mes+ano) e excluindo da pasta de dados.                        
+
               5.1.2 - Adiciona arquivos no "ATUALIZAT"                                                      
 
           5.2 - Recuperar arquivos                                                                          
@@ -81,11 +85,14 @@ Menus
 
           5.3 - Backup da base de dados                                                                     
               5.3.1 - Faz um backup da pasta de dados  com a opção de enviar para o servidor da SAV.
+
               5.3.2 - Restaura Backup da base de dados.
+
               5.3.3 - Enviar Backup selecionado.
 
           5.4 - Envia e Recebe Arquivos "Avulsos".
               5.4.1 - Enviar arquivo(s).
+
               5.4.2 - Receber arquivo(s).
 
           5.5 - Expurgador de arquivos                                                                      
@@ -100,18 +107,17 @@ Menus
 
           5.8 - Lembretes
               5.8.1 - Escrever uma nova nota
+
               5.8.2 - Visualiza nota 
+
               5.8.3 - Editar nota
+
               5.8.4 - Apagar nota
 
 Arquivos de trabalho:
 "atualizac"  = Contem a configuração referente a empresa
-
 "atualizap"  = Configuracao do parametro do sistema
-
 "atualizaj"  = Lista de arquivos principais para dar rebuild.
-
 "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.
               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip
-
 "setup.sh"   = Configurador para criar os arquivos atualizac e atualizap
