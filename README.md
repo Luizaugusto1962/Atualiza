@@ -9,17 +9,8 @@
 - Recupera arquivos avulso ou os principais
 
     Rotina para atualizar programas e bibliotecas da SAV
-    Feito por Luiz Augusto
+    Feito por Luiz Augusto.
     email [luizaugusto@sav.com.br](mailto:luizaugusto@sav.com.br)
-    Versão do atualiza.sh
-
-Arquivos de trabalho:
-"atualizac"  = Contem a configuração referente a empresa
-"atualizap"  = Configuracao do parametro do sistema
-"atualizaj"  = Lista de arquivos principais para dar rebuild.
-"atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.
-              Sao zipados em /backup/Temps-dia-mes-ano-horario.zip
-"setup.sh"   = Configurador para criar os arquivos atualizac e atualizap
 
 Menus
 
@@ -111,4 +102,11 @@ Menus
               5.8.2 - Visualiza nota 
               5.8.3 - Editar nota
               5.8.4 - Apagar nota
-              
+
+Arquivos de trabalho:
+"atualizac"  = Contem a configuração referente a empresa
+"atualizap"  = Configuracao do parametro do sistema
+"atualizaj"  = Lista de arquivos principais para dar rebuild.
+"atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.
+              Sao zipados em /backup/Temps-dia-mes-ano-horario.zip
+"setup.sh"   = Configurador para criar os arquivos atualizac e atualizap
