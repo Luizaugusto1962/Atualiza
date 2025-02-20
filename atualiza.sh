@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="17/02/2025-00"                                                                                                    #
+UPDATE="20/02/2025-00"                                                                                                    #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -795,6 +795,11 @@ if [[ -n "${SERACESOFF}" ]]; then
     if ! [[ -d "${SERACESOFF}" ]]; then 
         mkdir -p "${destino}${SERACESOFF}"
     fi
+    if [[ ! -d "${destino}${SERACESOFF}" ]]; then
+    printf "Erro ao criar diretório %s\n" "${destino}${SERACESOFF}"
+    exit 1
+fi
+
     _read_sleep 0,30
     BAT="atualiza.bat"
     if [[ -f "${TOOLS}/${BAT}" ]]; then
@@ -905,18 +910,69 @@ if [[ -z "${UMADATA}" ]]; then
     exit 1
 fi
 
-if [[ -f atualizal ]]; then
-FILE="atualizal"
+# Função para exibir o texto em uma moldura, parte da rotina _lembretes.
+#
+# Argumentos:
+#   $1: O texto a ser exibido na moldura.
+#
+# A moldura tem a largura máxima do texto, mais 2 caracteres para a borda
+# esquerda e direita. A borda é criada com caracteres '='.
+#
+# Exemplo:
+#   _colocar_em_moldura "Olá, mundo!"
+#
+# Saída:
+#   +-----------+
+#   | Olá, mundo! |
+#   +-----------+
+_colocar_em_moldura() {
+    local texto="$1"
+    local largura=0
+
+    # Calcula a largura máxima da moldura
+    while IFS= read -r linha; do
+        if [ ${#linha} -gt "$largura" ]; then
+            largura=${#linha}
+        fi
+    done <<< "$texto"
+
+    # Cria a borda superior e inferior
+    borda=$(printf "%${largura}s" | tr ' ' '=')
+
+    # Exibe a moldura
+    printf "%s\n" "+-${borda}-+"
+    while IFS= read -r linha; do
+        printf "| %-${largura}s |\n" "$linha"
+    done <<< "$texto"
+    printf "%s\n" "+-${borda}-+"
+}
+
+# Função para visualizar as notas.
+_visualizar_notas() {
     clear
     if [[ -f "$FILE" ]]; then
         if [[ -s "$FILE" ]]; then
-            _mensagec "${YELLOW}" "=== Notas armazenadas ==="
-            cat "$FILE"
+            _colocar_em_moldura "$(cat "$FILE")"
+        else
+            _mensagec "${YELLOW}" "Nenhuma nota encontrada!"
             _linha
-        fi    
-    _press
+        fi
+    else
+        _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
+        _linha
     fi
-fi    
+#    _linha
+    _press
+}
+
+if [[ -f atualizal ]]; then
+    FILE="atualizal"
+
+    if [[ -s "$FILE" ]]; then
+        clear
+        _visualizar_notas
+    fi
+fi
 
 clear
 
@@ -1060,7 +1116,7 @@ if [[ "${SERACESOFF}" != "" ]]; then
      if [[ -f "${arquivo}" ]]; then
         mv -f -- "${arquivo}" "." 
      else
-    M42="O programa a ser atualizado, ""${NOMEPROG[*]}"
+    M42="Aviso: Arquivo %s não encontrado.\n" "$arquivo"
     M422=" nao foi encontrado no diretorio ""${SAOFF}" 
      _linha 
      _mensagec "${RED}" "${M42}"
@@ -1191,6 +1247,7 @@ for  f in "${!programas[@]}"; do
         fi
         _mensagec "${YELLOW}" "Salvando programa antigo: ${programas[f]}"
         EXT_CLASS=".class"
+         # Processa arquivos .class
         if [ -f "${E_EXEC}/${programas[f]}${EXT_CLASS}" ]; then
             if ! "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas[f]}"*"${EXT_CLASS}"; then
                 _linha
@@ -2235,9 +2292,11 @@ _iscobol () {
     if [[ "${sistema}" == "iscobol" ]]; then
         if [[ -x "${SAVISC}${ISCCLIENT}" ]]; then
             clear
-            _linha
+            _linha "=" "${GREEN}"
+            _mensagec "${GREEN}" "Versao do IsCobol"
+            _linha "=" "${GREEN}"
             "${SAVISC}${ISCCLIENT}" -v
-            _linha
+            _linha "=" "${GREEN}"
             printf "\n\n"
         else
             _linha
@@ -3617,34 +3676,15 @@ _escrever_nota() {
    
     # Ler a entrada e adiciona ao arquivo.
      cat >> "$FILE"
-        _mensagec "${YELLOW}" "Nota gravada com sucesso!"
+    _linha    
+    _mensagec "${YELLOW}" "Nota gravada com sucesso!"
     sleep 2
 }
 
-# Função para visualizar as notas.
-_visualizar_notas() {
-    clear
-    if [[ -f "$FILE" ]]; then
-        if [[ -s "$FILE" ]]; then
-            _mensagec "${YELLOW}" "=== Nota armazenada ==="
-            _linha
-            cat "$FILE"
-            _linha
-        else
-            _mensagec "${YELLOW}" "Nenhuma nota encontrada!"
-            _linha
-        fi
-    else
-        _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
-        _linha
-    fi
-    _press
-}
 
 # Função para editar as notas utilizando um editor de texto.
 _editar_nota() {
     clear
-
     if [[ -f "$FILE" ]]; then
         # Abre o arquivo no editor padrão definido na variável EDITOR ou no nano, se não houver.
         if ! ${EDITOR:-nano} "$FILE"; then
