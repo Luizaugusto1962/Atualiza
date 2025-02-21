@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/02/2025-00"                                                                                                    #
+UPDATE="21/02/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -86,7 +86,7 @@ UPDATE="20/02/2025-00"                                                          
 #               5.3.1 - Faz um backup da pasta de dados  e tem a opcao de enviar para a SAV                            #
 #               5.3.2 - Restaura Backup da base de dados                                                               #
 #               5.3.3 - Enviar Backup selecionado                                                                      #
-#                                                                                                                      #  
+#                                                                                                                      #
 #           5.4 - Envia e Recebe Arquivos "Avulsos"                                                                    #
 #               5.4.1 - Enviar arquivo(s)                                                                              #
 #               5.4.2 - Receber arquivo(s)                                                                             #
@@ -94,17 +94,16 @@ UPDATE="20/02/2025-00"                                                          
 #           5.5 - Expurgador de arquivos                                                                               #
 #               Excluir, zips e bkps com mais de 30 dias processado dos diretorios:                                    #
 #                /backup, /olds /progs e /logs                                                                         #
-#                                                                                                                      # 
-#           5.6 - Parametros                                                                                           #    
-#                 Variaves e caminhos necessarios para o funcionamento do atualiza.sh                                  # 
-#                                                                                                                      # 
+#                                                                                                                      #
+#           5.6 - Parametros                                                                                           #
+#                 Variaves e caminhos necessarios para o funcionamento do atualiza.sh                                  #
+#                                                                                                                      #
 #           5.7 - Update                                                                                               #
 #               Atualizacao do programa atualiza.sh                                                                    #
 #                                                                                                                      #
 #           5.8 - Lembretes                                                                                            #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
-
 
 #Zerando variaves utilizadas 
 # resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
@@ -117,8 +116,15 @@ unset -v destino pasta base base2 base3 logs exec class telas xml
 unset -v olds progs backup sistema SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4
 unset -v TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF
 unset -v E_EXEC T_TELAS X_XML NOMEPROG CCC MXX
-unset -v cmd_unzip cmd_zip cmd_find cmd_who VBACKUP ARQUIVO 
-unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 
+unset -v cmd_unzip cmd_zip cmd_find cmd_who 
+unset -v PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 VBACKUP ARQUIVO VERSAO
+unset -v ARQUIVO2 VERSAOANT INI SAVISC
+unset -v DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO
+unset -v DEFAULT_VERSAO VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG
+unset -v DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_IPSERVER DEFAULT_DESTINO2
+unset -v UPDATE DEFAULT_PEDARQ
+unset -v jut JUTIL ISCCLIENT ISCCLIENTT SAVISCC
+
 tput sgr0; exit 
 }
 
@@ -910,66 +916,59 @@ if [[ -z "${UMADATA}" ]]; then
     exit 1
 fi
 
-# Função para exibir o texto em uma moldura, parte da rotina _lembretes.
-#
-# Argumentos:
-#   $1: O texto a ser exibido na moldura.
-#
-# A moldura tem a largura máxima do texto, mais 2 caracteres para a borda
-# esquerda e direita. A borda é criada com caracteres '='.
-#
-# Exemplo:
-#   _colocar_em_moldura "Olá, mundo!"
-#
-# Saída:
-#   +-----------+
-#   | Olá, mundo! |
-#   +-----------+
-_colocar_em_moldura() {
-    local texto="$1"
-    local largura=0
+# Visualiza as notas de vers o do programa no formato de uma moldura com bordas
+# e centraliza o texto para facilitar a leitura.
+_visualizar_notas() {
+clear    
+ARQUIVO="atualizal"
+# Verifica se o arquivo existe e é legível
+if [ ! -f "$ARQUIVO" ] || [ ! -r "$ARQUIVO" ]; then
+    echo "Erro: Arquivo '$ARQUIVO' não existe ou não pode ser lido"
+    exit 1
+fi
 
-    # Calcula a largura máxima da moldura
-    while IFS= read -r linha; do
-        if [ ${#linha} -gt "$largura" ]; then
-            largura=${#linha}
-        fi
-    done <<< "$texto"
+LARGURA=0
+# Calcula a largura máxima do conteúdo
+LARGURA=$(awk 'length > max {max = length} END {print max}' "$ARQUIVO")
+# Adiciona espaço extra para a moldura
+LARGURA_TOTAL=$((LARGURA + 3))
 
-    # Cria a borda superior e inferior
-    borda=$(printf "%${largura}s" | tr ' ' '=')
-
-    # Exibe a moldura
-    printf "%s\n" "+-${borda}-+"
-    while IFS= read -r linha; do
-        printf "| %-${largura}s |\n" "$linha"
-    done <<< "$texto"
-    printf "%s\n" "+-${borda}-+"
+# Função para criar linha horizontal da moldura
+criar_linha() {
+    printf "+-"
+    for ((i=1; i<=LARGURA_TOTAL-2; i++)); do
+        printf "="
+    done
+    printf "%s\n" "-+"  
 }
 
-# Função para visualizar as notas.
-_visualizar_notas() {
-    clear
-    if [[ -f "$FILE" ]]; then
-        if [[ -s "$FILE" ]]; then
-            _colocar_em_moldura "$(cat "$FILE")"
-        else
-            _mensagec "${YELLOW}" "Nenhuma nota encontrada!"
-            _linha
-        fi
-    else
-        _mensagec "${RED}" "Erro: O arquivo de notas nao existe!"
-        _linha
-    fi
-#    _linha
-    _press
+# Imprime a moldura superior
+criar_linha
+
+# Lê o arquivo linha por linha e adiciona bordas laterais
+while IFS= read -r linha || [ -n "$linha" ]; do
+    # Calcula padding para centralizar o texto
+    TAMANHO_LINHA=${#linha}
+    ESPACOS=$((LARGURA - TAMANHO_LINHA + 2))
+    
+    # Imprime borda esquerda, texto e borda direita
+    printf "| %s" "$linha"
+    # Adiciona espaços para completar a linha
+    for ((i=1; i<=ESPACOS; i++)); do
+        printf " "
+    done
+    printf "|\n"
+done < "$ARQUIVO"
+
+# Imprime a moldura inferior
+criar_linha
+printf "\n"
+_press
 }
 
 if [[ -f atualizal ]]; then
     FILE="atualizal"
-
     if [[ -s "$FILE" ]]; then
-        clear
         _visualizar_notas
     fi
 fi
