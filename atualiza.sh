@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="24/02/2025-00"                                                                                                 #
+UPDATE="25/02/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -109,7 +109,7 @@ UPDATE="24/02/2025-00"                                                          
 # resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
 #            evitar que elas sejam utilizadas por outros programas.
 #            Também fecha o programa atualiza.sh.
-resetando () {
+_resetando () {
 unset -v RED GREEN YELLOW BLUE PURPLE CYAN NORM
 unset -v BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP 
 unset -v destino pasta base base2 base3 logs exec class telas xml
@@ -174,14 +174,10 @@ DESTINO2="${DESTINO2:-}" # Variavel que define o caminho do diretorio da bibliot
 #-Variaveis de cores-------------------------------------------------------------------------------#
 # TERM=xterm-256color
 # Comando para resetar cores
-tput sgr0
-# Comando para limpar a tela
-tput clear 
-# Comando para tornar a fonte em negrito
-tput bold
-# Comando para definir a cor da fonte como branco
-tput setaf 7
-# Variaveis de cores
+tput sgr0 # Comando para limpar a tela
+tput clear # Comando para tornar a fonte em negrito
+tput bold # Comando para definir a cor da fonte como branco
+tput setaf 7 # Variaveis de cores
 RED=$(tput bold)$(tput setaf 1) # Cor vermelha
 GREEN=$(tput bold)$(tput setaf 2) # Cor verde
 YELLOW=$(tput bold)$(tput setaf 3) # Cor amarela
@@ -586,7 +582,7 @@ if [[ -z "${prog}" ]]; then
     prog="${DEFAULT_PROG}"
 fi
 
-# Verificacao de diretorio necessarios -------------------------------------------------------------#
+# Verificacao de diretorio necessarios nos arquivos atualizac e atualizap -------------------------------------#
 # pasta - Diretorio do Tools
 if [[ -n "${pasta}" ]]; then
     _mensagec "${CYAN}" "${M81}"
@@ -641,22 +637,32 @@ fi
 # Verifica se os diretorios necessarios para a execucao do programa
 # estao configurados corretamente.
 # -----------------------------------------------------------------#
+
+# Verificações de parâmetro e diretórios
 E_EXEC=${destino}"/"${exec}
 if [[ -n "${E_EXEC}" ]] && [[ -d "${E_EXEC}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
 else
     # Diretorio da destino nao encontrado
-    printf "%*s""Diretorio da destino nao encontrado ""${E_EXEC}""...  \n"
+        M44="Nao foi encontrado o diretorio ""${E_EXEC}"
+    _linha "*"
+    _mensagec "${RED}" "${M44}"
+    _linha "*"
+    _read_sleep 2
     exit
-fi
+    fi
 T_TELAS=${destino}"/"${telas}
 if [[ -n "${T_TELAS}" ]] && [[ -d "${T_TELAS}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
 else
     # Diretorio da destino nao encontrado
-    printf "%*s""Diretorio da destino nao encontrado ""${T_TELAS}""...  \n"
+    M44="Nao foi encontrado o diretorio ""${T_TELAS}"
+    _linha "*"
+    _mensagec "${RED}" "${M44}"
+    _linha "*"
+    _read_sleep 2
     exit
 fi
 X_XML=${destino}"/"${xml}
@@ -699,6 +705,17 @@ else
     exit
 fi     
 
+# Verifica diretórios específicos se o sistema for iscobol
+if [[ "${sistema}" = "iscobol" ]]; then
+    if [[ ! -d "${X_XML}" ]]; then
+        M44="Nao foi encontrado o diretorio ""${X_XML}"
+        _linha "*"
+        _mensagec "${RED}" "${M44}"
+        _linha "*"
+        _read_sleep 2
+        exit
+    fi
+fi
 # Verificacao do Jutil
 # Jutil - Programa para fazer rebuild nas bases de dados
 jut="$SAVISC""$JUTIL"
@@ -811,41 +828,6 @@ fi
 if [[ -z "${DESTINO2TRANSPC}" ]]; then
     printf "Erro: Variavel de ambiente DESTINO2TRANSPC nao esta configurada.\n"
     exit 1
-fi
-
-
-# Verificações de parâmetro e diretórios
-clear
-# Verifica se o diretório de execução existe
-if [[ ! -d "${E_EXEC}" ]]; then
-    M44="Nao foi encontrado o diretorio ""${E_EXEC}"
-    _linha "*"
-    _mensagec "${RED}" "${M44}"
-    _linha "*"
-    _read_sleep 2
-    exit
-fi
-
-# Verifica se o diretório de telas existe
-if [[ ! -d "${T_TELAS}" ]]; then
-    M44="Nao foi encontrado o diretorio ""${T_TELAS}"
-    _linha "*"
-    _mensagec "${RED}" "${M44}"
-    _linha "*"
-    _read_sleep 2
-    exit
-fi
-
-# Verifica diretórios específicos se o sistema for iscobol
-if [[ "${sistema}" = "iscobol" ]]; then
-    if [[ ! -d "${X_XML}" ]]; then
-        M44="Nao foi encontrado o diretorio ""${X_XML}"
-        _linha "*"
-        _mensagec "${RED}" "${M44}"
-        _linha "*"
-        _read_sleep 2
-        exit
-    fi
 fi
 
 # Verifica e cria diretório SERACESOFF se necessário
@@ -1994,7 +1976,7 @@ _processo () {
                         ;;
                 esac
 
-                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec zip -r -q "${OLDS}/${INI}" "{}" + || {
+                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec "${cmd_zip}" -r -q "${OLDS}/${INI}" "{}" + || {
                     printf "Erro: Falha ao compactar arquivos no diretório ${dir}""%*s\n" 
                     continue
                 }
@@ -2027,7 +2009,7 @@ _processo () {
                         ;;
                 esac
 
-                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec zip -r -q "${OLDS}/${INI}" "{}" + || {
+                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec "${cmd_zip}" -r -q "${OLDS}/${INI}" "{}" + || {
                     _mensagec "${RED}" "Erro: Falha ao compactar arquivos no diretório ${dir}"
                     continue
                 }
@@ -3930,7 +3912,7 @@ printf "\n"
         3) _iscobol       ;;
         4) _linux         ;;
         5) _ferramentas   ;;
-        9) clear ; resetando ;;
+        9) clear ; _resetando ;;
         *) _opinvalida ;
             _read_sleep 1 ; 
             _principal ;;
