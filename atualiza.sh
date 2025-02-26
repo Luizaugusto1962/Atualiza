@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="26/02/2025-01"                                                                                                 #
+UPDATE="26/02/2025-02"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2206,8 +2206,7 @@ _biblioteca () {
     VERSAO=" " # Variavel que define a versao do programa.
     clear
     M401="Menu da Biblioteca"
-    M402="Versao Informada - ${NORM}${YELLOW}${VERSAO}"
-    M403="Anterior - ${NORM}${PURPLE}${VERSAOANT}"
+    M403="Versao Anterior - ${NORM}${PURPLE}${VERSAOANT}"
     M404="Escolha o local da Biblioteca:        "
     M405="1${NORM} - Atualizacao do Transpc     "
     M406="2${NORM} - Atualizacao do Savatu      "
@@ -2219,10 +2218,8 @@ _biblioteca () {
     printf "\n"
     _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M401}"
-    _linha 
-    _mensagec "${RED}" "${M402}"
-    _linha 
-    _mensagec "${BLUE}" "${M403}"
+#    _linha 
+#    _mensagec "${BLUE}" "${M403}"
     _linha "="
     printf "\n"
     _mensagec "${PURPLE}" "${M404}"
@@ -2238,7 +2235,12 @@ _biblioteca () {
     _mensagec "${GREEN}" "${M409}"
     printf "\n\n"
     _mensagec "${GREEN}" "${M410}"
-    printf "\n"        
+    printf "\n"
+    if [[ -n "${VERSAOANT}" ]]; then
+        printf "\n"
+        _mensaged "${BLUE}" "${M403}"
+    fi
+#    _mensaged "${BLUE}" "${M403}"
     _linha "=" "${GREEN}"
 
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
@@ -3509,7 +3511,9 @@ SAVLOG="$destino""/sav/portalsav/log"
     local DIR5="${SAVLOG}""/"
 ERR_ISC="$destino""/sav/err_isc" 
     local DIR6="${ERR_ISC}""/"
-    for ARQS in $DIR1 $DIR2 $DIR3 $DIR4 $DIR5 $DIR6; do
+VIEWVIX="$destino""/sav/savisc/viewvix/tmp"
+    local DIR7="${VIEWVIX}""/"
+    for ARQS in $DIR1 $DIR2 $DIR3 $DIR4 $DIR5 $DIR6 $DIR7; do
         if [[ -d "${ARQS}" ]]; then
             "${cmd_find}" "${ARQS}" -mtime +30 -type f -delete 
             _mensagec "${GREEN}" "${MDIR}${ARQS}"
@@ -3614,7 +3618,7 @@ printf "${GREEN}""O diretorio da Terceira base: ""${NORM}""${destino}""${base3}"
 printf "${GREEN}""O diretorio do executavies: ""${NORM}""${destino}""/""${exec}""%*s\n"
 printf "${GREEN}""O diretorio das telas: ""${NORM}""${destino}""/""${telas}""%*s\n"
 printf "${GREEN}""O diretorio dos xmls: ""${NORM}""${destino}""/""${xml}""%*s\n"
-printf "${GREEN}""O diretorio dos logs: ""${NORM}""${destino}""${logs}""%*s\n"
+printf "${GREEN}""O diretorio dos logs: ""${NORM}""${destino}""${pasta}""${logs}""%*s\n"
 printf "${GREEN}""O diretorio dos olds: ""${NORM}""${destino}""${pasta}""${olds}""%*s\n"
 printf "${GREEN}""O diretorio dos progs: ""${NORM}""${destino}""${pasta}""${progs}""%*s\n"
 printf "${GREEN}""O diretorio do backup: ""${NORM}""${destino}""${pasta}""${backup}""%*s\n"
