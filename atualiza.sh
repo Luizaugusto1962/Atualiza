@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="25/02/2025-00"                                                                                                 #
+UPDATE="26/02/2025-01"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -794,15 +794,13 @@ fi
 # Variáveis para armazenar os caminhos de destino dos programas/biblioteca
 # que serão baixados via rsync.
 DESTINO2SERVER="/u/varejo/man/"  # Caminho do servidor da SAV com os programas.
-DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"
-DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"
-DESTINO2TRANSPC="/u/varejo/trans_pc/"
+DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"  # Caminho do diretorio de destino dos programas ISCobol.
+DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"  # Caminho do diretorio de destino dos programas Isam.
+DESTINO2TRANSPC="/u/varejo/trans_pc/"  # Caminho do diretorio de destino dos programas da pasta trans_pc.
 
 # Verifica se as variáveis de ambiente foram setadas.
 # As variáveis de ambiente são necessárias para que o programa funcione corretamente.
 # Caso elas não estejam setadas, o programa exibe uma mensagem de erro e sai.
-
-# DESTINO2SERVER: Caminho do servidor da SAV com os programas.
 # Utilizado para baixar os programas via rsync.
 if [[ -z "${DESTINO2SERVER}" ]]; then
     printf "Erro: Variavel de ambiente DESTINO2SERVER nao esta configurada.\n"
@@ -830,15 +828,15 @@ if [[ -z "${DESTINO2TRANSPC}" ]]; then
     exit 1
 fi
 
-# Verifica e cria diretório SERACESOFF se necessário
+# Verifica se o sistema e em modo offline, se sim cria diretório SERACESOFF se necessário
 if [[ -n "${SERACESOFF}" ]]; then
     if ! [[ -d "${SERACESOFF}" ]]; then 
         mkdir -p "${destino}${SERACESOFF}"
     fi
-    if [[ ! -d "${destino}${SERACESOFF}" ]]; then
-    printf "Erro ao criar diretório %s\n" "${destino}${SERACESOFF}"
-    exit 1
-    fi
+        if [[ ! -d "${destino}${SERACESOFF}" ]]; then
+        printf "Erro ao criar diretório %s\n" "${destino}${SERACESOFF}"
+        exit 1
+        fi
     _read_sleep 0,30
     BAT="atualiza.bat"
     if [[ -f "${TOOLS}/${BAT}" ]]; then
@@ -846,46 +844,36 @@ if [[ -n "${SERACESOFF}" ]]; then
     fi
 fi
 
-#### PARAMETRO PARA O LOGS ------------------------------------------------------------------------#
+#### PARAMETRO PARA O LOGS #
 # Define o nome do arquivo de log da atualizacao
 # com a data de hoje no formato "ano-mes-dia".
 LOG_ATU=${LOGS}/atualiza.$(date +"%Y-%m-%d").log
-
-# Define o nome do arquivo de log da limpeza
-# com a data de hoje no formato "ano-mes-dia".
-LOG_LIMPA=${LOGS}/limpando.$(date +"%Y-%m-%d").log
-
-# Define o nome do arquivo de log temporario
-# sem data no nome, pois sera sobreescrito
-# a cada execucao.
-LOG_TMP=${LOGS}/
-
-# Define a variavel UMADATA com a data e hora
-# atual no formato "dia-mes-ano_hora_minuto_segundo".
-UMADATA=$(date +"%d-%m-%Y_%H%M%S")
-
-
-# Verifica se as variáveis de ambiente necessárias estão configuradas.
-# Em caso negativo, exibe uma mensagem de erro e encerra a execução.
-
 # Verifica a variável de ambiente LOG_ATU
 if [[ -z "${LOG_ATU}" ]]; then
     printf "Erro: Variavel de ambiente LOG_ATU nao esta configurada.\n"
     exit 1
 fi
-
+# Define o nome do arquivo de log da limpeza
+# com a data de hoje no formato "ano-mes-dia".
+LOG_LIMPA=${LOGS}/limpando.$(date +"%Y-%m-%d").log
 # Verifica a variável de ambiente LOG_LIMPA
 if [[ -z "${LOG_LIMPA}" ]]; then
     printf "Erro: Variavel de ambiente LOG_LIMPA nao esta configurada.\n"
     exit 1
 fi
-
+# Define o nome do arquivo de log temporario
+# sem data no nome, pois sera sobreescrito
+# a cada execucao.
+LOG_TMP=${LOGS}/
 # Verifica a variável de ambiente LOG_TMP
 if [[ -z "${LOG_TMP}" ]]; then
     printf "Erro: Variavel de ambiente LOG_TMP nao esta configurada.\n"
     exit 1
 fi
 
+# Define a variavel UMADATA com a data e hora
+# atual no formato "dia-mes-ano_hora_minuto_segundo".
+UMADATA=$(date +"%d-%m-%Y_%H%M%S")
 # Verifica a variável de ambiente UMADATA
 if [[ -z "${UMADATA}" ]]; then
     printf "Erro: Variavel de ambiente UMADATA nao esta configurada.\n"
@@ -896,10 +884,10 @@ fi
 # e centraliza o texto para facilitar a leitura.
 _visualizar_notas() {
 clear    
-ARQUIVO="atualizal"
+NOTA="atualizal"
 # Verifica se o arquivo existe e é legível
-if [ ! -f "$ARQUIVO" ] || [ ! -r "$ARQUIVO" ]; then
-    ML1="Erro: Arquivo $ARQUIVO não existe ou não pode ser lido"
+if [ ! -f "$NOTA" ] || [ ! -r "$NOTA" ]; then
+    ML1="Erro: Arquivo $NOTA não existe ou não pode ser lido"
     _linha
     _mensagec "${RED}" "${ML1}"
     _linha  
@@ -908,12 +896,12 @@ if [ ! -f "$ARQUIVO" ] || [ ! -r "$ARQUIVO" ]; then
 else
 LARGURA=0
 # Calcula a largura máxima do conteúdo
-LARGURA=$(awk 'length > max {max = length} END {print max}' "$ARQUIVO")
+LARGURA=$(awk 'length > max {max = length} END {print max}' "$NOTA")
 # Adiciona espaço extra para a moldura
 LARGURA_TOTAL=$((LARGURA + 3))
 
 # Função para criar linha horizontal da moldura
-criar_linha() {
+_criar_linha() {
     printf "+-"
     for ((i=1; i<=LARGURA_TOTAL-2; i++)); do
         printf "="
@@ -922,7 +910,7 @@ criar_linha() {
 }
 
 # Imprime a moldura superior
-criar_linha
+_criar_linha
 
 # Lê o arquivo linha por linha e adiciona bordas laterais
 while IFS= read -r linha || [ -n "$linha" ]; do
@@ -937,18 +925,18 @@ while IFS= read -r linha || [ -n "$linha" ]; do
         printf " "
     done
     printf "|\n"
-done < "$ARQUIVO"
+done < "$NOTA"
 
 # Imprime a moldura inferior
-criar_linha
+_criar_linha
 printf "\n"
 _press
 fi
 }
-
-if [[ -f atualizal ]]; then
-    FILE="atualizal"
-    if [[ -s "$FILE" ]]; then
+# Verifica se o arquivo "atualizal" existe e é legível e se contém dados e mostras a anotacao.
+NOTA="atualizal"
+if [[ -f "${NOTA}" ]]; then
+    if [[ -s "${NOTA}" ]]; then
         _visualizar_notas
     fi
 fi
@@ -971,7 +959,7 @@ NOMEPROG=()
 programas=()
 
 # Função para validar nome do programa
-validar_nome() {
+_validar_nome() {
     local programa="$1"
     [[ -n "$programa" && "$programa" =~ ^[A-Z0-9]+$ ]]   
     [[ "$1" =~ ^[A-Z0-9]+$ ]]
@@ -997,7 +985,7 @@ while (( contador < MAX_REPETICOES )); do
         break
     fi
     # Verifica se o nome do programa é válido
-    if ! validar_nome "$programa"; then
+    if ! _validar_nome "$programa"; then
         _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
         continue
     fi
@@ -1390,7 +1378,7 @@ _voltaprog () {
     NOMEPROG=()
     programas=()
 
-    validar_nome() {
+    _validar_nome2() {
         [[ "$1" =~ ^[A-Z0-9]+$ ]]
     }
 
@@ -1406,11 +1394,12 @@ _voltaprog () {
 
         # Verifica se foi digitado ENTER ou espaço
         if [[ -z "${programa}" ]]; then
+        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo ou Continuando..."
             break
         fi
 
         # Verifica se o nome do programa é válido
-        if ! validar_nome "$programa"; then
+        if ! _validar_nome2 "$programa"; then
             _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
             continue
         fi
@@ -2418,15 +2407,7 @@ _varrendo_arquivo() {
     "${cmd_find}" "${DIRB}" -type f -iname "${file_name}" -exec "${cmd_zip}" -m "${BACKUP}/${zip_file_name}" "{}" +
 } >> "${LOG_LIMPA}"
 
-#_varrendo_arquivo () {
-#       "${cmd_find}" "${DIRB}" -type f -iname "${line}" -exec zip -m "${BACKUP}/${TEMPS}-${UMADATA}" "{}" + || {
-#        printf "Erro ao executar o comando zip.\n" >&2
-#        return 1
-#    }
-# _limpando: Limpa os arquivos temporarios no diretorio "${DIRB}"
-#
-# O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" e o comando zip para compactar e mover para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}".
-
+# _limpando: Exclui todos os arquivos temporarios no diretorio "${DIRB}" com base na lista "atualizat".
 _limpando () {
 clear
     line_array=""
