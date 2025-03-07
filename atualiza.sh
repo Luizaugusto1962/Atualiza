@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="07/03/2025-00"                                                                                                 #
+UPDATE="07/03/2025-01"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2880,10 +2880,10 @@ _backup() { # funcionando
     
     # Cria diretório de backup se não existir
     if [ ! -d "$BACKUP" ]; then
-        M23="Criando o diretório dos backups em $BACKUP..."
+        M23="Criando o diretorio dos backups em $BACKUP..."
         _linha && _mensagec "$YELLOW" "$M23" && _linha
         mkdir -p "$BACKUP" || {
-            _mensagec "$RED" "Erro ao criar diretório de backup"
+            _mensagec "$RED" "Erro ao criar diretorio de backup"
             return 1
         }
     fi
@@ -2895,7 +2895,7 @@ _backup() { # funcionando
 
     # Verifica backups recentes (últimos 2 dias)
     if find "$BACKUP" -maxdepth 1 -ctime -2 -name "${EMPRESA}*zip" -print -quit | grep -q .; then
-        M62="Já existe um backup recente em $BACKUP."
+        M62="Ja existe um backup recente em $BACKUP."
         _linha && _mensagec "$CYAN" "$M62" && _linha
         ls -ltrh "${BACKUP}"/"${EMPRESA}"_*.zip
         _linha
@@ -2914,7 +2914,7 @@ _backup() { # funcionando
     
     # Muda para diretório base com verificação
     cd "$BASE1" || {
-        _mensagec "$RED" "Erro: Não foi possível acessar $BASE1"
+        _mensagec "$RED" "Erro: Nao foi possivel acessar $BASE1"
         return 1
     }
     _linha && _mensagec "$YELLOW" "$M14" && _linha
@@ -2968,7 +2968,7 @@ _send_and_manage_backup() {
     local backup_file="$1"  # Recebe o nome do arquivo de backup como parâmetro
     
     # Mensagem inicial
-    MA116="Backup será enviado para o diretório: ${ENVIABACK:-"não especificado"}"
+    MA116="Backup sera enviado para o diretario: ${ENVIABACK:-"nao especificado"}"
     _mensagec "${YELLOW}" "${MA116}"
     _linha
         # Confirmação de envio simplificada
@@ -2983,11 +2983,11 @@ _send_and_manage_backup() {
             if [ -n "${SERACESOFF}" ]; then
                 local dest_dir="${destino}${SERACESOFF}"
                 mkdir -p "${dest_dir}" || {
-                    _mensagec "${RED}" "Erro ao criar diretório ${dest_dir}"
+                    _mensagec "${RED}" "Erro ao criar diretorio ${dest_dir}"
                     return 1
                 }
                 if mv -f "${BACKUP}/${backup_file}" "${dest_dir}"; then
-                    MA11="Backup enviado para o diretório: ${dest_dir}"
+                    MA11="Backup enviado para o diretorio: ${dest_dir}"
                     _linha
                     _mensagec "${YELLOW}" "${MA11}"
                     _linha
@@ -3012,7 +3012,7 @@ _send_and_manage_backup() {
                 until [ -n "$remote_dest" ]; do
                 _meiodatela 
                 _mensagec "$RED" "$M69" 
-                read -r -p "Digite o diretório remoto: " remote_dest
+                read -r -p "Digite o diretorio remoto: " remote_dest
                 done
             fi
             
@@ -3068,7 +3068,7 @@ _backupavulso() {
         # Verifica se o usuário quer sair
         if [[ "${VBACKAV,,}" == "sair" ]]; then
             _linha
-            _mensagec "${YELLOW}" "Operação cancelada."
+            _mensagec "${YELLOW}" "Operacao cancelada."
             _linha
             _press
             _ferramentas
@@ -3107,7 +3107,7 @@ _backupavulso() {
         SAOFF="${destino}${SERACESOFF}"
         if mv -f "${BACKUP}/${VBACKUP}" "${SAOFF}" 2>/dev/null; then
             _linha 
-            _mensagec "${YELLOW}" "Backup enviado para o diretório: ${SAOFF}"
+            _mensagec "${YELLOW}" "Backup enviado para o diretorio: ${SAOFF}"
             _linha && _press && _ferramentas && return
         else
             _mensagec "${RED}" "Erro ao mover o backup para ${SAOFF}"
@@ -3121,7 +3121,7 @@ _backupavulso() {
     printf "\n\n"
     case "${REPLY,,}" in
         n|"") 
-            _mensagec "${YELLOW}" "Operação concluída sem envio remoto." 
+            _mensagec "${YELLOW}" "Operacao concluida sem envio remoto." 
             _linha && _press
             _ferramentas
             ;;
@@ -3182,16 +3182,16 @@ _unbackup() {
 
     # Verifica se BACKUP e EMPRESA estão definidos
     if [[ -z "${BACKUP}" || -z "${EMPRESA}" ]]; then
-        _mensagec "${RED}" "Variáveis BACKUP ou EMPRESA não definidas"
+        _mensagec "${RED}" "Variaveis BACKUP ou EMPRESA nao definidas"
         _press
         return 1
     fi
 
     # Cria diretório de backup se não existir
     if [[ ! -d "${DIRBACK}" ]]; then
-        _mensagec "${YELLOW}" "Criando diretório temporário em ${DIRBACK}..."
+        _mensagec "${YELLOW}" "Criando diretorio temporario em ${DIRBACK}..."
         mkdir -p "${DIRBACK}" || {
-            _mensagec "${RED}" "Falha ao criar diretório ${DIRBACK}"
+            _mensagec "${RED}" "Falha ao criar diretorio ${DIRBACK}"
             _press
             return 1
         }
@@ -3219,7 +3219,7 @@ _unbackup() {
 
     # Verifica se o backup existe e é legível
     if [[ ! -f "${backup_path}" || ! -r "${backup_path}" ]]; then
-        _mensagec "${RED}" "Backup ${VBACKUP} não encontrado ou não legível"
+        _mensagec "${RED}" "Backup ${VBACKUP} nao encontrado ou nao legivel"
         _press
         _menubackup
         return 1
@@ -3235,7 +3235,7 @@ _unbackup() {
             # Restauração de arquivo específico
             local VARQUIVO=""
             _linha
-            read -rp "${YELLOW}2- Informe o nome do arquivo (maiúsculo, sem extensão): ${NORM}" VARQUIVO
+            read -rp "${YELLOW}2- Informe o nome do arquivo (maiusculo, sem a extensao): ${NORM}" VARQUIVO
             _linha
 
             # Valida nome do arquivo
@@ -3258,7 +3258,7 @@ _unbackup() {
             if ls "${BASE1}/${VARQUIVO}"*.* >/dev/null 2>&1; then
                 _mensagec "${GREEN}" "Arquivo ${VARQUIVO} restaurado com sucesso"
             else
-                _mensagec "${YELLOW}" "Arquivo ${VARQUIVO} não encontrado após restauração"
+                _mensagec "${YELLOW}" "Arquivo ${VARQUIVO} nao encontrado apos restauracao"
                 _linha && _press
                 _menubackup
                 return 1
@@ -3276,12 +3276,12 @@ _unbackup() {
                 _menubackup
                 return 1
             fi
-            _mensagec "${GREEN}" "Restauração completa concluída"
+            _mensagec "${GREEN}" "Restauracao completa concluida"
             _linha
             ;;
 
         *)
-            _mensagec "${RED}" "Opção inválida"
+            _mensagec "${RED}" "Opcao invalida"
             _linha && _press
             return 1
             ;;
@@ -3292,116 +3292,6 @@ _unbackup() {
     _ferramentas
 }
 
-
-#_unbackup() {
-#local DIRBACK="${BACKUP}"
-#
-#if [[ ! -d "${DIRBACK}" ]]; then
-#    M22=".. Criando o diretorio temp do backup em ${DIRBACK}.." 
-#    _linha 
-#    _mensagec "${YELLOW}" "${M22}"
-#    _linha 
-#    mkdir -p "${DIRBACK}"
-#fi
-#
-#ls -lhs "${BACKUP}""/""${EMPRESA}"_*.zip
-#_linha 
-#_mensagec "${RED}" "${M53}"
-#_linha
-#MA9="         1- Informe somente a data do BACKUP: " 
-#read -rp "${YELLOW}${MA9}${NORM}" VBACK
-#local VBACKUP="${EMPRESA}"_"${VBACK}"".zip"
-#while [[ -f "${VBACKUP}" || -z "${VBACKUP}" ]]; do 
-#    clear
-#    _meiodatela
-#    _mensagec "${RED}" "${M70}"
-#    _press
-#    _menubackup
-#done
-#
-#if [[ ! -r "${BACKUP}"/"${VBACKUP}" ]]; then
-#    #-"Backup nao encontrado no diretorio"
-#    _linha 
-#    _mensagec "${RED}" "${M45}"
-#    _linha 
-#    _press
-#    _menubackup
-#fi
-#
-#printf "\n" 
-##"Deseja volta todos os ARQUIVOS do Backup ? [N/s]:"
-#_linha 
-#read -rp "${YELLOW}${M35}${NORM}" -n1 
-#printf "\n\n"
-#
-#if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-#    MB1="       2- Informe o somente nome do arquivo em maiusculo e a sem extensao: "
-#    read -rp "${YELLOW}${MB1}${NORM}" VARQUIVO
-#    while [[ "${VARQUIVO}" =~ [^A-Z0-9] || -z "${VARQUIVO}" ]] ; do
-#        _mensagec "${RED}" "${M71}"
-#        _linha 
-#        _press
-#        _menubackup
-#    done
-#
-#    #-"Voltando Backup anterior  ...-#
-#    M34="O arquivo ""${VARQUIVO}"
-#    _linha 
-#    _mensagec "${YELLOW}" "${M33}"
-#    _mensagec "${YELLOW}" "${M34}"
-#    _linha 
-#    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" "${VARQUIVO}*.*" -d "${BASE1}" >> "${LOG_ATU}"
-#    _read_sleep 1
-#    if ls -s "${BASE1}/${VARQUIVO}"*.* >erro /dev/null 2>&1 ; then
-#        #-"Arquivo encontrado no diretorio"
-#        _linha 
-#        _mensagec "${YELLOW}" "${M28}"
-#        _linha 
-#    else
-#        #-"Arquivo nao encontrado no diretorio"
-#        _linha 
-#        _mensagec "${YELLOW}" "${M49}"
-#        _linha 
-#        _press 
-#        _menubackup  
-#    fi
-#        clear
-#    #-"VOLTA DO ARQUIVO CONCLUIDA"
-#    _linha 
-#    _mensagec "${YELLOW}" "${M04}"
-#    _linha 
-#    _press
-#    _menubackup
-#elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-#
-#    #---- Voltando Backup anterior  ... ----
-#    M34="O arquivo ""${VARQUIVO}"
-#    _linha 
-#    _mensagec "${YELLOW}" "${M33}"
-#    _mensagec "${YELLOW}" "${M34}"
-#    _linha 
-#    "${cmd_unzip}" -o "${BACKUP}""/""${VBACKUP}" -d "${BASE1}" >> "${LOG_ATU}"
-#    clear
-#    #-"VOLTA DOS ARQUIVOS CONCLUIDA"
-#    _linha 
-#    _mensagec "${YELLOW}" "${M04}"
-#    _linha 
-#    _press
-#else
-#    _opinvalida
-#    _read_sleep 1
-#    _press
-#fi
-#_ferramentas
-#}
-
-# _menubackup () - Menu de Backup(s).
-#
-# Mostra opcoes:
-# 1 - Faz backup da base de dados.
-# 2 - Restaura backup da base de dados.
-# 3 - Envia backup.
-# 9 - Volta ao menu anterior.
 _menubackup() { 
 while true ; do
 clear
@@ -3412,6 +3302,7 @@ clear
     M703="2${NORM} - Restaurar Backup da base de dados"
     M704="3${NORM} - Enviar Backup                    "
     M705="9${NORM} - ${RED}Menu Anterior           "
+
     # Display Menu
 	printf "\n"
 	_linha "=" "${GREEN}"
@@ -3431,6 +3322,7 @@ clear
 	_linha "=" "${GREEN}"
 
     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+
     # Processar opcao
     case ${OPCAO} in
     1) _backup       ;;
@@ -3616,7 +3508,8 @@ clear
     M802="1${NORM} - Enviar arquivo(s)     "
     M803="2${NORM} - Receber arquivo(s)    "
     M806="9${NORM} - ${RED}Menu Anterior"
-	printf "\n"
+	
+    printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M800}"
 	_linha 
@@ -3630,13 +3523,15 @@ clear
 	_mensagec "${GREEN}" "${M806}"
     printf "\n"       
 	_linha "=" "${GREEN}"
+
     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+    
     case ${OPCAO} in
     1) _envia_avulso    ;;
     2) _recebe_avulso   ;;
     9) clear ; _ferramentas ;;
-     *) _opinvalida ;
-        _read_sleep 1 ; 
+     *) _opinvalida 
+        _read_sleep 1  
         _envrecarq ;;
     esac
 }
@@ -3732,6 +3627,22 @@ _update_online() {
     exit 0
 }
 
+# _update_offline: Atualiza o script via um arquivo zip baixado previamente.
+#
+# Esta funcao e responsavel por atualizar o script via um arquivo zip baixado
+# previamente. Ela extrai o conteudo do arquivo zip e move os arquivos para o
+# diretorio $TOOLS. Se o arquivo zip nao for encontrado, uma mensagem de erro
+# e exibida e a funcao retorna 1.
+#
+# Variaveis globais:
+#   destino     - Caminho do diretorio onde o arquivo zip esta localizado.
+#   SERACESOFF  - Caminho do diretorio do servidor off.
+#   TOOLS       - Caminho do diretorio onde os arquivos devem ser movidos.
+#   LOG_ATU     - Caminho do arquivo de log da atualizacao.
+#
+# Retorna:
+#   0 em caso de sucesso.
+#   1 em caso de erro.
 _update_offline() {
     local zipfile="atualiza.zip"
     local dir="$destino$SERACESOFF"
@@ -3764,75 +3675,16 @@ _update() {
     _press
     _principal
 }
-#_update () {
-#local SAOFF="${destino}${SERACESOFF}"
-#local link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
-#local atualiza="atualiza.zip"
-#if [[ -z "${SERACESOFF}" ]]; then 
-#    clear
-#    printf "\n\n"
-#    _linha 
-#    _mensagec "${GREEN}" "${M91}"
-#    _mensagec "${GREEN}" "${M92}"
-#    _linha 
-#    cp -rfv atualiza.sh "${BACKUP}" &> /dev/null
-#    cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-#    wget -q -c "${link}" || { echo "Erro ao baixar atualização."; exit 1; }
-#    [[ -f "${atualizagit}" ]] || { echo "Arquivo baixado não encontrado."; exit 1; }
-##-Descompactando o programa baixado----------------------------------#
-#DEFAULT_ATUALIZAGIT="atualiza.zip"
-#    if [[ -z "${atualizagit}" ]]; then
-#        atualizagit="${DEFAULT_ATUALIZAGIT}"
-#    fi
-#    "${cmd_unzip}" -o "${atualizagit}" >> "${LOG_ATU}"
-#    _read_sleep 1
-#    "${cmd_find}" "${PROGS}" -name "${atualizagit}" -type f -delete 
-#    cd "${PROGS}"/Atualiza-main || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-#    #-Atualizando somente o atualiza.sh----------------------------------#
-#    if [[ -f "atualiza.sh" && -f "setup.sh" ]]; then
-#        chmod +x "setup.sh" "atualiza.sh"
-#        mv -f -- "atualiza.sh" "${TOOLS}" >> "${LOG_ATU}"
-#        mv -f -- "setup.sh" "${TOOLS}" >> "${LOG_ATU}"
-#        cd "${PROGS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-#        rm -rf "${PROGS}"/Atualiza-main
-#        exit 1
-#    else
-#        _mensagec "${RED}" "Erro: Arquivos atualiza.sh e setup.sh, nao encontrados na pasta ${PROGS}/Atualiza-main"
-#        exit 1
-#    fi
-#else
-#
-#    cd "${SAOFF}" || { printf "Erro: Diretorio ${SAOFF} nao encontrado.""%*s\n"; exit 1; }  
-#    if [[ -f "${atualiza}" ]]; then
-#    "${cmd_unzip}" -o "${atualiza}" >> "${LOG_ATU}"
-#    _read_sleep 1
-#    "${cmd_find}" "${SAOFF}" -name "${atualiza}" -type f -delete
-#    for programas in "atualiza.sh" "setup.sh"; do
-#        if [[ -f "${programas}" ]]; then
-#            chmod 777 "$programas" 
-#            mv -f -- "${programas}" "${TOOLS}" >> "${LOG_ATU}"
-#        else
-#            _mensagec "${RED}" "Erro: Arquivo ${programas} nao encontrado na pasta ${SAOFF}"
-#        fi
-#    done
-#    else
-#        printf "\n\n"
-#        _linha
-#        _mensagec "${RED}" "Erro: Arquivo ${atualiza} nao encontrado na pasta ${SAOFF}"
-#        _linha
-#        _press
-#        _principal
-#    fi
-#cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }  
-#fi
-#}
 
-#_parametros ()
-# Mostra os parametros de configuracao do sistema, base de dados, diretorios
-# do atualiza.sh, base principal, segunda base, terceira base, executaveis,
-# telas, xmls, logs, olds, progs, backup, sistema em uso, bibliotecas
-# sendo usadas, variaveis da classe e da mclasse, e o diretorio para onde
-# enviar o backup, e o diretorio do servidor OFF.
+# Mostra os parametros do sistema que estao configurados.
+# Mostra o diretorio raiz do sistema, o diretorio do atualiza.sh, o diretorio
+# da base principal, o diretorio da segunda base, o diretorio da terceira base,
+# o diretorio do executavel, o diretorio das telas, o diretorio dos xmls, o
+# diretorio dos logs, o diretorio dos olds, o diretorio dos progs, o diretorio
+# do backup e qual o sistema em uso.
+# Mostra tambem a biblioteca que esta sendo usada, o diretorio para onde enviar
+# o backup, o diretorio Servidor OFF, a versao anterior da Biblioteca, a
+# variavel da classe e a variavel da mclasse.
 _parametros() {
 clear
 _linha "=" "${GREEN}"
@@ -3977,6 +3829,7 @@ _ferramentas() {
     M509="7${NORM} - Update                  "
     M510="8${NORM} - Lembretes               "	
     M511="9${NORM} - ${RED}Menu Anterior  "
+
     _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M501}"
     _linha 
@@ -3999,7 +3852,9 @@ _ferramentas() {
         _mensagec "${GREEN}" "${M511}"
         printf "\n"
         _linha "=" "${GREEN}"
+
         read -rp "${YELLOW}${M110}${NORM}" OPCAOB
+
         case ${OPCAOB} in
             1) _temps       ;;
             4) _envrecarq   ;;
@@ -4033,7 +3888,9 @@ _ferramentas() {
     _mensagec "${GREEN}" "${M511}"
     printf "\n"
     _linha "=" "${GREEN}"
+
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
+
     case ${OPCAO} in
         1)  _temps        ;;
         2)  _rebuild      ;;
@@ -4043,10 +3900,10 @@ _ferramentas() {
         6)  _parametros   ;;
         7)  _update       ;;
         8)  _lembretes    ;;
-        9)  clear ; 
+        9)  clear  
             _principal ;;
-        *)  _opinvalida ;
-            _read_sleep 1 ; 
+        *)  _opinvalida 
+            _read_sleep 1  
             _ferramentas ;;
     esac
 }
@@ -4107,6 +3964,7 @@ printf "\n"
     printf "\n"
     _mensaged "${BLUE}" "${UPDATE}"
     _linha "=" "${GREEN}"
+
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
     case ${OPCAO} in
