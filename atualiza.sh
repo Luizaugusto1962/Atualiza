@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="07/03/2025-01"                                                                                                 #
+UPDATE="10/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1616,7 +1616,7 @@ _volta_geral() {
         return 1
     fi
 
-    if ! "${cmd_unzip}" -o "${INI}" -d "${destino}" >> "${LOG_ATU}"; then
+    if ! "${cmd_unzip}" -o "${INI}" -d "${destino}" >> "${LOG_ATU}"2>&1; then
         _meiodatela
         _mensagec "${RED}" "Erro ao descompactar ${INI} para ${destino}"
         _linha 
@@ -1625,7 +1625,7 @@ _volta_geral() {
         return 1
     fi
 
-    if ! cd "${TOOLS}"; then
+    if ! cd "${TOOLS}" 2>/dev/null; then
         _meiodatela
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${TOOLS}"
         _linha
@@ -1633,13 +1633,16 @@ _volta_geral() {
         _principal
         return 1
     fi
-    
+
+    # Sucesso
     _mensagec "${YELLOW}" "${M33}"
     clear
     #-VOLTA DOS PROGRAMAS CONCLUIDA
     _linha 
     _mensagec "${YELLOW}" "${M03}"
     _linha 
+    
+    # Atualização do arquivo de versão
     ANTVERSAO=$VERSAO
     if ! printf "VERSAOANT=""${ANTVERSAO}""%*s\n"  >> atualizac; then
         _meiodatela
@@ -2177,8 +2180,8 @@ _atualizacao() {
         2) _pacoteoff ;;
         3) _voltaprog ;;
         9) clear ; _principal ;;
-        *) _opinvalida ;
-            _read_sleep 1 ;
+        *) _opinvalida 
+            _read_sleep 1 
             _principal ;;
     esac
 }
@@ -2240,9 +2243,9 @@ _biblioteca() {
         3) _atuoff ;;
         4) _voltabibli ;;
         9) clear; _principal ;;
-        *) _opinvalida ;
-            _read_sleep 1 ;
-            _biblioteca ;;
+        *) _opinvalida 
+           _read_sleep 1 
+           _biblioteca ;;
     esac
 }
 
@@ -2522,9 +2525,9 @@ _temps() {
         1)  _limpeza ;;
         2)  _addlixo ;;
         9)  clear ; _ferramentas ;;
-        *) _opinvalida ;
-            _read_sleep 1 ;
-            _ferramentas ;;
+        *) _opinvalida 
+           _read_sleep 1 
+           _ferramentas ;;
     esac    
 }
 
@@ -2612,9 +2615,9 @@ if [[ ! "${base3}" ]]; then
 	    clear 
 	    _ferramentas 
 	    ;;
-           *) _opinvalida ;
-            _read_sleep 1 ;
-	        _ferramentas ;;
+    *) _opinvalida 
+        _read_sleep 1 
+	    _ferramentas ;;
     esac
 fi
 }
@@ -2645,8 +2648,22 @@ _jutill() {
     fi
 }
 
-_rebuild1() {
+
+# _rebuilall: Rotina para reconstruir um arquivo especifico com jutil ou todos os arquivos.
+#
+# Se o nome do arquivo for deixado em branco, ele irá reconstruir todos os arquivos na pasta
+# "${destino}${base}" com as extens es *.ARQ.dat, *.DAT.dat, *.LOG.dat e *.PAN.dat.
+#
+# Se o nome do arquivo for informado, ele irá reconstruir somente o arquivo com o nome informado
+# e as extens es *.ARQ.dat, *.DAT.dat, *.LOG.dat e *.PAN.dat.
+#
+# A rotina irá verificar se o arquivo existe e se tem tamanho maior que zero.
+# Se ambas as condi es forem atendidas, ele executar  o comando jutil com a op o -rebuild
+# no arquivo.
+_rebuildall() {
     local base_to_use
+
+    # Determina a base a ser usada
     if [[ -n "${base2}" ]]; then
         _escolhe_base
         base_to_use="${BASE1}"
@@ -2655,7 +2672,15 @@ _rebuild1() {
     fi
 
     clear
-    if [[ "${sistema}" = "iscobol" ]]; then
+    if [[ "${sistema}" != "iscobol" ]]; then
+        _meiodatela
+        M996="Recuperacao em desenvolvimento :"
+        _mensagec "${RED}" "${M996}"
+        _press
+        _rebuild1
+        return
+    fi
+    # Solicita o nome do arquivo
         _meiodatela
         _mensagec "${CYAN}" "${M64}"
         _linha
@@ -2701,48 +2726,36 @@ _rebuild1() {
         _linha
 
         cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-    else
-        _meiodatela
-        M996="Recuperacao em desenvolvimento :"
-        _mensagec "${RED}" "${M996}"
-    fi
+    
     _press
     _rebuild
 }
 
-
-#-Rotina de recuperar arquivos de uma Lista os arquivos estao cadatrados em "atualizaj"------------#
-
-#-Arquivos para rebuild ---------------------------------------------------------------------------#
-#--------------------------------------------------------------------------------------------------#
-# Recupera arquivos das listas "atualizaj" e "atualizaj2".
-#
-# Esta função reconstrói os arquivos listados em "atualizaj" e "atualizaj2",
-# se o sistema estiver configurado como "iscobol". Ela primeiro verifica e
-# opcionalmente seleciona um diretório base. Em seguida, gera o "atualizaj2"
-# arquivo com padrões específicos. Ela lê cada linha de "atualizaj" e
-# "atualizaj2", reconstruindo cada arquivo encontrado usando a função _jutill.
-#
-# Dependências:
-# - A função requer acesso aos arquivos "atualizaj" e "atualizaj2",
-# e usa a função _jutil para processar cada arquivo.
-#
-# Pré-condições:
-# - O sistema deverá estar configurado como "iscobol".
-# - O arquivo "atualizaj" deve existir e ser legível.
-#
-# Pós-condições:
-# - Os arquivos listados em "atualizaj" e "atualizaj2" são processados.
-#
-# Tratamento de erros:
-# - Sai com uma mensagem de erro se "atualizaj2" não puder ser acessado.
+# _rebuildlista: Rotina de recuperacao de arquivos especificos 
+#                com base em uma lista "atualizaj2" que esta no
+#                diretorio "${TOOLS}".
+# 
+# Com base na lista "atualizaj2" ele ira reconstruir os arquivos
+# ATE*.dat e NFE*.dat na pasta "${BASE1}".
+# 
+# Se o arquivo "atualizaj2" nao existir, sera gerado com base
+# nos arquivos ATE*.dat e NFE*.dat na pasta "${BASE1}".
+# 
+# Se o arquivo "atualizaj2" nao for encontrado, sera exibido
+# um erro e o programa sera encerrado.
+# 
+# Parametros:
+#   Nenhum.
 _rebuildlista() {
+    local arquivo var_ano var_ano4
+
     cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
+    # Escolhe a base, se necessário
     if [[ "${base2}" ]]; then
         _escolhe_base
     fi
     if [[ "${sistema}" = "iscobol" ]]; then
-        cd "${BASE1}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }  
+        cd "${BASE1}" || { printf "Erro: Diretorio ${BASE1} nao encontrado.""%*s\n"; exit 1; }  
         #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
         var_ano=$(date +%y)
         var_ano4=$(date +%Y)
@@ -2762,36 +2775,34 @@ _rebuildlista() {
         fi
 #--------------------------------------------------------------------------------------------------#
 # Trabalhando lista do arquivo "atualizaj" #
-        while read -r line; do
+        while read -r line || [[ -n "${line}" ]]; do
             if [[ -z "${line}" ]]; then
                 _meiodatela
                 _mensagec "${RED}" "Nao foi encontrado o arquivo ${line}"
                 _linha
             else
                 arquivo="${BASE1}""/""${line}"
-                if [[ ! -e "${arquivo}" ]]; then
+                if [[ -e "${arquivo}" ]]; then
+                   _jutill
+                else
                     _meiodatela
                     _mensagec "${RED}" "Nao foi encontrado o arquivo ${arquivo}"
                     _linha
-                else
-                    _jutill   
+                       
                 fi
             fi
         done < atualizaj
 # Trabalhando lista do arquivo "atualizaj2" #
         while read -r line; do
             if [[ -z "${line}" ]]; then
-                _meiodatela
-                _mensagec "${RED}" "Nao foi encontrado o arquivo ""${line}"
-                _linha
-            else
                 arquivo="${BASE1}""/""${line}"
                 if [[ ! -e "${arquivo}" ]]; then
+                    _jutill 
+                else
+                    se                    
                     _meiodatela
                     _mensagec "${RED}" "Nao foi encontrado o arquivo ""${arquivo}"
                     _linha
-                else
-                    _jutill   
                 fi
             fi
         done < atualizaj2
@@ -2852,7 +2863,7 @@ _rebuild() {
     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
 
     case ${OPCAO} in
-    1) _rebuild1 ;;
+    1) _rebuildall ;;
     2) _rebuildlista ;;
     9) clear ; _ferramentas ;;
     *) _opinvalida 
@@ -3863,8 +3874,8 @@ _ferramentas() {
             7) _update      ;;
             8) _lembretes   ;;
             9) clear ; _principal ;;
-            *) _opinvalida ;
-                _read_sleep 1 ; 
+            *) _opinvalida 
+                _read_sleep 1  
                 _ferramentas ;;
         esac
     else
