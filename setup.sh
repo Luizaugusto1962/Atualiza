@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 13/02/2025
+#versao de 12/03/2025
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
@@ -334,9 +334,9 @@ echo ${linha}
     fi
 declare -l DIR
 echo "###              ( PASTA DO SISTEMA )         ###" 
-read -rp " Informe o diretorio raiz ->" -n1 DIR 
+read -rp " Informe o diretorio raiz sem o /->" -n1 DIR 
 echo 
-echo destino="/${DIR}" >> atualizac
+echo destino="${DIR}" >> atualizac
 echo ${linha} 
 declare -l OFF
 echo "###          Tipo de acesso                  ###"
