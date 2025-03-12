@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="10/03/2025-00"                                                                                                 #
+UPDATE="12/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -191,18 +191,19 @@ COLUMNS=$(tput cols) # Numero de colunas da tela
 # Se o programa nao for encontrado, exibe uma mensagem de erro e sai do programa.
 _check_instalado() {
 #####
+local app
 local missing=""
-    for prog in zip unzip rsync wget; do
-        if ! command -v "$prog" &>/dev/null; then
-            missing="$missing $prog"
+    for app in zip unzip rsync wget; do
+        if ! command -v "$app" &>/dev/null; then
+            missing="$missing $app"
             printf "\n"
             printf "%*s""${RED}" ;printf "%*s\n" $(((${#Z1}+COLUMNS)/2)) "${Z1}" ;printf "%*s""${NORM}"
-            printf "%*s""${YELLOW}" " O programa nao foi encontrado ->> " "${NORM}" "${prog}"
+            printf "%*s""${YELLOW}" " O programa nao foi encontrado ->> " "${NORM}" "${app}"
             printf "\n"
             case "$prog" in
-                zip|unzip) echo "  Sugestão: Instale o zip unzip." ;;
-                rsync)     echo "  Sugestão: Instale o rsync." ;;
-                wget)      echo "  Sugestão: Instale o wget." ;;
+                zip|unzip) echo "  Sugestao: Instale o zip unzip." ;;
+                rsync)     echo "  Sugestao: Instale o rsync." ;;
+                wget)      echo "  Sugestao: Instale o wget." ;;
             esac
         fi
     done
@@ -494,42 +495,46 @@ else
     printf "ERRO. Arquivo atualizap, Nao existe no diretorio.\n"
     exit 1
 fi
+cd ..
+raiz="/"
+destino="${raiz}${destino}"
 
-TOOLS=${destino}${pasta}
+TOOLS="${destino}${pasta}"
 if [[ -n "${TOOLS}" ]] && [[ -d "${TOOLS}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
+cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }  
 
-    OLDS=${TOOLS}${olds}
+    OLDS="${TOOLS}${olds}"
     # Cria diretório olds se não existir
     if [[ ! -d "${OLDS}" ]]; then
         mkdir -p "${OLDS}" || { printf "Erro ao criar %s" "${OLDS}"; exit 1; }
     fi
-    PROGS=${TOOLS}${progs}
+    PROGS="${TOOLS}/progs"
     # Cria diretório progs se não existir
     if [[ ! -d "${PROGS}" ]]; then
         mkdir -p "${PROGS}"
     fi
     
-    LOGS=${TOOLS}${logs}
+    LOGS="${TOOLS}/logs"
     # Cria diretório logs se não existir
     if [[ ! -d "${LOGS}" ]]; then
         mkdir -p "${LOGS}"
     fi
     
-    BACKUP=${TOOLS}$backup
+    BACKUP="${TOOLS}/backup"
     # Cria diretório backups se não existir
     if [[ ! -d "${BACKUP}" ]]; then
         mkdir -p "${BACKUP}"
     fi
     
-    ENVIA=${TOOLS}"/envia"
+    ENVIA="${TOOLS}/envia"
     # Cria diretório envia se não existir
     if [[ ! -d "${ENVIA}" ]]; then
         mkdir -p "${ENVIA}"
     fi
     
-    RECEBE=${TOOLS}"/recebe"
+    RECEBE="${TOOLS}/recebe"
     # Cria diretório recebe se não existir
     if [[ ! -d "${RECEBE}" ]]; then
         mkdir -p "${RECEBE}"
@@ -639,7 +644,7 @@ fi
 # -----------------------------------------------------------------#
 
 # Verificações de parâmetro e diretórios
-E_EXEC=${destino}"/"${exec}
+E_EXEC="${destino}/${exec}"
 if [[ -n "${E_EXEC}" ]] && [[ -d "${E_EXEC}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
@@ -652,7 +657,7 @@ else
     _read_sleep 2
     exit
     fi
-T_TELAS=${destino}"/"${telas}
+T_TELAS="${destino}/${telas}"
 if [[ -n "${T_TELAS}" ]] && [[ -d "${T_TELAS}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
@@ -665,7 +670,7 @@ else
     _read_sleep 2
     exit
 fi
-X_XML=${destino}"/"${xml}
+X_XML="${destino}/${xml}"
 if [[ -n "${X_XML}" ]] && [[ -d "${X_XML}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
@@ -675,7 +680,7 @@ else
     exit
 fi     
 
-BASE1=${destino}${base}
+BASE1="${destino}${base}"
 if [[ -n "${BASE1}" ]] && [[ -d "${BASE1}" ]]; then
     # Diretorio da base encontrado
     _mensagec "${CYAN}" "${M81}"
@@ -685,7 +690,7 @@ else
     exit
 fi
 
-BASE2=${destino}${base2}
+BASE2="${destino}${base2}"
 if [[ -n "${BASE2}" ]] && [[ -d "${BASE2}" ]]; then
     # Diretorio da base encontrado
     _mensagec "${CYAN}" "${M81}"
@@ -695,7 +700,7 @@ else
     exit
 fi
 
-BASE3=${destino}${base3}
+BASE3="${destino}${base3}"
 if [[ -n "${BASE3}" ]] && [[ -d "${BASE3}" ]]; then
     # Diretorio da base encontrado
     _mensagec "${CYAN}" "${M81}"
@@ -706,7 +711,7 @@ else
 fi     
 
 # Verifica diretórios específicos se o sistema for iscobol
-if [[ "${sistema}" = "iscobol" ]]; then
+if [[ "${sistema}" == "iscobol" ]]; then
     if [[ ! -d "${X_XML}" ]]; then
         M44="Nao foi encontrado o diretorio ""${X_XML}"
         _linha "*"
@@ -716,6 +721,10 @@ if [[ "${sistema}" = "iscobol" ]]; then
         exit
     fi
 fi
+
+# Variavel para armazenar o nome do arquivo de backup
+INI="backup-""${VERSAO}"".zip"
+
 # Verificacao do Jutil
 # Jutil - Programa para fazer rebuild nas bases de dados
 jut="$SAVISC""$JUTIL"
@@ -1336,7 +1345,7 @@ _voltamaisprog() {
     read -rp "${YELLOW}""${M37}""${NORM}" -n1  REPLY
     printf "\n\n"
     if [[ -z "${REPLY}" ]]; then
-        _principal
+            _principal
     elif [[ "${REPLY,,}" =~ ^[Nn]$ ]]; then
             _principal
     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
@@ -1442,6 +1451,43 @@ _voltaprog() {
     _voltamaisprog
 }
 
+
+    # _volta_progy: Realiza a volta de um programa para uma versao anterior.
+    #
+    # Este método:
+    # - Verifica se a variável Vprog está vazia, se sim, volta ao menu principal.
+    # - Move os arquivos do diretório ${TOOLS} para os diretórios respectivos
+    #   dependendo do tipo de sistema.
+    # - Exibe uma mensagem de fim de processo e volta ao menu principal.
+    #
+    # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
+    # e o usuário é retornado ao menu principal.
+_volta_progy() {
+    _read_sleep 1
+
+    # Validação da variável Vprog
+    if [[ -z "${Vprog}" ]]; then
+        _meiodatela
+        _mensagec "${RED}" "${M71}"
+        _linha
+        _press
+        _principal
+        return 1
+    fi
+
+    # Função auxiliar para mover arquivos
+    move_files() {
+        local pattern="$1"
+        local dest="$2"
+        local type="$3"
+        
+        if ! "${cmd_find}" "${TOOLS}" -name "${pattern}" -exec mv {} "${dest}" \; 2>/dev/null; then
+            printf "Erro ao mover arquivos %s.\n" "${type}"
+            return 1
+        fi
+        return 0
+    }
+
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
 # _volta_progx: Volta um programa especifico para a versao anterior
 # 
@@ -1469,107 +1515,67 @@ _volta_progx() {
         return 1
     fi
 
-    cd "${OLDS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-    if ! "${cmd_unzip}" -j -o "${INI}" "sav/*/""${Vprog}"".*" -d "${TOOLS}" >> "${LOG_ATU}"; then
-        _meiodatela
-        _mensagec "${RED}" "Erro ao descompactar ${INI} para ${TOOLS}"
-        _linha 
-        _press
-        _principal
-        return 1
-    fi
-    _volta_progy
-}
-
-# _volta_progz: Volta mais algum programa para a versao anterior
-# 
-# Pergunta se deseja volta mais algum programa e caso sim, informa o nome
-# do programa em MAIUSCULO e descompacta o arquivo
-# da biblioteca anterior no diretorio TOOLS.
-_volta_progz() {
-    printf "\n"
-    MA5="Deseja voltar mais algum programa ? [N/s]:"
-    read -rp "${YELLOW}${MA5}${NORM}" -n1
-    printf "\n\n"
-    
-    local REPLY1="${REPLY,,}"
-    if [[ "${REPLY1}" =~ ^[Nn]$ ]] || [[ "${REPLY1}" == "" ]]; then
-        _press
-        # Limpa o diretório de arquivos antigos
-        local OLDS1="${OLDS}/"
-        if [[ -d "${OLDS1}" ]]; then
-            for pprog in {*.class,*.TEL,*.xml,*.int,*.png,*.jpg}; do
-                "${cmd_find}" "${OLDS1}" -name "${pprog}" -ctime +30 -exec rm -rf {} \;
-            done
-        fi
-        _apagadir
-        _principal
-        return
-    fi
-
-    if [[ "${REPLY1}" =~ ^[Ss]$ ]]; then
-        MA6="       2- Informe o nome do programa em maiusculo: "
-        read -rp "${YELLOW}${MA6}${NORM}" Vprog
-        if [[ -z "${Vprog}" ]] || [[ "${Vprog}" =~ [^A-Z0-9] ]]; then
-            _meiodatela
-            _mensagec "${RED}" "${M71}"
-            _linha
-            _press
-            _principal
-        else
-            _volta_progy
-        fi
-        _press
-        _principal
-    fi
-}
-
-# 
-# _volta_progy
-# 
-# Volta de programa.
-# Esta funcao e responsavel por voltar um programa.
-_volta_progy() {
-    _read_sleep 1
-
-    # Check if TOOLS directory exists
-    if [[ -z "${TOOLS}" ]] || ! cd "${TOOLS}" ; then
-        printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n" 
-        exit 1
-    fi
-
-    # Check if Vprog is set
-    if [[ -z "${Vprog}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M71}"
-        _linha
-        _press
-        _principal
-        return 1
-    fi
-
-    # Handle file moving based on system type
+    # Processamento baseado no tipo de sistema
+    local move_status=0
     if [[ "${sistema}" = "iscobol" ]]; then
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.xml" -exec mv {} "${X_XML}" \; || { printf "Erro ao mover arquivos XML."; return 1; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { printf "Erro ao mover arquivos TEL."; return 1; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.class" -exec mv {} "${E_EXEC}" \; || { printf "Erro ao mover arquivos CLASS."; return 1; }
+        move_files "${Vprog}.xml" "${X_XML}" || move_status=1
+        move_files "${Vprog}.TEL" "${T_TELAS}" || move_status=1
+        move_files "${Vprog}*.class" "${E_EXEC}" || move_status=1
     else
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}.TEL" -exec mv {} "${T_TELAS}" \; || { printf "Erro ao mover arquivos TEL."; return 1; }
-        "${cmd_find}" "${TOOLS}" -name "${Vprog}*.int" -exec mv {} "${E_EXEC}" \; || { printf "Erro ao mover arquivos INT."; return 1; }
+        move_files "${Vprog}.TEL" "${T_TELAS}" || move_status=1
+        move_files "${Vprog}*.int" "${E_EXEC}" || move_status=1
     fi
 
-    # Messages and confirmation
+    # Verifica se houve erro nos movimentos
+    if [[ ${move_status} -ne 0 ]]; then
+        return 1
+    fi
+
+    # Exibição das mensagens finais
     _linha
     _mensagec "${YELLOW}" "${M03}"
     _linha
 
-    M30="O(s) programa(s) ""${Vprog}"" da ${NORM}${RED}""$VERSAO"
+    local M30="O(s) programa(s) '${Vprog}' da ${NORM}${RED}${VERSAO}"
     _linha
     _mensagec "${YELLOW}" "${M25}"
     _mensagec "${YELLOW}" "${M30}"
     _linha
     _press
-    _volta_progz
+    _volta_progx
+}
+
+
+# Função para extrair arquivos e tratar erros
+
+cd "${OLDS}" || { printf "Erro ao acessar o diretório %s.\n" "${OLDS}"; exit 1; }
+
+# Verifica se o arquivo de entrada existe antes de tentar descompactar
+if [ ! -f "${INI}" ]; then
+    printf "Erro: Arquivo %s não encontrado.\n" "${INI}"
+    exit 1
+fi
+
+extrair_arquivos() {
+    local padrao="$1"
+
+    if ! "${cmd_unzip}" -j -o "${INI}" "${padrao}" -d "${TOOLS}" >> "${LOG_ATU}"; then
+        _meiodatela
+        _mensagec "${RED}" "Erro ao descompactar ${INI} para ${TOOLS}"
+        _linha
+        _press
+        _principal
+        return 1
+    fi
+}
+
+# Executa a extração dos dois conjuntos de arquivos
+extrair_arquivos "${destino}/${exec}/${Vprog}"*.*
+extrair_arquivos "${destino}/${telas}/${Vprog}".*
+
+# Retorna ao programa principal
+_volta_progy
+
 }
 
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
@@ -1580,32 +1586,20 @@ _volta_progy() {
 # Esta funcao e responsavel por voltar todos os arquivos da biblioteca da SAV.
 _volta_geral() {
     #-VOLTA DOS ARQUIVOS ANTERIORES...
-    if [[ -z "${OLDS}" ]]; then
+    _error_exit() {
+        local msg="$1"
         _meiodatela
-        _mensagec "${RED}" "${M71}"
-        _linha 
+        _mensagec "${RED}" "$msg"
+        _linha
         _press
         _principal
         return 1
-    fi
+    }
 
-    if [[ -z "${INI}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M71}"
-        _linha 
-        _press
-        _principal
-        return 1
-    fi
-
-    if [[ ! -d "${OLDS}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M71}"
-        _linha 
-        _press
-        _principal
-        return 1
-    fi
+    # Validate inputs
+    [[ -z "${OLDS}" ]] && _error_exit "${M71}"
+    [[ -z "${INI}" ]] && _error_exit "${M71}"
+    [[ ! -d "${OLDS}" ]] && _error_exit "${M71}"
 
     if ! cd "${OLDS}"; then
         _meiodatela
@@ -1615,10 +1609,10 @@ _volta_geral() {
         _principal
         return 1
     fi
-
-    if ! "${cmd_unzip}" -o "${INI}" -d "${destino}" >> "${LOG_ATU}"2>&1; then
+local raiz="/"
+    if ! "${cmd_unzip}" -o "${INI}" -d "${raiz}" >> "${LOG_ATU}"; then
         _meiodatela
-        _mensagec "${RED}" "Erro ao descompactar ${INI} para ${destino}"
+        _mensagec "${RED}" "Erro ao descompactar ${INI} para ${raiz}"
         _linha 
         _press
         _principal
@@ -1644,7 +1638,7 @@ _volta_geral() {
     
     # Atualização do arquivo de versão
     ANTVERSAO=$VERSAO
-    if ! printf "VERSAOANT=""${ANTVERSAO}""%*s\n"  >> atualizac; then
+    if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >> atualizac; then
         _meiodatela
         _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
         _linha 
@@ -1672,17 +1666,8 @@ _versao() {
         _principal
         return 1
     fi
-    INI="backup-${VERSAO}.zip"
-    if [[ -f "${INI}" ]]; then
-        printf "\n"
-        _linha
-        _mensagec "${RED}" "${M56}"
-        _linha 
-        _press
-        _principal
-        return 1
-    fi
-}
+}    
+
 _variaveis_atualiza() {
     ATUALIZA1="${SAVATU1}${VERSAO}.zip"
     ATUALIZA2="${SAVATU2}${VERSAO}.zip"
@@ -1925,94 +1910,44 @@ _salva() {
     _processo
 }
 
-
 # _processo: Função que faz o backup dos arquivos antigos e
 #            chama a função _atubiblioteca para atualizar os arquivos.
-_processo() {
 
+_processo() {
+    local INI="backup-${VERSAO}.zip"
+    local backup_path="${OLDS}/${INI}"
+
+#INI="backup-${VERSAO}.zip"
     #-ZIPANDO OS ARQUIVOS ANTERIORES...
     _linha 
     _mensagec "${YELLOW}" "${M01}"
     _linha 
     _read_sleep 1
 
-    if [[ "${sistema}" = "iscobol" ]]; then
-        cd "${destino}/" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${destino}"; exit 1; }
-        
-        for dir in "${E_EXEC}" "${T_TELAS}" "${X_XML}"; do
-            _mensagec "${GREEN}" "${M14}${dir}"
-            if [[ -n "${cmd_find}" && -n "${OLDS}" && -n "${INI}" ]]; then
-                case "${dir}" in
-                    "${E_EXEC}")
-                        ext="*.class *.jpg *.png *.brw *.* *.dll"
-                        ;;
-                    "${T_TELAS}")
-                        ext="*.TEL"
-                        ;;
-                    "${X_XML}")
-                        ext="*.xml"
-                        ;;
-                    *)
-                        _mensagec "${RED}" "Erro: Tipo de diretório desconhecido: ${dir}"
-                        continue
-                        ;;
-                esac
+    if [ "$sistema" = "iscobol" ]; then
 
-                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec "${cmd_zip}" -r -q "${OLDS}/${INI}" "{}" + || {
-                    printf "Erro: Falha ao compactar arquivos no diretório ${dir}""%*s\n" 
-                    continue
-                }
-            else
-                _linha 
-                _mensagec "${RED}" "${M45}"
-                _linha 
-                _read_sleep 2
-                _principal
-            fi
-        done
-        cd "${TOOLS}/" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${TOOLS}"; exit 1; }
-        clear
+        cd "$E_EXEC"/ || exit
+        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" + ; 
+        cd "$T_TELAS"/ || exit
+        "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" + ;
+        cd "$X_XML"/ || exit
+        "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${backup_path}" "{}" + ;
     else
-        cd "${destino}/" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${destino}"; exit 1; }
-        
-        for dir in "${E_EXEC}" "${T_TELAS}"; do
-            _mensagec "${GREEN}" "${M14}${dir}"
-            if [[ -n "${cmd_find}" && -n "${OLDS}" && -n "${INI}" ]]; then
-                case "${dir}" in
-                    "${E_EXEC}")
-                        ext="*.int"
-                        ;;
-                    "${T_TELAS}")
-                        ext="*.TEL"
-                        ;;
-                    *)
-                        _mensagec "${RED}" "Erro: Tipo de diretório desconhecido: ${dir}"
-                        continue
-                        ;;
-                esac
+        cd "$E_EXEC"/ || exit
+        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r -q "${backup_path}" "{}" + ;
+        cd "$T_TELAS"/ || exit
+        "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" + ;
 
-                "${cmd_find}" "${dir}/" -type f \( -iname "${ext}" \) -exec "${cmd_zip}" -r -q "${OLDS}/${INI}" "{}" + || {
-                    _mensagec "${RED}" "Erro: Falha ao compactar arquivos no diretório ${dir}"
-                    continue
-                }
-            else
-                _linha 
-                _mensagec "${RED}" "${M45}"
-                _linha 
-                _read_sleep 2
-                _principal
-            fi
-        done
     fi 
-
-    #-..BACKUP COMPLETO..
+    cd "$TOOLS"/ || exit
+    clear
     _linha 
     _mensagec "${YELLOW}" "${M27}"
     _linha 
     _read_sleep 1
 
     cd "${TOOLS}" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${TOOLS}"; exit 1; }
-    if [[ ! -r "${OLDS}/${INI}" ]]; then
+    if [[ ! -r "${backup_path}" ]]; then
         #-Backup nao encontrado no diretorio
         _linha 
         _mensagec "${RED}" "${M45}"
@@ -2020,18 +1955,23 @@ _processo() {
         #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
         _read_sleep 2    
         _meiodatela
-        read -rp "${YELLOW}${M38}${NORM}" -n1 
+        read -rp "${YELLOW}${M38}${NORM}" -n1 reply
         printf "\n\n"
-        if [[ -z "${REPLY}" || "${REPLY,,}" =~ ^[Nn]$ ]]; then
-            _principal
-        elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-            _meiodatela
-            _mensagec "${YELLOW}" "${M39}"
-        else
-            _opinvalida
-            _read_sleep 1
-            _principal
-        fi 
+
+       case "${reply,,}" in
+            "" | "n")
+                _principal
+                ;;
+            "s")
+                _meiodatela
+                _mensagec "${YELLOW}" "${M39}"
+                ;;
+            *)
+                _opinvalida
+                _read_sleep 1
+                _principal
+                ;;
+        esac
     fi
     _atubiblioteca 
 }
@@ -2041,6 +1981,7 @@ _processo() {
 # Altera a versao da atualizacao e salva no diretorio /backuup como a extensao .bkp".
 _atubiblioteca() {
     # Atualização de Programas
+
     cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
     _variaveis_atualiza
     # Atualizando os programas
@@ -2050,7 +1991,7 @@ _atubiblioteca() {
             _mensagec "${YELLOW}" "${M26}"
             _linha
             if _mensagec "${GREEN}" "${arquivo}"; then
-            "${cmd_unzip}" -o "${arquivo}" -d "${destino}" >> "${LOG_ATU}"
+            "${cmd_unzip}" -o "${arquivo}" -d "/${destino}" >> "${LOG_ATU}"
             else
                 _mensagec "${RED}" "${M48}"
             fi
@@ -2097,13 +2038,13 @@ _atubiblioteca() {
 # O usuário é questionado se deseja restaurar todos os programas para o estado anterior à atualização. Baseado em
 # resposta do usuário, ele restaura programas específicos ou todos os programas para suas versões anteriores.
 _voltabibli() {
-    clear
+#    clear
     M02="Voltando a versao anterior do programa ""${prog}""..."
     _meiodatela
     _mensagec "${RED}" "${M62}"
     _linha
     read -rp "${YELLOW}""${MA2}""${NORM}" VERSAO
-    INI="backup-""${VERSAO}"".zip"
+
     if [[ -z "${VERSAO}" ]]; then
         _meiodatela
         _mensagec "${RED}" "${M56}"
@@ -2112,7 +2053,10 @@ _voltabibli() {
         INI=""
         _principal
         return
+    else
+        INI="backup-${VERSAO}.zip" 
     fi
+
     if [[ ! -r "${OLDS}"/"${INI}" ]]; then
         # -Backup da Biblioteca nao encontrado no diretorio
         _linha 
@@ -2141,51 +2085,6 @@ _voltabibli() {
         _principal
     fi
 }
-
-#-Procedimento da atualizacao de programas---------------------------------------------------------# 
-### _atualizacao
-# Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
-# Chama a funcao escolhida pelo usuario.
-_atualizacao() { 
-    clear
-###   200-mensagens do Menu Programas.
-    M201="Menu de Programas "
-    M202="Escolha o tipo de Acao:"
-    M203="1${NORM} - Programa ou Pacote ON-Line    "
-    M204="2${NORM} - Programa ou Pacote em OFF-Line"
-    M205="Escolha o tipo de Desatualizacao:         "
-    M206="3${NORM} - Voltar programa Atualizado    "
-    M209="9${NORM} - ${RED}Menu Anterior        "
-    printf "\n"
-	_linha "=" "${GREEN}"
-	_mensagec "${RED}" "${M201}"
-	_linha
-	printf "\n"
-	_mensagec "${PURPLE}" "${M202}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M203}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M204}"
-	printf "\n\n"
-	_mensagec "${PURPLE}" "${M205}"
-	printf "\n"
-	_mensagec "${GREEN}" "${M206}"
-	printf "\n\n"
-	_mensagec "${GREEN}" "${M209}"
-	printf "\n"        
-	_linha "=" "${GREEN}"
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO
-    case ${OPCAO} in
-        1) _pacoteon ;;
-        2) _pacoteoff ;;
-        3) _voltaprog ;;
-        9) clear ; _principal ;;
-        *) _opinvalida 
-            _read_sleep 1 
-            _principal ;;
-    esac
-}
-
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
 # 
 # _biblioteca
@@ -2195,7 +2094,7 @@ _atualizacao() {
 
 _biblioteca() { 
     local OPCAO
-    local INI
+#    local INI
     VERSAO=" " # Variavel que define a versao do programa.
     clear
     M401="Menu da Biblioteca"
@@ -2244,10 +2143,56 @@ _biblioteca() {
         4) _voltabibli ;;
         9) clear; _principal ;;
         *) _opinvalida 
-           _read_sleep 1 
-           _biblioteca ;;
+            _read_sleep 1 
+            _biblioteca ;;
     esac
 }
+
+
+#-Procedimento da atualizacao de programas---------------------------------------------------------# 
+### _atualizacao
+# Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
+# Chama a funcao escolhida pelo usuario.
+_atualizacao() { 
+    clear
+###   200-mensagens do Menu Programas.
+    M201="Menu de Programas "
+    M202="Escolha o tipo de Acao:"
+    M203="1${NORM} - Programa ou Pacote ON-Line    "
+    M204="2${NORM} - Programa ou Pacote em OFF-Line"
+    M205="Escolha o tipo de Desatualizacao:         "
+    M206="3${NORM} - Voltar programa Atualizado    "
+    M209="9${NORM} - ${RED}Menu Anterior        "
+    printf "\n"
+	_linha "=" "${GREEN}"
+	_mensagec "${RED}" "${M201}"
+	_linha
+	printf "\n"
+	_mensagec "${PURPLE}" "${M202}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M203}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M204}"
+	printf "\n\n"
+	_mensagec "${PURPLE}" "${M205}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M206}"
+	printf "\n\n"
+	_mensagec "${GREEN}" "${M209}"
+	printf "\n"        
+	_linha "=" "${GREEN}"
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+    case ${OPCAO} in
+        1) _pacoteon ;;
+        2) _pacoteoff ;;
+        3) _voltaprog ;;
+        9) clear ; _principal ;;
+        *) _opinvalida 
+            _read_sleep 1 
+            _principal ;;
+    esac
+}
+
 
 #-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
 #
@@ -2399,17 +2344,31 @@ _linux() {
 #   _varrendo_arquivo
 _varrendo_arquivo() {
     local zip_file_name="Temps-${UMADATA}"
-    "${cmd_find}" "${DIRB}" -type f -iname "${file_name}" -exec "${cmd_zip}" -m "${BACKUP}/${zip_file_name}" "{}" +
-} >> "${LOG_LIMPA}"
+    "${cmd_find}" "${DIRB}" -type f -iname "${file_name}" -exec "${cmd_zip}" -m "${BACKUP}/${zip_file_name}" "{}" + >> "${LOG_LIMPA}" 
+}
 
 # _limpando: Exclui todos os arquivos temporarios no diretorio "${DIRB}" com base na lista "atualizat".
+#
+# O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" que contenham o nome "${file_name}" e o comando rm para exclui-los.
+#
+# Parametros:
+#   NAO TEM
+#
+# Exemplo:
+#   _limpando
 _limpando() {
 clear
     line_array=""
+    if [[ ! -r "${arqs}" ]]; then
+        printf "%sErro: Nao foi possivel ler ${arqs}\n" >&2
+        return 1
+    fi
     mapfile -t line_array < "${arqs}"
     for file_name in "${line_array[@]}"; do
-    printf "${GREEN}""Excluido todos as arquivos: ${YELLOW}${file_name}${NORM}%s\n"
-    _varrendo_arquivo
+        if [[ -n "${file_name}" ]]; then
+            printf "${GREEN}""Excluido todos as arquivos: ${YELLOW}${file_name}${NORM}%s\n"
+            _varrendo_arquivo "${DIRB}" "${file_name}"
+            fi
     done 
 M11="Movendo arquivos Temporarios do diretorio = ""${DIRB}"
 _linha 
@@ -2446,8 +2405,8 @@ _limpeza() {
         _meiodatela
         _messagec RED "${M63}"
     fi
-    for bases in $base $base2 $base3; do
-        local DIRB="${destino}${bases}/"
+    for dir_bases in $base $base2 $base3; do
+        local DIRB="${destino}${dir_bases}/"
         if [[ -d "${DIRB}" ]]; then
             _limpando
             _press
@@ -2473,6 +2432,7 @@ _addlixo() {
     M8B="         Qual o arquivo ->: "
     read -rp "${YELLOW}${M8B}${NORM}" ADDARQ
     _linha
+
     if [[ -z "${ADDARQ}" ]]; then
         _meiodatela
         _mensagec "${RED}" "${M66}"
@@ -2532,7 +2492,6 @@ _temps() {
 }
 
 # Configura BASE1 com o caminho para o banco de dados primário.
-# Configura BASE1 com o caminho para o banco de dados prim rio.
 #
 # Verifica se as variaveis de ambiente destino e base estao configuradas.
 # Caso nao estejam, exibe uma mensagem de erro e sai do programa.
@@ -2563,6 +2522,7 @@ _dbase3() {
     fi
     BASE1="${destino}${base3}"
 }
+
 # Funcao para escolher qual base ser  utilizada.
 #
 # Permite ao usuario escolher qual base ser utilizada. 
@@ -2599,11 +2559,11 @@ fi
 if [[ ! "${base3}" ]]; then
     case ${OPCAO} in
     1) 
-	    _dbase1 
-	    ;;
+ 	    _dbase1 
+ 	    ;;
     2) 
-	    _dbase2 
-	    ;;
+ 	    _dbase2 
+ 	    ;;
     3) 
         if [[ -n "${base3}" ]]; then
             _dbase3 
@@ -2629,12 +2589,12 @@ fi
 # _jutill irá verificar se o arquivo existe e se tem tamanho maior que zero. 
 # Se ambas as condições forem atendidas, ele executará o comando jutil com o
 # -rebuild opção no arquivo.
-
 _jutill() {
     if [[ -n "${arquivo}" ]] && [[ -e "${arquivo}" ]] && [[ -s "${arquivo}" ]]; then
         if [[ -x "${jut}" ]]; then
             if ! "${jut}" -rebuild "${arquivo}" -a -f; then
                 _mensagec "${RED}" "Erro: Falha ao reconstruir o arquivo ${arquivo}."
+                _linha "-" "${RED}"
                 return 1
             fi
             _linha "-" "${GREEN}"
@@ -2698,6 +2658,7 @@ _rebuildall() {
                         _jutill "${arquivo}"
                     else
                         _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado ou esta vazio."
+                        _linha
                     fi
                 done
             else
@@ -2717,6 +2678,7 @@ _rebuildall() {
                     "${jut}" -rebuild "${arquivo}" -a -f
                 else
                     _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado."
+                    _linha
                 fi
                 _linha "-" "${GREEN}"
             done
@@ -2944,7 +2906,7 @@ _backup() { # funcionando
     
     # Executa backup com tratamento de erro
     {
-        "$cmd_zip" "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+        "$cmd_zip" -u "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
     } & backup_pid=$!
     
     # Inicia progresso em background
@@ -3017,7 +2979,7 @@ _send_and_manage_backup() {
             if [ -z "${ENVIABACK}" ]; then 
                 _meiodatela
                 _mensagec "${RED}" "${M68}"
-#               printf "%s\n${YELLOW}${M41}"
+
                 read -r -p "${YELLOW}${M41}${NORM}"remote_dest
                 # Validação simples: não aceita vazio
                 until [ -n "$remote_dest" ]; do
