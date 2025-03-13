@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/03/2025-00"                                                                                                 #
+UPDATE="13/03/2025-01"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -457,7 +457,7 @@ fi
 # Checando se os arquivos de configuracao estao configurados corretamente
 if [[ ! -e "atualizac" ]]; then
     M58="ERRO. Arquivo atualizac, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
-    _linha 
+ls     _linha 
     _mensagec "${RED}" "${M58}"
     _linha 
     exit 1
@@ -599,17 +599,6 @@ else
     exit
 fi
 
-# base - Diretorio da Base de dados principal
-if [[ -n "${base}" ]]; then
-    _mensagec "${CYAN}" "${M81}"
-else
-    M80="Diretorio da Base de dados, nao esta configurado ou nao esta na pasta correta"
-    _linha
-    _mensagec "${RED}" "${M80}"
-    _linha
-    exit
-fi 
-
 # exec - Diretorio dos programas
 if [[ -n "${exec}" ]]; then
     _mensagec "${CYAN}" "${M81}"
@@ -680,38 +669,37 @@ else
     exit
 fi     
 
-BASE1="${destino}${base}"
+BASE1=${destino}${base}
 if [[ -n "${BASE1}" ]] && [[ -d "${BASE1}" ]]; then
-    # Diretorio da base encontrado
-    _mensagec "${CYAN}" "${M81}"
+     # Diretorio da base encontrado
+     _mensagec "${CYAN}" "${M81}"
 else
-    # Diretorio da base nao encontrado
-    printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
-    exit
+     # Diretorio da base nao encontrado
+     printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
+     exit
 fi
 
-BASE2="${destino}${base2}"
+BASE2=${destino}${base2}
 if [[ -n "${BASE2}" ]] && [[ -d "${BASE2}" ]]; then
-    # Diretorio da base encontrado
-    _mensagec "${CYAN}" "${M81}"
+     # Diretorio da base encontrado
+     _mensagec "${CYAN}" "${M81}"
 else
-    # Diretorio da base nao encontrado
-    printf "%*s""Diretorio da base nao encontrado ""${BASE2}""...  \n"
-    exit
+     # Diretorio da base nao encontrado
+     printf "%*s""Diretorio da base nao encontrado ""${BASE2}""...  \n"
+     exit
 fi
 
-BASE3="${destino}${base3}"
+BASE3=${destino}${base3}
 if [[ -n "${BASE3}" ]] && [[ -d "${BASE3}" ]]; then
-    # Diretorio da base encontrado
-    _mensagec "${CYAN}" "${M81}"
+     # Diretorio da base encontrado
+     _mensagec "${CYAN}" "${M81}"
 else
-    # Diretorio da base nao encontrado
-    printf "%*s""Diretorio da base nao encontrado ""${BASE3}""...  \n"
-    exit
+     # Diretorio da base nao encontrado
+     printf "%*s""Diretorio da base nao encontrado ""${BASE3}""...  \n"
+     exit
 fi     
-
 # Verifica diretórios específicos se o sistema for iscobol
-if [[ "${sistema}" == "iscobol" ]]; then
+if [[ "${sistema}" = "iscobol" ]]; then
     if [[ ! -d "${X_XML}" ]]; then
         M44="Nao foi encontrado o diretorio ""${X_XML}"
         _linha "*"
@@ -2569,14 +2557,14 @@ _set_base_diretorio() {
 
     if [[ -z "${destino}" ]]; then
         _mensagec "${RED}" "Erro: Variavel de ambiente destino nao esta configurada."
-        _linha "-" "${RED}"
+        _linha "${RED}" "-"
         _read_sleep 2
         _ferramentas
         return 1
     fi
     if [[ -z "${base_dir}" ]]; then
-        _mensagec "${RED}" "Erro: Variavel de ambiente ${base_var} nao esta configurada."
-        _linha "-" "${RED}"
+        _mensagec "${RED}" "Erro: Variavel de ambiente  nao esta configurada."
+        _linha "${RED}" "-"
         _read_sleep 2
         _ferramentas
         return 1
