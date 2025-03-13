@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="12/03/2025-00"                                                                                                 #
+UPDATE="13/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -765,7 +765,7 @@ if [[ -z "${USUARIO}" ]]; then
 fi
 
 # Valor padrao para o ip do servidor
-DEFAULT_IPSERVER="177.115.194.15"
+DEFAULT_IPSERVER="179.212.243.48"
 # Verifica se a variavel de ambiente IPSERVER foi setada
 if [[ -z "${IPSERVER}" ]]; then
     # Se a variavel de ambiente nao foi setada, utiliza o valor padrao
@@ -2490,39 +2490,6 @@ _temps() {
            _ferramentas ;;
     esac    
 }
-
-# Configura BASE1 com o caminho para o banco de dados primário.
-#
-# Verifica se as variaveis de ambiente destino e base estao configuradas.
-# Caso nao estejam, exibe uma mensagem de erro e sai do programa.
-# Caso estejam, define a variavel BASE1 com o valor de destino concatenado
-# com o valor de base.
-_dbase1() {
-    if [[ -z "${destino}" || -z "${base}" ]]; then
-        printf "Erro: Variaveis de ambiente destino ou base nao estao configuradas.\n"
-        exit 1
-    fi
-    BASE1="${destino}${base}"
-}
-
-# Configura BASE2 com o caminho para o banco de dados secundário.
-_dbase2() {
-    if [[ -z "${destino}" || -z "${base2}" ]]; then
-        printf "Erro: Variaveis de ambiente destino ou base2 nao estao configuradas.\n"
-        exit 1
-    fi
-    BASE1="${destino}${base2}"
-}
-
-# Configura BASE3 com o caminho para o banco de dados terciário.
-_dbase3() {
-    if [[ -z "${destino}" || -z "${base3}" ]]; then
-        printf "Erro: Variaveis de ambiente destino ou base3 nao estao configuradas.\n"
-        exit 1
-    fi
-    BASE1="${destino}${base3}"
-}
-
 # Funcao para escolher qual base ser  utilizada.
 #
 # Permite ao usuario escolher qual base ser utilizada. 
@@ -2556,30 +2523,18 @@ fi
     printf "\n"
     _linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO	
-if [[ ! "${base3}" ]]; then
+
     case ${OPCAO} in
-    1) 
- 	    _dbase1 
- 	    ;;
-    2) 
- 	    _dbase2 
- 	    ;;
-    3) 
-        if [[ -n "${base3}" ]]; then
-            _dbase3 
-        else
-            _ferramentas
-        fi
-        ;;
-    9) 
-	    clear 
-	    _ferramentas 
-	    ;;
-    *) _opinvalida 
-        _read_sleep 1 
-	    _ferramentas ;;
+        1) _set_base_diretorio "base" ;;
+        2) _set_base_diretorio "base2" ;;
+        3) _set_base_diretorio "base3" ;;
+        9) clear 
+	       _ferramentas ;;
+        *) _opinvalida 
+           _read_sleep 1 
+	       _ferramentas ;;
     esac
-fi
+
 }
 
 #-Rotina de recuperar arquivos especifico ou todos se deixar em branco-----------------------------#
@@ -2608,6 +2563,26 @@ _jutill() {
     fi
 }
 
+_set_base_diretorio() {
+    local base_var="$1"  # base, base2, or base3
+    local base_dir="${!base_var}" # Get the value of the variable dynamically
+
+    if [[ -z "${destino}" ]]; then
+        _mensagec "${RED}" "Erro: Variavel de ambiente destino nao esta configurada."
+        _linha "-" "${RED}"
+        _read_sleep 2
+        _ferramentas
+        return 1
+    fi
+    if [[ -z "${base_dir}" ]]; then
+        _mensagec "${RED}" "Erro: Variavel de ambiente ${base_var} nao esta configurada."
+        _linha "-" "${RED}"
+        _read_sleep 2
+        _ferramentas
+        return 1
+    fi
+    BASE1="${destino}${base_dir}"
+}
 
 # _rebuilall: Rotina para reconstruir um arquivo especifico com jutil ou todos os arquivos.
 #
@@ -2627,8 +2602,6 @@ _rebuildall() {
     if [[ -n "${base2}" ]]; then
         _escolhe_base
         base_to_use="${BASE1}"
-    else
-        base_to_use="${destino}${base}"
     fi
 
     clear
