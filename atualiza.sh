@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/03/2025-01"                                                                                                 #
+UPDATE="13/03/2025-02"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3079,7 +3079,7 @@ _backupavulso() {
             _mensagec "${YELLOW}" "${M29}"  # "Enviando backup via rsync..."
             _linha 
             if [[ -n "${IPSERVER}" && -n "${PORTA}" && -n "${USUARIO}" ]]; then
-                if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:${ENVBASE}" 2>/dev/null; then
+                if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:/${ENVBASE}" 2>/dev/null; then
                     _mensagec "${YELLOW}" "Backup enviado para \"${ENVBASE}\" no servidor ${IPSERVER}."
                     _linha 
                     _read_sleep 3 
