@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/03/2025-02"                                                                                                 #
+UPDATE="14/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -781,10 +781,6 @@ if [[ -z "${ENVIABACK}" ]]; then
     # Se a variavel de ambiente nao foi setada, utiliza o valor padrao
     if [[ -n "${DEFAULT_ENVIABACK}" ]]; then
         ENVIABACK="${DEFAULT_ENVIABACK}"
-    else
-        # Se a variavel de ambiente nao foi setada e nao tem valor padrao, exibe uma mensagem de erro e sai do programa
-        printf "Erro: Variavel de ambiente ENVIABACK nao esta configurada.\n"
-        exit 1
     fi
 fi
 ## ------- Parametro para a atualizacao de biblioteca ----------------------------
@@ -2911,7 +2907,7 @@ _send_and_manage_backup() {
         [Nn]|"")
             _ferramentas && return ;;
         [Ss]) ;;
-        *) _opinvalida && _ferramentas && return ;;
+           *) _opinvalida && _ferramentas && return ;;
     esac
             # Se SERACESOFF está definido, move localmente
             if [ -n "${SERACESOFF}" ]; then
@@ -2934,34 +2930,35 @@ _send_and_manage_backup() {
                 fi
             fi
             
-            # Determina o destino remoto
-            local remote_dest
-            remote_dest="${ENVIABACK}:-"
-            if [ -z "${ENVIABACK}" ]; then 
-                _meiodatela
-                _mensagec "${RED}" "${M68}"
+        # Determina o destino remoto
+        local remote_dest
+        remote_dest="${ENVIABACK}"
+        if [ -z "${ENVIABACK}" ]; then 
+            _meiodatela
+            _mensagec "${RED}" "${M68}"
+        read -r -p "${YELLOW}${M41}${NORM}" remote_dest
 
-                read -r -p "${YELLOW}${M41}${NORM}"remote_dest
-                # Validação simples: não aceita vazio
-                until [ -n "$remote_dest" ]; do
-                _meiodatela 
-                _mensagec "$RED" "$M69" 
-                read -r -p "Digite o diretorio remoto: " remote_dest
-                done
-            fi
-            
-            # Envia backup via rsync
-            _linha && _mensagec "${YELLOW}" "${M29}" && _linha
-            if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${backup_file}" "${USUARIO}@${IPSERVER}:/${remote_dest}"; then
-                M15="Backup enviado para a pasta \"${remote_dest}\"."
-                _linha
-                _mensagec "${YELLOW}" "${M15}"
-                _linha
-                _read_sleep 3
-            else
-                _mensagec "${RED}" "Erro ao enviar backup para ${remote_dest}"
-                return 1
-            fi 
+            # Validação simples: não aceita vazio
+            until [ -n "$remote_dest" ]; do
+            _meiodatela 
+            _mensagec "$RED" "$M69" 
+            read -r -p "Digite o diretorio remoto: " remote_dest
+            done
+        ENVIABACK="${remote_dest}"  
+        fi
+        echo "${ENVIABACK}"
+        # Envia backup via rsync
+        _linha && _mensagec "${YELLOW}" "${M29}" && _linha
+        if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${backup_file}" "${USUARIO}@${IPSERVER}:/${ENVIABACK}"; then
+            M15="Backup enviado para a pasta \"${remote_dest}\"."
+            _linha
+            _mensagec "${YELLOW}" "${M15}"
+            _linha
+            _read_sleep 3
+        else
+            _mensagec "${RED}" "Erro ao enviar backup para ${remote_dest}"
+            return 1
+        fi 
     # Gerenciamento do backup local        
      read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
      if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
