@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="14/03/2025-00"                                                                                                 #
+UPDATE="17/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -183,7 +183,8 @@ YELLOW=$(tput bold)$(tput setaf 3) # Cor amarela
 BLUE=$(tput bold)$(tput setaf 4) # Cor azul
 PURPLE=$(tput bold)$(tput setaf 5)  # Cor roxa
 CYAN=$(tput bold)$(tput setaf 6) # Cor ciano
-NORM=$(tput bold)$(tput setaf 7) # Cor normal
+#NORM=$(tput bold)$(tput setaf 7) # Cor normal
+NORM=$(tput sgr0)
 COLUMNS=$(tput cols) # Numero de colunas da tela
 #--------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
@@ -337,7 +338,7 @@ M81="..Encontrado o diretorio do sistema .."
 # Mensagens em VERDE
 M91="Atualizacao concluida com sucesso!"
 M92="ao termino da atualizacao entrar novamente"
-M93"Atualização offline concluída!"
+M93="Atualização offline concluída!"
 #-Centro da tela-----------------------------------------------------------------------------------#
 # _meiodatela ()
 # 
@@ -361,9 +362,9 @@ _meiodatela() {
 #   $2   - Texto a ser exibido na tela.
 
 _mensagec() {
-    local CCC="${1}"
-    local MXX="${2}"
-    printf "%*s""${CCC}" ;printf "%*s\n" $(((${#MXX}+COLUMNS)/2)) "${MXX}" ;printf "%*s""${NORM}"
+    local color="$1"
+    local message="$2"
+    printf "%s%*s%s\n" "${color}" $(((${#message} + $(tput cols)) / 2)) "${message}" "${NORM}"
 }
 
 # _mensaged (string, string)
@@ -375,16 +376,15 @@ _mensagec() {
 #   $1   - Cor a ser usada como fundo, no formato ANSI. Ex.: "\033[32m"
 #   $2   - Texto a ser exibido na tela.
 _mensaged() {
-local COR="${1}"
+local color="${1}"
 local mensagem="${2}"
 # Obtém a largura do terminal
 largura_terminal=$(tput cols)
 # Calcula a posição inicial para imprimir a mensagem à direita
 largura_mensagem=${#mensagem}
 posicao_inicio=$((largura_terminal - largura_mensagem))
-
 # Imprime a mensagem alinhada à direita
-printf "%*s""${COR}" ;printf "%${posicao_inicio}s%s\n" "" "$mensagem" ;printf "%*s""${NORM}"
+printf "%*s""${color}" ;printf "%${posicao_inicio}s%s\n" "" "$mensagem" ;printf "%*s""${NORM}"
 }
 #-Funcao de sleep----------------------------------------------------------------------------------#
 # Esta função pausa a execução por um número especificado de segundos.
@@ -753,7 +753,7 @@ if [[ -z "${USUARIO}" ]]; then
 fi
 
 # Valor padrao para o ip do servidor
-DEFAULT_IPSERVER="179.212.243.48"
+DEFAULT_IPSERVER="177.45.80.10"
 # Verifica se a variavel de ambiente IPSERVER foi setada
 if [[ -z "${IPSERVER}" ]]; then
     # Se a variavel de ambiente nao foi setada, utiliza o valor padrao
@@ -830,7 +830,7 @@ if [[ -n "${SERACESOFF}" ]]; then
         printf "Erro ao criar diretório %s\n" "${destino}${SERACESOFF}"
         exit 1
         fi
-    _read_sleep 0,30
+    _read_sleep 0.30
     BAT="atualiza.bat"
     if [[ -f "${TOOLS}/${BAT}" ]]; then
         mv -f -- "${BAT}" "${destino}${SERACESOFF}"
@@ -2946,7 +2946,7 @@ _send_and_manage_backup() {
             done
         ENVIABACK="${remote_dest}"  
         fi
-        echo "${ENVIABACK}"
+
         # Envia backup via rsync
         _linha && _mensagec "${YELLOW}" "${M29}" && _linha
         if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${backup_file}" "${USUARIO}@${IPSERVER}:/${ENVIABACK}"; then
@@ -2960,15 +2960,15 @@ _send_and_manage_backup() {
             return 1
         fi 
     # Gerenciamento do backup local        
-     read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
-     if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
+    read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
+    if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
         if rm -f "${BACKUP}/${backup_file}"; then
             M170="Backup local excluido"
             _linha && _mensagec "${YELLOW}" "${M170}" && _linha && _press
         else
             _mensagec "${RED}" "Erro ao excluir backup local"
         fi
-     fi
+    fi
     _ferramentas
 }
 
@@ -2990,7 +2990,7 @@ _backupavulso() {
     while true; do
         clear 
         _linha
-        ls -lhs "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null || _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
+        ls -lh "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null || _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
         _linha 
         _mensagec "${RED}" "${M52}"  # "Selecione um backup para enviar"
         _linha      
