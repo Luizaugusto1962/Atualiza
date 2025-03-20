@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/03/2025-03"                                                                                                 #
+UPDATE="20/03/2025-04"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3480,6 +3480,7 @@ VIEWVIX="$destino""/sav/savisc/viewvix/tmp"
         fi
     done
 printf "\n\n"     
+_linha
 _press
 cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
 _ferramentas
