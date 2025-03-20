@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/03/2025-01"                                                                                                 #
+UPDATE="20/03/2025-03"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3486,51 +3486,99 @@ _ferramentas
 }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
-# _update ()
-# 
-# Atualiza o atualiza.sh via Github, sempre que o programa for executado.
-# 
-# Baixa o atualiza.sh do Github, descompacta o arquivo, copia o programa
-# descompactado para o diretorio do atualiza.sh, remove o diretorio
-# descompactado e remove o arquivo descompactado.
-# 
-# O programa sempre sera atualizado via internet, caso o servidor tenha
-# acesso a rede.
 
+    # _update_online()
+    #
+    # Atualiza o script via GitHub.
+    #
+    # O script faz o backup do arquivo atualiza.sh, baixa o arquivo ZIP do GitHub,
+    # descompacta o arquivo ZIP, verifica e move os arquivos para o diretório $TOOLS,
+    # limpa o diretório temporário e exibe mensagens finais.
+    #
+    # Opcoes:
+    #   NAO TEM
+    #
+    # Variaveis:
+    #   link: link do GitHub com o arquivo ZIP
+    #   zipfile: nome do arquivo ZIP
+    #   temp_dir: diretório temporário para descompactar o arquivo ZIP
 _update_online() {
     local link="https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza.zip"
     local zipfile="atualiza.zip"
-    
+    local temp_dir="${ENVIA}/temp_update"
+
+    # Mensagem inicial
     _mensagec "${GREEN}" "Atualizando o script via GitHub..."
+
+    # Backup do arquivo atualiza.sh
+    if [ ! -d "$BACKUP" ]; then
+        mkdir -p "$BACKUP" || {
+            _mensagec "${RED}" "Erro: Diretório de backup $BACKUP não pode ser criado."
+            return 1
+        }
+    fi
     cp -f atualiza.sh "${BACKUP}/atualiza.sh.bak" || {
         _mensagec "${RED}" "Erro ao criar backup do atualiza.sh."
         return 1
     }
-    
-    cd "$PROGS" || { _mensagec "${RED}" "Erro: Diretorio $PROGS nao acessivel."; return 1; }
-    wget -q -c "$link" -O "$zipfile" || {
+
+    # Acessar o diretório de destino
+    cd "$ENVIA" || { 
+        _mensagec "${RED}" "Erro: Diretório $ENVIA não acessível."
+        return 1
+    }
+
+    # Criar diretório temporário
+    mkdir -p "$temp_dir" || {
+        _mensagec "${RED}" "Erro: Não foi possível criar o diretório temporário $temp_dir."
+        return 1
+    }
+    cd "$temp_dir" || {
+        _mensagec "${RED}" "Erro: Não foi possível acessar o diretório temporário $temp_dir."
+        return 1
+    }
+
+    # Baixar o arquivo ZIP
+    wget -q -c "$link" || {
         _mensagec "${RED}" "Erro ao baixar $zipfile."
         return 1
     }
-    
-    "$cmd_unzip" -o "$zipfile" -d . >> "$LOG_ATU" 2>&1 || {
+
+    # Descompactar o arquivo ZIP
+    "$cmd_unzip" -o -j "$zipfile" >> "$LOG_ATU" 2>&1 || {
         _mensagec "${RED}" "Erro ao descompactar $zipfile."
         return 1
     }
-    
-    rm -f "$zipfile"
-    cd "Atualiza-main" || { _mensagec "${RED}" "Erro: Diretorio Atualiza-main nao encontrado."; return 1; }
+
+    # Verificar e mover arquivos
     for file in atualiza.sh setup.sh; do
-        [ -f "$file" ] || { _mensagec "${RED}" "Erro: $file nao encontrado."; return 1; }
+        if [ ! -f "$file" ]; then
+            _mensagec "${RED}" "Erro: $file não encontrado."
+            return 1
+        fi
         chmod +x "$file"
-        mv -f "$file" "$TOOLS" || { _mensagec "${RED}" "Erro ao mover $file."; return 1; }
+        mv -f "$file" "$TOOLS" || {
+            _mensagec "${RED}" "Erro ao mover $file para $TOOLS."
+            return 1
+        }
     done
-    
-    cd "$PROGS" && rm -rf Atualiza-main
+
+    # Limpar diretório temporário
+    cd "$ENVIA" || {
+        _mensagec "${RED}" "Erro: Não foi possível retornar ao diretório $ENVIA."
+        return 1
+    }
+    rm -rf "$temp_dir" || {
+        _mensagec "${RED}" "Erro ao remover o diretório temporário $temp_dir."
+        return 1
+    }
+
+    # Mensagens finais
     _linha
     _mensagec "${GREEN}" "${M91}"
     _mensagec "${GREEN}" "${M92}"
     _linha
+
     exit 0
 }
 
