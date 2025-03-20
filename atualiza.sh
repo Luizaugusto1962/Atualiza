@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/03/2025-00"                                                                                                 #
+UPDATE="20/03/2025-01"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -963,13 +963,14 @@ while (( contador < MAX_REPETICOES )); do
      #-Informe o nome do programa a ser atualizado:
      _mensagec "${RED}" "${M59}"
      _linha
-     MB4="Informe o nome do programa (ENTER ou espaco para sair): "
+     MB4=" Informe o nome do programa (ENTER ou espaco para sair): "
      read -rp "${YELLOW}""${MB4}""${NORM}" programa
      _linha
     MB5="Erro: Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
     # Verifica se foi digitado ENTER ou espaço
     if [[ -z "${programa}" ]]; then
         _mensagec "${RED}" "${MB5}"
+        _linha
         break
     fi
     if [[ "${programa}" == " " ]]; then
@@ -1160,7 +1161,7 @@ _data_do_arquivo() {
     data_formatada=$(date -d "$data_modificacao" +"%d/%m/%Y %H:%M:%S")
     _mensagec "${GREEN}" "Nome do programa: ${novo_arquivo}"
     _mensagec "${YELLOW}" "Data do programa: ${data_formatada}"
-    _linha
+#    _linha
 }
     # Atualiza os pacotes de programa.
     #
