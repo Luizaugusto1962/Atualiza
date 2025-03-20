@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 12/03/2025
+#versao de 17/03/2025
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
@@ -9,11 +9,10 @@ clear
 _ATUALIZA_BAT () {
     {
     cat << 'EOF'
-@echo off
-cls
 mode con cols=60 lines=30
 color 0e
 set op=0  
+set ipservidor=177.45.80.10
 set "line================================================"
 IF EXIST *.zip (
     del /Q  *.zip
@@ -82,7 +81,7 @@ echo %line%
 set prog=""
 set /p prog=Nome do programa: 
 if "%prog%" == "" goto MENU
-call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%class%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/man/%prog%%class%.zip .
 goto OPCAO
 
 :DEBUG
@@ -94,7 +93,7 @@ echo %line%
 set prog=""
 set /p prog=Nome do programa: 
 if "%prog%" == "" goto MENU
-call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/man/%prog%%mclass%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/man/%prog%%mclass%.zip .
 goto OPCAO
 
 :Biblioteca
@@ -103,10 +102,10 @@ echo %line%
 set versao=""
 set /p versao=Numero da versao: 
 if "%versao%" == "" goto MENU
-call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU1%%versao%.zip .
-call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
-call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
-call pscp -sftp -p -pw %1 -P 41122 atualiza@177.115.194.15:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU1%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
+call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
 goto MENU
 
 :Tools
@@ -122,7 +121,7 @@ set sn=""
 set op=""
 set class=""
 set mclass=""
-set SAVATU=""
+set SAVATU0=""
 set SAVATU1=""
 set SAVATU2=""
 set SAVATU3=""
@@ -134,8 +133,8 @@ EOF
     } >> atualiza.bat 
 }
 
-class=""                                                        
-mclass=""
+complemento=""                                                        
+mcomplemento=""
 
 linha="#-------------------------------------------------------------------#"
 traco="#####################################################################"
@@ -149,6 +148,7 @@ echo ${traco} > atualizap
 echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> atualizap
 echo ${traco} >> atualizap
 _ISCOBOL () {
+    sistema="iscobol"
     echo ${traco}           
     echo "###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###"
     echo ${traco}
@@ -182,16 +182,16 @@ _ISCOBOL () {
         echo "exec=sav/classes" 
         echo "telas=sav/tel_isc"
         echo "xml=sav/xml" 
-        class="${VERCLASS}""_*_"
-        classA="${VERCLASS}""_classA_"
-        classB="${VERCLASS}""_classB_"
-        classC="${VERCLASS}""_tel_isc_"
-        classD="${VERCLASS}""_xml_"
-        echo "SAVATU=tempSAV_""${class}"
-        echo "SAVATU1=tempSAV_""${classA}"
-        echo "SAVATU2=tempSAV_""${classB}"
-        echo "SAVATU3=tempSAV_""${classC}"
-        echo "SAVATU4=tempSAV_""${classD}"
+        classA="${VERCLASS}""_*_" # Usanda esta variavel para baixar todos os zips da atualizacao.
+        classB="${VERCLASS}""_classA_"
+        classC="${VERCLASS}""_classB_"
+        classD="${VERCLASS}""_tel_isc_"
+        classE="${VERCLASS}""_xml_"
+        echo "SAVATU=tempSAV_""${classA}" 
+        echo "SAVATU1=tempSAV_""${classB}"
+        echo "SAVATU2=tempSAV_""${classC}"
+        echo "SAVATU3=tempSAV_""${classD}"
+        echo "SAVATU4=tempSAV_""${classE}"
     } >> atualizap
 }
 
@@ -206,8 +206,8 @@ _ISCOBOL () {
 # As variaveis sao escritas no arquivo atualizac.
 _2018 () {
     {
-class="-class"
-mclass="-mclass"
+complemento="-class"
+mcomplemento="-mclass"
 VERCLASS="IS2018"        
 echo "class=-class"
 echo "mclass=-mclass"
@@ -225,8 +225,8 @@ echo "mclass=-mclass"
 # As variaveis sao escritas no arquivo atualizac.
 _2020 () {
     {
-class="-class20"   
-mclass="-mclass20"                                                      
+complemento="-class20"   
+mcomplemento="-mclass20"                                                      
 VERCLASS="IS2020"
 echo "class=-class20"   
 echo "mclass=-mclass20"                                                      
@@ -244,8 +244,8 @@ echo "mclass=-mclass20"
 # As variaveis sao escritas no arquivo atualizac.
 _2023 () {
     {
-class="-class23"                                                        
-mclass="-mclass23"
+complemento="-class23"                                                        
+mcomplemento="-mclass23"
 VERCLASS="IS2023"  
 echo "class=-class23"                                                        
 echo "mclass=-mclass23"
@@ -263,35 +263,32 @@ echo "mclass=-mclass23"
 # As variaveis sao escritas no arquivo atualizac.
 _2024 () {
     {
-class="-class24"                                                        
-mclass="-mclass24"
+complemento="-class24"                                                        
+mcomplemento="-mclass24"
 VERCLASS="IS2024"  
 echo "class=-class24"                                                        
 echo "mclass=-mclass24"
     } >> atualizac
 }
 
+
 # _COBOL
 #
-# Define as variaveis para o COBOL.
+# Define as variaveis para o Micro Focus da versao COBOL.
 #
-# As variaveis class e sistema recebem seus valores para o COBOL.
+# As variaveis class e mclass recebem seus valores para a versao COBOL.
+#
+# A variavel sistema recebe o valor COBOL.
 #
 # As variaveis sao escritas no arquivo atualizac.
-#
-# A variavel exec recebe o valor sav/int.
-#
-# A variavel telas recebe o valor sav/tel.
-#
-# A variavel SAVATU1 recebe o valor tempSAVintA_.
-#
-# A variavel SAVATU2 recebe o valor tempSAVintB_.
-#
-# A variavel SAVATU3 recebe o valor tempSAVtel_.
 _COBOL () {
+sistema="cobol"    
     {
-        echo "sistema=cobol"
-        echo "class=-6"
+complemento="-6"
+mcomplemento="-m6"
+echo "sistema=cobol"
+echo "class=-6"
+echo "mclass=-m6"
     } >> atualizac
     {
     echo "exec=sav/int" 
@@ -299,7 +296,7 @@ _COBOL () {
     echo "SAVATU1=tempSAVintA_"
     echo "SAVATU2=tempSAVintB_" 
     echo "SAVATU3=tempSAVtel_" 
-    echo ${linha}
+    echo "${linha}"
     } >> atualizap
 }
 
@@ -421,16 +418,28 @@ echo ${linha}
 } >> atualizap
 
 if [[ "${OFF}" =~ ^[Ss]$ ]]; then
+    if [[ "${sistema}" = "cobol" ]]; then
     {
         echo "@echo off"
-        echo "set class=\"${class}\""
-        echo "set mclass=\"${mclass}\""
-        echo "set SAVATU1=tempSAV_\"${classA}\""
-        echo "set SAVATU2=tempSAV_\"${classB}\""
-        echo "set SAVATU3=tempSAV_\"${classC}\""
-        echo "set SAVATU4=tempSAV_\"${classD}\""
+        echo "cls"
+        echo "set class=""${complemento}"
+        echo "set mclass=""${mcomplemento}"
+        echo "set SAVATU1=tempSAVintA_"
+        echo "set SAVATU2=tempSAVintB_"
+        echo "set SAVATU3=tempSAVtel_"
     } > atualiza.bat
-    
+    else
+    {
+        echo "@echo off"
+        echo "cls"
+        echo "set class=""${complemento}"
+        echo "set mclass=""${mcomplemento}"
+        echo "set SAVATU1=tempSAV_${classA}"
+        echo "set SAVATU2=tempSAV_${classB}"
+        echo "set SAVATU3=tempSAV_${classC}"
+        echo "set SAVATU4=tempSAV_${classD}"
+    } > atualiza.bat
+    fi
     # Check if the batch file was created successfully
     if [[ -f "atualiza.bat" ]]; then
         _ATUALIZA_BAT
