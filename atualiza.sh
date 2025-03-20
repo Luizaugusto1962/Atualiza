@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="17/03/2025-00"                                                                                                 #
+UPDATE="20/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -966,14 +966,14 @@ while (( contador < MAX_REPETICOES )); do
      MB4="Informe o nome do programa (ENTER ou espaco para sair): "
      read -rp "${YELLOW}""${MB4}""${NORM}" programa
      _linha
-    
+    MB5="Erro: Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
     # Verifica se foi digitado ENTER ou espaço
     if [[ -z "${programa}" ]]; then
-        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo ou Continuando..."
+        _mensagec "${RED}" "${MB5}"
         break
     fi
     if [[ "${programa}" == " " ]]; then
-        _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo ou Continuando..."
+        _mensagec "${RED}" "${MB5}"
         break
     fi
     # Verifica se o nome do programa é válido
@@ -993,7 +993,7 @@ while (( contador < MAX_REPETICOES )); do
     elif [[ "$tipo_compilacao" == "2" ]]; then
         compila=${programa}${mclass}".zip"
     else
-        _mensagec "${RED}" "Erro: Opcao de compilacao invalida Digite 1 ou 2."
+        _mensagec "${RED}" "Erro: Opcao de compilacao invalida, Digite 1 ou 2."
         continue
     fi
     # Armazena o resultado
@@ -1435,42 +1435,37 @@ _voltaprog() {
     _voltamaisprog
 }
 
-
-    # _volta_progy: Realiza a volta de um programa para uma versao anterior.
-    #
-    # Este método:
-    # - Verifica se a variável Vprog está vazia, se sim, volta ao menu principal.
-    # - Move os arquivos do diretório ${TOOLS} para os diretórios respectivos
-    #   dependendo do tipo de sistema.
-    # - Exibe uma mensagem de fim de processo e volta ao menu principal.
-    #
-    # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
-    # e o usuário é retornado ao menu principal.
-_volta_progy() {
-    _read_sleep 1
-
-    # Validação da variável Vprog
-    if [[ -z "${Vprog}" ]]; then
-        _meiodatela
-        _mensagec "${RED}" "${M71}"
-        _linha
+# _maisprog: Pergunta ao usuario se deseja atualizar mais algum programa.
+#
+# Mostra uma mensagem de conclusao de atualizacao de programa e pergunta
+# se o usuario deseja atualizar mais algum programa. Se a resposta for
+# "s" ou "S", chama a funcao _voltaprogx. Caso contrario, volta ao menu
+# principal. Se a entrada for invalida, exibe uma mensagem de erro e
+# volta ao menu principal.
+_maisprog() {
+    _linha 
+    _mensagec "${YELLOW}" "${M03}"
+    _mensagec "${GREEN}" "${M02}"
+    _linha 
+    _press
+    _meiodatela
+    _linha
+        printf "\n\n"
+    read -rp "${YELLOW}""${M37}""${NORM}" -n1  REPLY
+    printf "\n\n"
+    if [[ -z "${REPLY}" ]]; then
+            _principal
+    elif [[ "${REPLY,,}" =~ ^[Nn]$ ]]; then
+            _principal
+    elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
+            _volta_progx
+    else
+        _opinvalida
+        _read_sleep 1          	 
         _press
         _principal
-        return 1
     fi
-
-    # Função auxiliar para mover arquivos
-    move_files() {
-        local pattern="$1"
-        local dest="$2"
-        local type="$3"
-        
-        if ! "${cmd_find}" "${TOOLS}" -name "${pattern}" -exec mv {} "${dest}" \; 2>/dev/null; then
-            printf "Erro ao mover arquivos %s.\n" "${type}"
-            return 1
-        fi
-        return 0
-    }
+}    
 
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
 # _volta_progx: Volta um programa especifico para a versao anterior
@@ -1478,7 +1473,21 @@ _volta_progy() {
 # Informa o nome do programa em MAIUSCULO e descompacta o arquivo
 # da biblioteca anterior no diretorio TOOLS.
 _volta_progx() {
-    MA4="       2- Informe o nome do programa em MAIUSCULO: "
+    M78="Erro encontrado"
+        # Validate inputs
+    [[ -z "${OLDS}" ]] && _messagec "${RED}" "${M78}"
+    [[ -z "${INI}" ]] && _messagec "${RED}" "${M78}"
+    [[ ! -d "${OLDS}" ]] && _messagec "${RED}" "${M78}"
+
+    if ! cd "${OLDS}"; then
+        _meiodatela
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${OLDS}"
+        _linha
+        _press
+        _principal
+        return 1
+    fi
+    MA4="       Informe o nome do programa em MAIUSCULO: "
     read -rp "${YELLOW}""${MA4}""${NORM}" Vprog
 
     if [[ -z "${Vprog}" ]]; then
@@ -1499,26 +1508,10 @@ _volta_progx() {
         return 1
     fi
 
-    # Processamento baseado no tipo de sistema
-    local move_status=0
-    if [[ "${sistema}" = "iscobol" ]]; then
-        move_files "${Vprog}.xml" "${X_XML}" || move_status=1
-        move_files "${Vprog}.TEL" "${T_TELAS}" || move_status=1
-        move_files "${Vprog}*.class" "${E_EXEC}" || move_status=1
-    else
-        move_files "${Vprog}.TEL" "${T_TELAS}" || move_status=1
-        move_files "${Vprog}*.int" "${E_EXEC}" || move_status=1
-    fi
-
-    # Verifica se houve erro nos movimentos
-    if [[ ${move_status} -ne 0 ]]; then
-        return 1
-    fi
-
     # Exibição das mensagens finais
-    _linha
-    _mensagec "${YELLOW}" "${M03}"
-    _linha
+#    _linha
+#    _mensagec "${YELLOW}" "${M03}"
+#    _linha
 
     local M30="O(s) programa(s) '${Vprog}' da ${NORM}${RED}${VERSAO}"
     _linha
@@ -1526,41 +1519,27 @@ _volta_progx() {
     _mensagec "${YELLOW}" "${M30}"
     _linha
     _press
-    _volta_progx
-}
-
-
-# Função para extrair arquivos e tratar erros
-
-cd "${OLDS}" || { printf "Erro ao acessar o diretório %s.\n" "${OLDS}"; exit 1; }
-
 # Verifica se o arquivo de entrada existe antes de tentar descompactar
 if [ ! -f "${INI}" ]; then
     printf "Erro: Arquivo %s não encontrado.\n" "${INI}"
     exit 1
 fi
 
-extrair_arquivos() {
-    local padrao="$1"
+    local padrao="*/"
 
-    if ! "${cmd_unzip}" -j -o "${INI}" "${padrao}" -d "${TOOLS}" >> "${LOG_ATU}"; then
+    if ! "${cmd_unzip}" -o "${INI}" "${padrao}${Vprog}*" -d "/" >> "${LOG_ATU}"; then
         _meiodatela
-        _mensagec "${RED}" "Erro ao descompactar ${INI} para ${TOOLS}"
+        _mensagec "${RED}" "Erro ao descompactar ${INI}" 
         _linha
         _press
         _principal
         return 1
     fi
-}
+_maisprog
+}    
 
-# Executa a extração dos dois conjuntos de arquivos
-extrair_arquivos "${destino}/${exec}/${Vprog}"*.*
-extrair_arquivos "${destino}/${telas}/${Vprog}".*
 
 # Retorna ao programa principal
-_volta_progy
-
-}
 
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
 # 
@@ -1570,20 +1549,11 @@ _volta_progy
 # Esta funcao e responsavel por voltar todos os arquivos da biblioteca da SAV.
 _volta_geral() {
     #-VOLTA DOS ARQUIVOS ANTERIORES...
-    _error_exit() {
-        local msg="$1"
-        _meiodatela
-        _mensagec "${RED}" "$msg"
-        _linha
-        _press
-        _principal
-        return 1
-    }
 
     # Validate inputs
-    [[ -z "${OLDS}" ]] && _error_exit "${M71}"
-    [[ -z "${INI}" ]] && _error_exit "${M71}"
-    [[ ! -d "${OLDS}" ]] && _error_exit "${M71}"
+    [[ -z "${OLDS}" ]] && _messagec "${RED}" "${M71}"
+    [[ -z "${INI}" ]] && _messagec "${RED}" "${M71}"
+    [[ ! -d "${OLDS}" ]] && _messagec "${RED}" "${M71}"
 
     if ! cd "${OLDS}"; then
         _meiodatela
@@ -1593,7 +1563,9 @@ _volta_geral() {
         _principal
         return 1
     fi
+    
 local raiz="/"
+
     if ! "${cmd_unzip}" -o "${INI}" -d "${raiz}" >> "${LOG_ATU}"; then
         _meiodatela
         _mensagec "${RED}" "Erro ao descompactar ${INI} para ${raiz}"
@@ -2028,6 +2000,7 @@ _voltabibli() {
     _mensagec "${RED}" "${M62}"
     _linha
     read -rp "${YELLOW}""${MA2}""${NORM}" VERSAO
+    _linha
 
     if [[ -z "${VERSAO}" ]]; then
         _meiodatela
@@ -2586,6 +2559,8 @@ _rebuildall() {
     if [[ -n "${base2}" ]]; then
         _escolhe_base
         base_to_use="${BASE1}"
+    else
+        base_to_use="${destino}${base}"
     fi
 
     clear
