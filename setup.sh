@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 17/03/2025
+#versao de 21/03/2025
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
@@ -56,21 +56,21 @@ echo	[S]- Sim [N]- Nao
 echo.
 set /p sn=Selecione a opcao ... 
 echo.
-if %sn% equ N goto EOF
-if %sn% equ S goto Modo_compilado
+if /I %sn% equ N goto EOF
+if /I %sn% equ S goto Modo_compilado
 
 :Modo_compilado
 set sn=""
 echo %line% 
-echo Programa compilado em qual modos? :
+echo Programa compilado em qual modo ? :
 echo %line% 
 echo	[1]- Normal [2]- Debug     
 echo.
 set /p sn=Selecione a opcao ... 
 echo.
-if %sn% equ 0 goto EOF
-if %sn% equ 1 goto NORMAL 
-if %sn% equ 2 goto DEBUG
+if %sn% == 0 goto EOF
+if %sn% == 1 goto NORMAL 
+if %sn% == 2 goto DEBUG
 
 :NORMAL
 echo.
