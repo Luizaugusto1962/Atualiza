@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 21/03/2025
+#versao de 24/03/2025
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
