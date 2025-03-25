@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 24/03/2025-00
+#versao de 25/03/2025-00
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
@@ -140,20 +140,20 @@ linha="#-------------------------------------------------------------------#"
 traco="#####################################################################"
 ###
 echo ${traco}
-echo ${traco} > atualizac
-echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> atualizac
+echo ${traco} > .atualizac
+echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> .atualizac
 echo "###      ( Parametros para serem usados no atualiza.sh )          ###" 
-echo ${traco} >> atualizac
-echo ${traco} > atualizap
-echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> atualizap
-echo ${traco} >> atualizap
+echo ${traco} >> .atualizac
+echo ${traco} > .atualizap
+echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >> .atualizap
+echo ${traco} >> .atualizap
 _ISCOBOL () {
     sistema="iscobol"
     echo ${traco}           
     echo "###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###"
     echo ${traco}
     echo "sistema=iscobol"
-    echo "sistema=iscobol" >> atualizac
+    echo "sistema=iscobol" >> .atualizac
     echo ${linha}
     echo "Escolha a versao do Iscobol"
     echo
@@ -192,7 +192,7 @@ _ISCOBOL () {
         echo "SAVATU2=tempSAV_""${classC}"
         echo "SAVATU3=tempSAV_""${classD}"
         echo "SAVATU4=tempSAV_""${classE}"
-    } >> atualizap
+    } >> .atualizap
 }
 
 # _2018
@@ -203,7 +203,7 @@ _ISCOBOL () {
 #
 # A variavel VERCLASS recebe o valor IS2018.
 #
-# As variaveis sao escritas no arquivo atualizac.
+# As variaveis sao escritas no arquivo .atualizac.
 _2018 () {
     {
 complemento="-class"
@@ -211,7 +211,7 @@ mcomplemento="-mclass"
 VERCLASS="IS2018"        
 echo "class=-class"
 echo "mclass=-mclass"
-    } >> atualizac
+    } >> .atualizac
 } 
 
 # _2020
@@ -222,7 +222,7 @@ echo "mclass=-mclass"
 #
 # A variavel VERCLASS recebe o valor IS2020.
 #
-# As variaveis sao escritas no arquivo atualizac.
+# As variaveis sao escritas no arquivo .atualizac.
 _2020 () {
     {
 complemento="-class20"   
@@ -230,7 +230,7 @@ mcomplemento="-mclass20"
 VERCLASS="IS2020"
 echo "class=-class20"   
 echo "mclass=-mclass20"                                                      
-    } >> atualizac      
+    } >> .atualizac      
 }
 
 # _2023
@@ -241,7 +241,7 @@ echo "mclass=-mclass20"
 #
 # A variavel VERCLASS recebe o valor IS2023.
 #
-# As variaveis sao escritas no arquivo atualizac.
+# As variaveis sao escritas no arquivo .atualizac.
 _2023 () {
     {
 complemento="-class23"                                                        
@@ -249,7 +249,7 @@ mcomplemento="-mclass23"
 VERCLASS="IS2023"  
 echo "class=-class23"                                                        
 echo "mclass=-mclass23"
-    } >> atualizac
+    } >> .atualizac
 }
 
 # _2024
@@ -260,7 +260,7 @@ echo "mclass=-mclass23"
 #
 # A variavel VERCLASS recebe o valor IS2024.
 #
-# As variaveis sao escritas no arquivo atualizac.
+# As variaveis sao escritas no arquivo .atualizac.
 _2024 () {
     {
 complemento="-class24"                                                        
@@ -268,7 +268,7 @@ mcomplemento="-mclass24"
 VERCLASS="IS2024"  
 echo "class=-class24"                                                        
 echo "mclass=-mclass24"
-    } >> atualizac
+    } >> .atualizac
 }
 
 
@@ -280,7 +280,7 @@ echo "mclass=-mclass24"
 #
 # A variavel sistema recebe o valor COBOL.
 #
-# As variaveis sao escritas no arquivo atualizac.
+# As variaveis sao escritas no arquivo .atualizac.
 _COBOL () {
 sistema="cobol"    
     {
@@ -289,7 +289,7 @@ mcomplemento="-m6"
 echo "sistema=cobol"
 echo "class=-6"
 echo "mclass=-m6"
-    } >> atualizac
+    } >> .atualizac
     {
     echo "exec=sav/int" 
     echo "telas=sav/tel"
@@ -297,7 +297,7 @@ echo "mclass=-m6"
     echo "SAVATU2=tempSAVintB_" 
     echo "SAVATU3=tempSAVtel_" 
     echo "${linha}"
-    } >> atualizap
+    } >> .atualizap
 }
 
 echo "  Em qual sistema que o SAV esta rodando " 
@@ -325,24 +325,24 @@ read -rp " ( Sistema em banco de dados [S/N]  ->" -n1 BANCO
 echo
 echo ${linha}
     if [[ "${BANCO}" =~ ^[Nn]$ ]] || [[ "${BANCO}" == "" ]]; then
-        echo "BANCO=n" >> atualizac
+        echo "BANCO=n" >> .atualizac
     else [[ "${BANCO}" =~ ^[Ss]$ ]];
-        echo "BANCO=s" >> atualizac
+        echo "BANCO=s" >> .atualizac
     fi
 declare -l DIR
 echo "###              ( PASTA DO SISTEMA )         ###" 
 read -rp " Informe o diretorio raiz sem o /->" -n1 DIR 
 echo 
-echo destino="${DIR}" >> atualizac
+echo destino="${DIR}" >> .atualizac
 echo ${linha} 
 declare -l OFF
 echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF [S ou N] ->" -n1 OFF 
 echo
 if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
-        echo "SERACESOFF=" >> atualizac
+        echo "SERACESOFF=" >> .atualizac
 elif [[ "${OFF}" =~ ^[Ss]$ ]]; then
-        echo "SERACESOFF=/sav/portalsav/Atualiza"  >> atualizac
+        echo "SERACESOFF=/sav/portalsav/Atualiza"  >> .atualizac
 fi
 echo ${linha} 
 declare -l PASTA
@@ -353,14 +353,14 @@ echo
 if [[ "${PASTA}" == "" ]]; then
     if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
         echo "ENVIABACK="""
-        echo "ENVIABACK=""" >> atualizac
+        echo "ENVIABACK=""" >> .atualizac
     else
     echo "ENVIABACK=/sav/portalsav/Atualiza"
-    echo "ENVIABACK=/sav/portalsav/Atualiza" >> atualizac
+    echo "ENVIABACK=/sav/portalsav/Atualiza" >> .atualizac
     fi
 else
     echo "ENVIABACK=cliente/""${PASTA}"
-    echo "ENVIABACK=cliente/""${PASTA}"  >> atualizac
+    echo "ENVIABACK=cliente/""${PASTA}"  >> .atualizac
 fi
 echo ${linha} 
 declare -u EMPR
@@ -369,7 +369,7 @@ echo ${linha}
 read -rp "Nome da Empresa-> " EMPR 
 echo 
 echo EMPRESA="${EMPR}"
-echo EMPRESA="${EMPR}" >> atualizac
+echo EMPRESA="${EMPR}" >> .atualizac
 echo ${linha}
 echo "###    ( DIRETORIO DA BASE DE DADOS )        ###"
 echo ${linha}
@@ -381,31 +381,31 @@ if [[ "${BASE}" == "" ]]; then
 echo "Necessario pasta informar a base de dados" 
 exit
 else
-echo "base=/""${BASE}" >> atualizac
+echo "base=/""${BASE}" >> .atualizac
 echo "base=/""${BASE}" 
 fi
 
 echo ${linha}
 read -rp "Nome de pasta da base2, Ex: sav/dados_? -:> " BASE2 
 if [[ "${BASE2}" == "" ]]; then
-echo "#base2=" >> atualizac
+echo "#base2=" >> .atualizac
 echo "#base2="
 else
-echo "base2=/""${BASE2}" >> atualizac
+echo "base2=/""${BASE2}" >> .atualizac
 echo "base2=/""${BASE2}"
 fi
 echo ${linha}
 
 read -rp "Nome de pasta da base3, Ex: sav/dados_? -:> " BASE3
 if [[ "${BASE3}" == "" ]]; then
-echo "#base3=" >> atualizac
+echo "#base3=" >> .atualizac
 echo "#base3="
 else
-echo "base3=/""${BASE3}" >> atualizac
+echo "base3=/""${BASE3}" >> .atualizac
 echo "base3=/""${BASE3}"
 fi
 echo ${linha}
-echo ${linha} >> atualizac
+echo ${linha} >> .atualizac
 clear   
 
 {
@@ -415,7 +415,7 @@ echo "olds=/olds"
 echo "logs=/logs" 
 echo "backup=/backup" 
 echo ${linha}
-} >> atualizap
+} >> .atualizap
 
 if [[ "${OFF}" =~ ^[Ss]$ ]]; then
     if [[ "${sistema}" = "cobol" ]]; then
