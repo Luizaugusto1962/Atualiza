@@ -117,13 +117,13 @@ Menus
               5.8.4 - Apagar nota
 
 Arquivos de trabalho:
-"atualizac"  = Contem a configuração referente a empresa.
+".atualizac"  = Contem a configuração referente a empresa.
 
-"atualizap"  = Configuracao do parametro do sistema.
+".atualizap"  = Configuracao do parametro do sistema.
 
 "atualizaj"  = Lista de arquivos principais para dar rebuild.
 
 "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.
               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip.
 
-"setup.sh"   = Configurador para criar os arquivos atualizac e atualizap.
+"setup.sh"   = Configurador para criar os arquivos .atualizac e .atualizap.
