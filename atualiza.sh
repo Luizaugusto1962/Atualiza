@@ -13,16 +13,16 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="24/03/2025-00"                                                                                                 #00
+UPDATE="25/03/2025-00"                                                                                                 #00
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
-# "atualizac"  = Contem a configuracao referente a empresa                                                             #
-# "atualizap"  = Configuracao do parametro do sistema                                                                  #
+# ".atualizac"  = Contem a configuracao referente a empresa                                                             #
+# ".atualizap"  = Configuracao do parametro do sistema                                                                  #
 # "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                        #
 # "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                      #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
-# "setup.sh"   = Configurador  para criar os arquivos atualizac e atualizap                                            #
+# "setup.sh"   = Configurador  para criar os arquivos .atualizac e .atualizap                                            #
 # Menus                                                                                                                #
 # 1 - Atualizacao de Programas                                                                                         #
 # 2 - Atualizacao de Biblioteca                                                                                        #
@@ -455,44 +455,44 @@ fi
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
 #- TESTE de CONFIGURACOES--------------------------------------------------------------------------#
 # Checando se os arquivos de configuracao estao configurados corretamente
-if [[ ! -e "atualizac" ]]; then
-    M58="ERRO. Arquivo atualizac, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
+if [[ ! -e ".atualizac" ]]; then
+    M58="ERRO. Arquivo .atualizac, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
 ls     _linha 
     _mensagec "${RED}" "${M58}"
     _linha 
     exit 1
 fi
 
-if [[ ! -r "atualizac" ]]; then
-    printf "ERRO. Arquivo atualizac, Sem acesso de leitura.\n"
+if [[ ! -r ".atualizac" ]]; then
+    printf "ERRO. Arquivo .atualizac, Sem acesso de leitura.\n"
     exit 1
 fi
 # Arquivo de configuracao para a empresa
-if [[ -f "atualizac" ]]; then
-    "." ./atualizac
+if [[ -f ".atualizac" ]]; then
+    "." ./.atualizac
 else
-    printf "ERRO. Arquivo atualizac, Nao existe no diretorio.\n"
+    printf "ERRO. Arquivo .atualizac, Nao existe no diretorio.\n"
     exit 1
 fi
 
 
-if [[ ! -e "atualizap" ]]; then
-    M58="ERRO. Arquivo atualizap, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
+if [[ ! -e ".atualizap" ]]; then
+    M58="ERRO. Arquivo .atualizap, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
     _linha 
     _mensagec "${RED}" "${M58}"
     _linha     
     exit 1
 fi
 
-if [[ ! -r "atualizap" ]]; then
-    printf "ERRO. Arquivo atualizap, Sem acesso de leitura.\n"
+if [[ ! -r ".atualizap" ]]; then
+    printf "ERRO. Arquivo .atualizap, Sem acesso de leitura.\n"
     exit 1
 fi
 # Arquivo de configuracao para o atualiza.sh
-if [[ -f "atualizap" ]]; then
-    "." ./atualizap
+if [[ -f ".atualizap" ]]; then
+    "." ./.atualizap
 else
-    printf "ERRO. Arquivo atualizap, Nao existe no diretorio.\n"
+    printf "ERRO. Arquivo .atualizap, Nao existe no diretorio.\n"
     exit 1
 fi
 cd ..
@@ -1594,18 +1594,12 @@ local raiz="/"
     _linha 
     
     # Atualização do arquivo de versão
-    ANTVERSAO=$VERSAO
-    if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >> atualizac; then
+    VERSAO_ANTERIOR=$VERSAO
         _meiodatela
-        _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
+        _mensagec "${RED}" "VERSAOANT=${VERSAO_ANTERIOR}""%*s\n"  >> .atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
         _linha 
         _press
         _principal
-        return 1
-    fi
-
-    _press
-    _principal
 }
 
 _versao() {
@@ -1984,8 +1978,11 @@ _atubiblioteca() {
     _press
 
     VERSAO_ANTERIOR=$VERSAO
-    printf "VERSAOANT=${VERSAO_ANTERIOR}""%*s\n"  >> atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
-    _principal
+        _meiodatela
+        _mensagec "${RED}" "VERSAOANT=${VERSAO_ANTERIOR}""%*s\n"  >> .atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
+        _linha 
+        _press
+        _principal
 }
 
 #-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
@@ -2451,7 +2448,7 @@ _temps() {
 # Funcao para escolher qual base ser  utilizada.
 #
 # Permite ao usuario escolher qual base ser utilizada. 
-# As bases esta gravada no arquivo atualizac.
+# As bases esta gravada no arquivo ".atualizac".
 _escolhe_base() {
     clear
 ###-600-mensagens do Menu Rebuild.
