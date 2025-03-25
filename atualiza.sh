@@ -13,7 +13,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="25/03/2025-00"                                                                                                 #00
+UPDATE="25/03/2025-01"                                                                                                 #00
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -451,13 +451,27 @@ DEFAULT_VERSAO=""
 if [[ -z "${VERSAO}" ]]; then
     VERSAO="${DEFAULT_VERSAO}"
 fi
-
+# Convertendo arquivos 
+if [[ -e "atualizac" ]]; then
+    mv -f atualizac .atualizac
+    _linha 
+    _mensagec "${RED}" "Convertido"
+    _linha 
+    exit 1
+fi
+if [[ -e "atualizap" ]]; then
+    mv -f atualizap .atualizap
+    _linha 
+    _mensagec "${RED}" "Convertido"
+    _linha 
+    exit 1
+fi
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
 #- TESTE de CONFIGURACOES--------------------------------------------------------------------------#
 # Checando se os arquivos de configuracao estao configurados corretamente
 if [[ ! -e ".atualizac" ]]; then
     M58="ERRO. Arquivo .atualizac, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
-ls     _linha 
+    _linha 
     _mensagec "${RED}" "${M58}"
     _linha 
     exit 1
