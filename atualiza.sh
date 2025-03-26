@@ -13,16 +13,16 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="25/03/2025-01"                                                                                                 #00
+UPDATE="26/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
-# ".atualizac"  = Contem a configuracao referente a empresa                                                             #
-# ".atualizap"  = Configuracao do parametro do sistema                                                                  #
+# ".atualizac"  = Contem a configuracao referente a empresa                                                            #
+# ".atualizap"  = Configuracao do parametro do sistema                                                                 #
 # "atualizaj"  = Lista de arquivos principais para dar rebuild.                                                        #
 # "atualizat   = Lista de arquivos temporarios a ser excluidos da pasta de dados.                                      #
 #               Sao zipados em /backup/Temps-dia-mes-ano-horario.zip                                                   #
-# "setup.sh"   = Configurador  para criar os arquivos .atualizac e .atualizap                                            #
+# "setup.sh"   = Configurador  para criar os arquivos .atualizac e .atualizap                                          #
 # Menus                                                                                                                #
 # 1 - Atualizacao de Programas                                                                                         #
 # 2 - Atualizacao de Biblioteca                                                                                        #
@@ -109,7 +109,7 @@ UPDATE="25/03/2025-01"                                                          
 # resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
 #            evitar que elas sejam utilizadas por outros programas.
 #            Também fecha o programa atualiza.sh.
-_resetando() {
+
 # Arrays para agrupar variáveis
 declare -a cores=(RED GREEN YELLOW BLUE PURPLE CYAN NORM)
 declare -a caminhos_base=(BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP destino pasta base base2 base3 logs exec class telas xml olds progs backup sistema TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF E_EXEC T_TELAS X_XML)
@@ -118,6 +118,7 @@ declare -a comandos=(cmd_unzip cmd_zip cmd_find cmd_who)
 declare -a outros=(NOMEPROG PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 VBACKUP ARQUIVO VERSAO ARQUIVO2 VERSAOANT INI SAVISC DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_VERSAO VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_IPSERVER DEFAULT_DESTINO2 UPDATE DEFAULT_PEDARQ jut JUTIL ISCCLIENT ISCCLIENTT SAVISCC)
 
 # Remove as variáveis nos arrays
+_resetando() {
 unset -v "${cores[@]}"
 unset -v "${caminhos_base[@]}"
 unset -v "${biblioteca[@]}"
@@ -1606,14 +1607,16 @@ local raiz="/"
     _linha 
     _mensagec "${YELLOW}" "${M03}"
     _linha 
-    
-    # Atualização do arquivo de versão
-    VERSAO_ANTERIOR=$VERSAO
-        _meiodatela
-        _mensagec "${RED}" "VERSAOANT=${VERSAO_ANTERIOR}""%*s\n"  >> .atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
-        _linha 
+
+    ANTVERSAO=$VERSAO
+    if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >> .atualizac; then
+        _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
         _press
         _principal
+        return 1
+    fi
+    _press
+    _principal
 }
 
 _versao() {
@@ -1871,7 +1874,6 @@ _salva() {
             return 1
         fi
     done
-
     _processo
 }
 
@@ -1989,15 +1991,17 @@ _atubiblioteca() {
     _mensagec "${YELLOW}" "${M13}"
     _mensagec "${RED}" "${M40}"
     _linha
-    _press
 
-    VERSAO_ANTERIOR=$VERSAO
-        _meiodatela
-        _mensagec "${RED}" "VERSAOANT=${VERSAO_ANTERIOR}""%*s\n"  >> .atualizac || _mensagec "${RED}" "Erro ao atualizar o arquivo de configuracao."
-        _linha 
+    ANTVERSAO=$VERSAO
+    if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >> .atualizac; then
+        _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
         _press
         _principal
-}
+        return 1
+    fi
+    _press
+    _principal
+    }
 
 #-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
 # Esta função trata do processo de reversão do sistema para o estado anterior à atualização da biblioteca.
@@ -2063,7 +2067,7 @@ _voltabibli() {
 
 _biblioteca() { 
     local OPCAO
-#    local INI
+
     VERSAO=" " # Variavel que define a versao do programa.
     clear
     M401="Menu da Biblioteca"
