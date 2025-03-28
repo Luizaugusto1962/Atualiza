@@ -1,5 +1,6 @@
 #!/usr/bin/env bash 
-#set -uo pipefail
+#set -euo pipefail  # Tratamento rigoroso de erros
+
 #                                                                                                                      #
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
 #   /"       )|" \    /"       )("     _   ")/"     "||"  \    /"  |     /""\          /"       )   /""\|"  \    /"  | #
@@ -13,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="26/03/2025-00"                                                                                                 #
+UPDATE="28/03/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -125,7 +126,6 @@ unset -v "${biblioteca[@]}"
 unset -v "${comandos[@]}"
 unset -v "${outros[@]}"
 tput sgr0; exit 1
-
 }
 #-VARIAVEIS do sistema ----------------------------------------------------------------------------#
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
@@ -192,7 +192,6 @@ COLUMNS=$(tput cols) # Numero de colunas da tela
 # Checa se os programas necessarios para o atualiza.sh estao instalados no sistema. 
 # Se o programa nao for encontrado, exibe uma mensagem de erro e sai do programa.
 _check_instalado() {
-#####
 local app
 local missing=""
     for app in zip unzip rsync wget; do
@@ -300,7 +299,6 @@ M41="         Informe para qual diretorio no servidor: "
 M42="         1- Informe nome BACKUP: "
 #M43=" "
 M44="Acesso externo do servidor em modo OFF"
-M45="Alterando a extensao da atualizacao"
 M46="De *-anterior.zip para *.zip"
 # MA1="O backup \"""$VBACKUP""\""
 MA2="         1- Informe apos qual versao da BIBLIOTECA: "
@@ -427,7 +425,8 @@ _press() {
 # na largura atual do terminal.
 _linha() {
     local Traco=${1:-'-'}
-    local CCC="${2}"
+    local CCC=""
+#    local CCC="${2}"
 # quantidade de tracos por linha
     printf -v Espacos "%$(tput cols)s""" 
     linhas=${Espacos// /$Traco}
@@ -798,6 +797,7 @@ if [[ -z "${ENVIABACK}" ]]; then
         ENVIABACK="${DEFAULT_ENVIABACK}"
     fi
 fi
+
 ## ------- Parametro para a atualizacao de biblioteca ----------------------------
 # Variáveis para armazenar os caminhos de destino dos programas/biblioteca
 # que serão baixados via rsync.
@@ -805,6 +805,7 @@ DESTINO2SERVER="/u/varejo/man/"  # Caminho do servidor da SAV com os programas.
 DESTINO2SAVATUISC="/home/savatu/biblioteca/temp/ISCobol/sav-5.0/"  # Caminho do diretorio de destino dos programas ISCobol.
 DESTINO2SAVATUMF="/home/savatu/biblioteca/temp/Isam/sav-3.1"  # Caminho do diretorio de destino dos programas Isam.
 DESTINO2TRANSPC="/u/varejo/trans_pc/"  # Caminho do diretorio de destino dos programas da pasta trans_pc.
+
 
 # Verifica se as variáveis de ambiente foram setadas.
 # As variáveis de ambiente são necessárias para que o programa funcione corretamente.
@@ -959,12 +960,12 @@ clear
 # A função define as variáveis ​​NOMEPROG para processamento posterior.
 _qualprograma() {
 # Variáveis
-MAX_REPETICOES=3
-contador=0
-#resultados=()
-NOMEPROG=()
+# Configurações
+local MAX_REPETICOES=6
+local contador=0
+local programa
 programas=()
-
+NOMEPROG=()
 # Função para validar nome do programa
 validar_nome() {
      local programa="$1"
@@ -973,13 +974,14 @@ validar_nome() {
 }
 
 # Loop principal
-while (( contador < MAX_REPETICOES )); do
+for ((contador = 1; contador <= MAX_REPETICOES; contador++)); do
+#while (( contador < MAX_REPETICOES )); do
      _meiodatela
      #-Informe o nome do programa a ser atualizado:
      _mensagec "${RED}" "${M59}"
      _linha
-     MB4=" Informe o nome do programa (ENTER ou espaco para sair): "
-     read -rp "${YELLOW}""${MB4}""${NORM}" programa
+     local MB4="${YELLOW}Informe o nome do programa (ENTER para sair): ${NORM}"
+     read -rp "${MB4}" programa
      _linha
     MB5="Erro: Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
     # Verifica se foi digitado ENTER ou espaço
@@ -1005,9 +1007,13 @@ while (( contador < MAX_REPETICOES )); do
      read -rp "${YELLOW}${M75}${NORM}" -n1 tipo_compilacao  
      printf "\n"
     if [[ "$tipo_compilacao" == "1" ]]; then
-        compila=${programa}${class}".zip"
+            # Processamento do nome (ajustado para tratar variável class indefinida)
+        local class="${class:-}"  # Valor padrão se não definido
+        local compila="${programa}${class}.zip"
     elif [[ "$tipo_compilacao" == "2" ]]; then
-        compila=${programa}${mclass}".zip"
+        # Processamento do nome (ajustado para tratar variável mclass indefinida)
+        local mclass="${class:-}"  # Valor padrão se não definido
+        local compila="${programa}${mclass}.zip"
     else
         _mensagec "${RED}" "Erro: Opcao de compilacao invalida, Digite 1 ou 2."
         continue
@@ -1018,7 +1024,7 @@ while (( contador < MAX_REPETICOES )); do
 #   
     _linha
     _mensagec "${GREEN}" "Compilacao adicionada: ${NOMEPROG[*]}"
-    ((contador++))
+#    ((contador++))
     _linha
 #done
 # Lista os programas armazenados
@@ -1218,7 +1224,7 @@ for  f in "${!programas[@]}"; do
         fi
         _mensagec "${YELLOW}" "Salvando programa antigo: ${programas[f]}"
         EXT_CLASS=".class"
-         # Processa arquivos .class
+        # Processa arquivos .class
         if [[ -f "${E_EXEC}/${programas[f]}${EXT_CLASS}" ]]; then
             if ! "${cmd_zip}" -m -j "${anterior}" "${E_EXEC}/${programas[f]}"*"${EXT_CLASS}"; then
                 _linha
@@ -1335,7 +1341,7 @@ _voltamaisprog() {
 #-VOLTA DE PROGRAMA CONCLUIDA
     _linha 
     _mensagec "${YELLOW}" "${M03}"
-    _mensagec "${GREEN}" "${M02}"
+#   _mensagec "${GREEN}" "${M02}"
     _linha 
     _press
 
@@ -1349,11 +1355,7 @@ _voltamaisprog() {
     elif [[ "${REPLY,,}" =~ ^[Nn]$ ]]; then
             _principal
     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-        if [[ "${OPCAO}" = 1 ]]; then
             _voltaprog
-        else
-            _principal
-        fi
     else
         _opinvalida
         _read_sleep 1          	 
@@ -1369,36 +1371,37 @@ _voltamaisprog() {
 #
 # Opcoes:
 #   Qualquer tecla - Desatualiza o programa
-_voltaprog() {
+
+_voltaprog () {
     # Variáveis
-    MAX_REPETICOES=3
-    contador=0
+    local MAX_REPETICOES=6
+    local contador=0
+    local programa
     NOMEPROG=()
     programas=()
 
-    _validar_nome2() {
+    validar_nome() {
         [[ "$1" =~ ^[A-Z0-9]+$ ]]
     }
 
     # Loop principal
-    while (( contador < MAX_REPETICOES )); do
+    for ((contador = 1; contador <= MAX_REPETICOES; contador++)); do
+#    while (( contador < MAX_REPETICOES )); do
         _meiodatela
         #-Informe o nome do programa a ser desatualizado:
         _mensagec "${RED}" "${M59}"
         _linha
         MB4="Informe o nome do programa (ENTER ou espaco para sair): "
-        while [[ -z "${programa}" ]]; do
         read -rp "${YELLOW}""${MB4}""${NORM}" programa
         _linha
-        if [[ -z "${programa}" ]]; then
-            _mensagec "${RED}" "Erro: Nenhum nome de programa fornecido Saindo da selecao de programas..."
-            return 
 
+        # Verifica se foi digitado ENTER ou espaço
+        if [[ -z "${programa}" ]]; then
+            break
         fi
-        done
 
         # Verifica se o nome do programa é válido
-        if ! _validar_nome2 "$programa"; then
+        if ! validar_nome "$programa"; then
             _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
             continue
         fi
@@ -1429,7 +1432,7 @@ _voltaprog() {
     # Processa programas antigos
     for f in "${!programas[@]}"; do
         anterior="${OLDS}/${programas[f]}-anterior.zip"
-        if [[ -f "$anterior" ]]; then
+        if [ -f "$anterior" ]; then
             mv -f -- "${anterior}" "${TOOLS}/${programas[f]}${class}.zip" >> "${LOG_ATU}" || {
                 M49="Erro: Falha ao renomear o arquivo ${anterior}.zip"
                 _linha
@@ -2215,13 +2218,11 @@ _iscobol() {
 #   - tempo de uptime do sistema
 _linux() {
     clear
-    LX="Vamos descobrir qual S.O. / Distro voce esta executando"
-    LM="A partir de algumas informacoes basicas o seu sistema, parece estar executando:"
     printf "\n\n"
-    _mensagec "${GREEN}" "${LX}"
+    _mensagec "${GREEN}" "Vamos descobrir qual S.O. / Distro voce esta executando"
     _linha
     printf "\n\n"
-    _mensagec "${YELLOW}""${LM}"
+    _mensagec "${YELLOW}" "A partir de algumas informacoes basicas o seu sistema, parece estar executando:"
     _linha
 
     # Checando se conecta com a internet ou nao
@@ -3013,7 +3014,7 @@ _backupavulso() {
         if [[ ! -f "${BACKUP}/${VBACKUP}" ]]; then
             clear
             _meiodatela
-            _mensagec "${RED}" "${M45}"  # "Backup não encontrado"
+            _mensagec "${RED}" "${M20}"  # "Backup não encontrado"
             _press
             continue
         fi
@@ -3307,9 +3308,10 @@ fi
     _linha 
     _mensagec "${CYAN}" "${M72}" #Informe o arquivo(s) que deseja enviar.
     _linha 
-    MB3="2- Informe nome do ARQUIVO: -> "     
+    local MB3="${YELLOW}2- Informe nome do ARQUIVO: -> ${NORM}"
+
     local EENVIA=" "
-    read -rp "${YELLOW}${MB3}${NORM}" EENVIA
+    read -rp "${MB3}" EENVIA
 if [[ -z "${EENVIA}" ]]; then 
 #   clear
     _meiodatela
@@ -3320,18 +3322,17 @@ if [[ -z "${EENVIA}" ]]; then
 fi
 if [[ ! -e "${DIRENVIA}""/""${EENVIA}" ]]; then
     _linha
-M49="$EENVIA Arquivo nao encontrado no diretorio"
+
     _linha 
-    _mensagec "${YELLOW}" "${M49}"  
+    _mensagec "${YELLOW}" "$EENVIA Arquivo nao encontrado no diretorio"  
     _linha 
     _press 
     _envrecarq  
 fi
     printf "\n"
     _linha 
-M992="3- Destino: Informe para qual diretorio no servidor:"   
-    _mensagec "${YELLOW}""${M992}"  
-    read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
+   _mensagec "${YELLOW}" "3- Destino:Informe diretorio do servidor que vai receber: ->"
+read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
     _linha 
 if [[ -z "${ENVBASE}" ]]; then
     _meiodatela
@@ -3363,8 +3364,7 @@ M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
 _recebe_avulso() {
     clear
     _linha 
-M993="1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"   
-    _mensagec "${YELLOW}""${M993}"  
+    _mensagec "${YELLOW}" "1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"
     read -rp "${YELLOW}"" -> ""${NORM}" RECBASE
     _linha 
     _linha 
@@ -3380,8 +3380,7 @@ if [[ -z "${RRECEBE}" ]]; then
     _envrecarq
 fi
     _linha 
-M994="3- Destino:Informe diretorio do servidor que vai receber arquivo: " 
-    _mensagec "${YELLOW}""${M994}"  
+    _mensagec "${YELLOW}" "3- Destino:Informe diretorio do servidor que vai receber arquivo: "
     read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
 if [[ -z "${EDESTINO}" ]]; then # testa variavel vazia
 local EDESTINO=${RECEBE}
@@ -3393,9 +3392,8 @@ if [[ -d "${VERDIR}" ]]; then
 else
     clear
     _meiodatela
-M995="Diretorio nao foi encontrado no servidor"
     _linha 
-    _mensagec "${RED}" "${M995}"
+    _mensagec "${RED}" "Diretorio nao foi encontrado no servidor"
     _linha 
     _press
     _envrecarq
@@ -3911,7 +3909,7 @@ printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M101}"
 	_linha
-    _mensagec "${WHITE}" "${M1102}"
+    _mensagec "${GREEN}" "${M1102}"
     _linha
 	_mensagec "${CYAN}" "${M102}"
     _linha 
