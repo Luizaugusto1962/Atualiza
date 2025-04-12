@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="28/03/2025-00"                                                                                                 #
+UPDATE="14/04/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -849,6 +849,7 @@ if [[ -n "${SERACESOFF}" ]]; then
     _read_sleep 0.30
     BAT="atualiza.bat"
     if [[ -f "${TOOLS}/${BAT}" ]]; then
+        chmod 777 "${BAT}"
         mv -f -- "${BAT}" "${destino}${SERACESOFF}"
     fi
 fi
