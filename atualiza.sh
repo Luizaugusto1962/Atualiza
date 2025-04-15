@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="14/04/2025-00"                                                                                                 #
+UPDATE="15/04/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1013,7 +1013,7 @@ for ((contador = 1; contador <= MAX_REPETICOES; contador++)); do
         local compila="${programa}${class}.zip"
     elif [[ "$tipo_compilacao" == "2" ]]; then
         # Processamento do nome (ajustado para tratar variável mclass indefinida)
-        local mclass="${class:-}"  # Valor padrão se não definido
+        local mclass="${mclass:-}"  # Valor padrão se não definido
         local compila="${programa}${mclass}.zip"
     else
         _mensagec "${RED}" "Erro: Opcao de compilacao invalida, Digite 1 ou 2."
@@ -1527,11 +1527,6 @@ _volta_progx() {
         _principal
         return 1
     fi
-
-    # Exibição das mensagens finais
-#    _linha
-#    _mensagec "${YELLOW}" "${M03}"
-#    _linha
 
     local M30="O(s) programa(s) '${Vprog}' da ${NORM}${RED}${VERSAO}"
     _linha
@@ -2075,7 +2070,7 @@ _biblioteca() {
     VERSAO=" " # Variavel que define a versao do programa.
     clear
     M401="Menu da Biblioteca"
-    M403="Versao Anterior - ${NORM}${PURPLE}${VERSAOANT}"
+    M403="Versao Anterior - ${NORM}${YELLOW}${VERSAOANT}"
     M404="Escolha o local da Biblioteca:        "
     M405="1${NORM} - Atualizacao do Transpc     "
     M406="2${NORM} - Atualizacao do Savatu      "
@@ -2087,8 +2082,6 @@ _biblioteca() {
     printf "\n"
     _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M401}"
-#    _linha 
-#    _mensagec "${BLUE}" "${M403}"
     _linha "="
     printf "\n"
     _mensagec "${PURPLE}" "${M404}"
@@ -2109,7 +2102,6 @@ _biblioteca() {
         printf "\n"
         _mensaged "${BLUE}" "${M403}"
     fi
-#    _mensaged "${BLUE}" "${M403}"
     _linha "=" "${GREEN}"
 
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
