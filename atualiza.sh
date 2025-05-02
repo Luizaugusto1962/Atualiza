@@ -1,4 +1,4 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 #set -euo pipefail  # Tratamento rigoroso de erros
 
 #                                                                                                                      #
@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="15/04/2025-00"                                                                                                 #
+UPDATE="02/05/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -106,7 +106,7 @@ UPDATE="15/04/2025-00"                                                          
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 
-#Zerando variaves utilizadas 
+#Zerando variaves utilizadas
 # resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
 #            evitar que elas sejam utilizadas por outros programas.
 #            Também fecha o programa atualiza.sh.
@@ -189,7 +189,7 @@ NORM=$(tput sgr0)
 COLUMNS=$(tput cols) # Numero de colunas da tela
 #--------------------------------------------------------------------------------------------------#
 # Funcao para checar se o zip esta instalado
-# Checa se os programas necessarios para o atualiza.sh estao instalados no sistema. 
+# Checa se os programas necessarios para o atualiza.sh estao instalados no sistema.
 # Se o programa nao for encontrado, exibe uma mensagem de erro e sai do programa.
 _check_instalado() {
 local app
@@ -254,7 +254,7 @@ if [[ -z "${cmd_find}" ]]; then
         exit 1
     fi
 fi
-# Comando para verificar de usuario 
+# Comando para verificar de usuario
 DEFAULT_WHO="who"
 if [[ -z "${cmd_who}" ]]; then
     if [[ -n "${DEFAULT_WHO}" ]]; then
@@ -340,9 +340,9 @@ M92="ao termino da atualizacao entrar novamente"
 M93="Atualização offline concluída!"
 #-Centro da tela-----------------------------------------------------------------------------------#
 # _meiodatela ()
-# 
+#
 # Limpa a tela e posiciona o cursor no meio da tela.
-# 
+#
 # O printf "\033c" limpa a tela, e o "\033[10;10H" posiciona o
 # cursor na linha 10, coluna 10.
 #
@@ -352,10 +352,10 @@ _meiodatela() {
 
 #-Mensagem centralizada----------------------------------------------------------------------------#
 # _mensagec (string, string)
-# 
+#
 # Exibe uma mensagem centralizada na tela, com a cor de fundo e o texto
 # informados como par metro.
-# 
+#
 # Par metros:
 #   $1   - Cor a ser usada como fundo, no formato ANSI. Ex.: "\033[32m"
 #   $2   - Texto a ser exibido na tela.
@@ -367,10 +367,10 @@ _mensagec() {
 }
 
 # _mensaged (string, string)
-# 
+#
 # Exibe uma mensagem alinhada à direita na tela, com a cor de fundo e o texto
 # informados como par metro.
-# 
+#
 # Par metros:
 #   $1   - Cor a ser usada como fundo, no formato ANSI. Ex.: "\033[32m"
 #   $2   - Texto a ser exibido na tela.
@@ -420,7 +420,7 @@ _press() {
 
 #-Escolha qual o tipo de traco---------------------------------------------------------------------#
 # Esta função imprime uma linha de caracteres na largura do terminal.
-# O caractere usado para a linha pode ser especificado como argumento; 
+# O caractere usado para a linha pode ser especificado como argumento;
 # caso contrário, o padrão é um hífen ('-'). A linha é centralizada com base
 # na largura atual do terminal.
 _linha() {
@@ -428,7 +428,7 @@ _linha() {
     local CCC=""
 #    local CCC="${2}"
 # quantidade de tracos por linha
-    printf -v Espacos "%$(tput cols)s""" 
+    printf -v Espacos "%$(tput cols)s"""
     linhas=${Espacos// /$Traco}
 	printf "%*s""${CCC}" ;printf "%*s\n" $(((${#linhas}+COLUMNS)/2)) "$linhas" ;printf "%*s""${NORM}"
 }
@@ -438,11 +438,11 @@ _linha() {
 # Esta funcao chamada quando o usuario digita uma opcao   invalida.
 # Ela imprime um aviso centralizado na tela, com a cor definida como variavel global.
 # A funcao e chamada sem nenhuma entrada.
-_opinvalida() {  
-    _linha 
+_opinvalida() {
+    _linha
     _mensagec "${RED}" "${M08}"
-    _linha  
-}      
+    _linha
+}
 
 #-Variavel para identificar -----------------------------------------------------------------------#
 ## Inicializa a variável DEFAULT_VERSAO como uma string vazia
@@ -451,19 +451,19 @@ DEFAULT_VERSAO=""
 if [[ -z "${VERSAO}" ]]; then
     VERSAO="${DEFAULT_VERSAO}"
 fi
-# Convertendo arquivos 
+# Convertendo arquivos
 if [[ -e "atualizac" ]]; then
     mv -f atualizac .atualizac
-    _linha 
+    _linha
     _mensagec "${RED}" "Convertido"
-    _linha 
+    _linha
     exit 1
 fi
 if [[ -e "atualizap" ]]; then
     mv -f atualizap .atualizap
-    _linha 
+    _linha
     _mensagec "${RED}" "Convertido"
-    _linha 
+    _linha
     exit 1
 fi
 #### configurar as variaveis em ambiente no arquivo abaixo:    ####
@@ -471,9 +471,9 @@ fi
 # Checando se os arquivos de configuracao estao configurados corretamente
 if [[ ! -e ".atualizac" ]]; then
     M58="ERRO. Arquivo .atualizac, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
-    _linha 
+    _linha
     _mensagec "${RED}" "${M58}"
-    _linha 
+    _linha
     exit 1
 fi
 
@@ -492,9 +492,9 @@ fi
 
 if [[ ! -e ".atualizap" ]]; then
     M58="ERRO. Arquivo .atualizap, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
-    _linha 
+    _linha
     _mensagec "${RED}" "${M58}"
-    _linha     
+    _linha
     exit 1
 fi
 
@@ -517,7 +517,7 @@ TOOLS="${destino}${pasta}"
 if [[ -n "${TOOLS}" ]] && [[ -d "${TOOLS}" ]]; then
     # Diretorio da destino encontrado
     _mensagec "${CYAN}" "${M81}"
-cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }  
+cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
 
     OLDS="${TOOLS}${olds}"
     # Cria diretório olds se não existir
@@ -529,25 +529,25 @@ cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exi
     if [[ ! -d "${PROGS}" ]]; then
         mkdir -p "${PROGS}"
     fi
-    
+
     LOGS="${TOOLS}/logs"
     # Cria diretório logs se não existir
     if [[ ! -d "${LOGS}" ]]; then
         mkdir -p "${LOGS}"
     fi
-    
+
     BACKUP="${TOOLS}/backup"
     # Cria diretório backups se não existir
     if [[ ! -d "${BACKUP}" ]]; then
         mkdir -p "${BACKUP}"
     fi
-    
+
     ENVIA="${TOOLS}/envia"
     # Cria diretório envia se não existir
     if [[ ! -d "${ENVIA}" ]]; then
         mkdir -p "${ENVIA}"
     fi
-    
+
     RECEBE="${TOOLS}/recebe"
     # Cria diretório recebe se não existir
     if [[ ! -d "${RECEBE}" ]]; then
@@ -619,7 +619,7 @@ if [[ -n "${exec}" ]]; then
 else
     printf "Diretorio dos programas, nao esta configurado  \n"
     exit
-fi    
+fi
 
 # telas - Diretorio das Telas
 if [[ -n "${telas}" ]]; then
@@ -627,7 +627,7 @@ if [[ -n "${telas}" ]]; then
 else
     printf "Diretorio das Telas, nao esta configurado \n"
     exit
-fi    
+fi
 
 # Verificacao do sistema, para verificar o diretorio dos Xmls -------------------------------#
 # xml - Diretorio dos Xmls do sistema
@@ -637,8 +637,8 @@ if [[ "${sistema}" = "iscobol" ]]; then
     else
     printf "Diretorio dos Xmls do sistema, nao esta configurado  \n"
     exit
-    fi 
-fi     
+    fi
+fi
 
 # Verificacao de diretorio necessarios para a execucao do programa
 # -----------------------------------------------------------------#
@@ -681,7 +681,7 @@ else
     # Diretorio da destino nao encontrado
     printf "%*s""Diretorio da destino nao encontrado ""${X_XML}""...  \n"
     exit
-fi     
+fi
 
 BASE1=${destino}${base}
 if [[ -n "${BASE1}" ]] && [[ -d "${BASE1}" ]]; then
@@ -711,7 +711,7 @@ else
      # Diretorio da base nao encontrado
      printf "%*s""Diretorio da base nao encontrado ""${BASE3}""...  \n"
      exit
-fi     
+fi
 # Verifica diretórios específicos se o sistema for iscobol
 if [[ "${sistema}" = "iscobol" ]]; then
     if [[ ! -d "${X_XML}" ]]; then
@@ -839,7 +839,7 @@ fi
 
 # Verifica se o sistema e em modo offline, se sim cria diretório SERACESOFF se necessário
 if [[ -n "${SERACESOFF}" ]]; then
-    if ! [[ -d "${SERACESOFF}" ]]; then 
+    if ! [[ -d "${SERACESOFF}" ]]; then
         mkdir -p "${destino}${SERACESOFF}"
     fi
         if [[ ! -d "${destino}${SERACESOFF}" ]]; then
@@ -893,16 +893,16 @@ fi
 # Visualiza as notas de vers o do programa no formato de uma moldura com bordas
 # e centraliza o texto para facilitar a leitura.
 _visualizar_notas() {
-clear    
+clear
 NOTA="atualizal"
 # Verifica se o arquivo existe e é legível
 if [ ! -f "$NOTA" ] || [ ! -r "$NOTA" ]; then
     ML1="Erro: Arquivo $NOTA não existe ou não pode ser lido"
     _linha
     _mensagec "${RED}" "${ML1}"
-    _linha  
+    _linha
     _press
-    _linha 
+    _linha
 else
 LARGURA=0
 # Calcula a largura máxima do conteúdo
@@ -916,7 +916,7 @@ _criar_linha() {
     for ((i=1; i<=LARGURA_TOTAL-2; i++)); do
         printf "="
     done
-    printf "%s\n" "-+"  
+    printf "%s\n" "-+"
 }
 
 # Imprime a moldura superior
@@ -927,7 +927,7 @@ while IFS= read -r linha || [ -n "$linha" ]; do
     # Calcula padding para centralizar o texto
     TAMANHO_LINHA=${#linha}
     ESPACOS=$((LARGURA - TAMANHO_LINHA + 2))
-    
+
     # Imprime borda esquerda, texto e borda direita
     printf "| %s" "$linha"
     # Adiciona espaços para completar a linha
@@ -970,7 +970,7 @@ NOMEPROG=()
 # Função para validar nome do programa
 validar_nome() {
      local programa="$1"
-    [[ -n "$programa" && "$programa" =~ ^[A-Z0-9]+$ ]]   
+    [[ -n "$programa" && "$programa" =~ ^[A-Z0-9]+$ ]]
     [[ "$1" =~ ^[A-Z0-9]+$ ]]
 }
 
@@ -1003,9 +1003,9 @@ for ((contador = 1; contador <= MAX_REPETICOES; contador++)); do
 
     # Solicita o tipo de compilação
      _mensagec "${RED}" "${M75}"
-     _linha  
+     _linha
 
-     read -rp "${YELLOW}${M75}${NORM}" -n1 tipo_compilacao  
+     read -rp "${YELLOW}${M75}${NORM}" -n1 tipo_compilacao
      printf "\n"
     if [[ "$tipo_compilacao" == "1" ]]; then
             # Processamento do nome (ajustado para tratar variável class indefinida)
@@ -1020,9 +1020,9 @@ for ((contador = 1; contador <= MAX_REPETICOES; contador++)); do
         continue
     fi
     # Armazena o resultado
-    programas+=("$programa") 
+    programas+=("$programa")
     NOMEPROG+=("$compila")
-#   
+#
     _linha
     _mensagec "${GREEN}" "Compilacao adicionada: ${NOMEPROG[*]}"
 #    ((contador++))
@@ -1066,7 +1066,7 @@ _baixarviarsync() {
             _mensagec "${GREEN}" "Transferindo: $arquivo"
             _linha
             _mensagec "${YELLOW}" "${M29}"
-            _linha  
+            _linha
             rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
         done
     else
@@ -1094,15 +1094,15 @@ if [[ "${SERACESOFF}" != "" ]]; then
     fi
     for arquivo in "${NOMEPROG[@]}"; do
     if [[ -f "${SAOFF}/${arquivo}" ]]; then
-        mv -f -- "${SAOFF}/${arquivo}" "." 
+        mv -f -- "${SAOFF}/${arquivo}" "."
     else
     M42="Aviso: Arquivo %s não encontrado.\n" "$arquivo"
-    _linha 
+    _linha
     _mensagec "${RED}" "${M42}"
-    _linha 
+    _linha
     _press
     _principal
-    fi 
+    fi
     done
 fi
 }
@@ -1121,9 +1121,9 @@ fi
 _pacoteon() {
     _qualprograma
     _baixarviarsync
-    _linha 
+    _linha
     _atupacote
-    _press 
+    _press
     _principal
 }
 
@@ -1221,7 +1221,7 @@ for  f in "${!programas[@]}"; do
                 _press
                 _principal
                 return
-            }    
+            }
         fi
         _mensagec "${YELLOW}" "Salvando programa antigo: ${programas[f]}"
         EXT_CLASS=".class"
@@ -1261,11 +1261,11 @@ for  f in "${!programas[@]}"; do
             fi
         fi
 done
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M24}"
-    _linha 
-    _read_sleep 1      
-    #fi      
+    _linha
+    _read_sleep 1
+    #fi
 
     # Processa de descompactar e atualizar os programas
     for arquivo in "${NOMEPROG[@]}"; do
@@ -1304,7 +1304,7 @@ done
     done
     _mensagec "${GREEN}" "${M26}"
     _linha
-    
+
 
 
     # Altera extensões e move arquivos para o diretório PROGS
@@ -1329,7 +1329,7 @@ done
     _mensagec "${YELLOW}" "${M17}"
     _linha
 }
-####-- Inicio da funcao de voltar programas --   
+####-- Inicio da funcao de voltar programas --
 # _voltamaisprog: Prompt user for additional program updates.
     #
     # This function concludes the program rollback process by displaying a message and
@@ -1340,13 +1340,13 @@ done
 
 _voltamaisprog() {
 #-VOLTA DE PROGRAMA CONCLUIDA
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M03}"
 #   _mensagec "${GREEN}" "${M02}"
-    _linha 
+    _linha
     _press
 
-#-Escolha de multi programas-----------------------------------------------------------------------# 
+#-Escolha de multi programas-----------------------------------------------------------------------#
 #M37 Deseja informar mais algum programa para ser atualizado?
     _meiodatela
     read -rp "${YELLOW}""${M37}""${NORM}" -n1  REPLY
@@ -1359,7 +1359,7 @@ _voltamaisprog() {
             _voltaprog
     else
         _opinvalida
-        _read_sleep 1          	 
+        _read_sleep 1
         _press
         _principal
     fi
@@ -1406,11 +1406,11 @@ _voltaprog () {
             _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
             continue
         fi
-        _linha  
+        _linha
         compila=${programa}${class}".zip"
-        
+
         # Armazena o resultado
-        programas+=("$programa") 
+        programas+=("$programa")
         NOMEPROG+=("$compila")
         ((contador++))
     done
@@ -1463,10 +1463,10 @@ _voltaprog () {
 # principal. Se a entrada for invalida, exibe uma mensagem de erro e
 # volta ao menu principal.
 _maisprog() {
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M03}"
     _mensagec "${GREEN}" "${M02}"
-    _linha 
+    _linha
     _press
     _meiodatela
     _linha
@@ -1481,15 +1481,15 @@ _maisprog() {
             _volta_progx
     else
         _opinvalida
-        _read_sleep 1          	 
+        _read_sleep 1
         _press
         _principal
     fi
-}    
+}
 
 #-VOLTA PROGRAMA ESPECIFICO------------------------------------------------------------------------#
 # _volta_progx: Volta um programa especifico para a versao anterior
-# 
+#
 # Informa o nome do programa em MAIUSCULO e descompacta o arquivo
 # da biblioteca anterior no diretorio TOOLS.
 _volta_progx() {
@@ -1513,7 +1513,7 @@ _volta_progx() {
     if [[ -z "${Vprog}" ]]; then
         _meiodatela
         _mensagec "${RED}" "${M71}"
-        _linha 
+        _linha
         _press
         _principal
         return 1
@@ -1522,7 +1522,7 @@ _volta_progx() {
     if [[ ! "${Vprog}" =~ [A-Z0-9] ]]; then
         _meiodatela
         _mensagec "${RED}" "${M71}"
-        _linha 
+        _linha
         _press
         _principal
         return 1
@@ -1544,22 +1544,22 @@ fi
 
     if ! "${cmd_unzip}" -o "${INI}" "${padrao}${Vprog}*" -d "/" >> "${LOG_ATU}"; then
         _meiodatela
-        _mensagec "${RED}" "Erro ao descompactar ${INI}" 
+        _mensagec "${RED}" "Erro ao descompactar ${INI}"
         _linha
         _press
         _principal
         return 1
     fi
 _maisprog
-}    
+}
 
 
 # Retorna ao programa principal
 
 #-volta todos os programas da biblioteca-----------------------------------------------------------#
-# 
+#
 # _volta_geral
-# 
+#
 # Volta todos os arquivos da biblioteca.
 # Esta funcao e responsavel por voltar todos os arquivos da biblioteca da SAV.
 _volta_geral() {
@@ -1578,13 +1578,13 @@ _volta_geral() {
         _principal
         return 1
     fi
-    
+
 local raiz="/"
 
     if ! "${cmd_unzip}" -o "${INI}" -d "${raiz}" >> "${LOG_ATU}"; then
         _meiodatela
         _mensagec "${RED}" "Erro ao descompactar ${INI} para ${raiz}"
-        _linha 
+        _linha
         _press
         _principal
         return 1
@@ -1603,9 +1603,9 @@ local raiz="/"
     _mensagec "${YELLOW}" "${M33}"
     clear
     #-VOLTA DOS PROGRAMAS CONCLUIDA
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M03}"
-    _linha 
+    _linha
 
     ANTVERSAO=$VERSAO
     if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >> .atualizac; then
@@ -1619,7 +1619,7 @@ local raiz="/"
 }
 
 _versao() {
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M55}"
     _linha
     printf "\n"
@@ -1628,12 +1628,12 @@ _versao() {
         printf "\n"
         _linha
         _mensagec "${RED}" "${M56}"
-        _linha 
+        _linha
         _press
         _principal
         return 1
     fi
-}    
+}
 
 _variaveis_atualiza() {
     ATUALIZA1="${SAVATU1}${VERSAO}.zip"
@@ -1658,10 +1658,21 @@ _variaveis_atualiza() {
 #   VERSAO - Versao do programa a ser baixado
 #   destino - Caminho do diretorio local onde o arquivo sera salvo
 _rsync_biblioteca() {
+    if [[ "${sistema}" == "iscobol" ]]; then
     local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
     local dst="."
     rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
     _salva
+    else
+    _variaveis_atualiza
+        update_files=( "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" )
+        local dst="."
+        for file in "${update_files[@]}"; do
+        local src="${USUARIO}@${IPSERVER}:${DESTINO2}${file}"
+        rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
+        done
+        _salva        
+    fi
 }
 
 # Acessa o menu de biblioteca no servidor OFF.
@@ -1716,20 +1727,20 @@ if [[ -n "${SERACESOFF}" ]]; then
 
     _read_sleep 2
     _salva
-fi    
+fi
 
 }
 
 #-Atualizacao da pasta transpc---------------------------------------------------------------------#
 #-Atualiza a pasta transpc
-# 
+#
 # _transpc
-# 
+#
 # Atualiza a pasta transpc.
 # Esta funcao e responsavel por atualizar a pasta transpc.
 _transpc() {
     clear
-    _versao 
+    _versao
     if [[ -z "${DESTINO2TRANSPC}" ]]; then
         _linha
         _mensagec "${RED}" "Erro: DESTINO2TRANSPC nao foi definido"
@@ -1758,10 +1769,10 @@ _transpc() {
     _rsync_biblioteca
 }
 
-#-Atualizacao da pasta do savatu-------------------------------------------------------------------# 
-# 
+#-Atualizacao da pasta do savatu-------------------------------------------------------------------#
+#
 # _savatu
-# 
+#
 # Atualiza a pasta do savatu.
 # Esta funcao e responsavel por atualizar a pasta do savatu.
 _savatu() {
@@ -1793,7 +1804,7 @@ _savatu() {
     else
         DESTINO2="${DESTINO2SAVATUMF}"
     fi
-    
+
     if [[ -z "${DESTINO2}" ]]; then
         _mensagec "${RED}" "Erro: DESTINO2 nao foi definido"
         exit 1
@@ -1822,7 +1833,7 @@ _atuoff() {
     _versao
     if [[ -n "${SERACESOFF}" ]]; then
         _acessooff
-    fi  
+    fi
     _salva
 }
 
@@ -1842,9 +1853,9 @@ _salva() {
     _variaveis_atualiza
 
     M21="A atualizacao tem que esta no diretorio ""${TOOLS}"
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M21}"
-    _linha 
+    _linha
 
     if [[ -z "${sistema}" ]]; then
         _mensagec "${RED}" "Erro: Variavel 'sistema' nao foi definida"
@@ -1864,9 +1875,9 @@ _salva() {
         fi
         if [[ ! -r "${atu}" ]]; then
             clear
-            _linha 
+            _linha
             _mensagec "${RED}" "${M48}"
-            _linha 
+            _linha
             _press
             clear
             _principal
@@ -1885,15 +1896,15 @@ _processo() {
 
 #INI="backup-${VERSAO}.zip"
     #-ZIPANDO OS ARQUIVOS ANTERIORES...
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M01}"
-    _linha 
+    _linha
     _read_sleep 1
 
     if [ "$sistema" = "iscobol" ]; then
 
         cd "$E_EXEC"/ || exit
-        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" + ; 
+        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" + ;
         cd "$T_TELAS"/ || exit
         "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" + ;
         cd "$X_XML"/ || exit
@@ -1904,22 +1915,22 @@ _processo() {
         cd "$T_TELAS"/ || exit
         "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" + ;
 
-    fi 
+    fi
     cd "$TOOLS"/ || exit
     clear
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M27}"
-    _linha 
+    _linha
     _read_sleep 1
 
     cd "${TOOLS}" || { _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio ${TOOLS}"; exit 1; }
     if [[ ! -r "${backup_path}" ]]; then
         #-Backup nao encontrado no diretorio
-        _linha 
+        _linha
         _mensagec "${RED}" "${M45}"
-        _linha 
-        #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------# 
-        _read_sleep 2    
+        _linha
+        #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------#
+        _read_sleep 2
         _meiodatela
         read -rp "${YELLOW}${M38}${NORM}" -n1 reply
         printf "\n\n"
@@ -1939,10 +1950,10 @@ _processo() {
                 ;;
         esac
     fi
-    _atubiblioteca 
+    _atubiblioteca
 }
-#-Procedimento da Atualizacao de Programas---------------------------------------------------------# 
-# 
+#-Procedimento da Atualizacao de Programas---------------------------------------------------------#
+#
 # Faz a atualizacao dos programas.
 # Altera a versao da atualizacao e salva no diretorio /backuup como a extensao .bkp".
 _atubiblioteca() {
@@ -2002,7 +2013,7 @@ _atubiblioteca() {
     _principal
     }
 
-#-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------# 
+#-Procedimento da desatualizacao de programas antes da biblioteca----------------------------------#
 # Esta função trata do processo de reversão do sistema para o estado anterior à atualização da biblioteca.
 # Ele solicita ao usuário a versão do backup a ser restaurada e verifica a existência do
 # arquivo de backup no diretório especificado. Se o backup não for encontrado, ele retorna ao menu anterior.
@@ -2026,14 +2037,14 @@ _voltabibli() {
         _principal
         return
     else
-        INI="backup-${VERSAO}.zip" 
+        INI="backup-${VERSAO}.zip"
     fi
 
     if [[ ! -r "${OLDS}"/"${INI}" ]]; then
         # -Backup da Biblioteca nao encontrado no diretorio
-        _linha 
+        _linha
         _mensagec "${RED}" "${M46}"
-        _linha 
+        _linha
         _press
         INI=""
         _principal
@@ -2041,13 +2052,13 @@ _voltabibli() {
     fi
     MA3="Deseja volta todos os programas para antes da atualizacao? [N/s]:"
     printf "\n"
-    read -rp "${YELLOW}${MA3}${NORM}" -n1 
+    read -rp "${YELLOW}${MA3}${NORM}" -n1
     printf "\n\n"
     if [[ "${REPLY,,}" =~ ^[Nn]$ ]] || [[ "${REPLY,,}" == "" ]]; then
-        _linha 
+        _linha
         _volta_progx
     elif [[ "${REPLY,,}" =~ ^[Ss]$ ]]; then
-        _linha 
+        _linha
         _volta_geral
     else
         _opinvalida
@@ -2058,13 +2069,13 @@ _voltabibli() {
     fi
 }
 #-Rotina de Atualizacao Biblioteca-----------------------------------------------------------------#
-# 
+#
 # _biblioteca
-# 
+#
 # Atualiza a biblioteca da SAV.
 # Esta funcao e responsavel por atualizar a biblioteca da SAV.
 
-_biblioteca() { 
+_biblioteca() {
     local OPCAO
 
     VERSAO=" " # Variavel que define a versao do programa.
@@ -2111,18 +2122,18 @@ _biblioteca() {
         3) _atuoff ;;
         4) _voltabibli ;;
         9) clear; _principal ;;
-        *) _opinvalida 
-            _read_sleep 1 
+        *) _opinvalida
+            _read_sleep 1
             _biblioteca ;;
     esac
 }
 
 
-#-Procedimento da atualizacao de programas---------------------------------------------------------# 
+#-Procedimento da atualizacao de programas---------------------------------------------------------#
 ### _atualizacao
 # Mostra o menu de atualizacao de programas com opcoes de atualizar via ON-Line ou OFF-Line.
 # Chama a funcao escolhida pelo usuario.
-_atualizacao() { 
+_atualizacao() {
     clear
 ###   200-mensagens do Menu Programas.
     M201="Menu de Programas "
@@ -2148,7 +2159,7 @@ _atualizacao() {
 	_mensagec "${GREEN}" "${M206}"
 	printf "\n\n"
 	_mensagec "${GREEN}" "${M209}"
-	printf "\n"        
+	printf "\n"
 	_linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
     case ${OPCAO} in
@@ -2156,14 +2167,14 @@ _atualizacao() {
         2) _pacoteoff ;;
         3) _voltaprog ;;
         9) clear ; _principal ;;
-        *) _opinvalida 
-            _read_sleep 1 
+        *) _opinvalida
+            _read_sleep 1
             _principal ;;
     esac
 }
 
 
-#-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------# 
+#-Mostrar a versao do isCobol que esta sendo usada.------------------------------------------------#
 #
 # Se o sistema for IsCOBOL, ele ira mostrar a versao do isCobol.
 # Se o sistema nao for IsCOBOL, ele ira mostrar uma mensagem de erro.
@@ -2197,7 +2208,7 @@ _iscobol() {
     _principal
 }
 
-#-Mostrar a versao do Linux que esta sendo usada.--------------------------------------------------# 
+#-Mostrar a versao do Linux que esta sendo usada.--------------------------------------------------#
 #-Mostra informacoes sobre o sistema, como:
 #
 #   - tipo de OS
@@ -2301,17 +2312,17 @@ _linux() {
 
 
 # _varrendo_arquivo: compacta arquivos temporarios no diretorio "${DIRB}" que contenham o nome "${line}" e move para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}"
-# 
+#
 # O comando find e usado para encontrar todos os arquivos temporarios no diretorio "${DIRB}" que contenham o nome "${line}" e o comando zip para compactar e mover para o diretorio "${BACKUP}" com o nome "${TEMPS}-${UMADATA}".
-# 
+#
 # Parametros:
 #   line: nome do arquivo temporario a ser compactado
-# 
+#
 # Exemplo:
 #   _varrendo_arquivo
 _varrendo_arquivo() {
     local zip_file_name="Temps-${UMADATA}"
-    "${cmd_find}" "${DIRB}" -type f -iname "${file_name}" -exec "${cmd_zip}" -m "${BACKUP}/${zip_file_name}" "{}" + >> "${LOG_LIMPA}" 
+    "${cmd_find}" "${DIRB}" -type f -iname "${file_name}" -exec "${cmd_zip}" -m "${BACKUP}/${zip_file_name}" "{}" + >> "${LOG_LIMPA}"
 }
 
 # _limpando: Exclui todos os arquivos temporarios no diretorio "${DIRB}" com base na lista "atualizat".
@@ -2336,9 +2347,9 @@ clear
             printf "${GREEN}""Excluido todos as arquivos: ${YELLOW}${file_name}${NORM}%s\n"
             _varrendo_arquivo "${DIRB}" "${file_name}"
             fi
-    done 
+    done
 M11="Movendo arquivos Temporarios do diretorio = ""${DIRB}"
-_linha 
+_linha
 _mensagec "${YELLOW}" "${M11}"
 _linha
 }
@@ -2352,7 +2363,7 @@ _linha
 _limpeza() {
     cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
 
-    #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------# 
+    #-Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema---------------#
     #-TESTE Arquivos ----------------------------------------------------------------------------------#
     local atualizat_file="atualizat"
     if [[ ! -e "${atualizat_file}" ]]; then
@@ -2435,7 +2446,7 @@ _temps() {
     printf "\n"
     _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M900}"
-    _linha 
+    _linha
     printf "\n"
     _mensagec "${PURPLE}" "${M103}"
     printf "\n"
@@ -2452,14 +2463,14 @@ _temps() {
         1)  _limpeza ;;
         2)  _addlixo ;;
         9)  clear ; _ferramentas ;;
-        *) _opinvalida 
-           _read_sleep 1 
+        *) _opinvalida
+           _read_sleep 1
            _ferramentas ;;
-    esac    
+    esac
 }
 # Funcao para escolher qual base ser  utilizada.
 #
-# Permite ao usuario escolher qual base ser utilizada. 
+# Permite ao usuario escolher qual base ser utilizada.
 # As bases esta gravada no arquivo ".atualizac".
 _escolhe_base() {
     clear
@@ -2476,7 +2487,7 @@ fi
     printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M900}"
-	_linha 
+	_linha
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
@@ -2489,16 +2500,16 @@ fi
     _mensagec "${GREEN}" "${M909}"
     printf "\n"
     _linha "=" "${GREEN}"
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
     case ${OPCAO} in
         1) _set_base_diretorio "base" ;;
         2) _set_base_diretorio "base2" ;;
         3) _set_base_diretorio "base3" ;;
-        9) clear 
+        9) clear
 	       _ferramentas ;;
-        *) _opinvalida 
-           _read_sleep 1 
+        *) _opinvalida
+           _read_sleep 1
 	       _ferramentas ;;
     esac
 
@@ -2508,7 +2519,7 @@ fi
 ##- Rotina para rodar o jutil
 # Reconstrói um arquivo específico com jutil.
 #
-# _jutill irá verificar se o arquivo existe e se tem tamanho maior que zero. 
+# _jutill irá verificar se o arquivo existe e se tem tamanho maior que zero.
 # Se ambas as condições forem atendidas, ele executará o comando jutil com o
 # -rebuild opção no arquivo.
 _jutill() {
@@ -2630,24 +2641,24 @@ _rebuildall() {
         _linha
 
         cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
-    
+
     _press
     _rebuild
 }
 
-# _rebuildlista: Rotina de recuperacao de arquivos especificos 
+# _rebuildlista: Rotina de recuperacao de arquivos especificos
 #                com base em uma lista "atualizaj2" que esta no
 #                diretorio "${TOOLS}".
-# 
+#
 # Com base na lista "atualizaj2" ele ira reconstruir os arquivos
 # ATE*.dat e NFE*.dat na pasta "${BASE1}".
-# 
+#
 # Se o arquivo "atualizaj2" nao existir, sera gerado com base
 # nos arquivos ATE*.dat e NFE*.dat na pasta "${BASE1}".
-# 
+#
 # Se o arquivo "atualizaj2" nao for encontrado, sera exibido
 # um erro e o programa sera encerrado.
-# 
+#
 # Parametros:
 #   Nenhum.
 _rebuildlista() {
@@ -2659,7 +2670,7 @@ _rebuildlista() {
         _escolhe_base
     fi
     if [[ "${sistema}" = "iscobol" ]]; then
-        cd "${BASE1}" || { printf "Erro: Diretorio ${BASE1} nao encontrado.""%*s\n"; exit 1; }  
+        cd "${BASE1}" || { printf "Erro: Diretorio ${BASE1} nao encontrado.""%*s\n"; exit 1; }
         #-Rotina para gerar o arquivos atualizaj2 adicionando os arquivos abaixo---------------------------#
         var_ano=$(date +%y)
         var_ano4=$(date +%Y)
@@ -2672,7 +2683,7 @@ _rebuildlista() {
             printf "ERRO. Arquivo atualizaj2, Nao existe no diretorio.\n" >&2
             exit 1
         fi
-        
+
         if [[ ! -r "atualizaj2" ]]; then
             printf "ERRO. Arquivo atualizaj2, Sem acesso de leitura.\n" >&2
             exit 1
@@ -2692,7 +2703,7 @@ _rebuildlista() {
                     _meiodatela
                     _mensagec "${RED}" "Nao foi encontrado o arquivo ${arquivo}"
                     _linha
-                       
+
                 fi
             fi
         done < atualizaj
@@ -2701,19 +2712,19 @@ _rebuildlista() {
             if [[ -z "${line}" ]]; then
                 arquivo="${BASE1}""/""${line}"
                 if [[ ! -e "${arquivo}" ]]; then
-                    _jutill 
+                    _jutill
                 else
-                    se                    
+                    se
                     _meiodatela
                     _mensagec "${RED}" "Nao foi encontrado o arquivo ""${arquivo}"
                     _linha
                 fi
             fi
         done < atualizaj2
-    #-Lista de Arquivo(s) recuperado(s)... 
+    #-Lista de Arquivo(s) recuperado(s)...
         _linha "-" "${YELLOW}"
         _mensagec "${YELLOW}" "${M12}"
-        _linha 
+        _linha
     #     _press
     else
         _meiodatela
@@ -2733,12 +2744,12 @@ _rebuildlista() {
 #   2 - Arquivos Principais
 #   9 - Menu Anterior
 
-_rebuild() { 
+_rebuild() {
     if [[ -e "${TOOLS}"/"atualizaj2" ]]; then
         rm -rf "${TOOLS}"/"atualizaj2" || {
         _mensagec "${RED}" "Error: falha ao remover o arquivo ${TOOLS}/atualizaj2."
         return 1
-        }   
+        }
     fi
 
     clear
@@ -2748,11 +2759,11 @@ _rebuild() {
 	M603="1${NORM} - Um arquivo ou Todos   "
 	M604="2${NORM} - Arquivos Principais   "
     M605="9${NORM} - ${RED}Menu Anterior"
-#Display Menu    
+#Display Menu
 	printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M601}"
-	_linha 
+	_linha
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
@@ -2764,14 +2775,14 @@ _rebuild() {
     printf "\n"
     _linha "=" "${GREEN}"
 
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
     case ${OPCAO} in
     1) _rebuildall ;;
     2) _rebuildlista ;;
     9) clear ; _ferramentas ;;
-    *) _opinvalida 
-        _read_sleep 1 
+    *) _opinvalida
+        _read_sleep 1
         _ferramentas ;;
     esac
 }
@@ -2789,10 +2800,10 @@ _rebuild() {
 _backup() { # funcionando
     # Limpa a tela
     clear
-    
+
     # Verifica se base2 está definida e chama função de escolha
     [ -n "$base2" ] && _escolhe_base
-    
+
     # Cria diretório de backup se não existir
     if [ ! -d "$BACKUP" ]; then
         M23="Criando o diretorio dos backups em $BACKUP..."
@@ -2802,7 +2813,7 @@ _backup() { # funcionando
             return 1
         }
     fi
-    
+
     # Define nome do arquivo de backup com timestamp
     local backup_file
     backup_file="${EMPRESA}_$(date +%Y%m%d%H%M).zip"
@@ -2818,7 +2829,7 @@ _backup() { # funcionando
 #        while true; do
         read -r -p "${YELLOW}Deseja continuar? (N/s): ${NORM}" answer
             case "${answer,,}" in
-                n|"") 
+                n|"")
                     _linha && _mensagec "$RED" "$M47" &&  _linha && _read_sleep 3 && _ferramentas && return ;;
                 s)
                     _linha &&  _mensagec "$YELLOW" "$M06" && _linha ;;
@@ -2826,14 +2837,14 @@ _backup() { # funcionando
                     _opinvalida && return ;;
             esac
     fi
-    
+
     # Muda para diretório base com verificação
     cd "$BASE1" || {
         _mensagec "$RED" "Erro: Nao foi possivel acessar $BASE1"
         return 1
     }
     _linha && _mensagec "$YELLOW" "$M14" && _linha
-    
+
     # Função de progresso simplificada
     _show_progress() {
         local chars=("#" "-" "*" "+")
@@ -2845,22 +2856,22 @@ _backup() { # funcionando
             sleep 3
         done
     }
-    
+
     # Executa backup com tratamento de erro
     {
         "$cmd_zip" -u "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
     } & backup_pid=$!
-    
+
     # Inicia progresso em background
     _show_progress $backup_pid &
     progress_pid=$!
-    
+
     # Aguarda backup completar e verifica status
     if wait $backup_pid; then
         kill $progress_pid 2>/dev/null
         wait $progress_pid 2>/dev/null
         echo "${YELLOW}] Concluido${NORM}"
-        
+
         M10="O backup $backup_file"
         M32="foi criado em $BACKUP"
         _linha
@@ -2874,14 +2885,14 @@ _backup() { # funcionando
         _mensagec "$RED" "Erro ao criar o backup"
         return 1
     fi
-    
+
     _linha && _mensagec "$YELLOW" "$M16" && _linha
     _send_and_manage_backup "$backup_file"
-}    
+}
 # Função complementar para envio e gerenciamento do backup
 _send_and_manage_backup() {
     local backup_file="$1"  # Recebe o nome do arquivo de backup como parâmetro
-    
+
     # Mensagem inicial
     MA116="Backup sera enviado para o diretario: ${ENVIABACK:-"nao especificado"}"
     _mensagec "${YELLOW}" "${MA116}"
@@ -2914,22 +2925,22 @@ _send_and_manage_backup() {
                     return 1
                 fi
             fi
-            
+
         # Determina o destino remoto
         local remote_dest
         remote_dest="${ENVIABACK}"
-        if [ -z "${ENVIABACK}" ]; then 
+        if [ -z "${ENVIABACK}" ]; then
             _meiodatela
             _mensagec "${RED}" "${M68}"
         read -r -p "${YELLOW}${M41}${NORM}" remote_dest
 
             # Validação simples: não aceita vazio
             until [ -n "$remote_dest" ]; do
-            _meiodatela 
-            _mensagec "$RED" "$M69" 
+            _meiodatela
+            _mensagec "$RED" "$M69"
             read -r -p "Digite o diretorio remoto: " remote_dest
             done
-        ENVIABACK="${remote_dest}"  
+        ENVIABACK="${remote_dest}"
         fi
 
         # Envia backup via rsync
@@ -2943,8 +2954,8 @@ _send_and_manage_backup() {
         else
             _mensagec "${RED}" "Erro ao enviar backup para ${remote_dest}"
             return 1
-        fi 
-    # Gerenciamento do backup local        
+        fi
+    # Gerenciamento do backup local
     read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
     if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
         if rm -f "${BACKUP}/${backup_file}"; then
@@ -2973,12 +2984,12 @@ _backupavulso() {
     local VBACKAV VBACKUP REPLY ENVBASE SAOFF
 
     while true; do
-        clear 
+        clear
         _linha
         ls -lh "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null || _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
-        _linha 
+        _linha
         _mensagec "${RED}" "${M52}"  # "Selecione um backup para enviar"
-        _linha      
+        _linha
         read -rp "${YELLOW}${M42} (ou digite'sair' para cancelar): ${NORM}" VBACKAV
 
         # Verifica se o usuário quer sair
@@ -3002,7 +3013,7 @@ _backupavulso() {
         fi
 
         VBACKUP="${EMPRESA}_${VBACKAV}.zip"
-        
+
         # Verifica se o arquivo existe
         if [[ ! -f "${BACKUP}/${VBACKUP}" ]]; then
             clear
@@ -3022,7 +3033,7 @@ _backupavulso() {
     if [[ -n "${SERACESOFF}" ]]; then
         SAOFF="${destino}${SERACESOFF}"
         if mv -f "${BACKUP}/${VBACKUP}" "${SAOFF}" 2>/dev/null; then
-            _linha 
+            _linha
             _mensagec "${YELLOW}" "Backup enviado para o diretorio: ${SAOFF}"
             _linha && _press && _ferramentas && return
         else
@@ -3032,16 +3043,16 @@ _backupavulso() {
     fi
 
     # Pergunta se o usuário quer enviar o backup remotamente
-    _linha 
+    _linha
     read -rp "${YELLOW}${M40}${NORM} (S/N): " -n1 REPLY
     printf "\n\n"
     case "${REPLY,,}" in
-        n|"") 
-            _mensagec "${YELLOW}" "Operacao concluida sem envio remoto." 
+        n|"")
+            _mensagec "${YELLOW}" "Operacao concluida sem envio remoto."
             _linha && _press
             _ferramentas
             ;;
-        s) 
+        s)
             if [[ -n "${ENVIABACK}" ]]; then
                 ENVBASE="${ENVIABACK}"
             else
@@ -3052,19 +3063,19 @@ _backupavulso() {
                 while [[ "${ENVBASE}" =~ [0-9] || -f "${ENVBASE}" ]]; do
                     _meiodatela
                     _mensagec "${RED}" "${M69}"  # "Caminho inválido"
-                    _press    
+                    _press
                     read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
                 done
             fi
 
-            _linha 
+            _linha
             _mensagec "${YELLOW}" "${M29}"  # "Enviando backup via rsync..."
-            _linha 
+            _linha
             if [[ -n "${IPSERVER}" && -n "${PORTA}" && -n "${USUARIO}" ]]; then
                 if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:/${ENVBASE}" 2>/dev/null; then
                     _mensagec "${YELLOW}" "Backup enviado para \"${ENVBASE}\" no servidor ${IPSERVER}."
-                    _linha 
-                    _read_sleep 3 
+                    _linha
+                    _read_sleep 3
                     _ferramentas
                 else
                     _mensagec "${RED}" "Erro ao enviar o backup via rsync."
@@ -3074,7 +3085,7 @@ _backupavulso() {
             else
                 _meiodatela
                 _mensagec "${RED}" "${M71}"  # "Detalhes do servidor (IP/Porta/Usuário) ausentes"
-                _press    
+                _press
                 _ferramentas
             fi
             ;;
@@ -3082,7 +3093,7 @@ _backupavulso() {
             _opinvalida
             _read_sleep 1
             _press
-            _ferramentas   
+            _ferramentas
             ;;
     esac
 }
@@ -3208,7 +3219,7 @@ _unbackup() {
     _ferramentas
 }
 
-_menubackup() { 
+_menubackup() {
 while true ; do
 clear
 
@@ -3223,7 +3234,7 @@ clear
 	printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M700}"
-	_linha 
+	_linha
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
@@ -3234,10 +3245,10 @@ clear
 	_mensagec "${GREEN}" "${M704}"
     printf "\n\n"
 	_mensagec "${GREEN}" "${M705}"
-    printf "\n"       
+    printf "\n"
 	_linha "=" "${GREEN}"
 
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO	
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
 
     # Processar opcao
     case ${OPCAO} in
@@ -3245,8 +3256,8 @@ clear
     2) _unbackup     ;;
     3) _backupavulso ;;
     9) clear; _ferramentas; return ;;
-     *) _opinvalida 
-        _read_sleep 1  
+     *) _opinvalida
+        _read_sleep 1
         _menubackup ;;
     esac
 done
@@ -3263,21 +3274,21 @@ done
 _envia_avulso() {
     clear
     printf "\n\n\n"
-### Pedir diretorio origem do arquivo    
-    _linha 
-M991="1- Origem: Informe em que diretorio esta o arquivo a ser enviado :"   
-    _mensagec "${YELLOW}" "${M991}"  
+### Pedir diretorio origem do arquivo
+    _linha
+M991="1- Origem: Informe em que diretorio esta o arquivo a ser enviado :"
+    _mensagec "${YELLOW}" "${M991}"
     read -rp "${YELLOW}"" -> ""${NORM}" DIRENVIA
-    _linha 
+    _linha
 if [[ -d "${DIRENVIA}" ]]; then
     printf "\n"
 else
     clear
     _meiodatela
 M995="Diretorio nao foi encontrado no servidor"
-    _linha 
-    _mensagec "${RED}" "${M995}"  
-    _linha 
+    _linha
+    _mensagec "${RED}" "${M995}"
+    _linha
     _press
     _envrecarq
 fi
@@ -3291,21 +3302,21 @@ if [[ -z "${DIRENVIA}" ]]; then # testa variavel vazia
     _linha
     else
 M49="Arquivo nao encontrado no diretorio"
-    _linha 
-    _mensagec "${YELLOW}" "${M49}"  
-    _linha 
-#      _press 
-    _ferramentas  
+    _linha
+    _mensagec "${YELLOW}" "${M49}"
+    _linha
+#      _press
+    _ferramentas
     fi
 fi
-    _linha 
+    _linha
     _mensagec "${CYAN}" "${M72}" #Informe o arquivo(s) que deseja enviar.
-    _linha 
+    _linha
     local MB3="${YELLOW}2- Informe nome do ARQUIVO: -> ${NORM}"
 
     local EENVIA=" "
     read -rp "${MB3}" EENVIA
-if [[ -z "${EENVIA}" ]]; then 
+if [[ -z "${EENVIA}" ]]; then
 #   clear
     _meiodatela
     _mensagec "${RED}" "${M74}"
@@ -3316,93 +3327,93 @@ fi
 if [[ ! -e "${DIRENVIA}""/""${EENVIA}" ]]; then
     _linha
 
-    _linha 
-    _mensagec "${YELLOW}" "$EENVIA Arquivo nao encontrado no diretorio"  
-    _linha 
-    _press 
-    _envrecarq  
+    _linha
+    _mensagec "${YELLOW}" "$EENVIA Arquivo nao encontrado no diretorio"
+    _linha
+    _press
+    _envrecarq
 fi
     printf "\n"
-    _linha 
+    _linha
    _mensagec "${YELLOW}" "3- Destino:Informe diretorio do servidor que vai receber: ->"
 read -rp "${YELLOW}"" -> ""${NORM}" ENVBASE
-    _linha 
+    _linha
 if [[ -z "${ENVBASE}" ]]; then
     _meiodatela
-#M69  
+#M69
     _mensagec "${RED}" "${M69}"
-    _press    
-    _envrecarq 
+    _press
+    _envrecarq
 fi
 #-Informe a senha do usuario do rsync
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M29}"
-    _linha 
-    rsync -avzP -e "ssh -p ${PORTA}" "${DIRENVIA}"/"${EENVIA}" "${USUARIO}"@"${IPSERVER}":"${ENVBASE}" 
+    _linha
+    rsync -avzP -e "ssh -p ${PORTA}" "${DIRENVIA}"/"${EENVIA}" "${USUARIO}"@"${IPSERVER}":"${ENVBASE}"
 M15="Backup enviado para a pasta, \"""${ENVBASE}""\"."
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M15}"
-    _linha 
+    _linha
     _read_sleep 3
     _envrecarq
 }
 ##---recebe_avulso-------------------------------------
 # _recebe_avulso()
-# 
+#
 # Recebe um arquivo avulso via rsync do servidor da SAV.
-# 
+#
 # - Informe a origem, nome do arquivo e o destino do arquivo.
 # - O usuario do rsync sera o mesmo do usuario do atualiza.sh.
 # - O diretorio do arquivo recebido sera o mesmo do diretorio do atualiza.sh.
 _recebe_avulso() {
     clear
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "1- Origem: Informe em qual diretorio esta o arquivo a ser RECEBIDO :"
     read -rp "${YELLOW}"" -> ""${NORM}" RECBASE
-    _linha 
-    _linha 
+    _linha
+    _linha
     _mensagec "${RED}" "${M73}"
     _linha
-    MB2="    2- Informe nome do ARQUIVO: "      
+    MB2="    2- Informe nome do ARQUIVO: "
     read -rp "${YELLOW}${MB2}${NORM}" RRECEBE
-if [[ -z "${RRECEBE}" ]]; then 
+if [[ -z "${RRECEBE}" ]]; then
     _meiodatela
     _mensagec "${RED}" "${M74}"
     _linha
     _press
     _envrecarq
 fi
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "3- Destino:Informe diretorio do servidor que vai receber arquivo: "
     read -rp "${YELLOW}"" -> ""${NORM}" EDESTINO
 if [[ -z "${EDESTINO}" ]]; then # testa variavel vazia
 local EDESTINO=${RECEBE}
 fi
-    _linha 
+    _linha
     local VERDIR="${EDESTINO}"
 if [[ -d "${VERDIR}" ]]; then
     printf "\n"
 else
     clear
     _meiodatela
-    _linha 
+    _linha
     _mensagec "${RED}" "Diretorio nao foi encontrado no servidor"
-    _linha 
+    _linha
     _press
     _envrecarq
 fi
 
 #-Informe a senha do usuario do rsync
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M29}"
-    _linha 
-    rsync -avzP -e "ssh -p ${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/". 
+    _linha
+    rsync -avzP -e "ssh -p ${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/".
 M15="Arquivo enviado para a pasta, \"""${EDESTINO}""\"."
-    _linha 
+    _linha
     _mensagec "${YELLOW}" "${M15}"
-    _linha 
+    _linha
     _read_sleep 3
-_envrecarq      
+_envrecarq
 }
 
 
@@ -3414,18 +3425,18 @@ _envrecarq
 ##  2 - Recebe arquivo(s)
 ##  9 - Menu Anterior
 ##-----------------------------------------------------------------------------------------------
-_envrecarq() { 
+_envrecarq() {
 clear
 ###-800-mensagens do Menu Envio e Retorno.
     M800="Menu de Enviar e Receber Arquivo(s)."
     M802="1${NORM} - Enviar arquivo(s)     "
     M803="2${NORM} - Receber arquivo(s)    "
     M806="9${NORM} - ${RED}Menu Anterior"
-	
+
     printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M800}"
-	_linha 
+	_linha
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
@@ -3434,17 +3445,17 @@ clear
 	_mensagec "${GREEN}" "${M803}"
 	printf "\n\n"
 	_mensagec "${GREEN}" "${M806}"
-    printf "\n"       
+    printf "\n"
 	_linha "=" "${GREEN}"
 
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO	
-    
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+
     case ${OPCAO} in
     1) _envia_avulso    ;;
     2) _recebe_avulso   ;;
     9) clear ; _ferramentas ;;
-     *) _opinvalida 
-        _read_sleep 1  
+     *) _opinvalida
+        _read_sleep 1
         _envrecarq ;;
     esac
 }
@@ -3458,11 +3469,11 @@ clear
 # Apaga arquivos do diretorio do /portalsav/log e /err_isc/.
 _expurgador() {
 clear
-#-Apagar Biblioteca--------------------------------------------------# 
+#-Apagar Biblioteca--------------------------------------------------#
 #-Verificando e/ou excluido arquivos com mais de 30 dias criado.------#
-    _linha 
+    _linha
     _mensagec "${RED}" "${M51}"
-    _linha 
+    _linha
 #     _read_sleep 3
     printf "\n\n"
 # Apagando todos os arquivos do diretorio backup#
@@ -3471,21 +3482,21 @@ MDIR="Limpando os arquivos do diretorio: "
     local DIR2="${OLDS}""/"
     local DIR3="${PROGS}""/"
     local DIR4="${LOGS}""/"
-SAVLOG="$destino""/sav/portalsav/log" 
+SAVLOG="$destino""/sav/portalsav/log"
     local DIR5="${SAVLOG}""/"
-ERR_ISC="$destino""/sav/err_isc" 
+ERR_ISC="$destino""/sav/err_isc"
     local DIR6="${ERR_ISC}""/"
 VIEWVIX="$destino""/sav/savisc/viewvix/tmp"
     local DIR7="${VIEWVIX}""/"
     for ARQS in $DIR1 $DIR2 $DIR3 $DIR4 $DIR5 $DIR6 $DIR7; do
         if [[ -d "${ARQS}" ]]; then
-            "${cmd_find}" "${ARQS}" -mtime +30 -type f -delete 
+            "${cmd_find}" "${ARQS}" -mtime +30 -type f -delete
             _mensagec "${GREEN}" "${MDIR}${ARQS}"
         else
             _mensagec "${YELLOW}" "${MDIR}${ARQS}""n: diretorio nao encontrado"
         fi
     done
-printf "\n\n"     
+printf "\n\n"
 _linha
 _press
 cd "${TOOLS}" || { printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"; exit 1; }
@@ -3530,7 +3541,7 @@ _update_online() {
     }
 
     # Acessar o diretório de destino
-    cd "$ENVIA" || { 
+    cd "$ENVIA" || {
         _mensagec "${RED}" "Erro: Diretório $ENVIA não acessível."
         return 1
     }
@@ -3608,15 +3619,15 @@ _update_online() {
 _update_offline() {
     local zipfile="atualiza.zip"
     local dir="$destino$SERACESOFF"
-    
+
     cd "$dir" || { _mensagec "${RED}" "Erro: Diretorio $dir nao acessivel."; return 1; }
     [ -f "$zipfile" ] || { _mensagec "${RED}" "Erro: $zipfile nao encontrado em $dir."; return 1; }
-    
+
     "$cmd_unzip" -o "$zipfile" >> "$LOG_ATU" 2>&1 || {
         _mensagec "${RED}" "Erro ao descompactar $zipfile."
         return 1
     }
-    
+
     rm -f "$zipfile"
     for file in atualiza.sh setup.sh; do
         [ -f "$file" ] || { _mensagec "${RED}" "Erro: $file nao encontrado."; return 1; }
@@ -3650,7 +3661,7 @@ _update() {
 _parametros() {
 clear
 _linha "=" "${GREEN}"
-printf "${GREEN}""Sistema e banco de dados: ""${NORM}""${BANCO}""%*s\n"     
+printf "${GREEN}""Sistema e banco de dados: ""${NORM}""${BANCO}""%*s\n"
 printf "${GREEN}""O diretorio raiz e: ""${NORM}""${destino}""%*s\n"
 printf "${GREEN}""O diretorio do atualiza.sh: ""${NORM}""${destino}""${pasta}""%*s\n"
 printf "${GREEN}""O diretorio da base Principal : ""${NORM}""${destino}""${base}""%*s\n"
@@ -3691,7 +3702,7 @@ _escrever_nota() {
 
     # Ler a entrada e adiciona ao arquivo.
     cat >> "$FILE"
-    _linha    
+    _linha
     _mensagec "${YELLOW}" "Nota gravada com sucesso!"
     sleep 2
 }
@@ -3730,9 +3741,9 @@ clear
 local FILE="atualizal"
 # Loop principal do menu.
 while true; do
-clear 
+clear
 ###-800-mensagens do Menu Bloco de anotacao.
-    M800=" Bloco de Notas  " 
+    M800=" Bloco de Notas  "
     M802="1${NORM} - Escrever nova nota   "
     M803="2${NORM} - Visualizar nota      "
     M804="3${NORM} - Editar nota          "
@@ -3742,7 +3753,7 @@ clear
 	printf "\n"
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M800}"
-	_linha 
+	_linha
 	printf "\n"
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
@@ -3753,30 +3764,30 @@ clear
 	_mensagec "${GREEN}" "${M804}"
     printf "\n"
 	_mensagec "${GREEN}" "${M805}"
-	printf "\n\n"    
+	printf "\n\n"
 	_mensagec "${GREEN}" "${M806}"
-    printf "\n"       
+    printf "\n"
 	_linha "=" "${GREEN}"
-    
-    read -rp "${YELLOW}${M110}${NORM}" OPCAO	
-    
+
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+
     case ${OPCAO} in
         1) _escrever_nota ;;
         2) _visualizar_notas ;;
         3) _editar_nota ;;
-        4) _excluir_nota ;;     
+        4) _excluir_nota ;;
         9) clear ; _ferramentas ;;
-        *) _opinvalida 
-            _read_sleep 1  
-            _lembretes ;;    
+        *) _opinvalida
+            _read_sleep 1
+            _lembretes ;;
     esac
 done
 }
 
 ### _ferramentas
-# 
-# Mostra o menu das ferramentas 
-# 
+#
+# Mostra o menu das ferramentas
+#
 _ferramentas() {
     tput clear
     printf "\n"
@@ -3789,12 +3800,12 @@ _ferramentas() {
     M507="5${NORM} - Expurgador de Arquivos  "
     M508="6${NORM} - Parametros              "
     M509="7${NORM} - Update                  "
-    M510="8${NORM} - Lembretes               "	
+    M510="8${NORM} - Lembretes               "
     M511="9${NORM} - ${RED}Menu Anterior  "
 
     _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M501}"
-    _linha 
+    _linha
     printf "\n"
     _mensagec "${PURPLE}" "${M103}"
     printf "\n"
@@ -3825,8 +3836,8 @@ _ferramentas() {
             7) _update      ;;
             8) _lembretes   ;;
             9) clear ; _principal ;;
-            *) _opinvalida 
-                _read_sleep 1  
+            *) _opinvalida
+                _read_sleep 1
                 _ferramentas ;;
         esac
     else
@@ -3862,10 +3873,10 @@ _ferramentas() {
         6)  _parametros   ;;
         7)  _update       ;;
         8)  _lembretes    ;;
-        9)  clear  
+        9)  clear
             _principal ;;
-        *)  _opinvalida 
-            _read_sleep 1  
+        *)  _opinvalida
+            _read_sleep 1
             _ferramentas ;;
     esac
 }
@@ -3873,7 +3884,7 @@ _ferramentas() {
 # _principal () - Funcao principal do programa
 # Mostra o menu principal com as opcoes de atualizacao de programas, biblioteca, desatualizando,
 # versao do iscobol, versao do linux e ferramentas. Chama a funcao escolhida pelo usuario.
-# 
+#
 # Opcoes:
 # 1 - Atualizacao de Programas
 # 2 - Atualizacao de Biblioteca
@@ -3882,22 +3893,22 @@ _ferramentas() {
 # 5 - Versao do Linux
 # 6 - Ferramentas
 # 9 - Sair
-_principal() { 
+_principal() {
 tput clear
 printf "\n"
-#-100-mensagens do Menu Principal. ----------------------------------------------------------------#	
+#-100-mensagens do Menu Principal. ----------------------------------------------------------------#
 	M101="Menu Principal"
 	M1102=".. Empresa: ${EMPRESA} .."
     M102=".. Sistema: ${sistema} .."
     M103="Escolha a opcao:                "
 	M104="1${NORM} - Programas                "
-    M105="2${NORM} - Biblioteca               " 
+    M105="2${NORM} - Biblioteca               "
 	M111="3${NORM} - Versao do Iscobol        "
 	M112="3${NORM} - Funcao nao disponivel    "
 	M107="4${NORM} - Versao do Linux          "
     M108="5${NORM} - Ferramentas              "
     M109="9${NORM} - ${RED}Sair            "
-    M110=" Digite a opcao desejada -> " 
+    M110=" Digite a opcao desejada -> "
 
 	_linha "=" "${GREEN}"
 	_mensagec "${RED}" "${M101}"
@@ -3905,7 +3916,7 @@ printf "\n"
     _mensagec "${GREEN}" "${M1102}"
     _linha
 	_mensagec "${CYAN}" "${M102}"
-    _linha 
+    _linha
 	_mensagec "${PURPLE}" "${M103}"
 	printf "\n"
 	_mensagec "${GREEN}" "${M104}"
@@ -3936,8 +3947,8 @@ printf "\n"
         4) _linux         ;;
         5) _ferramentas   ;;
         9) clear ; _resetando ;;
-        *) _opinvalida 
-            _read_sleep 1  
+        *) _opinvalida
+            _read_sleep 1
             _principal ;;
     esac
 }
