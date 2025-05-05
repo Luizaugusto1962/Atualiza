@@ -1,7 +1,7 @@
 #!/usr/bin/env bash 
 #
 #
-#versao de 25/03/2025-00
+#versao de 05/05/2025-00
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
@@ -9,103 +9,195 @@ clear
 _ATUALIZA_BAT () {
     {
     cat << 'EOF'
+set "ipservidor=177.45.80.10"
+set "port=41122"
+set "user=atualiza"
+set "line================================================"
+set "op=0"
+
+:: Solicita a senha ao usuário
+echo %line%
+echo.
+set /p senha=Digite a senha para pscp: 
+if "!senha!"=="" (
+    echo.
+    echo Senha nao pode ser vazio.
+    echo %line%
+	pause
+    cls
+    endlocal
+    exit /b
+)
+:: Configuração da tela
 mode con cols=60 lines=30
 color 0e
-set op=0  
-set ipservidor=177.45.80.10
-set "line================================================"
-IF EXIST *.zip (
-    del /Q  *.zip
+
+:: Verifica se o pscp está instalado
+where pscp >nul 2>&1
+if %ERRORLEVEL% neq 0 (
     echo %line%
-    echo arquivos zip excluidos
+    echo ERRO: pscp nao encontrado!
+    echo Instale o pscp a partir de: https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe
+    echo %line%
+    pause
+    exit /b
+)
+
+:: Remove arquivos .zip existentes
+IF EXIST *.zip (
+    echo %line%
+    echo Arquivos .zip encontrados no diretorio.
+    set /p confirm=Deseja excluir todos os arquivos .zip? [S/N]: 
+    if /I "!confirm!"=="S" (
+        del /Q *.zip
+        echo Arquivos zip excluidos.
+    ) else (
+        echo Exclusao cancelada.
+    )
 ) ELSE (
     echo %line%
-    echo Diretorio sem arquivos zip
-)    
+    echo Diretorio sem arquivos zip.
+)
+
 :MENU
 cls
-echo %line% 
+echo %line%
 echo.
-echo Rotina para atualizar os programas da SAV.
+echo Rotina para atualizar os programas da SAV
 echo ou atualizar a biblioteca
 echo Para servidor que nao tem acesso online
 echo.
-echo %line% 
-
-echo    [1] - Atualizar programa 
-echo    [2] - Atualizar Biblioteca
-echo    [3] - Atualiza o tools
-echo    [4] - Atualiza o pscp
-echo    [0] - Sair     
+echo %line%
+echo [1] - Atualizar programa
+echo [2] - Atualizar Biblioteca
+echo [3] - Atualiza o tools
+echo [4] - Atualiza o pscp
+echo [5] - Ajuda
+echo [0] - Sair
 echo.
-set /p op=Selecione a opcao ... 
+set op=invalid
+set /p op=Selecione a opcao [0-5]: 
 echo.
-if %op% equ 1 goto:Modo_compilado
-if %op% equ 2 goto:Biblioteca
-if %op% equ 3 goto:Tools
-if %op% equ 4 goto:PSCP
-if %op% equ 0 goto:EOF
 
-:OPCAO
+if "!op!"=="0" goto EOF
+if "!op!"=="1" goto Modo_compilado
+if "!op!"=="2" goto Biblioteca
+if "!op!"=="3" goto Tools
+if "!op!"=="4" goto PSCP
+if "!op!"=="5" goto HELP
+echo Opcao invalida. Tente novamente.
+pause
+goto MENU
+
+:HELP
 cls
-set sn=0
-echo %line% 
-echo Baixar mais algum programa da SAV.
-echo %line% 
-echo	[S]- Sim [N]- Nao     
+echo %line%
+echo Ajuda - Rotina de Atualizacao SAV
+echo %line%
+echo Este script atualiza programas e bibliotecas da SAV.
+echo - Opcao 1: Baixa programas compilados (Normal/Debug).
+echo - Opcao 2: Baixa bibliotecas por versao.
+echo - Opcao 3: Abre link para baixar tools.
+echo - Opcao 4: Abre link para baixar pscp.
+echo - Opcao 0: Sair do script.
 echo.
-set /p sn=Selecione a opcao ... 
-echo.
-if /I %sn% equ N goto EOF
-if /I %sn% equ S goto Modo_compilado
+echo Requisitos:
+echo - pscp.exe instalado.
+echo - Conexao com o servidor %ipservidor%.
+echo %line%
+pause
+goto MENU
 
 :Modo_compilado
-set sn=""
-echo %line% 
-echo Programa compilado em qual modo ? :
-echo %line% 
-echo	[1]- Normal [2]- Debug     
+set sn=invalid
+echo %line%
+echo Programa compilado em qual modo?
+echo %line%
+echo [1] - Normal
+echo [2] - Debug
+echo [0] - Voltar
 echo.
-set /p sn=Selecione a opcao ... 
+set /p sn=Selecione a opcao [0-2]: 
 echo.
-if %sn% == 0 goto EOF
-if %sn% == 1 goto NORMAL 
-if %sn% == 2 goto DEBUG
+if "!sn!"=="0" goto MENU
+if "!sn!"=="1" goto NORMAL
+if "!sn!"=="2" goto DEBUG
+echo Opcao invalida. Tente novamente.
+pause
+goto Modo_compilado
 
 :NORMAL
-echo.
-echo %line% 
-echo Informe o programa a ser baixado em "MAISCULO"
-echo somente o nome do programa sem  ".zip" :
 echo %line%
-set prog=""
+echo Informe o programa a ser baixado em "MAISCULO"
+echo Somente o nome do programa sem ".zip":
+echo %line%
+set prog=
 set /p prog=Nome do programa: 
-if "%prog%" == "" goto MENU
-call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/man/%prog%%class%.zip .
+if "!prog!"=="" (
+    echo Nome do programa nao pode ser vazio.
+    pause
+    goto MENU
+)
+:: Basic validation for program name (no special chars)
+echo %prog% | findstr /R "^[A-Z0-9]" >nul
+if %ERRORLEVEL% neq 0 (
+    echo Nome do programa invalido. Use apenas letras maiusculas, numeros.
+    pause
+    goto MENU
+) 
+call :Baixando_programa /u/varejo/man/%prog%%class%.zip
+if %ERRORLEVEL% neq 0 (
+    pause
+)
 goto OPCAO
 
 :DEBUG
-echo.
-echo %line% 
-echo Informe o programa a ser baixado em "MAISCULO"
-echo somente o nome do programa sem  ".zip" :
 echo %line%
-set prog=""
+echo Informe o programa a ser baixado em "MAISCULO"
+echo Somente o nome do programa sem ".zip":
+echo %line%
+set prog=
 set /p prog=Nome do programa: 
-if "%prog%" == "" goto MENU
-call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/man/%prog%%mclass%.zip .
+if "!prog!"=="" (
+    echo Nome do programa nao pode ser vazio.
+    pause
+    goto MENU
+)
+echo %prog% | findstr /R "^[A-Z0-9_]" >nul
+if %ERRORLEVEL% neq 0 (
+    echo Nome do programa invalido. Use apenas letras maiusculas, numeros e _.
+    pause
+    goto MENU
+)
+call :Baixando_programa /u/varejo/man/!prog!%mclass%.zip
+if %ERRORLEVEL% neq 0 (
+    pause
+)
 goto OPCAO
 
 :Biblioteca
-echo Informe qual versao vai ser baixada
-echo %line%
-set versao=""
-set /p versao=Numero da versao: 
-if "%versao%" == "" goto MENU
-call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU1%%versao%.zip .
-call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU2%%versao%.zip .
-call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU3%%versao%.zip .
-call pscp -sftp -p -pw %1 -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%SAVATU4%%versao%.zip .
+set "versao="
+set /p versao=Numero da versao:
+
+:: Verifica se a versao e um numero valido
+set "valid=true"
+for /f "tokens=* delims=0123456789" %%a in ("%versao%") do (
+    if "%%a" neq "" set "valid=false"
+)
+
+if "%valid%"=="false" (
+    echo Versao invalida. Por favor, insira um numero valido.
+    pause
+    goto Biblioteca
+)
+
+if "%versao%"=="" goto MENU
+for %%v in (%SAVATU1% %SAVATU2% %SAVATU3% %SAVATU4%) do (
+    call pscp -sftp -p -pw %senha% -P 41122 atualiza@%ipservidor%:/u/varejo/trans_pc/%%v%versao%.zip .
+)
+if %ERRORLEVEL% neq 0 (
+    pause
+)
 goto MENU
 
 :Tools
@@ -113,21 +205,58 @@ start chrome https://github.com/Luizaugusto1962/Atualiza/archive/master/atualiza
 goto MENU
 
 :PSCP
-start chrome https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe" 
+start chrome https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe
 goto MENU
 
-:EOF
-set sn=""
-set op=""
-set class=""
-set mclass=""
-set SAVATU0=""
-set SAVATU1=""
-set SAVATU2=""
-set SAVATU3=""
-set SAVATU4=""
+:OPCAO
 cls
+set sn=invalid
+echo %line%
+echo Baixar mais algum programa da SAV?
+echo %line%
+echo [S] - Sim
+echo [N] - Nao
+echo.
+set /p sn=Selecione a opcao [S/N]: 
+echo.
+if /I "!sn!"=="N" goto EOF
+if /I "!sn!"=="S" goto Modo_compilado
+echo Opcao invalida. Tente novamente.
+pause
+goto OPCAO
 
+:: Função para baixar programas
+:Baixando_programa
+echo Baixando %1...
+pscp -sftp -p -pw %senha% -P %port% %user%@%ipservidor%:%1 . >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    echo Download concluido: %1
+) else (
+    echo ERRO: Falha ao baixar %1
+    exit /b 1
+)
+exit /b 0
+
+:EOF
+:: Limpando variaveis
+set sn=
+set op=
+set class=
+set mclass=
+
+set SAVATU1=
+set SAVATU2=
+set SAVATU3=
+set SAVATU4=
+set prog=
+set versao=
+set ipservidor=
+set port=
+set user=
+set line=
+set pwd=
+cls
+endlocal
 exit /b
 EOF
     } >> atualiza.bat 
@@ -422,6 +551,9 @@ if [[ "${OFF}" =~ ^[Ss]$ ]]; then
     {
         echo "@echo off"
         echo "cls"
+        echo "setlocal EnableDelayedExpansion"
+        echo
+        echo ":: Configuracoes"        
         echo "set class=""${complemento}"
         echo "set mclass=""${mcomplemento}"
         echo "set SAVATU1=tempSAVintA_"
@@ -432,12 +564,15 @@ if [[ "${OFF}" =~ ^[Ss]$ ]]; then
     {
         echo "@echo off"
         echo "cls"
+        echo "setlocal EnableDelayedExpansion"
+        echo
+        echo ":: Configuracoes"
         echo "set class=""${complemento}"
         echo "set mclass=""${mcomplemento}"
-        echo "set SAVATU1=tempSAV_${classA}"
-        echo "set SAVATU2=tempSAV_${classB}"
-        echo "set SAVATU3=tempSAV_${classC}"
-        echo "set SAVATU4=tempSAV_${classD}"
+        echo "set SAVATU1=tempSAV_${classB}"
+        echo "set SAVATU2=tempSAV_${classC}"
+        echo "set SAVATU3=tempSAV_${classD}"
+        echo "set SAVATU4=tempSAV_${classE}"
     } > atualiza.bat
     fi
     # Check if the batch file was created successfully
