@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="02/05/2025-00"                                                                                                 #
+UPDATE="16/05/2025-00"                                                                                                 #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -152,6 +152,7 @@ SAVATU1="${SAVATU1:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU2="${SAVATU2:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU3="${SAVATU3:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU4="${SAVATU4:-}" # Caminho do diretorio da biblioteca do servidor da SAV.
+verclass="${verclass:-}" # Ano da versao
 ENVIABACK="${ENVIABACK:-}" # Variavel que define o caminho para onde sera enviado o backup.
 VERSAO="${VERSAO:-}" # Variavel que define a versao do programa.
 INI="${INI:-}" # Variavel que define o caminho do arquivo de configuracao do sistema.
@@ -2344,7 +2345,7 @@ clear
     mapfile -t line_array < "${arqs}"
     for file_name in "${line_array[@]}"; do
         if [[ -n "${file_name}" ]]; then
-            printf "${GREEN}""Excluido todos as arquivos: ${YELLOW}${file_name}${NORM}%s\n"
+            printf "${GREEN}""Excluindo os arquivos ->: ${YELLOW}${file_name}${NORM}%s\n"
             _varrendo_arquivo "${DIRB}" "${file_name}"
             fi
     done
@@ -2787,17 +2788,7 @@ _rebuild() {
     esac
 }
 
-
-    #----------------------------------------------------------------------------------------------
-    # _backup
-    #----------------------------------------------------------------------------------------------
-    #
-    # Realiza o backup da pasta de dados para o diretório de backup com o nome
-    # "Empresa_YYYYMMDDHHMM.zip". Verifica se o backup recente (últimos 2 dias) existe e
-    # informa ao usuário caso exista. Após o backup, remove arquivos temporários e
-    # compacta novamente o backup para enviar ao servidor da SAV.
-    #
-_backup() { # funcionando
+_backup () {
     # Limpa a tela
     clear
 
@@ -2813,34 +2804,65 @@ _backup() { # funcionando
             return 1
         }
     fi
+###-700-mensagens do Menu Backup.
+    M700="Menu de Tipo de Backup(s).         "
+    M701="1${NORM} - Backup Completo         "
+    M702="2${NORM} - Backup Incremental      "
+    M705="9${NORM} - ${RED}Menu Anterior     "
+
+    # Display Menu
+	printf "\n"
+	_linha "=" "${GREEN}"
+	_mensagec "${RED}" "${M700}"
+	_linha
+	printf "\n"
+	_mensagec "${PURPLE}" "${M103}"
+  	printf "\n"
+	_mensagec "${GREEN}" "${M701}"
+	printf "\n"
+	_mensagec "${GREEN}" "${M702}"
+    printf "\n\n"
+	_mensagec "${GREEN}" "${M705}"
+    printf "\n"
+	_linha "=" "${GREEN}"
+
+    read -rp "${YELLOW}${M110}${NORM}" OPCAO
+
+    # Processar opcao
+    case ${OPCAO} in
+    1) backup_mode="completo"      ;;
+    2) backup_mode="incremental"   ;;
+    9) clear; _ferramentas; return ;;
+     *) _opinvalida
+        _read_sleep 1
+        _menubackup ;;
+    esac
 
     # Define nome do arquivo de backup com timestamp
     local backup_file
-    backup_file="${EMPRESA}_$(date +%Y%m%d%H%M).zip"
+    backup_file="${EMPRESA}_${backup_mode}_$(date +%Y%m%d%H%M).zip"
     local backup_path="$BACKUP/$backup_file"
 
     # Verifica backups recentes (últimos 2 dias)
     if find "$BACKUP" -maxdepth 1 -ctime -2 -name "${EMPRESA}*zip" -print -quit | grep -q .; then
-        M62="Ja existe um backup recente em $BACKUP."
+        M62="Já existe um backup recente em $BACKUP."
         _linha && _mensagec "$CYAN" "$M62" && _linha
         ls -ltrh "${BACKUP}"/"${EMPRESA}"_*.zip
         _linha
-        # Prompt de confirmação mais robusto
-#        while true; do
         read -r -p "${YELLOW}Deseja continuar? (N/s): ${NORM}" answer
-            case "${answer,,}" in
-                n|"")
-                    _linha && _mensagec "$RED" "$M47" &&  _linha && _read_sleep 3 && _ferramentas && return ;;
-                s)
-                    _linha &&  _mensagec "$YELLOW" "$M06" && _linha ;;
-                *)
-                    _opinvalida && return ;;
-            esac
+        case "${answer,,}" in
+            n|"")
+                _linha && _mensagec "$RED" "$M47" && _linha && _read_sleep 3 && _ferramentas && return ;;
+            s)
+                _linha && _mensagec "$YELLOW" "$M06" && _linha ;;
+            *)
+                _opinvalida && return ;;
+        esac
     fi
 
     # Muda para diretório base com verificação
     cd "$BASE1" || {
-        _mensagec "$RED" "Erro: Nao foi possivel acessar $BASE1"
+        _mensagec "$RED" "Erro: Nao foi possavel acessar $BASE1"
         return 1
     }
     _linha && _mensagec "$YELLOW" "$M14" && _linha
@@ -2851,15 +2873,53 @@ _backup() { # funcionando
         local i=0
         echo -n "${YELLOW}Aguarde [${NORM}"
         while kill -0 "$1" 2>/dev/null; do
-		    printf "%s${GREEN}${chars[$((i++ % 4))]}${NORM}"
-#            i=$((i+1))
+            printf "%s${GREEN}${chars[$((i++ % 4))]}${NORM}"
             sleep 3
         done
     }
 
+    # Configuração para backup incremental
+    if [ "$backup_mode" = "incremental" ]; then
+        # Solicita mês e ano
+        _linha && _mensagec "$YELLOW" "Digite o mes (01-12) e ano (ex: 2023) para o backup incremental:" && _linha
+        read -r -p "${YELLOW}Mes (MM): ${NORM}" month
+        _linha 
+        read -r -p "${YELLOW}Ano (AAAA): ${NORM}" year
+
+        # Valida entrada
+        if ! [[ "$month" =~ ^0[1-9]$|^1[0-2]$ && "$year" =~ ^[0-9]{4}$ ]]; then
+            _mensagec "$RED" "Mes ou ano invalido. Use formato MM (01-12) e YYYY (ex: 2023)."
+            _read_sleep 2 && _ferramentas && return
+        fi
+
+        # Define data de referência no formato ISO (YYYY-MM-DD)
+        local ref_date="${year}-${month}-01"
+        if ! date -d "$ref_date" >/dev/null 2>&1; then
+            _mensagec "$RED" "Data inválida. Verifique o mês e ano fornecidos."
+            _read_sleep 2 && _ferramentas && return
+        fi
+
+        # Verifica se a data não é futura
+        local current_date
+        current_date=$(date +%Y%m%d)
+        local input_date
+        input_date=$(date -d "$ref_date" +%Y%m%d)
+        if [ "$input_date" -gt "$current_date" ]; then
+            _mensagec "$RED" "A data não pode ser futura."
+            _read_sleep 2 && _ferramentas && return
+        fi
+    fi
+
     # Executa backup com tratamento de erro
     {
-        "$cmd_zip" -u "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+        if [ "$backup_mode" = "incremental" ]; then
+            # Backup incremental com find para arquivos modificados/criados após a data
+            find . -type f -newermt "$ref_date" ! -name "*.zip" ! -name "*.tar" ! -name "*.tar.gz" -print0 | \
+                xargs -0 "$cmd_zip" -u "$backup_path" >/dev/null 2>&1
+        else
+            # Backup completo
+            "$cmd_zip" -u "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+        fi
     } & backup_pid=$!
 
     # Inicia progresso em background
@@ -2870,7 +2930,7 @@ _backup() { # funcionando
     if wait $backup_pid; then
         kill $progress_pid 2>/dev/null
         wait $progress_pid 2>/dev/null
-        echo "${YELLOW}] Concluido${NORM}"
+        echo "${YELLOW}] Concluído${NORM}"
 
         M10="O backup $backup_file"
         M32="foi criado em $BACKUP"
@@ -2888,85 +2948,7 @@ _backup() { # funcionando
 
     _linha && _mensagec "$YELLOW" "$M16" && _linha
     _send_and_manage_backup "$backup_file"
-}
-# Função complementar para envio e gerenciamento do backup
-_send_and_manage_backup() {
-    local backup_file="$1"  # Recebe o nome do arquivo de backup como parâmetro
-
-    # Mensagem inicial
-    MA116="Backup sera enviado para o diretario: ${ENVIABACK:-"nao especificado"}"
-    _mensagec "${YELLOW}" "${MA116}"
-    _linha
-        # Confirmação de envio simplificada
-    read -r -p "${YELLOW}${M40:-"Deseja enviar o backup? (S/n): "}${NORM}" answer
-    case "${answer,,}" in
-        [Nn]|"")
-            _ferramentas && return ;;
-        [Ss]) ;;
-           *) _opinvalida && _ferramentas && return ;;
-    esac
-            # Se SERACESOFF está definido, move localmente
-            if [ -n "${SERACESOFF}" ]; then
-                local dest_dir="${destino}${SERACESOFF}"
-                mkdir -p "${dest_dir}" || {
-                    _mensagec "${RED}" "Erro ao criar diretorio ${dest_dir}"
-                    return 1
-                }
-                if mv -f "${BACKUP}/${backup_file}" "${dest_dir}"; then
-                    MA11="Backup enviado para o diretorio: ${dest_dir}"
-                    _linha
-                    _mensagec "${YELLOW}" "${MA11}"
-                    _linha
-                    _press
-                    _ferramentas
-                    return
-                else
-                    _mensagec "${RED}" "Erro ao mover o backup para ${dest_dir}"
-                    return 1
-                fi
-            fi
-
-        # Determina o destino remoto
-        local remote_dest
-        remote_dest="${ENVIABACK}"
-        if [ -z "${ENVIABACK}" ]; then
-            _meiodatela
-            _mensagec "${RED}" "${M68}"
-        read -r -p "${YELLOW}${M41}${NORM}" remote_dest
-
-            # Validação simples: não aceita vazio
-            until [ -n "$remote_dest" ]; do
-            _meiodatela
-            _mensagec "$RED" "$M69"
-            read -r -p "Digite o diretorio remoto: " remote_dest
-            done
-        ENVIABACK="${remote_dest}"
-        fi
-
-        # Envia backup via rsync
-        _linha && _mensagec "${YELLOW}" "${M29}" && _linha
-        if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${backup_file}" "${USUARIO}@${IPSERVER}:/${ENVIABACK}"; then
-            M15="Backup enviado para a pasta \"${remote_dest}\"."
-            _linha
-            _mensagec "${YELLOW}" "${M15}"
-            _linha
-            _read_sleep 3
-        else
-            _mensagec "${RED}" "Erro ao enviar backup para ${remote_dest}"
-            return 1
-        fi
-    # Gerenciamento do backup local
-    read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
-    if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
-        if rm -f "${BACKUP}/${backup_file}"; then
-            M170="Backup local excluido"
-            _linha && _mensagec "${YELLOW}" "${M170}" && _linha && _press
-        else
-            _mensagec "${RED}" "Erro ao excluir backup local"
-        fi
-    fi
-    _ferramentas
-}
+}    
 
 #-Enviar backup avulso-----------------------------------------------------------------------------#
 #
@@ -3252,9 +3234,9 @@ clear
 
     # Processar opcao
     case ${OPCAO} in
-    1) _backup       ;;
-    2) _unbackup     ;;
-    3) _backupavulso ;;
+    1) _backup         ;;
+    2) _unbackup       ;;
+    3) _backupavulso   ;;
     9) clear; _ferramentas; return ;;
      *) _opinvalida
         _read_sleep 1
@@ -3675,6 +3657,7 @@ printf "${GREEN}""O diretorio dos olds: ""${NORM}""${destino}""${pasta}""${olds}
 printf "${GREEN}""O diretorio dos progs: ""${NORM}""${destino}""${pasta}""${progs}""%*s\n"
 printf "${GREEN}""O diretorio do backup: ""${NORM}""${destino}""${pasta}""${backup}""%*s\n"
 printf "${GREEN}""Qual o sistem em uso: ""${NORM}""${sistema}""%*s\n"
+printf "${GREEN}""Qual o versao em uso: ""${NORM}""${verclass}""%*s\n"
 printf "${GREEN}""Biblioteca sendo usada 1: ""${NORM}""${SAVATU1}""%*s\n"
 printf "${GREEN}""Biblioteca sendo usada 2: ""${NORM}""${SAVATU2}""%*s\n"
 printf "${GREEN}""Biblioteca sendo usada 3: ""${NORM}""${SAVATU3}""%*s\n"
@@ -3899,7 +3882,7 @@ printf "\n"
 #-100-mensagens do Menu Principal. ----------------------------------------------------------------#
 	M101="Menu Principal"
 	M1102=".. Empresa: ${EMPRESA} .."
-    M102=".. Sistema: ${sistema} .."
+    M102=".. Sistema: ${sistema} .. Versao: ${verclass}"
     M103="Escolha a opcao:                "
 	M104="1${NORM} - Programas                "
     M105="2${NORM} - Biblioteca               "
