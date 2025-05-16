@@ -3057,7 +3057,7 @@ _backupavulso() {
             continue
         fi
 
-        VBACKUP="${EMPRESA}_*${VBACKAV}.zip"
+        VBACKUP="${EMPRESA}_*_${VBACKAV}.zip"
 
         # Verifica se o arquivo existe
         if [[ ! -f "${BACKUP}/${VBACKUP}" ]]; then
