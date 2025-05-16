@@ -311,11 +311,11 @@ _ISCOBOL () {
         echo "exec=sav/classes" 
         echo "telas=sav/tel_isc"
         echo "xml=sav/xml" 
-        classA="${VERCLASS}""_*_" # Usanda esta variavel para baixar todos os zips da atualizacao.
-        classB="${VERCLASS}""_classA_"
-        classC="${VERCLASS}""_classB_"
-        classD="${VERCLASS}""_tel_isc_"
-        classE="${VERCLASS}""_xml_"
+        classA="IS${VERCLASS}""_*_" # Usanda esta variavel para baixar todos os zips da atualizacao.
+        classB="IS${VERCLASS}""_classA_"
+        classC="IS${VERCLASS}""_classB_"
+        classD="IS${VERCLASS}""_tel_isc_"
+        classE="IS${VERCLASS}""_xml_"
         echo "SAVATU=tempSAV_""${classA}" 
         echo "SAVATU1=tempSAV_""${classB}"
         echo "SAVATU2=tempSAV_""${classC}"
@@ -330,14 +330,15 @@ _ISCOBOL () {
 #
 # As variaveis class e mclass recebem seus valores para a versao 2018.
 #
-# A variavel VERCLASS recebe o valor IS2018.
+# A variavel VERCLASS recebe o valor 2018.
 #
 # As variaveis sao escritas no arquivo .atualizac.
 _2018 () {
     {
 complemento="-class"
 mcomplemento="-mclass"
-VERCLASS="IS2018"        
+VERCLASS="2018"
+echo "verclass=${VERCLASS}"        
 echo "class=-class"
 echo "mclass=-mclass"
     } >> .atualizac
@@ -349,14 +350,15 @@ echo "mclass=-mclass"
 #
 # As variaveis class e mclass recebem seus valores para a versao 2020.
 #
-# A variavel VERCLASS recebe o valor IS2020.
+# A variavel VERCLASS recebe o valor 2020.
 #
 # As variaveis sao escritas no arquivo .atualizac.
 _2020 () {
     {
 complemento="-class20"   
 mcomplemento="-mclass20"                                                      
-VERCLASS="IS2020"
+VERCLASS="2020"
+echo "verclass=${VERCLASS}"
 echo "class=-class20"   
 echo "mclass=-mclass20"                                                      
     } >> .atualizac      
@@ -368,14 +370,15 @@ echo "mclass=-mclass20"
 #
 # As variaveis class e mclass recebem seus valores para a versao 2023.
 #
-# A variavel VERCLASS recebe o valor IS2023.
+# A variavel VERCLASS recebe o valor 2023.
 #
 # As variaveis sao escritas no arquivo .atualizac.
 _2023 () {
     {
 complemento="-class23"                                                        
 mcomplemento="-mclass23"
-VERCLASS="IS2023"  
+VERCLASS="2023"
+echo "verclass=${VERCLASS}"  
 echo "class=-class23"                                                        
 echo "mclass=-mclass23"
     } >> .atualizac
@@ -387,14 +390,15 @@ echo "mclass=-mclass23"
 #
 # As variaveis class e mclass recebem seus valores para a versao 2024.
 #
-# A variavel VERCLASS recebe o valor IS2024.
+# A variavel VERCLASS recebe o valor 2024.
 #
 # As variaveis sao escritas no arquivo .atualizac.
 _2024 () {
     {
 complemento="-class24"                                                        
 mcomplemento="-mclass24"
-VERCLASS="IS2024"  
+VERCLASS="2024"
+echo "verclass=${VERCLASS}"  
 echo "class=-class24"                                                        
 echo "mclass=-mclass24"
     } >> .atualizac
