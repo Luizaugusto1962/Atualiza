@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="16/05/2025-00" #
+UPDATE="19/05/2025-00" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2858,10 +2858,10 @@ _backup() {
         }
     fi
     ###-700-mensagens do Menu Backup.
-    M700="Menu de Tipo de Backup(s).         "
-    M701="1${NORM} - Backup Completo         "
-    M702="2${NORM} - Backup Incremental      "
-    M705="9${NORM} - ${RED}Menu Anterior     "
+    M700="Menu de Tipo de Backup(s).        "
+    M701="1${NORM} - Backup Completo        "
+    M702="2${NORM} - Backup Incremental     "
+    M705="9${NORM} - ${RED}Menu Anterior "
 
     # Display Menu
     printf "\n"
@@ -2947,6 +2947,7 @@ _backup() {
         read -r -p "${YELLOW}Mes (MM): ${NORM}" month
         _linha
         read -r -p "${YELLOW}Ano (AAAA): ${NORM}" year
+        _linha
 
         # Valida entrada
         if ! [[ "$month" =~ ^0[1-9]$|^1[0-2]$ && "$year" =~ ^[0-9]{4}$ ]]; then
@@ -3027,119 +3028,130 @@ _backup() {
 #       de ambiente SERACESOFF.
 _backupavulso() {
     local VBACKAV VBACKUP REPLY ENVBASE SAOFF
+    local -a ZIPADOS                # array de correspondências
 
     while true; do
         clear
         _linha
-        ls -lh "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null || _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
+        ls -lh "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null \
+            || _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
         _linha
-        _mensagec "${RED}" "${M52}" # "Selecione um backup para enviar"
+        _mensagec "${RED}" "${M52}"          # "Selecione um backup para enviar"
         _linha
-        read -rp "${YELLOW}${M42} (ou digite'sair' para cancelar): ${NORM}" VBACKAV
+        read -rp "${YELLOW}${M42} (ou digite 'sair', para cancelar): ${NORM}" VBACKAV
 
-        # Verifica se o usuário quer sair
+        # --- sair ----------------------------------------------------------
         if [[ "${VBACKAV,,}" == "sair" ]]; then
             _linha
             _mensagec "${YELLOW}" "Operacao cancelada."
-            _linha
-            _press
-            _ferramentas
+            _linha; _press; _ferramentas
             return
         fi
 
-        # Valida se VBACKAV está vazio
+        # --- entrada vazia -------------------------------------------------
         if [[ -z "${VBACKAV}" ]]; then
-            clear
-            _meiodatela
-            _mensagec "${RED}" "${M70}" # "Erro: campo não pode estar vazio"
-            _linha
-            _press
+            clear; _meiodatela
+            _mensagec "${RED}" "${M70}"      # "Erro: campo não pode estar vazio"
+            _linha; _press
             continue
         fi
 
-        VBACKUP="${EMPRESA}_*_${VBACKAV}.zip"
+        # ---------- busca por correspondências -----------------------------
 
-        # Verifica se o arquivo existe
-        if [[ ! -f "${BACKUP}/${VBACKUP}" ]]; then
-            clear
-            _meiodatela
-            _mensagec "${RED}" "${M20}" # "Backup não encontrado"
-            _press
-            continue
-        fi
+        mapfile -t ZIPADOS < <(ls -1 "${BACKUP}"/*"${VBACKAV}"*.zip 2>/dev/null)
 
-        # Se chegou aqui, o backup é válido
-        break
+        case ${#ZIPADOS[@]} in
+            0)  # nenhuma
+                clear; _meiodatela
+                _mensagec "${RED}" "Nenhum backup correspondente encontrado."
+                _linha; _press
+                continue
+                ;;
+            1)  # exatamente uma -> usa direto
+                VBACKUP=$(basename "${ZIPADOS[0]}")
+                ;;
+            *)  # várias -> menu de escolha
+                clear; _linha
+                _mensagec "${RED}" "Vários backups encontrados. Escolha um:"
+                _linha
+                select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
+                    case $REPLY in
+                        ''|*[!0-9]*) echo "Digite o número da opção."; continue ;;
+                    esac
+                    if ((REPLY >= 1 && REPLY <= ${#ZIPADOS[@]})); then
+                        VBACKUP=$(basename "${OPCAO}")
+                        break
+                    else        # Cancelar ou opção inválida
+                        VBACKUP=""
+                        break
+                    fi
+                done
+                [[ -z $VBACKUP ]] && continue   # voltou sem escolher
+                ;;
+        esac
+        break      # backup válido selecionado
     done
 
-    clear && _meiodatela && _linha && _mensagec "${YELLOW}" "O backup \"${VBACKUP}\" foi selecionado."
+    clear; _meiodatela; _linha
+    _mensagec "${YELLOW}" "O backup \"${VBACKUP}\" foi selecionado."
 
-    # Move o backup localmente se SERACESOFF estiver definido
+    # ------------------- mover localmente se necessário --------------------
     if [[ -n "${SERACESOFF}" ]]; then
         SAOFF="${destino}${SERACESOFF}"
         if mv -f "${BACKUP}/${VBACKUP}" "${SAOFF}" 2>/dev/null; then
-            _linha
-            _mensagec "${YELLOW}" "Backup enviado para o diretorio: ${SAOFF}"
-            _linha && _press && _ferramentas && return
+            _linha; _mensagec "${YELLOW}" "Backup movido para o diretorio: ${SAOFF}"
+            _linha; _press; _ferramentas; return
         else
             _mensagec "${RED}" "Erro ao mover o backup para ${SAOFF}"
-            _press && _ferramentas && return
+            _press; _ferramentas; return
         fi
     fi
 
-    # Pergunta se o usuário quer enviar o backup remotamente
+    # ------------------- pergunta envio remoto -----------------------------
     _linha
-    read -rp "${YELLOW}${M40}${NORM} (S/N): " -n1 REPLY
+    read -rp "${YELLOW}${M40}${NORM} (S/N): " -n1 REPLY     # "Enviar remotamente?"
     printf "\n\n"
     case "${REPLY,,}" in
-    n | "")
-        _mensagec "${YELLOW}" "Operacao concluida sem envio remoto."
-        _linha && _press
-        _ferramentas
-        ;;
-    s)
-        if [[ -n "${ENVIABACK}" ]]; then
-            ENVBASE="${ENVIABACK}"
-        else
-            _meiodatela
-            _mensagec "${RED}" "${M68}" # "Digite o caminho de destino"
-            _linha
-            read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
-            while [[ "${ENVBASE}" =~ [0-9] || -f "${ENVBASE}" ]]; do
-                _meiodatela
-                _mensagec "${RED}" "${M69}" # "Caminho inválido"
-                _press
-                read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
-            done
-        fi
-
-        _linha
-        _mensagec "${YELLOW}" "${M29}" # "Enviando backup via rsync..."
-        _linha
-        if [[ -n "${IPSERVER}" && -n "${PORTA}" && -n "${USUARIO}" ]]; then
-            if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:/${ENVBASE}" 2>/dev/null; then
-                _mensagec "${YELLOW}" "Backup enviado para \"${ENVBASE}\" no servidor ${IPSERVER}."
-                _linha
-                _read_sleep 3
-                _ferramentas
+        n|"")
+            _mensagec "${YELLOW}" "Operacao concluida sem envio remoto."
+            _linha; _press; _ferramentas
+            ;;
+        s)
+            # destino remoto
+            if [[ -n "${ENVIABACK}" ]]; then
+                ENVBASE="${ENVIABACK}"
             else
-                _mensagec "${RED}" "Erro ao enviar o backup via rsync."
-                _press
-                _ferramentas
+                _meiodatela
+                _mensagec "${RED}" "${M68}"        # "Digite o caminho de destino"
+                _linha
+                read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
+                while [[ "${ENVBASE}" =~ [0-9] || -f "${ENVBASE}" ]]; do
+                    _meiodatela
+                    _mensagec "${RED}" "${M69}"    # "Caminho inválido"
+                    _press
+                    read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
+                done
             fi
-        else
-            _meiodatela
-            _mensagec "${RED}" "${M71}" # "Detalhes do servidor (IP/Porta/Usuário) ausentes"
-            _press
-            _ferramentas
-        fi
-        ;;
-    *)
-        _opinvalida
-        _read_sleep 1
-        _press
-        _ferramentas
-        ;;
+
+            _linha; _mensagec "${YELLOW}" "${M29}" # "Enviando backup via rsync..."
+            _linha
+            if [[ -n "${IPSERVER}" && -n "${PORTA}" && -n "${USUARIO}" ]]; then
+                if rsync -avzP -e "ssh -p ${PORTA}" \
+                    "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:/${ENVBASE}" 2>/dev/null; then
+                    _mensagec "${YELLOW}" \
+                        "Backup enviado para \"${ENVBASE}\" no servidor ${IPSERVER}."
+                    _linha; _read_sleep 3; _ferramentas
+                else
+                    _mensagec "${RED}" "Erro ao enviar o backup via rsync."
+                    _press; _ferramentas
+                fi
+            else
+                _meiodatela
+                _mensagec "${RED}" "${M71}"        # "Detalhes do servidor ausentes"
+                _press; _ferramentas
+            fi
+            ;;
+        *)  _opinvalida; _read_sleep 1; _press; _ferramentas ;;
     esac
 }
 
@@ -3150,118 +3162,73 @@ _backupavulso() {
 # O usuário é questionado se deseja restaurar todos os arquivos para o estado anterior à atualização. Baseado em
 # resposta do usuário, ele restaura arquivos específicos ou todos os arquivos para suas versões anteriores.
 _unbackup() {
-    local DIRBACK="${BACKUP}" # Define um padrão se BACKUP não estiver setado
+    local DIRBACK="${BACKUP}"          # onde estão os zips
+    local VBACK backup_path REPLY
+    local -a ZIPADOS
 
-    # Verifica se BACKUP e EMPRESA estão definidos
+    # --- pré-validações ----------------------------------------------------
     if [[ -z "${BACKUP}" || -z "${EMPRESA}" ]]; then
-        _mensagec "${RED}" "Variaveis BACKUP ou EMPRESA nao definidas"
-        _press
-        return 1
+        _mensagec "${RED}" "Variaveis BACKUP ou EMPRESA nao definidas"; _press; return 1
     fi
+    [[ -d "${DIRBACK}" ]] || { _mensagec "${YELLOW}" "Criando diretorio ${DIRBACK}..."; mkdir -p "${DIRBACK}" || { _mensagec "${RED}" "Falha ao criar ${DIRBACK}"; _press; return 1; }; }
 
-    # Cria diretório de backup se não existir
-    if [[ ! -d "${DIRBACK}" ]]; then
-        _mensagec "${YELLOW}" "Criando diretorio temporario em ${DIRBACK}..."
-        mkdir -p "${DIRBACK}" || {
-            _mensagec "${RED}" "Falha ao criar diretorio ${DIRBACK}"
-            _press
-            return 1
-        }
-    fi
+    # --- lista existentes --------------------------------------------------
+    ls -lh "${DIRBACK}"/*.zip 2>/dev/null || _mensagec "${RED}" "Nenhum backup encontrado"
+    _linha; _mensagec "${RED}" "${M53}"; _linha
 
-    # Lista backups disponíveis
-    if ! ls -lh "${DIRBACK}""/""${EMPRESA}"_*zip 2>/dev/null; then
-        _mensagec "${RED}" "Nenhum backup encontrado para ${EMPRESA}"
-    fi
-    _linha
-    _mensagec "${RED}" "${M53}"
-    _linha
+    # --- pede trecho do nome ----------------------------------------------
+    read -rp "${YELLOW}1- Informe parte do nome do BACKUP: ${NORM}" VBACK
+    [[ -z "${VBACK}" ]] && { _mensagec "${RED}" "${M70}"; _press; _menubackup; return 1; }
 
-    # Solicita data do backup
-    local VBACK=""
-    read -rp "${YELLOW}1- Informe somente a data do BACKUP: ${NORM}" VBACK
-    [[ -z "${VBACK}" ]] && {
-        _mensagec "${RED}" "${M70}"
-        _press
-        _menubackup
-        return 1
-    }
-    local VBACKUP="${EMPRESA}_${VBACK}.zip"
-    local backup_path="${DIRBACK}/${VBACKUP}"
+    # ---------- busca ------------------------------------------------------
+    mapfile -t ZIPADOS < <(ls -1 "${DIRBACK}"/*"${VBACK}"*.zip 2>/dev/null)
 
-    # Verifica se o backup existe e é legível
-    if [[ ! -f "${backup_path}" || ! -r "${backup_path}" ]]; then
-        _mensagec "${RED}" "Backup ${VBACKUP} nao encontrado ou nao legivel"
-        _press
-        _menubackup
-        return 1
-    fi
-
-    # Pergunta sobre restauração completa
-    _linha
-    read -rp "${YELLOW}${M35}${NORM}" -n1 REPLY
-    printf "\n\n"
-
-    case "${REPLY,,}" in
-    n | "")
-        # Restauração de arquivo específico
-        local VARQUIVO=""
-        _linha
-        read -rp "${YELLOW}2- Informe o nome do arquivo (maiusculo, sem a extensao): ${NORM}" VARQUIVO
-        _linha
-
-        # Valida nome do arquivo
-        if [[ ! "${VARQUIVO}" =~ ^[A-Z0-9]+$ || -z "${VARQUIVO}" ]]; then
-            _mensagec "${RED}" "${M71}" && _linha && _press
-            _menubackup
-            return 1
-        fi
-
-        _linha
-        _mensagec "${YELLOW}" "Restaurando arquivo ${VARQUIVO}..."
-        _linha
-        if ! "${cmd_unzip:-unzip}" -o "${backup_path}" "${VARQUIVO}*.*" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
-            _mensagec "${YELLOW}" "Erro ao extrair ${VARQUIVO}"
-            _linha && _press
-            _menubackup
-            return 1
-        fi
-
-        if ls "${BASE1}/${VARQUIVO}"*.* >/dev/null 2>&1; then
-            _mensagec "${GREEN}" "Arquivo ${VARQUIVO} restaurado com sucesso"
-        else
-            _mensagec "${YELLOW}" "Arquivo ${VARQUIVO} nao encontrado apos restauracao"
-            _linha && _press
-            _menubackup
-            return 1
-        fi
-        ;;
-
-    s)
-        # Restauração completa
-        _linha
-        _mensagec "${YELLOW}" "Restaurando todos os arquivos do backup..."
-        _linha
-        if ! "${cmd_unzip:-unzip}" -o "${backup_path}" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
-            _mensagec "${RED}" "Erro ao restaurar backup completo"
-            _linha && _press
-            _menubackup
-            return 1
-        fi
-        _mensagec "${GREEN}" "Restauracao completa concluida"
-        _linha
-        ;;
-
-    *)
-        _mensagec "${RED}" "Opcao invalida"
-        _linha && _press
-        return 1
-        ;;
+    case ${#ZIPADOS[@]} in
+        0)  _mensagec "${RED}" "Nenhum arquivo corresponde a \"${VBACK}\""; _press; _menubackup; return 1 ;;
+        1)  backup_path="${ZIPADOS[0]}" ;;
+        *)  # vários -> menu
+            _linha; _mensagec "${RED}" "Vários backups encontrados. Escolha um:"; _linha
+            select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
+                case $REPLY in ''|*[!0-9]*) echo "Digite o número da opção."; continue ;; esac
+                if ((REPLY >=1 && REPLY <= ${#ZIPADOS[@]})); then
+                    backup_path="${OPCAO}"; break
+                else
+                    _menubackup; return 1
+                fi
+            done
+            ;;
     esac
 
-    _press
-    _menubackup
-    _ferramentas
+    # --- checagem final ----------------------------------------------------
+    [[ -r "${backup_path}" ]] || { _mensagec "${RED}" "Backup nao legivel"; _press; _menubackup; return 1; }
+
+    # --- restauração total ou parcial --------------------------------------
+    _linha; read -rp "${YELLOW}${M35}${NORM}" -n1 REPLY; printf "\n\n"
+    case "${REPLY,,}" in
+        n|"")   # arquivo específico
+            local VARQUIVO=""
+            _linha; read -rp "${YELLOW}2- Nome do arquivo (maiusculo, sem extensão): ${NORM}" VARQUIVO; _linha
+            [[ ! "${VARQUIVO}" =~ ^[A-Z0-9]+$ ]] && { _mensagec "${RED}" "${M71}"; _linha; _press; _menubackup; return 1; }
+            _mensagec "${YELLOW}" "Restaurando ${VARQUIVO}..."; _linha
+            if ! "${cmd_unzip:-unzip}" -o "${backup_path}" "${VARQUIVO}*.*" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
+                _mensagec "${YELLOW}" "Erro ao extrair ${VARQUIVO}"; _linha; _press; _menubackup; return 1
+            fi
+            if ls "${BASE1}/${VARQUIVO}"*.* >/dev/null 2>&1; then
+                _mensagec "${GREEN}" "Arquivo ${VARQUIVO} restaurado com sucesso"
+            else
+                _mensagec "${YELLOW}" "Arquivo ${VARQUIVO} nao encontrado apos restauracao"; _linha; _press; _menubackup; return 1
+            fi
+            ;;
+        s)      # restauração completa
+            _linha; _mensagec "${YELLOW}" "Restaurando todos os arquivos..."; _linha
+            if ! "${cmd_unzip:-unzip}" -o "${backup_path}" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
+                _mensagec "${RED}" "Erro na restauracao completa"; _linha; _press; _menubackup; return 1
+            fi
+            _mensagec "${GREEN}" "Restauracao completa concluida"; _linha ;;
+        *)      _mensagec "${RED}" "Opcao invalida"; _linha; _press; return 1 ;;
+    esac
+
+    _press; _menubackup; _ferramentas
 }
 
 _menubackup() {
@@ -3987,14 +3954,14 @@ _principal() {
     M101="Menu Principal"
     M1102=".. Empresa: ${EMPRESA} .."
     M102=".. Sistema: ${sistema} .. Versao: ${verclass}"
-    M103="Escolha a opcao:                "
-    M104="1${NORM} - Programas                "
-    M105="2${NORM} - Biblioteca               "
-    M111="3${NORM} - Versao do Iscobol        "
-    M112="3${NORM} - Funcao nao disponivel    "
-    M107="4${NORM} - Versao do Linux          "
-    M108="5${NORM} - Ferramentas              "
-    M109="9${NORM} - ${RED}Sair            "
+    M103=" Escolha a opcao:         "
+    M104="1${NORM} - Programas             "
+    M105="2${NORM} - Biblioteca            "
+    M111="3${NORM} - Versao do Iscobol     "
+    M112="3${NORM} - Funcao nao disponivel "
+    M107="4${NORM} - Versao do Linux       "
+    M108="5${NORM} - Ferramentas           "
+    M109="9${NORM} - ${RED}Sair         "
     M110=" Digite a opcao desejada -> "
 
     _linha "=" "${GREEN}"
