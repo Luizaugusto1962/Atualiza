@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="19/05/2025-00" #
+UPDATE="19/05/2025-01" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3014,6 +3014,92 @@ _backup() {
     _send_and_manage_backup "$backup_file"
 }
 
+# Função complementar para envio e gerenciamento do backup
+# Envia e gerencia um arquivo de backup, com opções para enviar para um servidor remoto ou diretório local.
+# 
+# Esta função gerencia a transmissão do arquivo de backup via rsync ou movimentação local, com confirmação do usuário.
+# Suporta o envio para um destino remoto/local predefinido ou especificado pelo usuário.
+# 
+# @param backup_file Nome do arquivo de backup a ser enviado.
+# @return 0 em caso de transmissão de backup bem-sucedida, 1 em caso de erro.
+_send_and_manage_backup() {
+    local backup_file="$1"  # Recebe o nome do arquivo de backup como parâmetro
+    
+    # Mensagem inicial
+    MA116="Backup sera enviado para o diretario: ${ENVIABACK:-"nao especificado"}"
+    _mensagec "${YELLOW}" "${MA116}"
+    _linha
+        # Confirmação de envio simplificada
+    read -r -p "${YELLOW}${M40:-"Deseja enviar o backup? (S/n): "}${NORM}" answer
+    case "${answer,,}" in
+        [Nn]|"")
+            _ferramentas && return ;;
+        [Ss]) ;;
+           *) _opinvalida && _ferramentas && return ;;
+    esac
+            # Se SERACESOFF está definido, move localmente
+            if [ -n "${SERACESOFF}" ]; then
+                local dest_dir="${destino}${SERACESOFF}"
+                mkdir -p "${dest_dir}" || {
+                    _mensagec "${RED}" "Erro ao criar diretorio ${dest_dir}"
+                    return 1
+                }
+                if mv -f "${BACKUP}/${backup_file}" "${dest_dir}"; then
+                    MA11="Backup enviado para o diretorio: ${dest_dir}"
+                    _linha
+                    _mensagec "${YELLOW}" "${MA11}"
+                    _linha
+                    _press
+                    _ferramentas
+                    return
+                else
+                    _mensagec "${RED}" "Erro ao mover o backup para ${dest_dir}"
+                    return 1
+                fi
+            fi
+            
+        # Determina o destino remoto
+        local remote_dest
+        remote_dest="${ENVIABACK}"
+        if [ -z "${ENVIABACK}" ]; then 
+            _meiodatela
+            _mensagec "${RED}" "${M68}"
+        read -r -p "${YELLOW}${M41}${NORM}" remote_dest
+
+            # Validação simples: não aceita vazio
+            until [ -n "$remote_dest" ]; do
+            _meiodatela 
+            _mensagec "$RED" "$M69" 
+            read -r -p "Digite o diretorio remoto: " remote_dest
+            done
+        ENVIABACK="${remote_dest}"  
+        fi
+
+        # Envia backup via rsync
+        _linha && _mensagec "${YELLOW}" "${M29}" && _linha
+        if rsync -avzP -e "ssh -p ${PORTA}" "${BACKUP}/${backup_file}" "${USUARIO}@${IPSERVER}:/${ENVIABACK}"; then
+            M15="Backup enviado para a pasta \"${remote_dest}\"."
+            _linha
+            _mensagec "${YELLOW}" "${M15}"
+            _linha
+            _read_sleep 3
+        else
+            _mensagec "${RED}" "Erro ao enviar backup para ${remote_dest}"
+            return 1
+        fi 
+    # Gerenciamento do backup local        
+    read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
+    if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
+        if rm -f "${BACKUP}/${backup_file}"; then
+            M170="Backup local excluido"
+            _linha && _mensagec "${YELLOW}" "${M170}" && _linha && _press
+        else
+            _mensagec "${RED}" "Erro ao excluir backup local"
+        fi
+    fi
+    _ferramentas
+}
+
 #-Enviar backup avulso-----------------------------------------------------------------------------#
 #
 # Envia backup avulso para o servidor da SAV.
@@ -3775,6 +3861,10 @@ _excluir_nota() {
     sleep 2
 }
 
+# _lembretes manages the notes/reminder functionality
+# Displays an interactive menu for creating, viewing, editing, and deleting notes
+# Provides a user interface for managing a simple note-taking system
+# Allows navigation between different note-related actions and returning to the tools menu
 _lembretes() {
     clear
     # Nome do arquivo onde as notas serão salvas.
