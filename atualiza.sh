@@ -14,7 +14,7 @@
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
 ##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="19/05/2025-02" #
+UPDATE="20/05/2025-00" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1682,31 +1682,22 @@ _rsync_biblioteca() {
     fi
 }
 
-# Acessa o menu de biblioteca no servidor OFF.
-# Esta funcao e responsavel por acessar o menu de biblioteca no servidor OFF.
-# _acessooff: Access the OFF server's library and move update files to tools directory.
+# _acessooff
 #
-# This function checks if the directory for the OFF server's library (SAOFF) exists.
-# If it does not exist, it displays an error message and returns 1. If the directory
-# exists, it attempts to move update files from the SAOFF directory to the TOOLS directory.
-# The update files are determined based on the system type (iscobol or another system).
-# If any file move operation fails, an error message is displayed and the function returns 1.
-# If successful, messages indicating the progress of the operation are displayed.
+# Move arquivos de biblioteca do servidor OFF para o diretório TOOLS.
 #
-# Globals:
-#   destino     - Base directory for the current operation.
-#   SERACESOFF  - Directory containing the OFF server's files.
-#   sistema     - Indicates the system type (e.g., iscobol).
-#   TOOLS       - Directory where tools are stored.
-#   ATUALIZA1   - Update file path for first update.
-#   ATUALIZA2   - Update file path for second update.
-#   ATUALIZA3   - Update file path for third update.
-#   ATUALIZA4   - Update file path for fourth update (used if system is iscobol).
+# Esta função lida com a movimentação de arquivos de biblioteca quando o parâmetro SERACESOFF está definido.
+# Ela suporta diferentes conjuntos de arquivos com base no tipo de sistema (iscobol ou não).
 #
-# Returns:
-#   0 on success
-#   1 on error
-
+# Variáveis ​​de Ambiente:
+# destino - Caminho do diretório base
+# SERACESOFF - Indicador de acesso à biblioteca do servidor OFF
+# TOOLS - Diretório de destino para arquivos de biblioteca
+# sistema - Tipo de sistema (ex.: "iscobol")
+#
+# Retorna:
+# 0 em movimentações de arquivo bem-sucedidas
+# 1 se alguma movimentação de arquivo falhar
 _acessooff() {
     local off_directory="${destino}${SERACESOFF}"
     if [[ -n "${SERACESOFF}" ]]; then
@@ -1819,6 +1810,7 @@ _savatu() {
     _rsync_biblioteca
 }
 
+
 #
 # _atuoff
 #
@@ -1829,12 +1821,10 @@ _savatu() {
 #
 # Variáveis globais:
 #   SERACESOFF - Indica se o servidor OFF está configurado para atualização.
-#   TOOLS      - Diretório onde os arquivos de ferramentas são armazenados.
 #
 # Retorna:
 #   Nenhum valor de retorno. Chama outras funções para realizar operações.
 #
-
 _atuoff() {
     clear
     _versao
@@ -1877,7 +1867,7 @@ _salva() {
 
     for atu in "${atualizas[@]}"; do
         if [[ -z "${atu}" ]]; then
-            _mensagec "${RED}" "Erro: Variavel 'atu' nao foi definida"
+            _mensagec "${RED}" "Erro: Variavel $atu nao foi definida"
             exit 1
         fi
         if [[ ! -r "${atu}" ]]; then
@@ -1894,36 +1884,83 @@ _salva() {
     _processo
 }
 
+_barra () {
+    ((contador++))
+    percent=$((contador * 100 / total_etapas))
+    preenchido=$((percent * barra_tamanho / 100))
+    vazio=$((barra_tamanho - preenchido))
+    barra=$(printf "%${preenchido}s" | tr ' ' '#')
+    barra+=$(printf "%${vazio}s" | tr ' ' '-')
+}
 # _processo: Função que faz o backup dos arquivos antigos e
 #            chama a função _atubiblioteca para atualizar os arquivos.
-
 _processo() {
     local INI="backup-${VERSAO}.zip"
     local backup_path="${OLDS}/${INI}"
 
-    #INI="backup-${VERSAO}.zip"
-    #-ZIPANDO OS ARQUIVOS ANTERIORES...
+    # Inicializar contador para a barra de progresso
+    local contador=0
+    local total_etapas=2  # Default para sistema não-iscobol (E_EXEC e T_TELAS)
+    if [ "$sistema" = "iscobol" ]; then
+        total_etapas=3  # Para iscobol, inclui E_EXEC, T_TELAS e X_XML
+    fi
+    local barra_tamanho=20  # Tamanho da barra de progresso em caracteres
+
+    # Exibir mensagem inicial
     _linha
     _mensagec "${YELLOW}" "${M01}"
     _linha
     _read_sleep 1
 
     if [ "$sistema" = "iscobol" ]; then
+        # Compactação em E_EXEC
+        cd "$E_EXEC" || exit
+        if "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" +; then
+            _barra
+            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $E_EXEC concluida)"
+        else
+            _mensagec "${RED}" "Erro ao compactar arquivos em $E_EXEC"
+        fi
+#
+        # Compactação em T_TELAS
+        cd "$T_TELAS" || exit
+        if "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +; then
+            _barra
+            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $T_TELAS concluida)"
+        else
+            _mensagec "${RED}" "Erro ao compactar arquivos em $T_TELAS"
+        fi
 
-        cd "$E_EXEC"/ || exit
-        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" +
-        cd "$T_TELAS"/ || exit
-        "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +
-        cd "$X_XML"/ || exit
-        "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${backup_path}" "{}" +
-    else
-        cd "$E_EXEC"/ || exit
-        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r -q "${backup_path}" "{}" +
-        cd "$T_TELAS"/ || exit
-        "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +
+        # Compactação em X_XML
+        cd "$X_XML" || exit
+        if "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${backup_path}" "{}" +; then
+            _barra
+            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $X_XML concluida)"
+        else
+            _mensagec "${RED}" "Erro ao compactar arquivos em $X_XML"
+        fi
+    else #
+        # Compactação em E_EXEC
+        cd "$E_EXEC" || exit
+        if "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r -q "${backup_path}" "{}" +; then
+            _barra
+            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $E_EXEC concluida)"
+        else
+            _mensagec "${RED}" "Erro ao compactar arquivos em $E_EXEC"
+        fi
 
+        # Compactação em T_TELAS
+        cd "$T_TELAS" || exit
+        if "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +; then
+            _barra
+            ((contador++))
+            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $T_TELAS concluida)"
+        else
+            _mensagec "${RED}" "Erro ao compactar arquivos em $T_TELAS"
+        fi
     fi
-    cd "$TOOLS"/ || exit
+
+    cd "$TOOLS" || exit
     clear
     _linha
     _mensagec "${YELLOW}" "${M27}"
@@ -1935,11 +1972,11 @@ _processo() {
         exit 1
     }
     if [[ ! -r "${backup_path}" ]]; then
-        #-Backup nao encontrado no diretorio
+        # Backup não encontrado no diretório
         _linha
         _mensagec "${RED}" "${M45}"
         _linha
-        #-Procedimento caso nao exista o diretorio a ser atualizado----------------------------------------#
+        # Procedimento caso não exista o diretório a ser atualizado
         _read_sleep 2
         _meiodatela
         read -rp "${YELLOW}${M38}${NORM}" -n1 reply
@@ -1962,6 +1999,7 @@ _processo() {
     fi
     _atubiblioteca
 }
+
 #-Procedimento da Atualizacao de Programas---------------------------------------------------------#
 #
 # Faz a atualizacao dos programas.
@@ -1974,6 +2012,18 @@ _atubiblioteca() {
         exit 1
     }
     _variaveis_atualiza
+
+    # Contar o número total de arquivos a serem processados
+    arquivos=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}")
+    total_arquivos=0
+    for arquivo in "${arquivos[@]}"; do
+        [[ -n "${arquivo}" && -r "${arquivo}" ]] && ((total_arquivos++))
+    done
+
+    # Inicializar contador para a barra de progresso
+    contador=0
+    barra_tamanho=20  # Tamanho da barra de progresso em caracteres
+
     # Atualizando os programas
     for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
         if [[ -n "${arquivo}" && -r "${arquivo}" ]]; then
@@ -1981,7 +2031,15 @@ _atubiblioteca() {
             _mensagec "${YELLOW}" "${M26}"
             _linha
             if _mensagec "${GREEN}" "${arquivo}"; then
-                "${cmd_unzip}" -o "${arquivo}" -d "/${destino}" >>"${LOG_ATU}"
+                # Descompactar o arquivo
+                "${cmd_unzip}" -o "${arquivo}" -d "/${destino}" >>"${LOG_ATU}" 2>&1
+                if "${cmd_unzip}" -o "${arquivo}" -d "/${destino}" >>"${LOG_ATU}" 2>&1; then
+                    _mensagec "${GREEN}" "Descompactação de ${arquivo} concluída com sucesso."
+                else
+                    _mensagec "${RED}" "${M48}"
+                fi
+                _barra
+                # Atualizar a barra de progresso
             else
                 _mensagec "${RED}" "${M48}"
             fi
@@ -1989,7 +2047,7 @@ _atubiblioteca() {
             _read_sleep 2
             clear
         else
-            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} nao encontrado ou nao legível."
+            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} não encontrado ou não legível."
         fi
     done
 
@@ -2002,13 +2060,13 @@ _atubiblioteca() {
         if [[ -f "${arquivo_zip}" ]]; then
             mv -f -- "${arquivo_zip}" "${arquivo_zip%.zip}.bkp" || _mensagec "${RED}" "Erro ao mover ${arquivo_zip} para ${arquivo_zip%.zip}.bkp"
         else
-            _mensagec "${RED}" "Arquivo ${arquivo_zip} nao encontrado."
+            _mensagec "${RED}" "Arquivo ${arquivo_zip} não encontrado."
         fi
     done
     mv -f -- *_"${VERSAO}".bkp "${BACKUP}" || _mensagec "${RED}" "Erro ao mover backups para ${BACKUP}"
 
     # Alterando a extensão da atualização de .zip para .bkp
-    M40="Versao atualizada - ${VERSAO}"
+    M40="Versão atualizada - ${VERSAO}"
     _linha
     _mensagec "${YELLOW}" "${M20}"
     _mensagec "${YELLOW}" "${M13}"
@@ -2017,7 +2075,7 @@ _atubiblioteca() {
 
     ANTVERSAO=$VERSAO
     if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >>.atualizac; then
-        _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
+        _mensagec "${RED}" "Erro ao gravar arquivo de versão atualizada"
         _press
         _principal
         return 1
