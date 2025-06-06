@@ -12,9 +12,10 @@
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 ##  Rotina para atualizar os programas avulsos e bibliotecas da SAV                                                    #
-##  Feito por: Luiz Augusto   email luizaugusto@sav.com.br                                                             #
+##  Feito por: Luiz Augusto                                                                                            #
+##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="20/05/2025-00" #
+UPDATE="06/06/2025-00" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -88,7 +89,7 @@ UPDATE="20/05/2025-00" #
 #               5.3.2 - Restaura Backup da base de dados                                                               #
 #               5.3.3 - Enviar Backup selecionado                                                                      #
 #                                                                                                                      #
-#           5.4 - Envia e Recebe Arquivos "Avulsos"                                                                    #
+#           5.4 - Enviar e Receber Arquivos "Avulsos"                                                                    #
 #               5.4.1 - Enviar arquivo(s)                                                                              #
 #               5.4.2 - Receber arquivo(s)                                                                             #
 #                                                                                                                      #
@@ -106,11 +107,10 @@ UPDATE="20/05/2025-00" #
 #                                                                                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 
-#Zerando variaves utilizadas
-# resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
+# Zerando variaves utilizadas
+# Resetando: Funcao que zera todas as variaveis utilizadas pelo programa, para
 #            evitar que elas sejam utilizadas por outros programas.
 #            Também fecha o programa atualiza.sh.
-
 # Arrays para agrupar variáveis
 declare -a cores=(RED GREEN YELLOW BLUE PURPLE CYAN NORM)
 declare -a caminhos_base=(BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP destino pasta base base2 base3 logs exec class telas xml olds progs backup sistema TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF E_EXEC T_TELAS X_XML)
@@ -218,15 +218,9 @@ _check_instalado() {
     fi
 }
 
-# Checando se o zip esta na base
+# Verifica se os requisitos necessários estão instalados antes de prosseguir com a execução do script.
+# A função _check_instalado deve garantir que todas as dependências estejam presentes.
 _check_instalado
-
-#-Comandos#----------------------------------------------------------------------------------------#
-# Checando se os comandos estao disponiveis
-# Caso o comando nao esteja disponivel, sera utilizado o valor padrao
-# Caso o valor padrao nao esteja configurado, exibe uma mensagem de erro e sai do programa.
-
-# Comando para descompactar arquivos .zip
 DEFAULT_UNZIP="unzip"
 if [[ -z "${cmd_unzip}" ]]; then
     if [[ -n "${DEFAULT_UNZIP}" ]]; then
@@ -271,10 +265,8 @@ fi
 
 #-Lista de mensagens #-----------------------------------------------------------------------------#
 ### Mensagens em AMARELO
-# Mensagens em AMARELO
 M01="Compactando os arquivos Anteriores"
 M03="Volta do(s) Programa(s) Concluida(s)"
-#M04="Volta do(s) Arquivo(s) Concluida"
 M05="Sistema nao e IsCOBOL"
 M06="Sera criado mais um backup para o periodo"
 M08="Opcao Invalida"
@@ -301,16 +293,13 @@ M39="Continuando a atualizacao...:"
 M40="      Deseja enviar para o servidor da SAV ? [N/s]:"
 M41="         Informe para qual diretorio no servidor: "
 M42="         1- Informe nome BACKUP: "
-#M43=" "
 M44="Acesso externo do servidor em modo OFF"
 M46="De *-anterior.zip para *.zip"
-# MA1="O backup \"""$VBACKUP""\""
 MA2="         1- Informe apos qual versao da BIBLIOTECA: "
 
-# Mensagens em VERMELHO
+### Mensagens em VERMELHO
 M45="Backup nao encontrado no diretorio ou nao foi informado os dados"
 M46="Backup da Biblioteca nao encontrado no diretorio"
-#M47="Backup Abortado!"
 M48="Atualizacao nao encontrado ou incompleta."
 M49="Arquivo nao encontrado no diretorio"
 M51="Verificando e/ou excluido arquivos com mais de 30 dias criado."
@@ -320,8 +309,6 @@ M55="Informe versao a da Biblioteca a ser atualizada: "
 M56="*+* < <- Versao a ser atualizada nao foi informada: -> > *+*"
 M57="Informe somente o numeral da versao : "
 M59="Informe o nome do programa a ser atualizado:"
-#M60="Faltou informou o nome do programa a ser atualizado ou esta em minusculo"
-#M61="Informe o nome do programa a ser desatualizado:"
 M62="Informe a ultima versao que foi feita a atualizacao da biblioteca."
 M64=" Informe o nome do arquivo ser recuperado OU enter para todos os arquivos:"
 M65="Recuperado todos os arquivos:"
@@ -335,13 +322,14 @@ M73="Informe o(s) arquivo(s) que deseja receber."
 M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
 M75="Informe o tipo de compilacao (1 - Normal, 2 - Depuracao): "
 
-# Mensagens em CYAN
+### Mensagens em CYAN
 M81="..Encontrado o diretorio do sistema .."
 
-# Mensagens em VERDE
+### Mensagens em VERDE
 M91="Atualizacao concluida com sucesso!"
 M92="ao termino da atualizacao entrar novamente"
 M93="Atualização offline concluída!"
+
 #-Centro da tela-----------------------------------------------------------------------------------#
 # _meiodatela ()
 #
@@ -349,7 +337,6 @@ M93="Atualização offline concluída!"
 #
 # O printf "\033c" limpa a tela, e o "\033[10;10H" posiciona o
 # cursor na linha 10, coluna 10.
-#
 _meiodatela() {
     printf "\033c\033[10;10H\n"
 }
@@ -363,7 +350,6 @@ _meiodatela() {
 # Par metros:
 #   $1   - Cor a ser usada como fundo, no formato ANSI. Ex.: "\033[32m"
 #   $2   - Texto a ser exibido na tela.
-
 _mensagec() {
     local color="$1"
     local message="$2"
@@ -903,6 +889,9 @@ fi
 
 # Visualiza as notas de vers o do programa no formato de uma moldura com bordas
 # e centraliza o texto para facilitar a leitura.
+# A função recebe uma string de texto como parâmetro e exibe o texto centralizado
+# dentro de uma moldura e bordas.
+# O texto é exibido em vermelho.
 _visualizar_notas() {
     clear
     NOTA="atualizal"
@@ -922,6 +911,8 @@ _visualizar_notas() {
         LARGURA_TOTAL=$((LARGURA + 3))
 
         # Função para criar linha horizontal da moldura
+        # Função interna para criar uma linha formatada ou realizar operações relacionadas à criação de linhas.
+        # Detalhes de implementação devem ser descritos conforme o propósito específico da função.
         _criar_linha() {
             printf "+-"
             for ((i = 1; i <= LARGURA_TOTAL - 2; i++)); do
@@ -1174,17 +1165,13 @@ _pacoteoff() {
     _principal
 }
 
-# Obtém a data e hora de modificação do arquivo novo
-# Exibe a data e hora de modificação do arquivo novo
-#
-# Exibe uma mensagem com o nome do arquivo e a data e hora de modificação
-# do arquivo novo.
-#
-# Argumentos:
-#   Nenhum
-#
-# Retorno:
-#   Nenhum
+# Função: _data_do_arquivo
+# Descrição: Retorna a data de modificação de um arquivo especificado.
+# Uso: _data_do_arquivo <caminho_do_arquivo>
+# Parâmetros:
+#   $1 - Caminho para o arquivo do qual se deseja obter a data de modificação.
+# Saída:
+#   Imprime a data de modificação do arquivo no formato padrão do sistema.
 _data_do_arquivo() {
     local novo_arquivo="${arquivo}"
     local data_modificacao
@@ -1337,15 +1324,16 @@ _atupacote() {
     _mensagec "${YELLOW}" "${M17}"
     _linha
 }
-####-- Inicio da funcao de voltar programas --
-# _voltamaisprog: Prompt user for additional program updates.
-#
-# This function concludes the program rollback process by displaying a message and
-# optionally prompts the user if they wish to update additional programs. If the user
-# chooses to update more programs and the option is set to 1, it calls the _voltaprog
-# function. Otherwise, it returns to the main menu. If the input is invalid, an error
-# message is displayed, and the user is returned to the main menu.
 
+# Função _voltamaisprog
+# ---------------------
+# Esta função define a rotina _voltamaisprog, utilizada para (descrever aqui o propósito principal da função).
+# Parâmetros:
+#   (listar e descrever os parâmetros, se houver)
+# Retorno:
+#   (descrever o valor de retorno, se houver)
+# Observações:
+#   (incluir observações relevantes sobre o uso da função)
 _voltamaisprog() {
     #-VOLTA DE PROGRAMA CONCLUIDA
     _linha
@@ -1380,7 +1368,6 @@ _voltamaisprog() {
 #
 # Opcoes:
 #   Qualquer tecla - Desatualiza o programa
-
 _voltaprog() {
     # Variáveis
     local MAX_REPETICOES=6
@@ -1625,6 +1612,11 @@ _volta_geral() {
     _principal
 }
 
+# Função _versao
+# ----------------
+# Esta função exibe ou manipula informações relacionadas à versão do sistema ou script.
+# Detalhes específicos de sua implementação dependem do restante do código.
+# Uso típico: chamada interna para obter ou mostrar a versão atual.
 _versao() {
     _linha
     _mensagec "${YELLOW}" "${M55}"
@@ -1642,6 +1634,17 @@ _versao() {
     fi
 }
 
+# -----------------------------------------------------------------------------
+# _variaveis_atualiza
+#
+# Função responsável por definir e inicializar as variáveis necessárias para o
+# processo de atualização do sistema ou aplicação. Deve ser chamada antes de
+# executar qualquer etapa que dependa dessas variáveis.
+#
+# Uso:
+#   _variaveis_atualiza
+#
+# -----------------------------------------------------------------------------
 _variaveis_atualiza() {
     ATUALIZA1="${SAVATU1}${VERSAO}.zip"
     ATUALIZA2="${SAVATU2}${VERSAO}.zip"
@@ -1810,7 +1813,6 @@ _savatu() {
     _rsync_biblioteca
 }
 
-
 #
 # _atuoff
 #
@@ -1884,7 +1886,12 @@ _salva() {
     _processo
 }
 
-_barra () {
+# Função _barra
+# Descrição: Esta função implementa uma barra de progresso ou realiza uma ação relacionada a uma barra visual.
+# Parâmetros: Nenhum.
+# Retorno: Não especificado.
+# Observação: Detalhes adicionais sobre o funcionamento interno devem ser verificados na implementação da função.
+_barra() {
     ((contador++))
     percent=$((contador * 100 / total_etapas))
     preenchido=$((percent * barra_tamanho / 100))
@@ -1900,11 +1907,11 @@ _processo() {
 
     # Inicializar contador para a barra de progresso
     local contador=0
-    local total_etapas=2  # Default para sistema não-iscobol (E_EXEC e T_TELAS)
+    local total_etapas=2 # Default para sistema não-iscobol (E_EXEC e T_TELAS)
     if [ "$sistema" = "iscobol" ]; then
-        total_etapas=3  # Para iscobol, inclui E_EXEC, T_TELAS e X_XML
+        total_etapas=3 # Para iscobol, inclui E_EXEC, T_TELAS e X_XML
     fi
-    local barra_tamanho=20  # Tamanho da barra de progresso em caracteres
+    local barra_tamanho=20 # Tamanho da barra de progresso em caracteres
 
     # Exibir mensagem inicial
     _linha
@@ -1921,7 +1928,7 @@ _processo() {
         else
             _mensagec "${RED}" "Erro ao compactar arquivos em $E_EXEC"
         fi
-#
+        #
         # Compactação em T_TELAS
         cd "$T_TELAS" || exit
         if "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +; then
@@ -2022,7 +2029,7 @@ _atubiblioteca() {
 
     # Inicializar contador para a barra de progresso
     contador=0
-    barra_tamanho=20  # Tamanho da barra de progresso em caracteres
+    barra_tamanho=20 # Tamanho da barra de progresso em caracteres
 
     # Atualizando os programas
     for arquivo in ${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3} ${ATUALIZA4}; do
@@ -2145,7 +2152,6 @@ _voltabibli() {
 #
 # Atualiza a biblioteca da SAV.
 # Esta funcao e responsavel por atualizar a biblioteca da SAV.
-
 _biblioteca() {
     local OPCAO
 
@@ -2437,7 +2443,6 @@ _limpando() {
 # Le a lista "atualizat" que contem os arquivos a serem excluidas da base do sistema.
 #
 # Exclui os arquivos temporarios da pasta "${DIRB}" com base na lista "atualizat".
-
 _limpeza() {
     cd "${TOOLS}" || {
         printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"
@@ -2481,7 +2486,6 @@ _limpeza() {
 #
 # Pergunta ao usuario o nome do arquivo a ser adicionado na lista "atualizat".
 # Se o usuario nao informar o arquivo, sai da rotina.
-
 _addlixo() {
     clear
     M8A="Informe o nome do arquivo a ser adicionado ao atualizat"
@@ -2519,7 +2523,6 @@ _addlixo() {
 # - Limpar todos os arquivos temporarios no diretorio "${DIRB}".
 # - Adicionar arquivos na lista "atualizat" para serem excluidos no diretorio "${DIRB}".
 # - Voltar ao menu anterior.
-
 _temps() {
     clear
     M900="Menu de Limpeza"
@@ -2850,7 +2853,6 @@ _rebuildlista() {
 #   1 - Um arquivo ou Todos
 #   2 - Arquivos Principais
 #   9 - Menu Anterior
-
 _rebuild() {
     if [[ -e "${TOOLS}"/"atualizaj2" ]]; then
         rm -rf "${TOOLS}"/"atualizaj2" || {
@@ -2899,6 +2901,10 @@ _rebuild() {
     esac
 }
 
+# _backup: Função responsável por realizar o backup dos arquivos necessários.
+# Certifique-se de definir as variáveis e caminhos utilizados dentro da função.
+# Parâmetros: Nenhum.
+# Retorno: Nenhum. Exibe mensagens de status durante o processo de backup.
 _backup() {
     # Limpa a tela
     clear
@@ -3041,7 +3047,7 @@ _backup() {
             # Backup completo
             "$cmd_zip" -u "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
         fi
-    } & 
+    } &
     backup_pid=$!
 
     # Inicia progresso em background
@@ -3073,13 +3079,14 @@ _backup() {
     MA116="Backup sera enviado para o diretorio: ${ENVIABACK:-"nao especificado"}"
     _mensagec "${YELLOW}" "${MA116}"
     _linha
-        # Confirmação de envio simplificada
+    # Confirmação de envio simplificada
     read -r -p "${YELLOW}${M40:-"Deseja enviar o backup? (S/n): "}${NORM}" answer
     case "${answer,,}" in
-        [Nn]|"")
-            _ferramentas && return ;;
-        [Ss]) ;;
-           *) _opinvalida && _ferramentas && return ;;
+    [Nn] | "")
+        _ferramentas && return
+        ;;
+    [Ss]) ;;
+    *) _opinvalida && _ferramentas && return ;;
     esac
     # Se SERACESOFF está definido, move localmente
     if [ -n "${SERACESOFF}" ]; then
@@ -3105,17 +3112,17 @@ _backup() {
     # Determina o destino remoto
     local remote_dest
     remote_dest="${ENVIABACK}"
-    if [ -z "${ENVIABACK}" ]; then 
+    if [ -z "${ENVIABACK}" ]; then
         _meiodatela
         _mensagec "${RED}" "${M68}"
-    read -r -p "${YELLOW}${M41}${NORM}" remote_dest
+        read -r -p "${YELLOW}${M41}${NORM}" remote_dest
         # Validação simples: não aceita vazio
         until [ -n "$remote_dest" ]; do
-        _meiodatela s
-        _mensagec "$RED" "$M69" 
-        read -r -p "Digite o diretorio remoto: " remote_dest
+            _meiodatela s
+            _mensagec "$RED" "$M69"
+            read -r -p "Digite o diretorio remoto: " remote_dest
         done
-    ENVIABACK="${remote_dest}"  
+        ENVIABACK="${remote_dest}"
     fi
 
     # Envia backup via rsync
@@ -3129,10 +3136,10 @@ _backup() {
     else
         _mensagec "${RED}" "Erro ao enviar backup para ${remote_dest}"
         return 1
-    fi 
-    # Gerenciamento do backup local        
+    fi
+    # Gerenciamento do backup local
     read -r -p "${YELLOW}Mantem o backup local? (S/n): ${NORM}" keep
-    if [[ "${keep,,}" =~ ^[n]$ ]]; then  # Apenas "n" ou "N" remove
+    if [[ "${keep,,}" =~ ^[n]$ ]]; then # Apenas "n" ou "N" remove
         if rm -f "${BACKUP}/${backup_file}"; then
             M170="Backup local excluido"
             _linha && _mensagec "${YELLOW}" "${M170}" && _linha && _press
@@ -3157,15 +3164,15 @@ _backup() {
 #       de ambiente SERACESOFF.
 _backupavulso() {
     local VBACKAV VBACKUP REPLY ENVBASE SAOFF
-    local -a ZIPADOS                # array de correspondências
+    local -a ZIPADOS # array de correspondências
 
     while true; do
         clear
         _linha
-        ls -lh "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null \
-            || _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
+        ls -lh "${BACKUP}/${EMPRESA}"_*.zip 2>/dev/null ||
+            _mensagec "${RED}" "Nenhum backup encontrado em ${BACKUP}"
         _linha
-        _mensagec "${RED}" "${M52}"          # "Selecione um backup para enviar"
+        _mensagec "${RED}" "${M52}" # "Selecione um backup para enviar"
         _linha
         read -rp "${YELLOW}${M42} (ou digite 'sair', para cancelar): ${NORM}" VBACKAV
 
@@ -3173,15 +3180,19 @@ _backupavulso() {
         if [[ "${VBACKAV,,}" == "sair" ]]; then
             _linha
             _mensagec "${YELLOW}" "Operacao cancelada."
-            _linha; _press; _ferramentas
+            _linha
+            _press
+            _ferramentas
             return
         fi
 
         # --- entrada vazia -------------------------------------------------
         if [[ -z "${VBACKAV}" ]]; then
-            clear; _meiodatela
-            _mensagec "${RED}" "${M70}"      # "Erro: campo não pode estar vazio"
-            _linha; _press
+            clear
+            _meiodatela
+            _mensagec "${RED}" "${M70}" # "Erro: campo não pode estar vazio"
+            _linha
+            _press
             continue
         fi
 
@@ -3190,97 +3201,123 @@ _backupavulso() {
         mapfile -t ZIPADOS < <(ls -1 "${BACKUP}"/*"${VBACKAV}"*.zip 2>/dev/null)
 
         case ${#ZIPADOS[@]} in
-            0)  # nenhuma
-                clear; _meiodatela
-                _mensagec "${RED}" "Nenhum backup correspondente encontrado."
-                _linha; _press
-                continue
-                ;;
-            1)  # exatamente uma -> usa direto
-                VBACKUP=$(basename "${ZIPADOS[0]}")
-                ;;
-            *)  # várias -> menu de escolha
-                clear; _linha
-                _mensagec "${RED}" "Vários backups encontrados. Escolha um:"
-                _linha
-                select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
-                    case $REPLY in
-                        ''|*[!0-9]*) echo "Digite o número da opção."; continue ;;
-                    esac
-                    if ((REPLY >= 1 && REPLY <= ${#ZIPADOS[@]})); then
-                        VBACKUP=$(basename "${OPCAO}")
-                        break
-                    else        # Cancelar ou opção inválida
-                        VBACKUP=""
-                        break
-                    fi
-                done
-                [[ -z $VBACKUP ]] && continue   # voltou sem escolher
-                ;;
+        0) # nenhuma
+            clear
+            _meiodatela
+            _mensagec "${RED}" "Nenhum backup correspondente encontrado."
+            _linha
+            _press
+            continue
+            ;;
+        1) # exatamente uma -> usa direto
+            VBACKUP=$(basename "${ZIPADOS[0]}")
+            ;;
+        *) # várias -> menu de escolha
+            clear
+            _linha
+            _mensagec "${RED}" "Vários backups encontrados. Escolha um:"
+            _linha
+            select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
+                case $REPLY in
+                '' | *[!0-9]*)
+                    echo "Digite o número da opção."
+                    continue
+                    ;;
+                esac
+                if ((REPLY >= 1 && REPLY <= ${#ZIPADOS[@]})); then
+                    VBACKUP=$(basename "${OPCAO}")
+                    break
+                else # Cancelar ou opção inválida
+                    VBACKUP=""
+                    break
+                fi
+            done
+            [[ -z $VBACKUP ]] && continue # voltou sem escolher
+            ;;
         esac
-        break      # backup válido selecionado
+        break # backup válido selecionado
     done
 
-    clear; _meiodatela; _linha
+    clear
+    _meiodatela
+    _linha
     _mensagec "${YELLOW}" "O backup \"${VBACKUP}\" foi selecionado."
 
     # ------------------- mover localmente se necessário --------------------
     if [[ -n "${SERACESOFF}" ]]; then
         SAOFF="${destino}${SERACESOFF}"
         if mv -f "${BACKUP}/${VBACKUP}" "${SAOFF}" 2>/dev/null; then
-            _linha; _mensagec "${YELLOW}" "Backup movido para o diretorio: ${SAOFF}"
-            _linha; _press; _ferramentas; return
+            _linha
+            _mensagec "${YELLOW}" "Backup movido para o diretorio: ${SAOFF}"
+            _linha
+            _press
+            _ferramentas
+            return
         else
             _mensagec "${RED}" "Erro ao mover o backup para ${SAOFF}"
-            _press; _ferramentas; return
+            _press
+            _ferramentas
+            return
         fi
     fi
 
     # ------------------- pergunta envio remoto -----------------------------
     _linha
-    read -rp "${YELLOW}${M40}${NORM} (S/N): " -n1 REPLY     # "Enviar remotamente?"
+    read -rp "${YELLOW}${M40}${NORM} (S/N): " -n1 REPLY # "Enviar remotamente?"
     printf "\n\n"
     case "${REPLY,,}" in
-        n|"")
-            _mensagec "${YELLOW}" "Operacao concluida sem envio remoto."
-            _linha; _press; _ferramentas
-            ;;
-        s)
-            # destino remoto
-            if [[ -n "${ENVIABACK}" ]]; then
-                ENVBASE="${ENVIABACK}"
-            else
-                _meiodatela
-                _mensagec "${RED}" "${M68}"        # "Digite o caminho de destino"
-                _linha
-                read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
-                while [[ "${ENVBASE}" =~ [0-9] || -f "${ENVBASE}" ]]; do
-                    _meiodatela
-                    _mensagec "${RED}" "${M69}"    # "Caminho inválido"
-                    _press
-                    read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
-                done
-            fi
-
-            _linha; _mensagec "${YELLOW}" "${M29}" # "Enviando backup via rsync..."
+    n | "")
+        _mensagec "${YELLOW}" "Operacao concluida sem envio remoto."
+        _linha
+        _press
+        _ferramentas
+        ;;
+    s)
+        # destino remoto
+        if [[ -n "${ENVIABACK}" ]]; then
+            ENVBASE="${ENVIABACK}"
+        else
+            _meiodatela
+            _mensagec "${RED}" "${M68}" # "Digite o caminho de destino"
             _linha
-            if [[ -n "${IPSERVER}" && -n "${PORTA}" && -n "${USUARIO}" ]]; then
-                if rsync -avzP -e "ssh -p ${PORTA}" \
-                    "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:/${ENVBASE}" 2>/dev/null; then
-                    _mensagec "${YELLOW}" \
-                        "Backup enviado para \"${ENVBASE}\" no servidor ${IPSERVER}."
-                    _linha; _read_sleep 3; _ferramentas
-                else
-                    _mensagec "${RED}" "Erro ao enviar o backup via rsync."
-                    _press; _ferramentas
-                fi
-            else
+            read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
+            while [[ "${ENVBASE}" =~ [0-9] || -f "${ENVBASE}" ]]; do
                 _meiodatela
-                _mensagec "${RED}" "${M71}"        # "Detalhes do servidor ausentes"
-                _press; _ferramentas
+                _mensagec "${RED}" "${M69}" # "Caminho inválido"
+                _press
+                read -rp "${YELLOW}${M41}${NORM}: " ENVBASE
+            done
+        fi
+
+        _linha
+        _mensagec "${YELLOW}" "${M29}" # "Enviando backup via rsync..."
+        _linha
+        if [[ -n "${IPSERVER}" && -n "${PORTA}" && -n "${USUARIO}" ]]; then
+            if rsync -avzP -e "ssh -p ${PORTA}" \
+                "${BACKUP}/${VBACKUP}" "${USUARIO}@${IPSERVER}:/${ENVBASE}" 2>/dev/null; then
+                _mensagec "${YELLOW}" \
+                    "Backup enviado para \"${ENVBASE}\" no servidor ${IPSERVER}."
+                _linha
+                _read_sleep 3
+                _ferramentas
+            else
+                _mensagec "${RED}" "Erro ao enviar o backup via rsync."
+                _press
+                _ferramentas
             fi
-            ;;
-        *)  _opinvalida; _read_sleep 1; _press; _ferramentas ;;
+        else
+            _meiodatela
+            _mensagec "${RED}" "${M71}" # "Detalhes do servidor ausentes"
+            _press
+            _ferramentas
+        fi
+        ;;
+    *)
+        _opinvalida
+        _read_sleep 1
+        _press
+        _ferramentas
+        ;;
     esac
 }
 
@@ -3291,75 +3328,146 @@ _backupavulso() {
 # O usuário é questionado se deseja restaurar todos os arquivos para o estado anterior à atualização. Baseado em
 # resposta do usuário, ele restaura arquivos específicos ou todos os arquivos para suas versões anteriores.
 _unbackup() {
-    local DIRBACK="${BACKUP}"          # onde estão os zips
+    local DIRBACK="${BACKUP}" # onde estão os zips
     local VBACK backup_path REPLY
     local -a ZIPADOS
 
     # --- pré-validações ----------------------------------------------------
     if [[ -z "${BACKUP}" || -z "${EMPRESA}" ]]; then
-        _mensagec "${RED}" "Variaveis BACKUP ou EMPRESA nao definidas"; _press; return 1
+        _mensagec "${RED}" "Variaveis BACKUP ou EMPRESA nao definidas"
+        _press
+        return 1
     fi
-    [[ -d "${DIRBACK}" ]] || { _mensagec "${YELLOW}" "Criando diretorio ${DIRBACK}..."; mkdir -p "${DIRBACK}" || { _mensagec "${RED}" "Falha ao criar ${DIRBACK}"; _press; return 1; }; }
+    [[ -d "${DIRBACK}" ]] || {
+        _mensagec "${YELLOW}" "Criando diretorio ${DIRBACK}..."
+        mkdir -p "${DIRBACK}" || {
+            _mensagec "${RED}" "Falha ao criar ${DIRBACK}"
+            _press
+            return 1
+        }
+    }
 
     # --- lista existentes --------------------------------------------------
     ls -lh "${DIRBACK}"/*.zip 2>/dev/null || _mensagec "${RED}" "Nenhum backup encontrado"
-    _linha; _mensagec "${RED}" "${M53}"; _linha
+    _linha
+    _mensagec "${RED}" "${M53}"
+    _linha
 
     # --- pede trecho do nome ----------------------------------------------
     read -rp "${YELLOW}1- Informe parte do nome do BACKUP: ${NORM}" VBACK
-    [[ -z "${VBACK}" ]] && { _mensagec "${RED}" "${M70}"; _press; _menubackup; return 1; }
+    [[ -z "${VBACK}" ]] && {
+        _mensagec "${RED}" "${M70}"
+        _press
+        _menubackup
+        return 1
+    }
 
     # ---------- busca ------------------------------------------------------
     mapfile -t ZIPADOS < <(ls -1 "${DIRBACK}"/*"${VBACK}"*.zip 2>/dev/null)
 
     case ${#ZIPADOS[@]} in
-        0)  _mensagec "${RED}" "Nenhum arquivo corresponde a \"${VBACK}\""; _press; _menubackup; return 1 ;;
-        1)  backup_path="${ZIPADOS[0]}" ;;
-        *)  # vários -> menu
-            _linha; _mensagec "${RED}" "Vários backups encontrados. Escolha um:"; _linha
-            select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
-                case $REPLY in ''|*[!0-9]*) echo "Digite o número da opção."; continue ;; esac
-                if ((REPLY >=1 && REPLY <= ${#ZIPADOS[@]})); then
-                    backup_path="${OPCAO}"; break
-                else
-                    _menubackup; return 1
-                fi
-            done
-            ;;
+    0)
+        _mensagec "${RED}" "Nenhum arquivo corresponde a \"${VBACK}\""
+        _press
+        _menubackup
+        return 1
+        ;;
+    1) backup_path="${ZIPADOS[0]}" ;;
+    *) # vários -> menu
+        _linha
+        _mensagec "${RED}" "Vários backups encontrados. Escolha um:"
+        _linha
+        select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
+            case $REPLY in '' | *[!0-9]*)
+                echo "Digite o número da opção."
+                continue
+                ;;
+            esac
+            if ((REPLY >= 1 && REPLY <= ${#ZIPADOS[@]})); then
+                backup_path="${OPCAO}"
+                break
+            else
+                _menubackup
+                return 1
+            fi
+        done
+        ;;
     esac
 
     # --- checagem final ----------------------------------------------------
-    [[ -r "${backup_path}" ]] || { _mensagec "${RED}" "Backup nao legivel"; _press; _menubackup; return 1; }
+    [[ -r "${backup_path}" ]] || {
+        _mensagec "${RED}" "Backup nao legivel"
+        _press
+        _menubackup
+        return 1
+    }
 
     # --- restauração total ou parcial --------------------------------------
-    _linha; read -rp "${YELLOW}${M35}${NORM}" -n1 REPLY; printf "\n\n"
+    _linha
+    read -rp "${YELLOW}${M35}${NORM}" -n1 REPLY
+    printf "\n\n"
     case "${REPLY,,}" in
-        n|"")   # arquivo específico
-            local VARQUIVO=""
-            _linha; read -rp "${YELLOW}2- Nome do arquivo (maiusculo, sem extensão): ${NORM}" VARQUIVO; _linha
-            [[ ! "${VARQUIVO}" =~ ^[A-Z0-9]+$ ]] && { _mensagec "${RED}" "${M71}"; _linha; _press; _menubackup; return 1; }
-            _mensagec "${YELLOW}" "Restaurando ${VARQUIVO}..."; _linha
-            if ! "${cmd_unzip:-unzip}" -o "${backup_path}" "${VARQUIVO}*.*" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
-                _mensagec "${YELLOW}" "Erro ao extrair ${VARQUIVO}"; _linha; _press; _menubackup; return 1
-            fi
-            if ls "${BASE1}/${VARQUIVO}"*.* >/dev/null 2>&1; then
-                _mensagec "${GREEN}" "Arquivo ${VARQUIVO} restaurado com sucesso"
-            else
-                _mensagec "${YELLOW}" "Arquivo ${VARQUIVO} nao encontrado apos restauracao"; _linha; _press; _menubackup; return 1
-            fi
-            ;;
-        s)      # restauração completa
-            _linha; _mensagec "${YELLOW}" "Restaurando todos os arquivos..."; _linha
-            if ! "${cmd_unzip:-unzip}" -o "${backup_path}" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
-                _mensagec "${RED}" "Erro na restauracao completa"; _linha; _press; _menubackup; return 1
-            fi
-            _mensagec "${GREEN}" "Restauracao completa concluida"; _linha ;;
-        *)      _mensagec "${RED}" "Opcao invalida"; _linha; _press; return 1 ;;
+    n | "") # arquivo específico
+        local VARQUIVO=""
+        _linha
+        read -rp "${YELLOW}2- Nome do arquivo (maiusculo, sem extensão): ${NORM}" VARQUIVO
+        _linha
+        [[ ! "${VARQUIVO}" =~ ^[A-Z0-9]+$ ]] && {
+            _mensagec "${RED}" "${M71}"
+            _linha
+            _press
+            _menubackup
+            return 1
+        }
+        _mensagec "${YELLOW}" "Restaurando ${VARQUIVO}..."
+        _linha
+        if ! "${cmd_unzip:-unzip}" -o "${backup_path}" "${VARQUIVO}*.*" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
+            _mensagec "${YELLOW}" "Erro ao extrair ${VARQUIVO}"
+            _linha
+            _press
+            _menubackup
+            return 1
+        fi
+        if ls "${BASE1}/${VARQUIVO}"*.* >/dev/null 2>&1; then
+            _mensagec "${GREEN}" "Arquivo ${VARQUIVO} restaurado com sucesso"
+        else
+            _mensagec "${YELLOW}" "Arquivo ${VARQUIVO} nao encontrado apos restauracao"
+            _linha
+            _press
+            _menubackup
+            return 1
+        fi
+        ;;
+    s) # restauração completa
+        _linha
+        _mensagec "${YELLOW}" "Restaurando todos os arquivos..."
+        _linha
+        if ! "${cmd_unzip:-unzip}" -o "${backup_path}" -d "${BASE1}" >>"${LOG_ATU}" 2>>"${LOG_ATU}"; then
+            _mensagec "${RED}" "Erro na restauracao completa"
+            _linha
+            _press
+            _menubackup
+            return 1
+        fi
+        _mensagec "${GREEN}" "Restauracao completa concluida"
+        _linha
+        ;;
+    *)
+        _mensagec "${RED}" "Opcao invalida"
+        _linha
+        _press
+        return 1
+        ;;
     esac
 
-    _press; _menubackup; _ferramentas
+    _press
+    _menubackup
+    _ferramentas
 }
 
+# _menubackup: Função para exibir ou gerenciar o menu de opções de backup.
+# Esta função é responsável por apresentar as opções relacionadas a backup
+# ao usuário e processar sua seleção dentro do script atualiza.sh.
 _menubackup() {
     while true; do
         clear
@@ -3904,10 +4012,10 @@ _excluir_nota() {
     sleep 2
 }
 
-# _lembretes manages the notes/reminder functionality
-# Displays an interactive menu for creating, viewing, editing, and deleting notes
-# Provides a user interface for managing a simple note-taking system
-# Allows navigation between different note-related actions and returning to the tools menu
+# Função interna _lembretes
+# Descrição: Esta função é responsável por gerenciar ou exibir lembretes no contexto do script atualiza.sh.
+# Parâmetros: Nenhum.
+# Retorno: Não especificado.
 _lembretes() {
     clear
     # Nome do arquivo onde as notas serão salvas.
@@ -3973,8 +4081,8 @@ _ferramentas() {
     M501="Menu das Ferramentas"
     M503="1${NORM} - Temporarios             "
     M504="2${NORM} - Recuperar Arquivos      "
-    M505="3${NORM} - Rotina de Backup        "
-    M506="4${NORM} - Envia e Recebe Arquivos "
+    M505="3${NORM} - Rotinas de Backup        "
+    M506="4${NORM} - Enviar e Receber Arquivos"
     M507="5${NORM} - Expurgador de Arquivos  "
     M508="6${NORM} - Parametros              "
     M509="7${NORM} - Update                  "
