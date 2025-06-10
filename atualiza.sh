@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="06/06/2025-00" #
+UPDATE="09/06/2025-00" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -3747,12 +3747,22 @@ _expurgador() {
     local DIR6="${ERR_ISC}""/"
     VIEWVIX="$destino""/sav/savisc/viewvix/tmp"
     local DIR7="${VIEWVIX}""/"
+    local DIR8="${E_EXEC}""/"
+    local DIR9="${T_TELAS}""/"
     for ARQS in $DIR1 $DIR2 $DIR3 $DIR4 $DIR5 $DIR6 $DIR7; do
         if [[ -d "${ARQS}" ]]; then
             "${cmd_find}" "${ARQS}" -mtime +30 -type f -delete
             _mensagec "${GREEN}" "${MDIR}${ARQS}"
         else
-            _mensagec "${YELLOW}" "${MDIR}${ARQS}""n: diretorio nao encontrado"
+            _mensagec "${YELLOW}" "${MDIR}${ARQS}""Diretorio nao encontrado"
+        fi
+    done
+    for ZIPDIR in "$DIR8" "$DIR9"; do
+        if [[ -d "${ZIPDIR}" ]]; then
+            "${cmd_find}" "${ZIPDIR}" -name "*.zip" -type f -mtime +15 -delete
+            _mensagec "${GREEN}" "Limpando arquivos .zip antigos do diretorio: ${ZIPDIR}"
+        else
+            _mensagec "${YELLOW}" "Diretorio ${ZIPDIR} nao encontrado"
         fi
     done
     printf "\n\n"
