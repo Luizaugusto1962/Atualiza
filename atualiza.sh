@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="09/06/2025-00" #
+UPDATE="17/06/2025-00" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1899,6 +1899,7 @@ _barra() {
     barra=$(printf "%${preenchido}s" | tr ' ' '#')
     barra+=$(printf "%${vazio}s" | tr ' ' '-')
 }
+
 # _processo: Função que faz o backup dos arquivos antigos e
 #            chama a função _atubiblioteca para atualizar os arquivos.
 _processo() {
@@ -1960,7 +1961,7 @@ _processo() {
         cd "$T_TELAS" || exit
         if "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +; then
             _barra
-            ((contador++))
+            #            ((contador++))
             _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $T_TELAS concluida)"
         else
             _mensagec "${RED}" "Erro ao compactar arquivos em $T_TELAS"
