@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="17/06/2025-00" #
+UPDATE="23/06/2025-00" #
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -263,6 +263,8 @@ if [[ -z "${cmd_who}" ]]; then
     fi
 fi
 
+# Este script shell é responsável por listar mensagens relacionadas ao processo de atualização.
+# Utilize este arquivo para visualizar ou modificar a lista de mensagens exibidas durante a execução.
 #-Lista de mensagens #-----------------------------------------------------------------------------#
 ### Mensagens em AMARELO
 M01="Compactando os arquivos Anteriores"
