@@ -117,6 +117,7 @@ Menus
               5.8.4 - Apagar nota
 
 Arquivos de trabalho:
+
 ".atualizac"  = Contem a configuração referente a empresa.
 
 ".atualizap"  = Configuracao do parametro do sistema.
