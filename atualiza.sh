@@ -330,7 +330,7 @@ M81="..Encontrado o diretorio do sistema .."
 ### Mensagens em VERDE
 M91="Atualizacao concluida com sucesso!"
 M92="ao termino da atualizacao entrar novamente"
-M93="Atualização offline concluída!"
+M93="Atualizacao offline concluida!"
 
 #-Centro da tela-----------------------------------------------------------------------------------#
 # _meiodatela ()
@@ -2044,7 +2044,7 @@ _atubiblioteca() {
                 # Descompactar o arquivo
                 "${cmd_unzip}" -o "${arquivo}" -d "/${destino}" >>"${LOG_ATU}" 2>&1
                 if "${cmd_unzip}" -o "${arquivo}" -d "/${destino}" >>"${LOG_ATU}" 2>&1; then
-                    _mensagec "${GREEN}" "Descompactação de ${arquivo} concluída com sucesso."
+                    _mensagec "${GREEN}" "Descompactacao de ${arquivo} concluida com sucesso."
                 else
                     _mensagec "${RED}" "${M48}"
                 fi
@@ -2057,7 +2057,7 @@ _atubiblioteca() {
             _read_sleep 2
             clear
         else
-            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} não encontrado ou não legível."
+            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} não encontrado ou não legivel."
         fi
     done
 
@@ -2635,7 +2635,7 @@ _jutill() {
             return 1
         fi
     else
-        _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado ou está vazio."
+        _mensagec "${YELLOW}" "Erro: Arquivo ${arquivo} nao encontrado ou esta vazio."
         return 1
     fi
 }
@@ -2971,7 +2971,7 @@ _backup() {
 
     # Verifica backups recentes (últimos 2 dias)
     if find "$BACKUP" -maxdepth 1 -ctime -2 -name "${EMPRESA}*zip" -print -quit | grep -q .; then
-        M62="Já existe um backup recente em $BACKUP."
+        M62="Ja existe um backup recente em $BACKUP."
         _linha && _mensagec "$CYAN" "$M62" && _linha
         ls -ltrh "${BACKUP}"/"${EMPRESA}"_*.zip
         _linha
@@ -3218,7 +3218,7 @@ _backupavulso() {
         *) # várias -> menu de escolha
             clear
             _linha
-            _mensagec "${RED}" "Vários backups encontrados. Escolha um:"
+            _mensagec "${RED}" "Varios backups encontrados. Escolha um:"
             _linha
             select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
                 case $REPLY in
@@ -3378,7 +3378,7 @@ _unbackup() {
     1) backup_path="${ZIPADOS[0]}" ;;
     *) # vários -> menu
         _linha
-        _mensagec "${RED}" "Vários backups encontrados. Escolha um:"
+        _mensagec "${RED}" "Varios backups encontrados. Escolha um:"
         _linha
         select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
             case $REPLY in '' | *[!0-9]*)
@@ -3817,17 +3817,17 @@ _update_online() {
 
     # Acessar o diretório de destino
     cd "$ENVIA" || {
-        _mensagec "${RED}" "Erro: Diretório $ENVIA não acessível."
+        _mensagec "${RED}" "Erro: Diretório $ENVIA não acessivel."
         return 1
     }
 
     # Criar diretório temporário
     mkdir -p "$temp_dir" || {
-        _mensagec "${RED}" "Erro: Não foi possível criar o diretório temporário $temp_dir."
+        _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
         return 1
     }
     cd "$temp_dir" || {
-        _mensagec "${RED}" "Erro: Não foi possível acessar o diretório temporário $temp_dir."
+        _mensagec "${RED}" "Erro: Nao foi possivel acessar o diretorio temporario $temp_dir."
         return 1
     }
 
@@ -3858,11 +3858,11 @@ _update_online() {
 
     # Limpar diretório temporário
     cd "$ENVIA" || {
-        _mensagec "${RED}" "Erro: Não foi possível retornar ao diretório $ENVIA."
+        _mensagec "${RED}" "Erro: Não foi possivel retornar ao diretorio $ENVIA."
         return 1
     }
     rm -rf "$temp_dir" || {
-        _mensagec "${RED}" "Erro ao remover o diretório temporário $temp_dir."
+        _mensagec "${RED}" "Erro ao remover o diretorio temporario $temp_dir."
         return 1
     }
 
