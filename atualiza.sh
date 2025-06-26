@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="23/06/2025-00" #
+UPDATE="26/06/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -468,7 +468,7 @@ fi
 #- TESTE de CONFIGURACOES--------------------------------------------------------------------------#
 # Checando se os arquivos de configuracao estao configurados corretamente
 if [[ ! -e ".atualizac" ]]; then
-    M58="ERRO. Arquivo .atualizac, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
+    M58="ERRO. Arquivo .atualizac, Nao existe no diretorio, usar ./setup.sh, ou nao esta na pasta TOOLS."
     _linha
     _mensagec "${RED}" "${M58}"
     _linha
@@ -488,7 +488,7 @@ else
 fi
 
 if [[ ! -e ".atualizap" ]]; then
-    M58="ERRO. Arquivo .atualizap, Nao existe no diretorio, usar ./setup.sh, ou não esta na pasta TOOLS."
+    M58="ERRO. Arquivo .atualizap, Nao existe no diretorio, usar ./setup.sh, ou nao esta na pasta TOOLS."
     _linha
     _mensagec "${RED}" "${M58}"
     _linha
@@ -899,7 +899,7 @@ _visualizar_notas() {
     NOTA="atualizal"
     # Verifica se o arquivo existe e é legível
     if [ ! -f "$NOTA" ] || [ ! -r "$NOTA" ]; then
-        ML1="Erro: Arquivo $NOTA não existe ou não pode ser lido"
+        ML1="Erro: Arquivo $NOTA nao existe ou nao pode ser lido"
         _linha
         _mensagec "${RED}" "${ML1}"
         _linha
@@ -1099,7 +1099,7 @@ _servacessoff() {
             if [[ -f "${SAOFF}/${arquivo}" ]]; then
                 mv -f -- "${SAOFF}/${arquivo}" "."
             else
-                M42="Aviso: Arquivo %s não encontrado.\n" "$arquivo"
+                M42="Aviso: Arquivo %s nao encontrado.\n" "$arquivo"
                 _linha
                 _mensagec "${RED}" "${M42}"
                 _linha
@@ -1533,7 +1533,7 @@ _volta_progx() {
     _press
     # Verifica se o arquivo de entrada existe antes de tentar descompactar
     if [ ! -f "${INI}" ]; then
-        printf "Erro: Arquivo %s não encontrado.\n" "${INI}"
+        printf "Erro: Arquivo %s nao encontrado.\n" "${INI}"
         exit 1
     fi
 
@@ -2057,7 +2057,7 @@ _atubiblioteca() {
             _read_sleep 2
             clear
         else
-            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} não encontrado ou não legivel."
+            _mensagec "${RED}" "Erro: Arquivo ${arquivo}${VERSAO} nao encontrado ou nao legivel."
         fi
     done
 
@@ -2070,13 +2070,13 @@ _atubiblioteca() {
         if [[ -f "${arquivo_zip}" ]]; then
             mv -f -- "${arquivo_zip}" "${arquivo_zip%.zip}.bkp" || _mensagec "${RED}" "Erro ao mover ${arquivo_zip} para ${arquivo_zip%.zip}.bkp"
         else
-            _mensagec "${RED}" "Arquivo ${arquivo_zip} não encontrado."
+            _mensagec "${RED}" "Arquivo ${arquivo_zip} nao encontrado."
         fi
     done
     mv -f -- *_"${VERSAO}".bkp "${BACKUP}" || _mensagec "${RED}" "Erro ao mover backups para ${BACKUP}"
 
     # Alterando a extensão da atualização de .zip para .bkp
-    M40="Versão atualizada - ${VERSAO}"
+    M40="Versao atualizada - ${VERSAO}"
     _linha
     _mensagec "${YELLOW}" "${M20}"
     _mensagec "${YELLOW}" "${M13}"
@@ -2085,7 +2085,7 @@ _atubiblioteca() {
 
     ANTVERSAO=$VERSAO
     if ! printf "VERSAOANT=%s\n" "${ANTVERSAO}" >>.atualizac; then
-        _mensagec "${RED}" "Erro ao gravar arquivo de versão atualizada"
+        _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
         _press
         _principal
         return 1
@@ -3223,7 +3223,7 @@ _backupavulso() {
             select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
                 case $REPLY in
                 '' | *[!0-9]*)
-                    echo "Digite o número da opção."
+                    echo "Digite o número da opcao."
                     continue
                     ;;
                 esac
@@ -3382,7 +3382,7 @@ _unbackup() {
         _linha
         select OPCAO in "${ZIPADOS[@]}" "Cancelar"; do
             case $REPLY in '' | *[!0-9]*)
-                echo "Digite o número da opção."
+                echo "Digite o numero da opcao."
                 continue
                 ;;
             esac
@@ -3413,7 +3413,7 @@ _unbackup() {
     n | "") # arquivo específico
         local VARQUIVO=""
         _linha
-        read -rp "${YELLOW}2- Nome do arquivo (maiusculo, sem extensão): ${NORM}" VARQUIVO
+        read -rp "${YELLOW}2- Nome do arquivo (maiusculo, sem extensao): ${NORM}" VARQUIVO
         _linha
         [[ ! "${VARQUIVO}" =~ ^[A-Z0-9]+$ ]] && {
             _mensagec "${RED}" "${M71}"
@@ -3806,7 +3806,7 @@ _update_online() {
     # Backup do arquivo atualiza.sh
     if [ ! -d "$BACKUP" ]; then
         mkdir -p "$BACKUP" || {
-            _mensagec "${RED}" "Erro: Diretório de backup $BACKUP não pode ser criado."
+            _mensagec "${RED}" "Erro: Diretorio de backup $BACKUP nao pode ser criado."
             return 1
         }
     fi
@@ -3817,7 +3817,7 @@ _update_online() {
 
     # Acessar o diretório de destino
     cd "$ENVIA" || {
-        _mensagec "${RED}" "Erro: Diretório $ENVIA não acessivel."
+        _mensagec "${RED}" "Erro: Diretorio $ENVIA nao acessivel."
         return 1
     }
 
@@ -3846,7 +3846,7 @@ _update_online() {
     # Verificar e mover arquivos
     for file in atualiza.sh setup.sh; do
         if [ ! -f "$file" ]; then
-            _mensagec "${RED}" "Erro: $file não encontrado."
+            _mensagec "${RED}" "Erro: $file nao encontrado."
             return 1
         fi
         chmod +x "$file"
@@ -3858,7 +3858,7 @@ _update_online() {
 
     # Limpar diretório temporário
     cd "$ENVIA" || {
-        _mensagec "${RED}" "Erro: Não foi possivel retornar ao diretorio $ENVIA."
+        _mensagec "${RED}" "Erro: Nao foi possivel retornar ao diretorio $ENVIA."
         return 1
     }
     rm -rf "$temp_dir" || {
