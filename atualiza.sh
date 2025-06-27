@@ -3045,10 +3045,10 @@ _backup() {
         if [ "$backup_mode" = "incremental" ]; then
             # Backup incremental com find para arquivos modificados/criados após a data
             find . -type f -newermt "$ref_date" ! -name "*.zip" ! -name "*.tar" ! -name "*.tar.gz" -print0 |
-                xargs -0 "$cmd_zip" -u "$backup_path" >/dev/null 2>&1
+                xargs -0 "$cmd_zip" "$backup_path" >/dev/null 2>&1
         else
             # Backup completo
-            "$cmd_zip" -u "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
+            "$cmd_zip" "$backup_path" ./*.* -x ./*.zip ./*.tar ./*tar.gz >/dev/null 2>&1
         fi
     } &
     backup_pid=$!
