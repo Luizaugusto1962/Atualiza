@@ -1,7 +1,92 @@
 #!/usr/bin/env bash
 #
 #
-#versao de 06/06/2025-00
+#versao de 07/07/2025-00
+
+clear
+
+# Função para editar variável com prompt
+editar_variavel() {
+    local nome="$1"
+    local valor_atual="${!nome}"
+
+    read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
+    alterar=${alterar,,}
+    if [[ "$alterar" =~ ^s$ ]]; then
+        read -rp "Novo valor para ${nome}: " novo_valor
+        eval "$nome=\"$novo_valor\""
+    fi
+}
+
+# Se os arquivos existem, carrega e pergunta se quer editar campo a campo
+if [[ -f ".atualizac" && -f ".atualizap" ]]; then
+    echo "=================================================="
+    echo "Arquivos .atualizac e .atualizap já existem."
+    echo "Carregando parâmetros para edição..."
+    echo "=================================================="
+    echo
+
+    # Carrega os valores existentes
+    "." ./.atualizac
+
+    # Edita sistema
+    editar_variavel sistema
+
+    # Edita verclass e atualiza class/mclass automaticamente
+    editar_variavel verclass
+
+    if [[ -n "$verclass" ]]; then
+        verclass_sufixo="${verclass: -2}" # Pega os dois últimos dígitos
+        class="-class${verclass_sufixo}"
+        mclass="-mclass${verclass_sufixo}"
+        echo "class e mclass foram atualizados automaticamente:"
+        echo "class=${class}"
+        echo "mclass=${mclass}"
+    else
+        editar_variavel class
+        editar_variavel mclass
+    fi
+
+    editar_variavel BANCO
+    editar_variavel destino
+    editar_variavel SERACESOFF
+    editar_variavel ENVIABACK
+    editar_variavel EMPRESA
+    editar_variavel base
+    editar_variavel base2
+    editar_variavel base3
+
+    # Recria o arquivo com os novos valores
+    echo "Recriando .atualizac com os novos parâmetros..."
+    {
+        echo "sistema=${sistema}"
+        [[ -n "$verclass" ]] && echo "verclass=${verclass}"
+        [[ -n "$class" ]] && echo "class=${class}"
+        [[ -n "$mclass" ]] && echo "mclass=${mclass}"
+        [[ -n "$BANCO" ]] && echo "BANCO=${BANCO}"
+        [[ -n "$destino" ]] && echo "destino=${destino}"
+        [[ -n "$SERACESOFF" ]] && echo "SERACESOFF=${SERACESOFF}"
+        [[ -n "$ENVIABACK" ]] && echo "ENVIABACK=${ENVIABACK}"
+        [[ -n "$EMPRESA" ]] && echo "EMPRESA=${EMPRESA}"
+        [[ -n "$base" ]] && echo "base=${base}"
+        [[ -n "$base2" ]] && echo "base2=${base2}"
+        [[ -n "$base3" ]] && echo "base3=${base3}"
+    } >.atualizac
+
+    echo
+    echo "Arquivo .atualizac atualizado com sucesso!"
+    echo
+
+    read -rp "Deseja continuar o restante da configuração normalmente? [s/N] " continuar
+    continuar=${continuar,,}
+    if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
+        echo "Finalizando o script por escolha do usuário."
+        exit 0
+    fi
+    echo
+    echo "Continuando o processo normal..."
+    sleep 1
+fi
 
 clear
 ### Cria o bat se o servidor for em modo offline ------------------
