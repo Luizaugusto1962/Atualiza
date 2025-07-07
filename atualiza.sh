@@ -2166,7 +2166,7 @@ _biblioteca() {
     M405="1${NORM} - Atualizacao do Transpc     "
     M406="2${NORM} - Atualizacao do Savatu      "
     M407="3${NORM} - Atualizacao OFF-Line       "
-    M408="Escolha o tipo de Desatualizacao:       "
+    M408="Escolha Desatualizar:       "
     M409="4${NORM} - Voltar antes da Biblioteca "
     M410="9${NORM} - ${RED}Menu Anterior     "
 
@@ -2221,10 +2221,10 @@ _atualizacao() {
     clear
     ###   200-mensagens do Menu Programas.
     M201="Menu de Programas "
-    M202="Escolha o tipo de Acao:"
+    M202="Escolha o tipo de Atualizacao:         "
     M203="1${NORM} - Programa ou Pacote ON-Line    "
     M204="2${NORM} - Programa ou Pacote em OFF-Line"
-    M205="Escolha o tipo de Desatualizacao:         "
+    M205="Escolha Desatualizar:       "
     M206="3${NORM} - Voltar programa Atualizado    "
     M209="9${NORM} - ${RED}Menu Anterior        "
     printf "\n"
@@ -4207,10 +4207,10 @@ _principal() {
     #-100-mensagens do Menu Principal. ----------------------------------------------------------------#
     M101="Menu Principal"
     M1102=".. Empresa: ${EMPRESA} .."
-    M102=".. Sistema: ${sistema} .. Versao: ${verclass}"
+    M102=".. Sistema: ${sistema} - Versao: ${verclass} .."
     M103=" Escolha a opcao:         "
-    M104="1${NORM} - Programas             "
-    M105="2${NORM} - Biblioteca            "
+    M104="1${NORM} - Atualizar Programa(s) "
+    M105="2${NORM} - Atualizar Biblioteca  "
     M111="3${NORM} - Versao do Iscobol     "
     M112="3${NORM} - Funcao nao disponivel "
     M107="4${NORM} - Versao do Linux       "
