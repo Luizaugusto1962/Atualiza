@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 #
-#versao de 07/07/2025-00
+#versao de 07/07/2025-01
 
 clear
 
@@ -18,6 +18,25 @@ editar_variavel() {
     fi
 }
 
+# Atualiza as variáveis SAVATU* com base na verclass
+atualizar_savatu_variaveis() {
+    local ano="${verclass}"
+    local sufixo="IS${ano}"
+
+    SAVATU="tempSAV_${sufixo}_*_"
+    SAVATU1="tempSAV_${sufixo}_classA_"
+    SAVATU2="tempSAV_${sufixo}_classB_"
+    SAVATU3="tempSAV_${sufixo}_tel_isc_"
+    SAVATU4="tempSAV_${sufixo}_xml_"
+
+    echo "Variáveis SAVATU atualizadas com base em verclass:"
+    echo "SAVATU=$SAVATU"
+    echo "SAVATU1=$SAVATU1"
+    echo "SAVATU2=$SAVATU2"
+    echo "SAVATU3=$SAVATU3"
+    echo "SAVATU4=$SAVATU4"
+}
+
 # Se os arquivos existem, carrega e pergunta se quer editar campo a campo
 if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     echo "=================================================="
@@ -25,23 +44,24 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     echo "Carregando parâmetros para edição..."
     echo "=================================================="
     echo
-
-    # Carrega os valores existentes
+    # Carrega os valores existentes do arquivo .atualizac
     "." ./.atualizac
 
-    # Edita sistema
-    editar_variavel sistema
+    # Carrega os valores existentes do arquivo .atualizap
+    "." ./.atualizap
 
-    # Edita verclass e atualiza class/mclass automaticamente
+    editar_variavel sistema
     editar_variavel verclass
 
     if [[ -n "$verclass" ]]; then
-        verclass_sufixo="${verclass: -2}" # Pega os dois últimos dígitos
+        verclass_sufixo="${verclass: -2}"
         class="-class${verclass_sufixo}"
         mclass="-mclass${verclass_sufixo}"
         echo "class e mclass foram atualizados automaticamente:"
         echo "class=${class}"
         echo "mclass=${mclass}"
+
+        atualizar_savatu_variaveis
     else
         editar_variavel class
         editar_variavel mclass
@@ -56,7 +76,6 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     editar_variavel base2
     editar_variavel base3
 
-    # Recria o arquivo com os novos valores
     echo "Recriando .atualizac com os novos parâmetros..."
     {
         echo "sistema=${sistema}"
@@ -73,8 +92,25 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
         [[ -n "$base3" ]] && echo "base3=${base3}"
     } >.atualizac
 
+    echo "Recriando .atualizap com os parâmetros atualizados..."
+    {
+        echo "exec=sav/classes"
+        echo "telas=sav/tel_isc"
+        echo "xml=sav/xml"
+        echo "SAVATU=${SAVATU}"
+        echo "SAVATU1=${SAVATU1}"
+        echo "SAVATU2=${SAVATU2}"
+        echo "SAVATU3=${SAVATU3}"
+        echo "SAVATU4=${SAVATU4}"
+        echo "pasta=/sav/tools"
+        echo "progs=/progs"
+        echo "olds=/olds"
+        echo "logs=/logs"
+        echo "backup=/backup"
+    } >.atualizap
+
     echo
-    echo "Arquivo .atualizac atualizado com sucesso!"
+    echo "Arquivos .atualizac e .atualizap atualizados com sucesso!"
     echo
 
     read -rp "Deseja continuar o restante da configuração normalmente? [s/N] " continuar
