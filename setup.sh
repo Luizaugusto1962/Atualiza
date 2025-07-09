@@ -1,21 +1,38 @@
 #!/usr/bin/env bash
 #
 #
-#versao de 07/07/2025-01
+#versao de 09/07/2025-01
 
 clear
+linha="#-------------------------------------------------------------------#"
+traco="#####################################################################"
+
+# Variáveis globais
+declare -l sistema
+declare -u EMPRESA
+declare -l base
+declare -l base2
+declare -l base3
+declare -l BANCO
+declare -l DIR
+declare -l OFF
+declare -l ENVIABACK
 
 # Função para editar variável com prompt
 editar_variavel() {
     local nome="$1"
     local valor_atual="${!nome}"
 
-    read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
+    read -rp "Deseja alterar a variavel: ${nome} (valor atual: ${valor_atual} )? [s/N] " alterar
     alterar=${alterar,,}
     if [[ "$alterar" =~ ^s$ ]]; then
-        read -rp "Novo valor para ${nome}: " novo_valor
+        read -rp "Novo valor da variavel: ${nome}: " novo_valor
         eval "$nome=\"$novo_valor\""
+    else
+        echo ${linha}
+        echo " Variavel ${nome} mantida com o valor atual: ${valor_atual}"
     fi
+    echo ${linha}
 }
 
 # Atualiza as variáveis SAVATU* com base na verclass
@@ -29,19 +46,20 @@ atualizar_savatu_variaveis() {
     SAVATU3="tempSAV_${sufixo}_tel_isc_"
     SAVATU4="tempSAV_${sufixo}_xml_"
 
-    echo "Variáveis SAVATU atualizadas com base em verclass:"
+    echo "Variaveis SAVATU atualizadas com base em verclass:"
     echo "SAVATU=$SAVATU"
     echo "SAVATU1=$SAVATU1"
     echo "SAVATU2=$SAVATU2"
     echo "SAVATU3=$SAVATU3"
     echo "SAVATU4=$SAVATU4"
+    echo ${linha}
 }
 
 # Se os arquivos existem, carrega e pergunta se quer editar campo a campo
 if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     echo "=================================================="
-    echo "Arquivos .atualizac e .atualizap já existem."
-    echo "Carregando parâmetros para edição..."
+    echo "Arquivos .atualizac e .atualizap ja existem."
+    echo "Carregando parametros para edicao..."
     echo "=================================================="
     echo
     # Carrega os valores existentes do arquivo .atualizac
@@ -76,7 +94,9 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     editar_variavel base2
     editar_variavel base3
 
-    echo "Recriando .atualizac com os novos parâmetros..."
+    echo "Recriando .atualizac com os novos parametros..."
+    echo ${linha}
+
     {
         echo "sistema=${sistema}"
         [[ -n "$verclass" ]] && echo "verclass=${verclass}"
@@ -92,7 +112,9 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
         [[ -n "$base3" ]] && echo "base3=${base3}"
     } >.atualizac
 
-    echo "Recriando .atualizap com os parâmetros atualizados..."
+    echo "Recriando .atualizap com os parametros atualizados..."
+    echo ${linha}
+
     {
         echo "exec=sav/classes"
         echo "telas=sav/tel_isc"
@@ -112,11 +134,12 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     echo
     echo "Arquivos .atualizac e .atualizap atualizados com sucesso!"
     echo
+    echo ${linha}
 
-    read -rp "Deseja continuar o restante da configuração normalmente? [s/N] " continuar
+    read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
     continuar=${continuar,,}
     if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
-        echo "Finalizando o script por escolha do usuário."
+        echo "Finalizando o script de setup."
         exit 0
     fi
     echo
@@ -577,7 +600,6 @@ case ${escolha} in
     ;;
 esac
 clear
-declare -l BANCO
 echo ${traco}
 echo "###           ( Banco de Dados )                               ###"
 read -rp " ( Sistema em banco de dados [S/N]  ->" -n1 BANCO
@@ -589,13 +611,11 @@ else
     [[ "${BANCO}" =~ ^[Ss]$ ]]
     echo "BANCO=s" >>.atualizac
 fi
-declare -l DIR
 echo "###              ( PASTA DO SISTEMA )         ###"
 read -rp " Informe o diretorio raiz sem o /->" -n1 DIR
 echo
 echo destino="${DIR}" >>.atualizac
 echo ${linha}
-declare -l OFF
 echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF [S ou N] ->" -n1 OFF
 echo
@@ -605,12 +625,11 @@ elif [[ "${OFF}" =~ ^[Ss]$ ]]; then
     echo "SERACESOFF=/sav/portalsav/Atualiza" >>.atualizac
 fi
 echo ${linha}
-declare -l PASTA
 echo "###          ( Nome de pasta no servidor da SAV )                ###"
 echo "Nome de pasta no servidor da SAV, informar somento e pasta do cliente"
-read -rp "/cliente/" PASTA
+read -rp "/cliente/" ENVIABACK
 echo
-if [[ "${PASTA}" == "" ]]; then
+if [[ "${ENVIABACK}" == "" ]]; then
     if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
         echo "ENVIABACK="""
         echo "ENVIABACK=""" >>.atualizac
@@ -619,51 +638,47 @@ if [[ "${PASTA}" == "" ]]; then
         echo "ENVIABACK=/sav/portalsav/Atualiza" >>.atualizac
     fi
 else
-    echo "ENVIABACK=cliente/""${PASTA}"
-    echo "ENVIABACK=cliente/""${PASTA}" >>.atualizac
+    echo "ENVIABACK=cliente/""${ENVIABACK}"
+    echo "ENVIABACK=cliente/""${ENVIABACK}" >>.atualizac
 fi
 echo ${linha}
-declare -u EMPR
 echo "###           ( NOME DA EMPRESA )            ###"
 echo "###   Nao pode ter espacos entre os nomes    ###"
 echo ${linha}
-read -rp "Nome da Empresa-> " EMPR
+read -rp "Nome da Empresa-> " EMPRESA
 echo
-echo EMPRESA="${EMPR}"
-echo EMPRESA="${EMPR}" >>.atualizac
+echo EMPRESA="${EMPRESA}"
+echo EMPRESA="${EMPRESA}" >>.atualizac
 echo ${linha}
 echo "###    ( DIRETORIO DA BASE DE DADOS )        ###"
 echo ${linha}
-declare -l BASE
-declare -l BASE2
-declare -l BASE3
-read -rp "Nome de pasta da base, Ex: sav/dados_? -:> " BASE
-if [[ "${BASE}" == "" ]]; then
+read -rp "Nome de pasta da base, Ex: sav/dados_? -:> " base
+if [[ "${base}" == "" ]]; then
     echo "Necessario pasta informar a base de dados"
     exit
 else
-    echo "base=/""${BASE}" >>.atualizac
-    echo "base=/""${BASE}"
+    echo "base=/""${base}" >>.atualizac
+    echo "base=/""${base}"
 fi
 
 echo ${linha}
-read -rp "Nome de pasta da base2, Ex: sav/dados_? -:> " BASE2
-if [[ "${BASE2}" == "" ]]; then
+read -rp "Nome de pasta da base2, Ex: sav/dados_? -:> " base2
+if [[ "${base2}" == "" ]]; then
     echo "#base2=" >>.atualizac
     echo "#base2="
 else
-    echo "base2=/""${BASE2}" >>.atualizac
-    echo "base2=/""${BASE2}"
+    echo "base2=/""${base2}" >>.atualizac
+    echo "base2=/""${base2}"
 fi
 echo ${linha}
 
-read -rp "Nome de pasta da base3, Ex: sav/dados_? -:> " BASE3
-if [[ "${BASE3}" == "" ]]; then
+read -rp "Nome de pasta da base3, Ex: sav/dados_? -:> " base3
+if [[ "${base3}" == "" ]]; then
     echo "#base3=" >>.atualizac
     echo "#base3="
 else
-    echo "base3=/""${BASE3}" >>.atualizac
-    echo "base3=/""${BASE3}"
+    echo "base3=/""${base3}" >>.atualizac
+    echo "base3=/""${base3}"
 fi
 echo ${linha}
 echo ${linha} >>.atualizac
