@@ -1,28 +1,22 @@
 #!/usr/bin/env bash
 #
 #
-#versao de 09/07/2025-01
+#versao de 10/07/2025-01
 
 clear
-linha="#-------------------------------------------------------------------#"
-traco="#####################################################################"
+
+# Constantes
+readonly linha="#-------------------------------------------------------------------#"
+readonly traco="#####################################################################"
 
 # Variáveis globais
-declare -l sistema
+declare -l sistema base base2 base3 BANCO DIR OFF ENVIABACK
 declare -u EMPRESA
-declare -l base
-declare -l base2
-declare -l base3
-declare -l BANCO
-declare -l DIR
-declare -l OFF
-declare -l ENVIABACK
 
 # Função para editar variável com prompt
 editar_variavel() {
     local nome="$1"
     local valor_atual="${!nome}"
-
     read -rp "Deseja alterar a variavel: ${nome} (valor atual: ${valor_atual} )? [s/N] " alterar
     alterar=${alterar,,}
     if [[ "$alterar" =~ ^s$ ]]; then
@@ -62,12 +56,30 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     echo "Carregando parametros para edicao..."
     echo "=================================================="
     echo
+
     # Carrega os valores existentes do arquivo .atualizac
-    "." ./.atualizac
+    "." ./.atualizac || {
+        echo "Erro: Falha ao carregar .atualizac"
+        exit 1
+    }
 
     # Carrega os valores existentes do arquivo .atualizap
-    "." ./.atualizap
+    "." ./.atualizap || {
+        echo "Erro: Falha ao carregar .atualizap"
+        exit 1
+    }
 
+    # Faz backup dos arquivos
+    cp .atualizac .atualizac.bak || {
+        echo "Erro: Falha ao criar backup de .atualizac"
+        exit 1
+    }
+    cp .atualizap .atualizap.bak || {
+        echo "Erro: Falha ao criar backup de .atualizap"
+        exit 1
+    }
+
+    # Edita as variáveis
     editar_variavel sistema
     editar_variavel verclass
 
@@ -78,7 +90,6 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
         echo "class e mclass foram atualizados automaticamente:"
         echo "class=${class}"
         echo "mclass=${mclass}"
-
         atualizar_savatu_variaveis
     else
         editar_variavel class
@@ -94,6 +105,7 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
     editar_variavel base2
     editar_variavel base3
 
+    # Recria .atualizac
     echo "Recriando .atualizac com os novos parametros..."
     echo ${linha}
 
@@ -112,6 +124,7 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
         [[ -n "$base3" ]] && echo "base3=${base3}"
     } >.atualizac
 
+    # Recria .atualizap
     echo "Recriando .atualizap com os parametros atualizados..."
     echo ${linha}
 
