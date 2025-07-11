@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 #
-#versao de 10/07/2025-01
+#versao de 11/07/2025-01
 
 clear
 
@@ -10,21 +10,58 @@ readonly linha="#---------------------------------------------------------------
 readonly traco="#####################################################################"
 
 # Variáveis globais
-declare -l sistema base base2 base3 BANCO DIR OFF ENVIABACK
+declare -l sistema base base2 base3 BANCO destino SERACESOFF ENVIABACK
 declare -u EMPRESA
 
-# Função para editar variável com prompt
 editar_variavel() {
     local nome="$1"
     local valor_atual="${!nome}"
-    read -rp "Deseja alterar a variavel: ${nome} (valor atual: ${valor_atual} )? [s/N] " alterar
+
+    # Função para editar variável com prompt
+    read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
     alterar=${alterar,,}
     if [[ "$alterar" =~ ^s$ ]]; then
-        read -rp "Novo valor da variavel: ${nome}: " novo_valor
-        eval "$nome=\"$novo_valor\""
-    else
-        echo ${linha}
-        echo " Variavel ${nome} mantida com o valor atual: ${valor_atual}"
+        if [[ "$nome" == "sistema" ]]; then
+            echo
+            echo "Escolha o sistema:"
+            echo "1) IsCobol"
+            echo "2) Micro Focus Cobol"
+            read -rp "Opcao [1-2]: " opcao
+            case "$opcao" in
+            1) sistema="iscobol" ;;
+            2) sistema="cobol" ;;
+            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
+            esac
+
+        elif [[ "$nome" == "BANCO" ]]; then
+            echo
+            echo ${linha}
+            echo "O sistema usa banco de dados?"
+            echo "1) Sim"
+            echo "2) Não"
+            read -rp "Opcao [1-2]: " opcao
+            case "$opcao" in
+            1) BANCO="s" ;;
+            2) BANCO="n" ;;
+            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
+            esac
+        elif [[ "$nome" == "SERACESOFF" ]]; then
+            echo
+            echo ${linha}
+            echo "O sistema em modo Offline ?"
+            echo "1) Sim"
+            echo "2) Não"
+            read -rp "Opcao [1-2]: " opcao
+            case "$opcao" in
+            1) SERACESOFF="s" ;;
+            2) SERACESOFF="n" ;;
+            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
+            esac
+
+        else
+            read -rp "Novo valor para ${nome}: " novo_valor
+            eval "$nome=\"$novo_valor\""
+        fi
     fi
     echo ${linha}
 }
@@ -625,16 +662,16 @@ else
     echo "BANCO=s" >>.atualizac
 fi
 echo "###              ( PASTA DO SISTEMA )         ###"
-read -rp " Informe o diretorio raiz sem o /->" -n1 DIR
+read -rp " Informe o diretorio raiz sem o /->" -n1 destino
 echo
-echo destino="${DIR}" >>.atualizac
+echo destino="${destino}" >>.atualizac
 echo ${linha}
 echo "###          Tipo de acesso                  ###"
-read -rp "Servidor OFF [S ou N] ->" -n1 OFF
+read -rp "Servidor OFF [S ou N] ->" -n1 SERACESOFF
 echo
-if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
+if [[ "${SERACESOFF}" =~ ^[Nn]$ ]] || [[ "${SERACESOFF}" == "" ]]; then
     echo "SERACESOFF=" >>.atualizac
-elif [[ "${OFF}" =~ ^[Ss]$ ]]; then
+elif [[ "${SERACESOFF}" =~ ^[Ss]$ ]]; then
     echo "SERACESOFF=/sav/portalsav/Atualiza" >>.atualizac
 fi
 echo ${linha}
@@ -643,7 +680,7 @@ echo "Nome de pasta no servidor da SAV, informar somento e pasta do cliente"
 read -rp "/cliente/" ENVIABACK
 echo
 if [[ "${ENVIABACK}" == "" ]]; then
-    if [[ "${OFF}" =~ ^[Nn]$ ]] || [[ "${OFF}" == "" ]]; then
+    if [[ "${SERACESOFF}" =~ ^[Nn]$ ]] || [[ "${SERACESOFF}" == "" ]]; then
         echo "ENVIABACK="""
         echo "ENVIABACK=""" >>.atualizac
     else
@@ -706,7 +743,7 @@ clear
     echo ${linha}
 } >>.atualizap
 
-if [[ "${OFF}" =~ ^[Ss]$ ]]; then
+if [[ "${SERACESOFF}" =~ ^[Ss]$ ]]; then
     if [[ "${sistema}" = "cobol" ]]; then
         {
             echo "@echo off"
