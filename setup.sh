@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 #
-#
 #versao de 11/07/2025-01
 
 clear
