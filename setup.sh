@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 #
-#versao de 11/07/2025-01
+#versao de 23/07/2025
 
+## Criando o progama atualiza em /usr/local/bin
+{
+echo "#!/usr/bin/env bash"
+echo "#--------------------------------------------------------------------------------#"
+echo "##  Rotina para atualizar SAV                                                    #"
+echo "##  Feito por: Luiz Augusto                                                      #"
+echo "##  email luizaugusto@sav.com.br                                                 #"
+echo "##  Rotina para chamar o atualiza.sh                                             #"
+echo "#--------------------------------------------------------------------------------#" 
+echo "cd ${destino}${pasta:-/sav/tools}" 
+echo ./atualiza.sh 
+} >/usr/local/bin/atualiza
+chmod +x /usr/local/bin/atualiza
 clear
 
 # Constantes
@@ -779,5 +792,12 @@ if [[ "${SERACESOFF}" =~ ^[Ss]$ ]]; then
         exit 1
     fi
 fi
+
+## Criando atualiza em /usr/local/bin
+echo "cd ${destino}${pasta:-/sav/tools}" >/usr/local/bin/atualiza
+echo ./atualiza.sh >/usr/local/bin/atualiza
+chmod +x /usr/local/bin/atualiza
+
+
 
 echo "Pronto !!!"
