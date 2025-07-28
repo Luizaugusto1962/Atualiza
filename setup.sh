@@ -1,21 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 23/07/2025
-
-## Criando o progama atualiza em /usr/local/bin
-{
-echo "#!/usr/bin/env bash"
-echo "#--------------------------------------------------------------------------------#"
-echo "##  Rotina para atualizar SAV                                                    #"
-echo "##  Feito por: Luiz Augusto                                                      #"
-echo "##  email luizaugusto@sav.com.br                                                 #"
-echo "##  Rotina para chamar o atualiza.sh                                             #"
-echo "#--------------------------------------------------------------------------------#" 
-echo "cd ${destino}${pasta:-/sav/tools}" 
-echo ./atualiza.sh 
-} >/usr/local/bin/atualiza
-chmod +x /usr/local/bin/atualiza
-clear
+#versao de 28/07/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -127,6 +112,22 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
         echo "Erro: Falha ao criar backup de .atualizap"
         exit 1
     }
+
+## Criando o progama atualiza em /usr/local/bin
+{
+echo "#!/usr/bin/env bash"
+echo "#--------------------------------------------#"
+echo "##  Rotina para atualizar SAV                #"
+echo "##  Feito por: Luiz Augusto                  #"
+echo "##  email luizaugusto@sav.com.br             #"
+echo "##  Rotina para chamar o atualiza.sh         #"
+echo "#--------------------------------------------#" 
+echo "cd /${destino}${pasta:-/sav/tools}" 
+echo ./atualiza.sh 
+} >/usr/local/bin/atualiza
+chmod +x /usr/local/bin/atualiza
+
+clear
 
     # Edita as variáveis
     editar_variavel sistema
@@ -797,7 +798,4 @@ fi
 echo "cd ${destino}${pasta:-/sav/tools}" >/usr/local/bin/atualiza
 echo ./atualiza.sh >/usr/local/bin/atualiza
 chmod +x /usr/local/bin/atualiza
-
-
-
 echo "Pronto !!!"
