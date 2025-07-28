@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="26/06/2025-00"
+UPDATE="28/07/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -837,7 +837,8 @@ if [[ -z "${DESTINO2TRANSPC}" ]]; then
 fi
 
 # Verifica se o sistema e em modo offline, se sim cria diretório SERACESOFF se necessário
-if [[ -n "${SERACESOFF}" ]]; then
+
+if [[ "${SERACESOFF}" == "s" ]]; then
     if ! [[ -d "${SERACESOFF}" ]]; then
         mkdir -p "${destino}${SERACESOFF}"
     fi
@@ -1089,7 +1090,7 @@ _baixarviarsync() {
 #   SERACESOFF - Caminho do diretorio SERACESOFF
 #   destino - Caminho do diretorio raiz
 _servacessoff() {
-    if [[ "${SERACESOFF}" != "" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         local SAOFF="${destino}${SERACESOFF}"
         if [[ ! -d "${SAOFF}" ]]; then
             _mensagec "${RED}" "Erro: Diretorio ${SAOFF} nao existe"
@@ -1122,12 +1123,19 @@ _servacessoff() {
 # Se ocorrer qualquer erro durante o processo, uma mensagem de erro é exibida,
 # e o usuário é retornado ao menu principal.
 _pacoteon() {
+    if [[ "${SERACESOFF}" == "s" ]]; then
+    _linha
+    _mensagec "${YELLOW}" "Parametro do servidor OFF, ativo"
+    _linha
+    _press
+    else
     _qualprograma
     _baixarviarsync
     _linha
     _atupacote
     _press
     _principal
+    fi
 }
 
 # _pacoteoff: Realiza a atualização de um programa em um ambiente offline.
@@ -1705,7 +1713,7 @@ _rsync_biblioteca() {
 # 1 se alguma movimentação de arquivo falhar
 _acessooff() {
     local off_directory="${destino}${SERACESOFF}"
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         _mensagec "${YELLOW}" "Acessando biblioteca do servidor OFF..."
         _linha
         _variaveis_atualiza
@@ -1751,7 +1759,7 @@ _transpc() {
         exit 1
     fi
 
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         _linha
         _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF, ativo"
         _linha
@@ -1792,7 +1800,7 @@ _savatu() {
         _mensagec "${RED}" "Erro: DESTINO2SAVATUMF nao foi definido"
         exit 1
     fi
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         _linha
         _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF, ativo"
         _linha
@@ -1832,7 +1840,7 @@ _savatu() {
 _atuoff() {
     clear
     _versao
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         _acessooff
     fi
     _salva
@@ -2351,7 +2359,7 @@ _linux() {
     printf "\n"
 
     # Checando Externo IP
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
         printf "${GREEN}""IP Externo :""${NORM}""${externalip}""%*s\n"
     fi
@@ -3092,7 +3100,7 @@ _backup() {
     *) _opinvalida && _ferramentas && return ;;
     esac
     # Se SERACESOFF está definido, move localmente
-    if [ -n "${SERACESOFF}" ]; then
+    if [ "${SERACESOFF}" == "s" ]; then
         local dest_dir="${destino}${SERACESOFF}"
         mkdir -p "${dest_dir}" || {
             _mensagec "${RED}" "Erro ao criar diretorio ${dest_dir}"
@@ -3247,7 +3255,7 @@ _backupavulso() {
     _mensagec "${YELLOW}" "O backup \"${VBACKUP}\" foi selecionado."
 
     # ------------------- mover localmente se necessário --------------------
-    if [[ -n "${SERACESOFF}" ]]; then
+    if [[ "${SERACESOFF}" == "s" ]]; then
         SAOFF="${destino}${SERACESOFF}"
         if mv -f "${BACKUP}/${VBACKUP}" "${SAOFF}" 2>/dev/null; then
             _linha
@@ -3927,7 +3935,7 @@ _update_offline() {
 }
 
 _update() {
-    if [ -z "$SERACESOFF" ]; then
+    if [ "${SERACESOFF}" == "n" ]; then
         _update_online
     else
         _update_offline
