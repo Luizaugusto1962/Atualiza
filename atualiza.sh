@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="28/07/2025-00"
+UPDATE="08/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -989,7 +989,7 @@ _qualprograma() {
         local MB4="${YELLOW}Informe o nome do programa (ENTER para sair): ${NORM}"
         read -rp "${MB4}" programa
         _linha
-        MB5="Erro: Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
+        MB5="Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
         # Verifica se foi digitado ENTER ou espaço
         if [[ -z "${programa}" ]]; then
             _mensagec "${RED}" "${MB5}"
@@ -2235,6 +2235,7 @@ _atualizacao() {
     M205="Escolha Desatualizar:       "
     M206="3${NORM} - Voltar programa Atualizado    "
     M209="9${NORM} - ${RED}Menu Anterior        "
+    M210="Versao do Iscobol - ""${NORM}${YELLOW}${verclass}"
     printf "\n"
     _linha "=" "${GREEN}"
     _mensagec "${RED}" "${M201}"
@@ -2252,6 +2253,8 @@ _atualizacao() {
     printf "\n\n"
     _mensagec "${GREEN}" "${M209}"
     printf "\n"
+    printf "\n"
+    _mensaged "${BLUE}" "${M210}"
     _linha "=" "${GREEN}"
     read -rp "${YELLOW}${M110}${NORM}" OPCAO
     case ${OPCAO} in
@@ -4215,7 +4218,7 @@ _principal() {
     #-100-mensagens do Menu Principal. ----------------------------------------------------------------#
     M101="Menu Principal"
     M1102=".. Empresa: ${EMPRESA} .."
-    M102=".. Sistema: ${sistema} - Versao: ${verclass} .."
+    M102="..| Sistema: ${sistema} - Versao do Iscobol: ${verclass} |.."
     M103=" Escolha a opcao:         "
     M104="1${NORM} - Atualizar Programa(s) "
     M105="2${NORM} - Atualizar Biblioteca  "
