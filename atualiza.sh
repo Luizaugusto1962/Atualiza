@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="08/08/2025-00"
+UPDATE="11/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -353,8 +353,8 @@ _meiodatela() {
 #   $1   - Cor a ser usada como fundo, no formato ANSI. Ex.: "\033[32m"
 #   $2   - Texto a ser exibido na tela.
 _mensagec() {
-    local color="$1"
-    local message="$2"
+    local color="${1}"
+    local message="${2}"
     printf "%s%*s%s\n" "${color}" $(((${#message} + $(tput cols)) / 2)) "${message}" "${NORM}"
 }
 
@@ -1071,7 +1071,8 @@ _baixarviarsync() {
             _linha
             _mensagec "${YELLOW}" "${M29}"
             _linha
-            rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
+#            rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
+            sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
         done
     else
         _mensagec "${RED}" "Nenhum valor armazenado."
@@ -1681,7 +1682,8 @@ _rsync_biblioteca() {
     if [[ "${sistema}" == "iscobol" ]]; then
         local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
         local dst="."
-        rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
+#        rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
+        sftp -P "$PORTA" "${src}" "${dst}"
         _salva
     else
         _variaveis_atualiza
@@ -1689,7 +1691,8 @@ _rsync_biblioteca() {
         local dst="."
         for file in "${update_files[@]}"; do
             local src="${USUARIO}@${IPSERVER}:${DESTINO2}${file}"
-            rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
+#            rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
+            sftp -P "$PORTA" "${src}" "${dst}"
         done
         _salva
     fi
@@ -3676,7 +3679,8 @@ _recebe_avulso() {
     _linha
     _mensagec "${YELLOW}" "${M29}"
     _linha
-    rsync -avzP -e "ssh -p ${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/".
+#    rsync -avzP -e "ssh -p ${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/".
+    sftp -P "${PORTA}" "${USUARIO}"@"${IPSERVER}":"${RECBASE}""/""${RRECEBE}" "${EDESTINO}""/".
     M15="Arquivo enviado para a pasta, \"""${EDESTINO}""\"."
     _linha
     _mensagec "${YELLOW}" "${M15}"
