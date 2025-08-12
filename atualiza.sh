@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="11/08/2025-00"
+UPDATE="12/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -390,12 +390,12 @@ _read_sleep() {
     # Usage: _read_sleep 1
     #        _read_sleep 0.2
     if [[ -z "${1}" ]]; then
-        printf "Erro: Nenhum argumento foi passado para a fun o _read_sleep.\n"
+        printf "Erro: Nenhum argumento foi passado para a funcao _read_sleep.\n"
         return 1
     fi
 
     if ! [[ "${1}" =~ ^[0-9.]+$ ]]; then
-        printf "Erro: O argumento passado para a fun o _read_sleep nao e um numero.\n"
+        printf "Erro: O argumento passado para a funcao _read_sleep nao e um numero.\n"
         return 1
     fi
 
@@ -1064,7 +1064,7 @@ _baixarviarsync() {
 
         # Realiza o RSYNC
         _linha
-        _mensagec "${YELLOW}" "Realizando RSYNC dos arquivos..."
+        _mensagec "${YELLOW}" "Realizando sincronizacao dos arquivos..."
         for arquivo in "${NOMEPROG[@]}"; do
             _linha
             _mensagec "${GREEN}" "Transferindo: $arquivo"
@@ -1072,7 +1072,21 @@ _baixarviarsync() {
             _mensagec "${YELLOW}" "${M29}"
             _linha
 #            rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
-            sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
+            if ! sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .; then
+                _linha
+                _mensagec "${RED}" "ERRO: Arquivo '$arquivo' nao encontrado no servidor!"
+                continue  # Pula para o próximo arquivo
+            fi
+            
+            # Verifica se o arquivo existe localmente após o download
+            if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
+                _linha
+                _mensagec "${RED}" "ERRO: Falha ao baixar '$arquivo' (arquivo nao existe localmente)!"
+                _linha
+                continue  # Pula para o próximo arquivo
+            fi
+            _linha            
+            _mensagec "${GREEN}" "Download concluido: $arquivo"
         done
     else
         _mensagec "${RED}" "Nenhum valor armazenado."
