@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 28/07/2025
+#versao de 12/08/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -35,7 +35,7 @@ editar_variavel() {
             echo ${linha}
             echo "O sistema usa banco de dados?"
             echo "1) Sim"
-            echo "2) Não"
+            echo "2) Nao"
             read -rp "Opcao [1-2]: " opcao
             case "$opcao" in
             1) BANCO="s" ;;
@@ -47,7 +47,7 @@ editar_variavel() {
             echo ${linha}
             echo "O sistema em modo Offline ?"
             echo "1) Sim"
-            echo "2) Não"
+            echo "2) Nao"
             read -rp "Opcao [1-2]: " opcao
             case "$opcao" in
             1) SERACESOFF="s" ;;
@@ -501,7 +501,7 @@ _ISCOBOL() {
     echo
     echo "4- Versao 2024"
     echo
-    read -rp "Escolha a versão -> " -n1 VERSAO
+    read -rp "Escolha a versao -> " -n1 VERSAO
     echo
     case ${VERSAO} in
     1) _2018 ;;
