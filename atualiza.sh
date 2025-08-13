@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="12/08/2025-00"
+UPDATE="13/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1696,8 +1696,8 @@ _rsync_biblioteca() {
     if [[ "${sistema}" == "iscobol" ]]; then
         local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
         local dst="."
-#        rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
-        sftp -P "$PORTA" "${src}" "${dst}"
+        rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
+#        sftp -P "$PORTA" "${src}" "${dst}"
         _salva
     else
         _variaveis_atualiza
