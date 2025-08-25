@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 12/08/2025
+#versao de 25/08/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -198,6 +198,22 @@ clear
     echo "Arquivos .atualizac e .atualizap atualizados com sucesso!"
     echo
     echo ${linha}
+#
+#config="$HOME/.ssh/"config
+if [[ ! -f ~/.ssh/config ]]; then
+{
+    mkdir "$HOME/.ssh/control"
+    cat <<EOF >> "$HOME/.ssh/config"
+Host sav_servidor
+    HostName 177.45.80.10
+    Port 41122
+    User atualiza
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist 10m
+EOF
+}
+fi
 
     read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
     continuar=${continuar,,}
@@ -211,6 +227,7 @@ clear
 fi
 
 clear
+
 ### Cria o bat se o servidor for em modo offline ------------------
 
 _ATUALIZA_BAT() {
