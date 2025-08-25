@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="25/08/2025-00"
+UPDATE="25/08/2025-01"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -1082,13 +1082,13 @@ EOF
 #                continue  # Pula para o próximo arquivo
 #            fi
             
-            # Verifica se o arquivo existe localmente após o download
-#            if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
-#                _linha
-#                _mensagec "${RED}" "ERRO: Falha ao baixar '$arquivo' (arquivo nao existe localmente)!"
-#                _linha
-#                continue  # Pula para o próximo arquivo
-#            fi
+# Verifica se o arquivo existe localmente após o download
+            if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
+                _linha
+                _mensagec "${RED}" "ERRO: Falha ao baixar '$arquivo' (arquivo nao existe localmente)!"
+                _linha
+                continue  # Pula para o próximo arquivo
+            fi
             _linha            
             _mensagec "${GREEN}" "Download concluido: $arquivo"
         done
