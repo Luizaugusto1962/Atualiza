@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="13/08/2025-00"
+UPDATE="25/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -958,6 +958,7 @@ fi
 
 clear
 
+
 # Esta função solicita que o usuário insira o nome de um programa em letras maiúsculas para ser atualizado.
 # Ele valida a entrada para garantir que ela consista apenas em letras maiúsculas e números.
 # Se a entrada for inválida, exibe uma mensagem de erro e retorna ao menu principal.
@@ -1072,19 +1073,22 @@ _baixarviarsync() {
             _mensagec "${YELLOW}" "${M29}"
             _linha
 #            rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
-            if ! sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .; then
-                _linha
-                _mensagec "${RED}" "ERRO: Arquivo '$arquivo' nao encontrado no servidor!"
-                continue  # Pula para o próximo arquivo
-            fi
+#            if ! sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .; then
+            sftp sav_servidor <<EOF
+get "${DESTINO2SERVER}${arquivo}"
+EOF
+#                _linha
+#                _mensagec "${RED}" "ERRO: Arquivo '$arquivo' nao encontrado no servidor!"
+#                continue  # Pula para o próximo arquivo
+#            fi
             
             # Verifica se o arquivo existe localmente após o download
-            if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
-                _linha
-                _mensagec "${RED}" "ERRO: Falha ao baixar '$arquivo' (arquivo nao existe localmente)!"
-                _linha
-                continue  # Pula para o próximo arquivo
-            fi
+#            if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
+#                _linha
+#                _mensagec "${RED}" "ERRO: Falha ao baixar '$arquivo' (arquivo nao existe localmente)!"
+#                _linha
+#                continue  # Pula para o próximo arquivo
+#            fi
             _linha            
             _mensagec "${GREEN}" "Download concluido: $arquivo"
         done
@@ -1586,8 +1590,8 @@ _volta_geral() {
 
     # Validate inputs
     [[ -z "${OLDS}" ]] && _messagec "${RED}" "${M71}"
-    [[ -z "${INI}" ]] && _messagec "${RED}" "${M71}"
     [[ ! -d "${OLDS}" ]] && _messagec "${RED}" "${M71}"
+    [[ -z "${INI}" ]] && _messagec "${RED}" "${M71}"
 
     if ! cd "${OLDS}"; then
         _meiodatela
@@ -1729,22 +1733,22 @@ _rsync_biblioteca() {
 # 0 em movimentações de arquivo bem-sucedidas
 # 1 se alguma movimentação de arquivo falhar
 _acessooff() {
-    local off_directory="${destino}${SERACESOFF}"
+    local diretorio_off="${destino}${SERACESOFF}"
     if [[ "${SERACESOFF}" == "s" ]]; then
         _mensagec "${YELLOW}" "Acessando biblioteca do servidor OFF..."
         _linha
         _variaveis_atualiza
-        local -a update_files
+        local -a updates
 
         if [[ "${sistema}" == "iscobol" ]]; then
-            update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}")
+            updates=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}")
         else
-            update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}")
+            updates=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}")
         fi
 
-        for file in "${update_files[@]}"; do
-            if [[ -f "${off_directory}/${file}" ]]; then
-                if ! mv -f -- "${off_directory}/${file}" "${TOOLS}"; then
+        for file in "${updates[@]}"; do
+            if [[ -f "${diretorio_off}/${file}" ]]; then
+                if ! mv -f -- "${diretorio_off}/${file}" "${TOOLS}"; then
                     _mensagec "${RED}" "Erro ao mover arquivo ${file}"
                     return 1
                 fi
@@ -2701,14 +2705,14 @@ _set_base_diretorio() {
 # Se ambas as condi es forem atendidas, ele executar  o comando jutil com a op o -rebuild
 # no arquivo.
 _rebuildall() {
-    local base_to_use
+    local base_em_uso
 
     # Determina a base a ser usada
     if [[ -n "${base2}" ]]; then
         _escolhe_base
-        base_to_use="${BASE1}"
+        base_em_uso="${BASE1}"
     else
-        base_to_use="${destino}${base}"
+        base_em_uso="${destino}${base}"
     fi
 
     clear
@@ -2718,21 +2722,24 @@ _rebuildall() {
         _mensagec "${RED}" "${M996}"
         _press
         _rebuild1
-        return
+        return 0
     fi
     # Solicita o nome do arquivo
     _meiodatela
     _mensagec "${CYAN}" "${M64}"
     _linha
     read -rp "${YELLOW}Informe o nome do arquivo: ${NORM}" arquivo
+    # Remove espaços extras
+    arquivo="${arquivo#"${arquivo%%[![:space:]]*}"}"
+    arquivo="${arquivo%"${arquivo##*[![:space:]]}"}"
 
     _linha "-" "${BLUE}"
     if [[ -z "${arquivo}" ]]; then
         _meiodatela
         _mensagec "${RED}" "${M65}"
         _linha "-" "${YELLOW}"
-        if [[ -d "${base_to_use}" ]]; then
-            local -a files=("${base_to_use}"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat})
+        if [[ -d "${base_em_uso}" ]]; then
+            local -a files=("${base_em_uso}"/{*.ARQ.dat,*.DAT.dat,*.LOG.dat,*.PAN.dat})
             for arquivo in "${files[@]}"; do
                 if [[ -f "${arquivo}" ]] && [[ -s "${arquivo}" ]]; then
                     _jutill "${arquivo}"
@@ -2742,7 +2749,7 @@ _rebuildall() {
                 fi
             done
         else
-            _mensagec "${RED}" "Erro: Diretorio ${base_to_use} Nao existe."
+            _mensagec "${RED}" "Erro: Diretorio ${base_em_uso} Nao existe."
         fi
     else
         while [[ "${arquivo}" =~ [^A-Z0-9] || -z "${arquivo}" ]]; do
@@ -2756,7 +2763,7 @@ _rebuildall() {
             _ferramentas
         done
         local arquivo_com_extensao="${arquivo}.???.dat"
-        for arquivo in "${base_to_use}"/${arquivo_com_extensao}; do
+        for arquivo in "${base_em_uso}"/${arquivo_com_extensao}; do
             if [[ -f "${arquivo}" ]]; then
                 "${jut}" -rebuild "${arquivo}" -a -f
             else
@@ -3769,15 +3776,15 @@ _expurgador() {
     printf "\n\n"
     # Apagando todos os arquivos do diretorio backup#
     MDIR="Limpando os arquivos do diretorio: "
+    SAVLOG="$destino""/sav/portalsav/log"
+    ERR_ISC="$destino""/sav/err_isc"
+    VIEWVIX="$destino""/sav/savisc/viewvix/tmp"
     local DIR1="${BACKUP}""/"
     local DIR2="${OLDS}""/"
     local DIR3="${PROGS}""/"
     local DIR4="${LOGS}""/"
-    SAVLOG="$destino""/sav/portalsav/log"
     local DIR5="${SAVLOG}""/"
-    ERR_ISC="$destino""/sav/err_isc"
     local DIR6="${ERR_ISC}""/"
-    VIEWVIX="$destino""/sav/savisc/viewvix/tmp"
     local DIR7="${VIEWVIX}""/"
     local DIR8="${E_EXEC}""/"
     local DIR9="${T_TELAS}""/"
