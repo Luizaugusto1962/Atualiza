@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="25/08/2025-01"
+UPDATE="26/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -113,7 +113,7 @@ UPDATE="25/08/2025-01"
 #            Também fecha o programa atualiza.sh.
 # Arrays para agrupar variáveis
 declare -a cores=(RED GREEN YELLOW BLUE PURPLE CYAN NORM)
-declare -a caminhos_base=(BASE1 BASE2 BASE3 tools DIR OLDS PROGS BACKUP destino pasta base base2 base3 logs exec class telas xml olds progs backup sistema TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF E_EXEC T_TELAS X_XML)
+declare -a caminhos_base=(BASE1 BASE2 BASE3 tools DIR destino pasta base base2 base3 logs exec class telas xml olds progs backup sistema TEMPS UMADATA DIRB ENVIABACK ENVBASE SERACESOFF E_EXEC T_TELAS X_XML)
 declare -a biblioteca=(SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4)
 declare -a comandos=(cmd_unzip cmd_zip cmd_find cmd_who)
 declare -a outros=(NOMEPROG PEDARQ prog PORTA USUARIO IPSERVER DESTINO2 VBACKUP ARQUIVO VERSAO ARQUIVO2 VERSAOANT INI SAVISC DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_VERSAO VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_IPSERVER DEFAULT_DESTINO2 UPDATE DEFAULT_PEDARQ jut JUTIL ISCCLIENT ISCCLIENTT SAVISCC)
@@ -186,7 +186,7 @@ YELLOW=$(tput bold)$(tput setaf 3) # Cor amarela
 BLUE=$(tput bold)$(tput setaf 4)   # Cor azul
 PURPLE=$(tput bold)$(tput setaf 5) # Cor roxa
 CYAN=$(tput bold)$(tput setaf 6)   # Cor ciano
-#NORM=$(tput bold)$(tput setaf 7) # Cor normal
+NORM=$(tput bold)$(tput setaf 7) # Cor normal
 NORM=$(tput sgr0)
 COLUMNS=$(tput cols) # Numero de colunas da tela
 #--------------------------------------------------------------------------------------------------#
@@ -325,7 +325,7 @@ M74="* * * < < Nome do Arquivo nao foi informada > > * * *"
 M75="Informe o tipo de compilacao (1 - Normal, 2 - Depuracao): "
 
 ### Mensagens em CYAN
-M81="..Encontrado o diretorio do sistema .."
+M81="..Encontrado o diretorio do sistema: "
 
 ### Mensagens em VERDE
 M91="Atualizacao concluida com sucesso!"
@@ -519,7 +519,14 @@ if [[ -n "${TOOLS}" ]] && [[ -d "${TOOLS}" ]]; then
         exit 1
     }
 
-    OLDS="${TOOLS}${olds}"
+readonly BACKUP="${BACKUP:-${TOOLS}/backup}"
+readonly OLDS="${OLDS:-${TOOLS}/olds}"
+readonly PROGS="${PROGS:-${TOOLS}/progs}"
+readonly LOGS="${LOGS:-${TOOLS}/logs}"
+readonly ENVIA="${ENVIA:-${TOOLS}/envia}"
+readonly RECEBE="${RECEBE:-${TOOLS}/recebe}"
+
+#    OLDS="${TOOLS}${olds}"
     # Cria diretório olds se não existir
     if [[ ! -d "${OLDS}" ]]; then
         mkdir -p "${OLDS}" || {
@@ -527,31 +534,27 @@ if [[ -n "${TOOLS}" ]] && [[ -d "${TOOLS}" ]]; then
             exit 1
         }
     fi
-    PROGS="${TOOLS}/progs"
+#    PROGS="${TOOLS}/progs"
     # Cria diretório progs se não existir
     if [[ ! -d "${PROGS}" ]]; then
         mkdir -p "${PROGS}"
     fi
-
-    LOGS="${TOOLS}/logs"
+#    LOGS="${TOOLS}/logs"
     # Cria diretório logs se não existir
     if [[ ! -d "${LOGS}" ]]; then
         mkdir -p "${LOGS}"
     fi
-
-    BACKUP="${TOOLS}/backup"
+#    BACKUP="${TOOLS}/backup"
     # Cria diretório backups se não existir
     if [[ ! -d "${BACKUP}" ]]; then
         mkdir -p "${BACKUP}"
     fi
-
-    ENVIA="${TOOLS}/envia"
+#    ENVIA="${TOOLS}/envia"
     # Cria diretório envia se não existir
     if [[ ! -d "${ENVIA}" ]]; then
         mkdir -p "${ENVIA}"
     fi
-
-    RECEBE="${TOOLS}/recebe"
+#    RECEBE="${TOOLS}/recebe"
     # Cria diretório recebe se não existir
     if [[ ! -d "${RECEBE}" ]]; then
         mkdir -p "${RECEBE}"
@@ -647,52 +650,50 @@ fi
 # estao configurados corretamente.
 # -----------------------------------------------------------------#
 
+# ...existing code...
+
+# Define variáveis de caminho
+export E_EXEC="${destino}/${exec}"
+export T_TELAS="${destino}/${telas}"
+export X_XML="${destino}/${xml}"
+export BASE1="${destino}${base}"
+
+# Função para verificar diretório e exibir mensagem
+_verifica_diretorio() {
+    local caminho="$1"
+    local mensagem_ok="$2"
+    local mensagem_erro="$3"
+    if [[ -n "${caminho}" ]] && [[ -d "${caminho}" ]]; then
+        _mensagec "${CYAN}" "${mensagem_ok}"
+    else
+        _linha "*"
+        _mensagec "${RED}" "${mensagem_erro} ${caminho}"
+        _linha "*"
+        _read_sleep 2
+        exit 1
+    fi
+}
+
 # Verificações de parâmetro e diretórios
-E_EXEC="${destino}/${exec}"
-if [[ -n "${E_EXEC}" ]] && [[ -d "${E_EXEC}" ]]; then
-    # Diretorio da destino encontrado
-    _mensagec "${CYAN}" "${M81}"
-else
-    # Diretorio da destino nao encontrado
-    M44="Nao foi encontrado o diretorio ""${E_EXEC}"
-    _linha "*"
-    _mensagec "${RED}" "${M44}"
-    _linha "*"
-    _read_sleep 2
-    exit
-fi
-T_TELAS="${destino}/${telas}"
-if [[ -n "${T_TELAS}" ]] && [[ -d "${T_TELAS}" ]]; then
-    # Diretorio da destino encontrado
-    _mensagec "${CYAN}" "${M81}"
-else
-    # Diretorio da destino nao encontrado
-    M44="Nao foi encontrado o diretorio ""${T_TELAS}"
-    _linha "*"
-    _mensagec "${RED}" "${M44}"
-    _linha "*"
-    _read_sleep 2
-    exit
-fi
-X_XML="${destino}/${xml}"
-if [[ -n "${X_XML}" ]] && [[ -d "${X_XML}" ]]; then
-    # Diretorio da destino encontrado
-    _mensagec "${CYAN}" "${M81}"
-else
-    # Diretorio da destino nao encontrado
-    printf "%*s""Diretorio da destino nao encontrado ""${X_XML}""...  \n"
-    exit
+_verifica_diretorio "${E_EXEC}" "${M81}${E_EXEC}" "Nao foi encontrado o diretorio"
+_verifica_diretorio "${T_TELAS}" "${M81}${T_TELAS}" "Nao foi encontrado o diretorio"
+_verifica_diretorio "${BASE1}" "${M81}${BASE1}" "Nao foi encontrado o diretorio"
+
+if [[ "$sistema" == "iscobol" ]] ; then
+    _verifica_diretorio "${X_XML}" "${M81}${X_XML}" "Diretorio da destino nao encontrado"
 fi
 
-BASE1=${destino}${base}
-if [[ -n "${BASE1}" ]] && [[ -d "${BASE1}" ]]; then
-    # Diretorio da base encontrado
-    _mensagec "${CYAN}" "${M81}"
-else
-    # Diretorio da base nao encontrado
-    printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
-    exit
-fi
+# ...existing code...
+
+#BASE1=${destino}${base}
+#if [[ -n "${BASE1}" ]] && [[ -d "${BASE1}" ]]; then
+#    # Diretorio da base encontrado
+#    _mensagec "${CYAN}" "${M81}"
+#else
+#    # Diretorio da base nao encontrado
+#    printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
+#    exit
+#fi
 
 BASE2=${destino}${base2}
 if [[ -n "${BASE2}" ]] && [[ -d "${BASE2}" ]]; then
@@ -1951,10 +1952,9 @@ _processo() {
     _linha
     _read_sleep 1
 
-    if [ "$sistema" = "iscobol" ]; then
-        # Compactação em E_EXEC
-        cd "$E_EXEC" || exit
-        if "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" +; then
+    # Compactação em E_EXEC
+    cd "$E_EXEC" || exit
+        if "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec zip -r -q "${backup_path}" "{}" +; then
             _barra
             _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $E_EXEC concluida)"
         else
@@ -1969,7 +1969,7 @@ _processo() {
         else
             _mensagec "${RED}" "Erro ao compactar arquivos em $T_TELAS"
         fi
-
+    if [ "$sistema" == "iscobol" ]; then
         # Compactação em X_XML
         cd "$X_XML" || exit
         if "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec zip -r -q "${backup_path}" "{}" +; then
@@ -1977,25 +1977,6 @@ _processo() {
             _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $X_XML concluida)"
         else
             _mensagec "${RED}" "Erro ao compactar arquivos em $X_XML"
-        fi
-    else #
-        # Compactação em E_EXEC
-        cd "$E_EXEC" || exit
-        if "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.int" \) -exec zip -r -q "${backup_path}" "{}" +; then
-            _barra
-            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $E_EXEC concluida)"
-        else
-            _mensagec "${RED}" "Erro ao compactar arquivos em $E_EXEC"
-        fi
-
-        # Compactação em T_TELAS
-        cd "$T_TELAS" || exit
-        if "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec zip -r -q "${backup_path}" "{}" +; then
-            _barra
-            #            ((contador++))
-            _mensagec "${YELLOW}" "[${barra}] ${percent}% (Compactacao de $T_TELAS concluida)"
-        else
-            _mensagec "${RED}" "Erro ao compactar arquivos em $T_TELAS"
         fi
     fi
 
@@ -3882,12 +3863,12 @@ _update_online() {
     # Verificar e mover arquivos
     for file in atualiza.sh setup.sh; do
         if [ ! -f "$file" ]; then
-            _mensagec "${RED}" "Erro: $file nao encontrado."
+            _mensagec "${RED}" "Erro: Arquivo $file nao encontrado."
             return 1
         fi
         chmod +x "$file"
         mv -f "$file" "$TOOLS" || {
-            _mensagec "${RED}" "Erro ao mover $file para $TOOLS."
+            _mensagec "${RED}" "Falha ao mover $file para $TOOLS."
             return 1
         }
     done
