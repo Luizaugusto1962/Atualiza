@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 25/08/2025
+#versao de 27/08/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -112,7 +112,7 @@ if [[ -f ".atualizac" && -f ".atualizap" ]]; then
         echo "Erro: Falha ao criar backup de .atualizap"
         exit 1
     }
-
+fi
 ## Criando o progama atualiza em /usr/local/bin
 {
 echo "#!/usr/bin/env bash"
@@ -198,12 +198,20 @@ clear
     echo "Arquivos .atualizac e .atualizap atualizados com sucesso!"
     echo
     echo ${linha}
+    
 #
-#config="$HOME/.ssh/"config
-if [[ ! -f ~/.ssh/config ]]; then
-{
-    mkdir "$HOME/.ssh/control"
-    cat <<EOF >> "$HOME/.ssh/config"
+# Verifica se o arquivo ~/.ssh/config NÃO existe
+if [[ ! -f "$HOME/.ssh/config" ]]; then
+    # Cria diretório .ssh com permissões seguras (se não existir)
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    
+    # Cria diretório de controle para multiplexação
+    mkdir -p "$HOME/.ssh/control"
+    chmod 700 "$HOME/.ssh/control"
+    
+    # Adiciona configuração SSH com as definições solicitadas
+    cat << 'EOF' >> "$HOME/.ssh/config"
 Host sav_servidor
     HostName 177.45.80.10
     Port 41122
@@ -212,20 +220,44 @@ Host sav_servidor
     ControlPath ~/.ssh/control/%r@%h:%p
     ControlPersist 10m
 EOF
-}
-fi
 
-    read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
-    continuar=${continuar,,}
-    if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
-        echo "Finalizando o script de setup."
-        exit 0
+    # Define permissões seguras para o arquivo de configuração
+    chmod 600 "$HOME/.ssh/config"
+    
+    echo "Configuracao SSH criada com sucesso em $HOME/.ssh/config"
+else
+    echo "Arquivo de configuracao ja existe: $HOME/.ssh/config"
+    # Verifica se a configuração específica já está presente
+    if ! grep -q "Host sav_servidor" "$HOME/.ssh/config" 2>/dev/null; then
+        echo -e "\n A configuracao 'sav_servidor' NAO esta presente no arquivo."
+        echo "Deseja adiciona-la? (s/n)"
+        read -r resposta
+        if [[ "$resposta" =~ ^[Ss]$ ]]; then
+            cat << 'EOF' >> "$HOME/.ssh/config"
+
+# Configuracao adicionada automaticamente
+Host sav_servidor
+    HostName 177.45.80.10
+    Port 41122
+    User atualiza
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist 10m
+EOF
+            echo "Configuracao 'sav_servidor' adicionada com sucesso!"
+        fi
     fi
-    echo
-    echo "Continuando o processo normal..."
-    sleep 1
 fi
 
+read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
+continuar=${continuar,,}
+if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
+    echo "Finalizando o script de setup."
+    exit 0
+fi
+echo
+echo "Continuando o processo normal..."
+sleep 1
 clear
 
 ### Cria o bat se o servidor for em modo offline ------------------
