@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="26/08/2025-00"
+UPDATE="27/08/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -189,7 +189,7 @@ CYAN=$(tput bold)$(tput setaf 6)   # Cor ciano
 NORM=$(tput bold)$(tput setaf 7) # Cor normal
 NORM=$(tput sgr0)
 COLUMNS=$(tput cols) # Numero de colunas da tela
-#--------------------------------------------------------------------------------------------------#
+
 # Funcao para checar se o zip esta instalado
 # Checa se os programas necessarios para o atualiza.sh estao instalados no sistema.
 # Se o programa nao for encontrado, exibe uma mensagem de erro e sai do programa.
@@ -263,9 +263,9 @@ if [[ -z "${cmd_who}" ]]; then
     fi
 fi
 
-# Este script shell é responsável por listar mensagens relacionadas ao processo de atualização.
 # Utilize este arquivo para visualizar ou modificar a lista de mensagens exibidas durante a execução.
-#-Lista de mensagens #-----------------------------------------------------------------------------#
+#-Lista de mensagens 
+
 ### Mensagens em AMARELO
 M01="Compactando os arquivos Anteriores"
 M03="Volta do(s) Programa(s) Concluida(s)"
@@ -683,37 +683,26 @@ if [[ "$sistema" == "iscobol" ]] ; then
     _verifica_diretorio "${X_XML}" "${M81}${X_XML}" "Diretorio da destino nao encontrado"
 fi
 
-# ...existing code...
+# Verifica se existe o diretorio para outras bases de dados
+_verifica_base() {
+    local caminho="$1"
+    if [[ -n "${caminho}" ]] && [[ -d "${caminho}" ]]; then
+        _mensagec "${CYAN}" "${M81}"
+    else
+        M99="Diretorio da base nao encontrado ${caminho}"
+        _linha "*"
+        _mensagec "${RED}" "${M99}"
+        _linha "*"
+        exit 1
+    fi
+}
 
-#BASE1=${destino}${base}
-#if [[ -n "${BASE1}" ]] && [[ -d "${BASE1}" ]]; then
-#    # Diretorio da base encontrado
-#    _mensagec "${CYAN}" "${M81}"
-#else
-#    # Diretorio da base nao encontrado
-#    printf "%*s""Diretorio da base nao encontrado ""${BASE1}""...  \n"
-#    exit
-#fi
+BASE2="${destino}${base2}"
+_verifica_base "${BASE2}"
 
-BASE2=${destino}${base2}
-if [[ -n "${BASE2}" ]] && [[ -d "${BASE2}" ]]; then
-    # Diretorio da base encontrado
-    _mensagec "${CYAN}" "${M81}"
-else
-    # Diretorio da base nao encontrado
-    printf "%*s""Diretorio da base nao encontrado ""${BASE2}""...  \n"
-    exit
-fi
+BASE3="${destino}${base3}"
+_verifica_base "${BASE3}"
 
-BASE3=${destino}${base3}
-if [[ -n "${BASE3}" ]] && [[ -d "${BASE3}" ]]; then
-    # Diretorio da base encontrado
-    _mensagec "${CYAN}" "${M81}"
-else
-    # Diretorio da base nao encontrado
-    printf "%*s""Diretorio da base nao encontrado ""${BASE3}""...  \n"
-    exit
-fi
 # Verifica diretórios específicos se o sistema for iscobol
 if [[ "${sistema}" = "iscobol" ]]; then
     if [[ ! -d "${X_XML}" ]]; then
@@ -1078,11 +1067,7 @@ _baixarviarsync() {
             sftp sav_servidor <<EOF
 get "${DESTINO2SERVER}${arquivo}"
 EOF
-#                _linha
-#                _mensagec "${RED}" "ERRO: Arquivo '$arquivo' nao encontrado no servidor!"
-#                continue  # Pula para o próximo arquivo
-#            fi
-            
+
 # Verifica se o arquivo existe localmente após o download
             if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
                 _linha
@@ -1090,7 +1075,7 @@ EOF
                 _linha
                 continue  # Pula para o próximo arquivo
             fi
-            _linha            
+            _linha
             _mensagec "${GREEN}" "Download concluido: $arquivo"
         done
     else
@@ -1698,23 +1683,20 @@ _variaveis_atualiza() {
 #   VERSAO - Versao do programa a ser baixado
 #   destino - Caminho do diretorio local onde o arquivo sera salvo
 _rsync_biblioteca() {
+    _variaveis_atualiza
     if [[ "${sistema}" == "iscobol" ]]; then
-        local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
-        local dst="."
-        rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
-#        sftp -P "$PORTA" "${src}" "${dst}"
-        _salva
+        update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}")
     else
-        _variaveis_atualiza
         update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}")
-        local dst="."
-        for file in "${update_files[@]}"; do
-            local src="${USUARIO}@${IPSERVER}:${DESTINO2}${file}"
-#            rsync -avzP -e "ssh -p ${PORTA}" "${src}" "${dst}"
-            sftp -P "$PORTA" "${src}" "${dst}"
-        done
-        _salva
     fi
+    local dst="."
+    for file in "${update_files[@]}"; do
+        local src="${DESTINO2}${file}"
+            sftp sav_servidor <<EOF
+get "${src}" "${dst}"
+EOF
+    done
+    _salva
 }
 
 # _acessooff
@@ -2818,7 +2800,7 @@ _rebuildlista() {
             printf "ERRO. Arquivo atualizaj2, Sem acesso de leitura.\n" >&2
             exit 1
         fi
-        #--------------------------------------------------------------------------------------------------#
+
         # Trabalhando lista do arquivo "atualizaj" #
         while read -r line || [[ -n "${line}" ]]; do
             if [[ -z "${line}" ]]; then
@@ -2833,7 +2815,6 @@ _rebuildlista() {
                     _meiodatela
                     _mensagec "${RED}" "Nao foi encontrado o arquivo ${arquivo}"
                     _linha
-
                 fi
             fi
         done <atualizaj
@@ -3537,14 +3518,14 @@ _menubackup() {
     done
 }
 
-###---_envia_avulso-------------------------------------------------------------
+###---_envia_avulso-
 ##  Funcao para Enviar um arquivo avulso.
 ##  Chama as funcoes _envia_avulso() e _recebe_avulso() para o envio e recebimento de arquivos.
 ##  Opcoes:
 ##  1 - Envia arquivo(s)
 ##  2 - Recebe arquivo(s)
 ##  9 - Menu Anterior
-##-----------------------------------------------------------------------------------------------
+
 _envia_avulso() {
     clear
     printf "\n\n\n"
@@ -3631,7 +3612,7 @@ _envia_avulso() {
     _read_sleep 3
     _envrecarq
 }
-##---recebe_avulso-------------------------------------
+
 # _recebe_avulso()
 #
 # Recebe um arquivo avulso via rsync do servidor da SAV.
@@ -3698,7 +3679,7 @@ _recebe_avulso() {
 ##  1 - Envia arquivo(s)
 ##  2 - Recebe arquivo(s)
 ##  9 - Menu Anterior
-##-----------------------------------------------------------------------------------------------
+
 _envrecarq() {
     clear
     ###-800-mensagens do Menu Envio e Retorno.
