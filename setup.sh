@@ -199,7 +199,9 @@ clear
     echo
     echo ${linha}
     
+
 #
+# Rotina para cria acesso ao ssh
 # Verifica se o arquivo ~/.ssh/config NÃO existe
 if [[ ! -f "$HOME/.ssh/config" ]]; then
     # Cria diretório .ssh com permissões seguras (se não existir)
@@ -209,7 +211,11 @@ if [[ ! -f "$HOME/.ssh/config" ]]; then
     # Cria diretório de controle para multiplexação
     mkdir -p "$HOME/.ssh/control"
     chmod 700 "$HOME/.ssh/control"
-    
+
+    # Cria diretório de controle para multiplexação
+    mkdir -p "/u/sav/tools/.ssh/control"
+    chmod 700 "/u/sav/tools/.ssh/control"
+
     # Adiciona configuração SSH com as definições solicitadas
     cat << 'EOF' >> "$HOME/.ssh/config"
 Host sav_servidor
@@ -217,7 +223,8 @@ Host sav_servidor
     Port 41122
     User atualiza
     ControlMaster auto
-    ControlPath ~/.ssh/control/%r@%h:%p
+#    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
     ControlPersist 10m
 EOF
 
@@ -241,7 +248,8 @@ Host sav_servidor
     Port 41122
     User atualiza
     ControlMaster auto
-    ControlPath ~/.ssh/control/%r@%h:%p
+#    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
     ControlPersist 10m
 EOF
             echo "Configuracao 'sav_servidor' adicionada com sucesso!"
