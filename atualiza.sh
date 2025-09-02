@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="27/08/2025-00"
+UPDATE="02/09/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -126,7 +126,7 @@ _resetando() {
     unset -v "${comandos[@]}"
     unset -v "${outros[@]}"
     tput sgr0
-    exit 1
+    exit 1 
 }
 #-VARIAVEIS do sistema ----------------------------------------------------------------------------#
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
@@ -140,8 +140,8 @@ base2="${base2:-}"           # Caminho do diretorio da segunda base de dados.
 base3="${base3:-}"           # Caminho do diretorio da terceira base de dados.
 logs="${logs:-}"             # Caminho do diretorio dos arquivos de log.
 exec="${exec:-}"             # Caminho do diretorio dos executaveis.
-class="${class:-}"           # Caminho do diretorio das classes.
-mclass="${mclass:-}"         # Caminho do diretorio das classes da mclasse.
+class="${class:-}"           # Extensao do programa compilando.
+mclass="${mclass:-}"         # Extensao do programa compilando em modo debug.
 telas="${telas:-}"           # Caminho do diretorio das telas.
 xml="${xml:-}"               # Caminho do diretorio dos arquivos xml.
 olds="${olds:-}"             # Caminho do diretorio dos arquivos de backup.
@@ -158,6 +158,7 @@ ENVIABACK="${ENVIABACK:-}"   # Variavel que define o caminho para onde sera envi
 VERSAO="${VERSAO:-}"         # Variavel que define a versao do programa.
 INI="${INI:-}"               # Variavel que define o caminho do arquivo de configuracao do sistema.
 SERACESOFF="${SERACESOFF:-}" # Variavel que define o caminho do diretorio do servidor off.
+acessossh="${acessossh:-}" # Variavel que define o caminho do diretorio do servidor off.
 VERSAOANT="${VERSAOANT:-}"   # Variavel que define a versao do programa anterior.
 cmd_unzip="${cmd_unzip:-}"   # Comando para descompactar arquivos.
 cmd_zip="${cmd_zip:-}"       # Comando para compactar arquivos.
@@ -167,8 +168,8 @@ VBACKUP="${VBACKUP:-}"       # Variavel que define se sera realizado backup.
 ARQUIVO="${ARQUIVO:-}"       # Variavel que define o nome do arquivo a ser baixado.
 PEDARQ="${PEDARQ:-}"         # Variavel que define se sera realizado o pedido de arquivos.
 prog="${prog:-}"             # Variavel que define o nome do programa a ser baixado.
-PORTA="${PORTA:-}"           # Variavel que define a porta a ser usada para rsync.
-USUARIO="${USUARIO:-}"       # Variavel que define o usuario a ser usado para rsync.
+PORTA="${PORTA:-}"           # Variavel que define a porta a ser usada para.
+USUARIO="${USUARIO:-}"       # Variavel que define o usuario a ser usado.
 IPSERVER="${IPSERVER:-}"     # Variavel que define o ip do servidor da SAV.
 DESTINO2="${DESTINO2:-}"     # Variavel que define o caminho do diretorio da biblioteca do servidor da SAV.
 
@@ -285,7 +286,7 @@ M25="... Voltando versao anterior ..."
 M26="... Agora, ATUALIZANDO os programas ..."
 M27=" .. Backup Completo .."
 M28="Arquivo encontrado no diretorio"
-M29="Informe a senha para o usuario do rsync:"
+M29="Informe a senha para o usuario remoto:"
 M33="Voltando Backup anterior  ..."
 M35="Deseja voltar todos os ARQUIVOS do Backup ? [N/s]:"
 M36="<< ... Pressione qualquer tecla para continuar ... >>"
@@ -513,7 +514,7 @@ destino="${raiz}${destino}"
 TOOLS="${destino}${pasta}"
 if [[ -n "${TOOLS}" ]] && [[ -d "${TOOLS}" ]]; then
     # Diretorio da destino encontrado
-    _mensagec "${CYAN}" "${M81}"
+    _mensagec "${CYAN}" "${M81}${TOOLS}"
     cd "${TOOLS}" || {
         printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"
         exit 1
@@ -608,7 +609,7 @@ fi
 
 # pasta - Diretorio do Tools
 if [[ -n "${pasta}" ]]; then
-    _mensagec "${CYAN}" "${M81}"
+    _mensagec "${CYAN}" "${M81}${pasta}"
 else
     M80="Diretorio do Tools, nao esta configurado"
     _linha
@@ -619,7 +620,7 @@ fi
 
 # exec - Diretorio dos programas
 if [[ -n "${exec}" ]]; then
-    _mensagec "${CYAN}" "${M81}"
+    _mensagec "${CYAN}" "${M81}${exec}"
 else
     printf "Diretorio dos programas, nao esta configurado  \n"
     exit
@@ -627,7 +628,7 @@ fi
 
 # telas - Diretorio das Telas
 if [[ -n "${telas}" ]]; then
-    _mensagec "${CYAN}" "${M81}"
+    _mensagec "${CYAN}" "${M81}${telas}"
 else
     printf "Diretorio das Telas, nao esta configurado \n"
     exit
@@ -637,7 +638,7 @@ fi
 # xml - Diretorio dos Xmls do sistema
 if [[ "${sistema}" = "iscobol" ]]; then
     if [[ -n "${xml}" ]]; then
-        _mensagec "${CYAN}" "${M81}"
+        _mensagec "${CYAN}" "${M81}${xml}"
     else
         printf "Diretorio dos Xmls do sistema, nao esta configurado  \n"
         exit
@@ -685,23 +686,22 @@ fi
 
 # Verifica se existe o diretorio para outras bases de dados
 _verifica_base() {
-    local caminho="$1"
-    if [[ -n "${caminho}" ]] && [[ -d "${caminho}" ]]; then
-        _mensagec "${CYAN}" "${M81}"
+    local base="$1"
+    if [[ -n "${destino}${base}" ]] && [[ -d "${destino}${base}" ]]; then
+        _mensagec "${CYAN}" "${M81}${base}"
     else
-        M99="Diretorio da base nao encontrado ${caminho}"
-        _linha "*"
+        M99="Diretorio da base nao encontrado ou configurada ${base}"
         _mensagec "${RED}" "${M99}"
-        _linha "*"
         exit 1
     fi
 }
 
-BASE2="${destino}${base2}"
+export BASE2="${base2}"
 _verifica_base "${BASE2}"
 
-BASE3="${destino}${base3}"
+export BASE3="${base3}"
 _verifica_base "${BASE3}"
+
 
 # Verifica diretórios específicos se o sistema for iscobol
 if [[ "${sistema}" = "iscobol" ]]; then
@@ -727,7 +727,6 @@ jut="$SAVISC""$JUTIL"
 # PORTA - Porta a ser usada para acesso ao servidor via rsync
 # USUARIO - Usuario a ser usado para acesso ao servidor via rsync
 # IPSERVER - IP do servidor a ser acessado via rsync
-
 # Valor padrao para a porta
 DEFAULT_PORTA="41122"
 # Verifica se a variavel de ambiente PORTA foi setada
@@ -948,7 +947,6 @@ fi
 
 clear
 
-
 # Esta função solicita que o usuário insira o nome de um programa em letras maiúsculas para ser atualizado.
 # Ele valida a entrada para garantir que ela consista apenas em letras maiúsculas e números.
 # Se a entrada for inválida, exibe uma mensagem de erro e retorna ao menu principal.
@@ -1062,11 +1060,15 @@ _baixarviarsync() {
             _linha
             _mensagec "${YELLOW}" "${M29}"
             _linha
-#            rsync -avzP -e "ssh -p $PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .
-#            if ! sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .; then
+            if [[ "${acessossh}" == "n" ]]; then
+            if ! sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .; then
+                true
+            fi
+            else
             sftp sav_servidor <<EOF
 get "${DESTINO2SERVER}${arquivo}"
 EOF
+            fi
 
 # Verifica se o arquivo existe localmente após o download
             if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
@@ -1627,6 +1629,198 @@ _volta_geral() {
     _principal
 }
 
+##--- [ Inicio da rotina para baixar pacotes ]
+# Esta função solicita ao usuário o nome de um pacote para ser baixado.
+# O usuário pode informar até 6 nomes de programas (em letras maiúsculas e números).
+# Para cada nome informado, o script adiciona o nome do arquivo .zip correspondente ao array NOMEPROG.
+# Ao final, exibe a lista dos programas que serão baixados.
+_qualpack() {
+    # Variáveis
+    # Configurações
+    local MAX_REPETICOES=6
+    local contador=0
+    local programa
+    programas=()
+    NOMEPROG=()
+    # Função para validar nome do programa
+    validar_nome() {
+        local programa="$1"
+        [[ -n "$programa" && "$programa" =~ ^[A-Z0-9]+$ ]]
+        [[ "$1" =~ ^[A-Z0-9]+$ ]]
+    }
+
+    # Loop principal
+    for ((contador = 1; contador <= MAX_REPETICOES; contador++)); do
+        #while (( contador < MAX_REPETICOES )); do
+        _meiodatela
+        #-Informe o nome do programa a ser atualizado:
+        _mensagec "${RED}" "${M59}"
+        _linha
+        local MB4="${YELLOW}Informe o nome do programa (ENTER para sair): ${NORM}"
+        read -rp "${MB4}" programa
+        _linha
+        MB5="Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
+        # Verifica se foi digitado ENTER ou espaço
+        if [[ -z "${programa}" ]]; then
+            _mensagec "${RED}" "${MB5}"
+            _linha
+            break
+        fi
+        if [[ "${programa}" == " " ]]; then
+            _mensagec "${RED}" "${MB5}"
+            break
+        fi
+        # Verifica se o nome do programa é válido
+        if ! validar_nome "$programa"; then
+            _mensagec "${RED}" "Erro: O nome do programa deve conter apenas letras maiusculas e numeros (ex.: ABC123)."
+            continue
+        fi
+
+        # Solicita o tipo de compilação
+        _mensagec "${RED}" "${M75}"
+        _linha
+
+        local compila="${programa}.zip"
+        # Armazena o resultado
+        programas+=("$programa")
+        NOMEPROG+=("$compila")
+        
+        _linha
+        _mensagec "${GREEN}" "Compilacao adicionada: ${programas[*]}"
+        _linha
+        # Lista os programas armazenados
+        _mensagec "${YELLOW}" "Lista de programas a serem baixados:"
+        for progr in "${programas[@]}"; do
+            _mensagec "${GREEN}" "$progr"
+        done
+    done
+}
+
+
+_baixarpack() {
+    cd "$RECEBE" || { echo "Diretório $RECEBE não encontrado."; return 1; }
+    # Exibe os resultados finais se houver
+    if ((${#NOMEPROG[@]} > 0)); then
+        _mensagec "${YELLOW}" "Resultados armazenados:"
+        _linha
+        _mensagec "${GREEN}" "${NOMEPROG[@]}"
+
+        # Realiza o RSYNC
+        _linha
+        _mensagec "${YELLOW}" "Realizando sincronizacao dos arquivos..."
+        for arquivo in "${NOMEPROG[@]}"; do
+            _linha
+            _mensagec "${GREEN}" "Transferindo: $arquivo"
+            _linha
+            _mensagec "${YELLOW}" "${M29}"
+            _linha
+            if [[ "${acessossh}" == "n" ]]; then
+                if ! sftp -P "$PORTA" "$USUARIO"@"${IPSERVER}":"${DESTINO2SERVER}""${arquivo}" .; then
+                    true
+                fi
+            else
+            sftp sav_servidor <<EOF
+get "${DESTINO2SERVER}${arquivo}"
+EOF
+            fi
+
+# Verifica se o arquivo existe localmente após o download
+            if [ ! -f "$arquivo" ] || [ ! -s "$arquivo" ]; then
+                _linha
+                _mensagec "${RED}" "ERRO: Falha ao baixar '$arquivo' (arquivo nao existe localmente)!"
+                _linha
+                continue  # Pula para o próximo arquivo
+            fi
+            _linha
+            _mensagec "${GREEN}" "Download concluido: $arquivo"
+        done
+    else
+        _mensagec "${RED}" "Nenhum valor armazenado."
+        _mensagec "${GREEN}" "Processo finalizado."
+    fi
+}
+
+
+_atupack() {
+    cd "$RECEBE" || { echo "Diretório $RECEBE não encontrado."; return 1; }
+    # Processa de descompactar e atualizar os programas
+    for arquivo in "${NOMEPROG[@]}"; do
+        while [[ ! -f "${arquivo}" ]]; do
+            _linha
+            _mensagec "${RED}" "Erro: Arquivo de atualizacao ${arquivo} nao existe"
+            _linha
+            printf "%s\n" "${YELLOW}Digite o nome correto do arquivo ou pressione ENTER para sair:${NORM}"
+            read -r novo_arquivo
+            if [[ -z "${novo_arquivo}" ]]; then
+                _mensagec "${RED}" "Processo cancelado pelo usuario."
+                _linha
+                return 1
+            fi
+            arquivo="${novo_arquivo}"
+        done
+        if ! "${cmd_unzip}" -o "${arquivo}" >>"${LOG_ATU}"; then
+            _linha
+            _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
+            _linha
+            _press
+        fi
+    done
+        # Altera extensões e move arquivos para o diretório PROGS
+    for arquivo in "${NOMEPROG[@]}"; do
+        if [[ -f "${arquivo}" ]]; then
+            backup_file="${arquivo%.zip}.bkp"
+            if ! mv -f -- "${arquivo}" "${PROGS}/${backup_file}"; then
+                _linha
+                _mensagec "${RED}" "Erro ao renomear ${arquivo} para ${backup_file}"
+                _linha
+                _press
+                _principal
+                return
+            fi
+        fi
+        _mensagec "${GREEN}" "${M20}"
+        _linha
+    done
+    
+    # Processa todos os arquivos .class
+    find . -type f -name "*.class" | grep -v '\$' | while read -r classfile; do
+        # Extrai nome base do programa (ex: ADC011)
+        progname="${classfile##*/}"
+        progname="${progname%%.class}"
+
+        # Compacta todos os arquivos antigos .class do programa
+        find "${E_EXEC}" -type f -name "${progname}*.class" -exec zip -m -j "${OLDS}/${progname}-anterior.zip" {} + 2>/dev/null
+
+        # Se existir arquivo .TEL correspondente, processa
+        if [ -f "${progname}.TEL" ]; then
+            # Compacta todos os arquivos antigos .TEL do programa
+            find "${T_TELAS}" -type f -name "${progname}*.TEL" -exec zip -m -j "${OLDS}/${progname}-anterior.zip" {} + 2>/dev/null
+
+        fi
+    done
+                # Move o novo arquivo .class para /u/sav/classes
+            mv -f ./*.class "${E_EXEC}/" >>"${LOG_ATU}"
+                # Move o novo arquivo .TEL para /u/sav/tel_isc
+            mv -f ./*.TEL "${T_TELAS}/" >>"${LOG_ATU}"
+
+}
+
+_pack() {
+    if [[ "${SERACESOFF}" == "s" ]]; then
+    _linha
+    _mensagec "${YELLOW}" "Parametro do servidor OFF, ativo"
+    _linha
+    _press
+    else
+    _qualpack
+    _baixarpack
+    _linha
+    _atupack
+    _press
+    _principal
+    fi
+}
+##----
 # Função _versao
 # ----------------
 # Esta função exibe ou manipula informações relacionadas à versão do sistema ou script.
@@ -1683,13 +1877,28 @@ _variaveis_atualiza() {
 #   VERSAO - Versao do programa a ser baixado
 #   destino - Caminho do diretorio local onde o arquivo sera salvo
 _rsync_biblioteca() {
+    local dst="."
+    if [[ "${acessossh}" == "n" ]]; then
+        if [[ "${sistema}" == "iscobol" ]]; then
+            local src="${USUARIO}@${IPSERVER}:${DESTINO2}${SAVATU}${VERSAO}.zip"
+            sftp -P "$PORTA" "${src}" "${dst}"
+            _salva
+        else
+            _variaveis_atualiza
+            update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}")
+            for file in "${update_files[@]}"; do
+                local src="${USUARIO}@${IPSERVER}:${DESTINO2}${file}"
+                sftp -P "$PORTA" "${src}" "${dst}"
+            done
+            _salva
+        fi    
+    else
     _variaveis_atualiza
     if [[ "${sistema}" == "iscobol" ]]; then
         update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}")
     else
         update_files=("${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}")
     fi
-    local dst="."
     for file in "${update_files[@]}"; do
         local src="${DESTINO2}${file}"
             sftp sav_servidor <<EOF
@@ -1697,6 +1906,7 @@ get "${src}" "${dst}"
 EOF
     done
     _salva
+    fi
 }
 
 # _acessooff
@@ -2216,8 +2426,9 @@ _atualizacao() {
     M202="Escolha o tipo de Atualizacao:         "
     M203="1${NORM} - Programa ou Pacote ON-Line    "
     M204="2${NORM} - Programa ou Pacote em OFF-Line"
-    M205="Escolha Desatualizar:       "
-    M206="3${NORM} - Voltar programa Atualizado    "
+    M205="3${NORM} - Progamas em Pacote            "
+    M206="Escolha Desatualizar:                 "
+    M207="4${NORM} - Voltar programa Atualizado    "
     M209="9${NORM} - ${RED}Menu Anterior        "
     M210="Versao do Iscobol - ""${NORM}${YELLOW}${verclass}"
     printf "\n"
@@ -2230,10 +2441,12 @@ _atualizacao() {
     _mensagec "${GREEN}" "${M203}"
     printf "\n"
     _mensagec "${GREEN}" "${M204}"
-    printf "\n\n"
-    _mensagec "${PURPLE}" "${M205}"
     printf "\n"
-    _mensagec "${GREEN}" "${M206}"
+    _mensagec "${GREEN}" "${M205}"
+    printf "\n\n"
+    _mensagec "${PURPLE}" "${M206}"
+    printf "\n"
+    _mensagec "${GREEN}" "${M207}"
     printf "\n\n"
     _mensagec "${GREEN}" "${M209}"
     printf "\n"
@@ -2244,7 +2457,9 @@ _atualizacao() {
     case ${OPCAO} in
     1) _pacoteon ;;
     2) _pacoteoff ;;
-    3) _voltaprog ;;
+    3) _pack      ;;
+    4) _voltaprog ;;
+
     9)
         clear
         _principal
@@ -2836,7 +3051,6 @@ _rebuildlista() {
         _linha "-" "${YELLOW}"
         _mensagec "${YELLOW}" "${M12}"
         _linha
-    #     _press
     else
         _meiodatela
         #M996="Recuperacao para este sistema nao disponivel:"
@@ -3142,7 +3356,10 @@ _backup() {
     if [[ "${keep,,}" =~ ^[n]$ ]]; then # Apenas "n" ou "N" remove
         if rm -f "${BACKUP}/${backup_file}"; then
             M170="Backup local excluido"
-            _linha && _mensagec "${YELLOW}" "${M170}" && _linha && _press
+            _linha
+            _mensagec "${YELLOW}" "${M170}"
+             _linha
+             _press
         else
             _mensagec "${RED}" "Erro ao excluir backup local"
         fi
@@ -3560,7 +3777,6 @@ _envia_avulso() {
             _linha
             _mensagec "${YELLOW}" "${M49}"
             _linha
-            #      _press
             _ferramentas
         fi
     fi
@@ -3600,7 +3816,7 @@ _envia_avulso() {
         _press
         _envrecarq
     fi
-    #-Informe a senha do usuario do rsync
+    #-Informe a senha do usuario do acesso remoto
     _linha
     _mensagec "${YELLOW}" "${M29}"
     _linha
@@ -3618,7 +3834,7 @@ _envia_avulso() {
 # Recebe um arquivo avulso via rsync do servidor da SAV.
 #
 # - Informe a origem, nome do arquivo e o destino do arquivo.
-# - O usuario do rsync sera o mesmo do usuario do atualiza.sh.
+# - O usuario do acesso sera o mesmo do usuario do atualiza.sh.
 # - O diretorio do arquivo recebido sera o mesmo do diretorio do atualiza.sh.
 _recebe_avulso() {
     clear
@@ -3658,7 +3874,7 @@ _recebe_avulso() {
         _envrecarq
     fi
 
-    #-Informe a senha do usuario do rsync
+    #-Informe a senha do usuario do acesso externo
     _linha
     _mensagec "${YELLOW}" "${M29}"
     _linha
@@ -3728,6 +3944,7 @@ _envrecarq() {
 # Apaga todos os arquivos do diretorio backup, olds, progs e logs.
 # Apaga arquivos do diretorio do /portalsav/log e /err_isc/.
 _expurgador() {
+    local origem="${1:-ferramentas}" # padrão: principal
     clear
     #-Apagar Biblioteca--------------------------------------------------#
     #-Verificando e/ou excluido arquivos com mais de 30 dias criado.------#
@@ -3773,8 +3990,15 @@ _expurgador() {
         printf "Erro: Diretorio ${TOOLS} nao encontrado.""%*s\n"
         exit 1
     }
-    _ferramentas
-}
+    
+    # Adicione um parâmetro à função _expurgador para identificar a origem da chamada
+        # Verifica origem da chamada
+        if [[ "${origem}" == "ferramentas" ]]; then
+            _ferramentas
+        else
+            _principal
+        fi
+    }
 
 #-Atualizacao online-------------------------------------------------------------------------------#
 
@@ -4070,7 +4294,7 @@ _lembretes() {
         4) _excluir_nota ;;
         9)
             clear
-            _ferramentas
+            _ferramentas 
             ;;
         *)
             _opinvalida
@@ -4128,7 +4352,7 @@ _ferramentas() {
         case ${OPCAOB} in
         1) _temps ;;
         4) _envrecarq ;;
-        5) _expurgador ;;
+        5) _expurgador "ferramentas" ;;
         6) _parametros ;;
         7) _update ;;
         8) _lembretes ;;
@@ -4171,7 +4395,7 @@ _ferramentas() {
     2) _rebuild ;;
     3) _menubackup ;;
     4) _envrecarq ;;
-    5) _expurgador ;;
+    5) _expurgador "ferramentas" ;;
     6) _parametros ;;
     7) _update ;;
     8) _lembretes ;;
@@ -4186,6 +4410,17 @@ _ferramentas() {
         ;;
     esac
 }
+
+# Rotina para rodar o expurgador apenas uma vez por dia
+EXPURGADOR_FLAG="${TOOLS}/.expurgador_proxima_vez"
+DATA_ATUAL=$(date +%Y-%m-%d)
+
+if [[ ! -f "${EXPURGADOR_FLAG}" ]] || [[ "$(cat "${EXPURGADOR_FLAG}")" != "${DATA_ATUAL}" ]]; then
+    _expurgador "principal"
+    echo "${DATA_ATUAL}" > "${EXPURGADOR_FLAG}"
+fi
+
+#_principal
 
 # _principal () - Funcao principal do programa
 # Mostra o menu principal com as opcoes de atualizacao de programas, biblioteca, desatualizando,
