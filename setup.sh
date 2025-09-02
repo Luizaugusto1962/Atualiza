@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 27/08/2025
+#versao de 02/09/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -42,6 +42,18 @@ editar_variavel() {
             2) BANCO="n" ;;
             *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
             esac
+        elif [[ "$nome" == "acessossh" ]]; then
+            echo
+            echo ${linha}
+            echo "Metodo de acesso facil?"
+            echo "1) Sim"
+            echo "2) Nao"
+            read -rp "Opcao [1-2]: " opcao
+            case "$opcao" in
+            1) acessossh="s" ;;
+            2) acessossh="n" ;;
+            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
+            esac
         elif [[ "$nome" == "SERACESOFF" ]]; then
             echo
             echo ${linha}
@@ -54,7 +66,6 @@ editar_variavel() {
             2) SERACESOFF="n" ;;
             *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
             esac
-
         else
             read -rp "Novo valor para ${nome}: " novo_valor
             eval "$nome=\"$novo_valor\""
@@ -148,6 +159,7 @@ clear
 
     editar_variavel BANCO
     editar_variavel destino
+    editar_variavel acessossh
     editar_variavel SERACESOFF
     editar_variavel ENVIABACK
     editar_variavel EMPRESA
@@ -166,6 +178,7 @@ clear
         [[ -n "$mclass" ]] && echo "mclass=${mclass}"
         [[ -n "$BANCO" ]] && echo "BANCO=${BANCO}"
         [[ -n "$destino" ]] && echo "destino=${destino}"
+        [[ -n "$acessossh" ]] && echo "acessossh=${acessossh}"
         [[ -n "$SERACESOFF" ]] && echo "SERACESOFF=${SERACESOFF}"
         [[ -n "$ENVIABACK" ]] && echo "ENVIABACK=${ENVIABACK}"
         [[ -n "$EMPRESA" ]] && echo "EMPRESA=${EMPRESA}"
@@ -736,6 +749,19 @@ read -rp " Informe o diretorio raiz sem o /->" -n1 destino
 echo
 echo destino="${destino}" >>.atualizac
 echo ${linha}
+##--
+echo "###           ( FACILITADOR DE ACESSO REMOTO )         ###"
+read -rp " Informe se ativa o acesso facil ->" -n1 acessossh
+echo
+echo ${linha}
+if [[ "${acessossh}" =~ ^[Nn]$ ]] || [[ "${BANCO}" == "" ]]; then
+    echo "acessossh=n" >>.atualizac
+else
+    [[ "${acessossh}" =~ ^[Ss]$ ]]
+    echo "acessossh=s" >>.atualizac
+fi
+echo
+##--
 echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF [S ou N] ->" -n1 SERACESOFF
 echo
