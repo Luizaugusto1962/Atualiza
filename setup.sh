@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 02/09/2025
+#versao de 02/099/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
