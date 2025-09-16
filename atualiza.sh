@@ -187,7 +187,7 @@ YELLOW=$(tput bold)$(tput setaf 3) # Cor amarela
 BLUE=$(tput bold)$(tput setaf 4)   # Cor azul
 PURPLE=$(tput bold)$(tput setaf 5) # Cor roxa
 CYAN=$(tput bold)$(tput setaf 6)   # Cor ciano
-NORM=$(tput bold)$(tput setaf 7) # Cor normal
+#NORM=$(tput bold)$(tput setaf 7) # Cor normal
 NORM=$(tput sgr0)
 COLUMNS=$(tput cols) # Numero de colunas da tela
 
@@ -207,7 +207,7 @@ _check_instalado() {
             printf "%*s""${YELLOW}" " O programa nao foi encontrado ->> " "${NORM}" "${app}"
             printf "\n"
             case "$prog" in
-            zip | unzip) echo "  Sugestao: Instale o zip unzip." ;;
+            zip | unzip) echo "  Sugestao: Instale o zip, unzip." ;;
             rsync) echo "  Sugestao: Instale o rsync." ;;
             wget) echo "  Sugestao: Instale o wget." ;;
             esac
