@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="02/09/2025-00"
+UPDATE="16/09/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -756,7 +756,8 @@ if [[ -z "${USUARIO}" ]]; then
 fi
 
 # Valor padrao para o ip do servidor
-DEFAULT_IPSERVER="177.45.80.10"
+#DEFAULT_IPSERVER="177.45.80.10"
+DEFAULT_IPSERVER="179.94.201.115"
 # Verifica se a variavel de ambiente IPSERVER foi setada
 if [[ -z "${IPSERVER}" ]]; then
     # Se a variavel de ambiente nao foi setada, utiliza o valor padrao
@@ -1656,10 +1657,10 @@ _qualpack() {
         #-Informe o nome do programa a ser atualizado:
         _mensagec "${RED}" "${M59}"
         _linha
-        local MB4="${YELLOW}Informe o nome do programa (ENTER para sair): ${NORM}"
+        local MB4="${YELLOW}Informe o nome do pacote (ENTER para sair): ${NORM}"
         read -rp "${MB4}" programa
         _linha
-        MB5="Nenhum nome de programa fornecido Saindo ou Continuando o processo..."
+        MB5="Nenhum nome de pacote fornecido, Saindo ou Continuando o processo..."
         # Verifica se foi digitado ENTER ou espaço
         if [[ -z "${programa}" ]]; then
             _mensagec "${RED}" "${MB5}"
@@ -1679,24 +1680,39 @@ _qualpack() {
         # Solicita o tipo de compilação
         _mensagec "${RED}" "${M75}"
         _linha
-
-        local compila="${programa}.zip"
+##
+        read -rp "${YELLOW}${M75}${NORM}" -n1 tipo_compilacao
+        printf "\n"
+        if [[ "$tipo_compilacao" == "1" ]]; then
+            # Processamento do nome (ajustado para tratar variável class indefinida)
+            local class="${class:-}" # Valor padrão se não definido
+            local compila="${programa}${class}.zip"
+        elif [[ "$tipo_compilacao" == "2" ]]; then
+            # Processamento do nome (ajustado para tratar variável mclass indefinida)
+            local mclass="${mclass:-}" # Valor padrão se não definido
+            local compila="${programa}${mclass}.zip"
+        else
+            _mensagec "${RED}" "Erro: Opcao de compilacao invalida, Digite 1 ou 2."
+            continue
+        fi
         # Armazena o resultado
         programas+=("$programa")
         NOMEPROG+=("$compila")
         
         _linha
-        _mensagec "${GREEN}" "Compilacao adicionada: ${programas[*]}"
+        _mensagec "${GREEN}" "Compilacao adicionada: ${NOMEPROG[*]}"
         _linha
         # Lista os programas armazenados
-        _mensagec "${YELLOW}" "Lista de programas a serem baixados:"
-        for progr in "${programas[@]}"; do
+        _mensagec "${YELLOW}" "Lista de pacotes a serem baixados:"
+        for progr in "${NOMEPROG[@]}"; do
             _mensagec "${GREEN}" "$progr"
         done
     done
 }
 
-
+# Este código processa o texto atualmente selecionado no editor.
+# Ele gera um comentário de documentação para o código selecionado, sem repetir o próprio código.
+# A documentação fornece uma descrição concisa do propósito e da funcionalidade do código.
 _baixarpack() {
     cd "$RECEBE" || { echo "Diretório $RECEBE não encontrado."; return 1; }
     # Exibe os resultados finais se houver
@@ -1732,7 +1748,7 @@ EOF
                 continue  # Pula para o próximo arquivo
             fi
             _linha
-            _mensagec "${GREEN}" "Download concluido: $arquivo"
+            _mensagec "${GREEN}" "Download concluido: $arquivo" 
         done
     else
         _mensagec "${RED}" "Nenhum valor armazenado."
@@ -1741,23 +1757,63 @@ EOF
 }
 
 
+: '
+_atupack - Função para descompactar, atualizar e organizar arquivos de programas.
+
+Descrição:
+    Esta função realiza o processo de atualização de programas, incluindo:
+    - Verificação da existência dos arquivos de atualização.
+    - Descompactação dos arquivos especificados em NOMEPROG usando o comando definido em cmd_unzip.
+    - Renomeação dos arquivos .zip para .bkp e movimentação para o diretório PROGS.
+    - Compactação dos arquivos antigos (.class ou .int) e arquivos .TEL correspondentes para backup no diretório OLDS.
+    - Movimentação dos novos arquivos .class para E_EXEC e .TEL para T_TELAS.
+    - Exibe mensagens de erro e sucesso durante o processo.
+
+Parâmetros esperados (variáveis globais):
+    - RECEBE: Diretório onde os arquivos de atualização estão localizados.
+    - NOMEPROG: Array com os nomes dos arquivos de atualização.
+    - cmd_unzip: Comando utilizado para descompactar os arquivos.
+    - LOG_ATU: Arquivo de log para registrar operações.
+    - PROGS: Diretório de destino para arquivos renomeados.
+    - OLDS: Diretório para armazenar backups compactados.
+    - E_EXEC: Diretório de destino para arquivos .class ou .int.
+    - T_TELAS: Diretório de destino para arquivos .TEL.
+    - sistema: Tipo de sistema ("iscobol" ou outro).
+    - M20, RED, GREEN: Variáveis para mensagens e cores.
+
+Funções auxiliares utilizadas:
+    - _linha: Exibe uma linha separadora.
+    - _mensagec: Exibe mensagem colorida.
+    - _press: Aguarda interação do usuário.
+    - _principal: Retorna ao menu principal.
+
+Retorno:
+    - 0 em caso de sucesso.
+    - 1 em caso de erro ao acessar o diretório RECEBE.
+'
 _atupack() {
+        local arquivo
+    local extensao
+    local backup_file
+
     cd "$RECEBE" || { echo "Diretório $RECEBE não encontrado."; return 1; }
+    # Verifica se o programa existe
+    if ((${#NOMEPROG[@]} == 0)) || [[ ! -f "${NOMEPROG[0]}" ]]; then
+        _linha
+        _mensagec "${RED}" "Um deste(s) programa(s) ${NOMEPROG[*]} nao encontrado(s) no diretorio"
+        _linha
+        _press
+        _principal
+    fi
     # Processa de descompactar e atualizar os programas
     for arquivo in "${NOMEPROG[@]}"; do
-        while [[ ! -f "${arquivo}" ]]; do
+        if [[ ! -f "${arquivo}" ]]; then
             _linha
             _mensagec "${RED}" "Erro: Arquivo de atualizacao ${arquivo} nao existe"
             _linha
-            printf "%s\n" "${YELLOW}Digite o nome correto do arquivo ou pressione ENTER para sair:${NORM}"
-            read -r novo_arquivo
-            if [[ -z "${novo_arquivo}" ]]; then
-                _mensagec "${RED}" "Processo cancelado pelo usuario."
-                _linha
-                return 1
-            fi
-            arquivo="${novo_arquivo}"
-        done
+            _press 
+        fi    
+
         if ! "${cmd_unzip}" -o "${arquivo}" >>"${LOG_ATU}"; then
             _linha
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
@@ -1765,6 +1821,7 @@ _atupack() {
             _press
         fi
     done
+
         # Altera extensões e move arquivos para o diretório PROGS
     for arquivo in "${NOMEPROG[@]}"; do
         if [[ -f "${arquivo}" ]]; then
@@ -1789,20 +1846,21 @@ _atupack() {
         progname="${progname%%.class}"
 
         # Compacta todos os arquivos antigos .class do programa
+    if [[ "${sistema}" == "iscobol" ]]; then
         find "${E_EXEC}" -type f -name "${progname}*.class" -exec zip -m -j "${OLDS}/${progname}-anterior.zip" {} + 2>/dev/null
-
+    else    
+        find "${E_EXEC}" -type f -name "${progname}*.int" -exec zip -m -j "${OLDS}/${progname}-anterior.zip" {} + 2>/dev/null
+    fi
         # Se existir arquivo .TEL correspondente, processa
         if [ -f "${progname}.TEL" ]; then
             # Compacta todos os arquivos antigos .TEL do programa
             find "${T_TELAS}" -type f -name "${progname}*.TEL" -exec zip -m -j "${OLDS}/${progname}-anterior.zip" {} + 2>/dev/null
-
         fi
-    done
                 # Move o novo arquivo .class para /u/sav/classes
             mv -f ./*.class "${E_EXEC}/" >>"${LOG_ATU}"
                 # Move o novo arquivo .TEL para /u/sav/tel_isc
             mv -f ./*.TEL "${T_TELAS}/" >>"${LOG_ATU}"
-
+    done
 }
 
 _pack() {
