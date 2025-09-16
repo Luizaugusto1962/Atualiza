@@ -232,7 +232,8 @@ if [[ ! -f "$HOME/.ssh/config" ]]; then
     # Adiciona configuração SSH com as definições solicitadas
     cat << 'EOF' >> "$HOME/.ssh/config"
 Host sav_servidor
-    HostName 177.45.80.10
+#    HostName 177.45.80.10
+    HostName 179.94.201.115
     Port 41122
     User atualiza
     ControlMaster auto
@@ -257,7 +258,8 @@ else
 
 # Configuracao adicionada automaticamente
 Host sav_servidor
-    HostName 177.45.80.10
+#    HostName 177.45.80.10
+    HostName 179.94.201.115
     Port 41122
     User atualiza
     ControlMaster auto
