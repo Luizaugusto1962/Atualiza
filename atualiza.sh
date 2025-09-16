@@ -756,8 +756,7 @@ if [[ -z "${USUARIO}" ]]; then
 fi
 
 # Valor padrao para o ip do servidor
-#DEFAULT_IPSERVER="177.45.80.10"
-DEFAULT_IPSERVER="179.94.201.115"
+DEFAULT_IPSERVER="177.45.80.10"
 # Verifica se a variavel de ambiente IPSERVER foi setada
 if [[ -z "${IPSERVER}" ]]; then
     # Se a variavel de ambiente nao foi setada, utiliza o valor padrao
