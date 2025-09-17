@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="16/09/2025-00"
+UPDATE="17/09/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -89,7 +89,7 @@ UPDATE="16/09/2025-00"
 #               5.3.2 - Restaura Backup da base de dados                                                               #
 #               5.3.3 - Enviar Backup selecionado                                                                      #
 #                                                                                                                      #
-#           5.4 - Enviar e Receber Arquivos "Avulsos"                                                                    #
+#           5.4 - Enviar e Receber Arquivos "Avulsos"                                                                  #
 #               5.4.1 - Enviar arquivo(s)                                                                              #
 #               5.4.2 - Receber arquivo(s)                                                                             #
 #                                                                                                                      #
@@ -756,7 +756,7 @@ if [[ -z "${USUARIO}" ]]; then
 fi
 
 # Valor padrao para o ip do servidor
-DEFAULT_IPSERVER="177.45.80.10"
+DEFAULT_IPSERVER="${IPSERVER}"
 # Verifica se a variavel de ambiente IPSERVER foi setada
 if [[ -z "${IPSERVER}" ]]; then
     # Se a variavel de ambiente nao foi setada, utiliza o valor padrao
