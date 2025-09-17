@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 02/099/2025
+#versao de 17/09/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -42,6 +42,7 @@ editar_variavel() {
             2) BANCO="n" ;;
             *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
             esac
+
         elif [[ "$nome" == "acessossh" ]]; then
             echo
             echo ${linha}
@@ -54,6 +55,18 @@ editar_variavel() {
             2) acessossh="n" ;;
             *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
             esac
+
+        elif [[ "$nome" == "IPSERVER" ]]; then
+            echo
+            echo "${linha}"
+            read -rp "Digite o IP do Servidor SAV (ou pressione Enter para manter $valor_atual): " novo_ip
+        if [[ -n "$novo_ip" ]]; then
+            IPSERVER="$novo_ip"
+        else
+            IPSERVER="$valor_atual"
+            echo "Mantendo valor anterior: $valor_atual"
+        fi    
+
         elif [[ "$nome" == "SERACESOFF" ]]; then
             echo
             echo ${linha}
@@ -62,7 +75,7 @@ editar_variavel() {
             echo "2) Nao"
             read -rp "Opcao [1-2]: " opcao
             case "$opcao" in
-            1) SERACESOFF="s" ;;
+            1) SERACESOFF="/sav/portalsav/Atualiza" ;;
             2) SERACESOFF="n" ;;
             *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
             esac
@@ -160,6 +173,7 @@ clear
     editar_variavel BANCO
     editar_variavel destino
     editar_variavel acessossh
+    editar_variavel IPSERVER
     editar_variavel SERACESOFF
     editar_variavel ENVIABACK
     editar_variavel EMPRESA
@@ -179,6 +193,7 @@ clear
         [[ -n "$BANCO" ]] && echo "BANCO=${BANCO}"
         [[ -n "$destino" ]] && echo "destino=${destino}"
         [[ -n "$acessossh" ]] && echo "acessossh=${acessossh}"
+        [[ -n "$IPSERVER" ]] && echo "IPSERVER=${IPSERVER}"      
         [[ -n "$SERACESOFF" ]] && echo "SERACESOFF=${SERACESOFF}"
         [[ -n "$ENVIABACK" ]] && echo "ENVIABACK=${ENVIABACK}"
         [[ -n "$EMPRESA" ]] && echo "EMPRESA=${EMPRESA}"
@@ -213,63 +228,151 @@ clear
     echo ${linha}
     
 
-#
-# Rotina para cria acesso ao ssh
-# Verifica se o arquivo ~/.ssh/config NÃO existe
+# CONFIGURAÇÕES PERSONALIZÁVEIS (ALTERE AQUI OU VIA VARIÁVEIS DE AMBIENTE)
+SERVER_IP="${IPSERVER}"        # IP do servidor (padrão: 177.45.80.10)
+SERVER_PORT="${SERVER_PORT:-41122}"            # Porta SFTP (padrão: 41122)
+SERVER_USER="${SERVER_USER:-atualiza}"         # Usuário SSH (padrão: atualiza)
+CONTROL_PATH_BASE="${CONTROL_PATH_BASE:-${destino}${pasta}/.ssh/control}"
+
+# VALIDAÇÃO DAS VARIÁVEIS OBRIGATÓRIAS
+if [[ -z "$SERVER_IP" || -z "$SERVER_PORT" || -z "$SERVER_USER" ]]; then
+    echo "Erro: Variaveis obrigatorias nao definidas!"
+    echo "Defina via ambiente ou edite as configuracoes no inicio do script:"
+    echo "  export SERVER_IP='seu.ip.aqui'"
+    echo "  export SERVER_PORT='porta'"
+    echo "  export SERVER_USER='usuario'"
+    exit 1
+fi
+
+# PREPARAÇÃO DOS DIRETÓRIOS
+SSH_CONFIG_DIR="$(dirname "$CONTROL_PATH_BASE")"
+CONTROL_PATH="$CONTROL_PATH_BASE"
+
+# Verifica/cria diretório base
+if [[ ! -d "$SSH_CONFIG_DIR" ]]; then
+    echo "Criando diretorio $SSH_CONFIG_DIR..."
+    mkdir -p "$SSH_CONFIG_DIR" || {
+        echo "Falha: Permissao negada para criar $SSH_CONFIG_DIR. Use sudo se necessario."
+        exit 1
+    }
+    chmod 700 "$SSH_CONFIG_DIR"
+fi
+
+# Verifica/cria diretório de controle
+if [[ ! -d "$CONTROL_PATH" ]]; then
+    echo "Criando diretorio de controle $CONTROL_PATH..."
+    mkdir -p "$CONTROL_PATH" || {
+        echo "Falha: Permissao negada para criar $CONTROL_PATH."
+        exit 1
+    }
+    chmod 700 "$CONTROL_PATH"
+fi
+
+# CONFIGURAÇÃO SSH
 if [[ ! -f "$HOME/.ssh/config" ]]; then
-    # Cria diretório .ssh com permissões seguras (se não existir)
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
     
-    # Cria diretório de controle para multiplexação
-    mkdir -p "$HOME/.ssh/control"
-    chmod 700 "$HOME/.ssh/control"
-
-    # Cria diretório de controle para multiplexação
-    mkdir -p "/u/sav/tools/.ssh/control"
-    chmod 700 "/u/sav/tools/.ssh/control"
-
-    # Adiciona configuração SSH com as definições solicitadas
-    cat << 'EOF' >> "$HOME/.ssh/config"
+    # Injeta as variáveis diretamente na configuração (sem aspas em EOF para expansão)
+    cat << EOF >> "$HOME/.ssh/config"
 Host sav_servidor
-    HostName 177.45.80.10
-    Port 41122
-    User atualiza
+    HostName $SERVER_IP
+    Port $SERVER_PORT
+    User $SERVER_USER
     ControlMaster auto
-#    ControlPath ~/.ssh/control/%r@%h:%p
-    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
+    ControlPath $CONTROL_PATH/%r@%h:%p
     ControlPersist 10m
 EOF
-
-    # Define permissões seguras para o arquivo de configuração
     chmod 600 "$HOME/.ssh/config"
-    
-    echo "Configuracao SSH criada com sucesso em $HOME/.ssh/config"
+    echo "Configuracao SSH criada com parametros:"
 else
     echo "Arquivo de configuracao ja existe: $HOME/.ssh/config"
+    
     # Verifica se a configuração específica já está presente
     if ! grep -q "Host sav_servidor" "$HOME/.ssh/config" 2>/dev/null; then
-        echo -e "\n A configuracao 'sav_servidor' NAO esta presente no arquivo."
-        echo "Deseja adiciona-la? (s/n)"
+        echo -e "\nA configuracao 'sav_servidor' NAO esta presente no arquivo."
+        echo "Deseja adiciona-la com os parametros atuais? (s/n)"
         read -r resposta
-        if [[ "$resposta" =~ ^[Ss]$ ]]; then
-            cat << 'EOF' >> "$HOME/.ssh/config"
+        if [[ ! "$resposta" =~ ^[Ss]$ ]]; then exit 0; fi
+        cat << EOF >> "$HOME/.ssh/config"
 
-# Configuracao adicionada automaticamente
+# Configuração adicionada automaticamente
 Host sav_servidor
-    HostName 177.45.80.10
-    Port 41122
-    User atualiza
+    HostName $SERVER_IP
+    Port $SERVER_PORT
+    User $SERVER_USER
     ControlMaster auto
-#    ControlPath ~/.ssh/control/%r@%h:%p
-    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
+    ControlPath $CONTROL_PATH/%r@%h:%p
     ControlPersist 10m
 EOF
-            echo "Configuracao 'sav_servidor' adicionada com sucesso!"
-        fi
+        echo "Configuracao 'sav_servidor' adicionada com parametros:"
     fi
 fi
 
+# EXIBE OS PARÂMETROS UTILIZADOS
+echo -e "\n   IP do Servidor:   $SERVER_IP"
+echo "   Porta:            $SERVER_PORT"
+echo "   Usuário:          $SERVER_USER"
+echo "   ControlPath:      $CONTROL_PATH/%r@%h:%p"
+echo -e "\n Validacao concluida! Teste com:"
+echo "   sftp sav_servidor"
+#
+## Rotina para cria acesso ao ssh
+## Verifica se o arquivo ~/.ssh/config NÃO existe
+#if [[ ! -f "$HOME/.ssh/config" ]]; then
+#    # Cria diretório .ssh com permissões seguras (se não existir)
+#    mkdir -p "$HOME/.ssh"
+#    chmod 700 "$HOME/.ssh"
+#    
+#    # Cria diretório de controle para multiplexação
+#    mkdir -p "$HOME/.ssh/control"
+#    chmod 700 "$HOME/.ssh/control"
+#
+#    # Cria diretório de controle para multiplexação
+#    mkdir -p "${destino}${pasta}/.ssh/control"
+#    chmod 700 "${destino}${pasta}/.ssh/control"
+#
+#    # Adiciona configuração SSH com as definições solicitadas
+#    cat << 'EOF' >> "$HOME/.ssh/config"
+#Host sav_servidor
+#    HostName $IPSERVER
+#    Port 41122
+#    User atualiza
+#    ControlMaster auto
+##    ControlPath ~/.ssh/control/%r@%h:%p
+#    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
+#    ControlPersist 10m
+#EOF
+#
+#    # Define permissões seguras para o arquivo de configuração
+#    chmod 600 "$HOME/.ssh/config"
+#    
+#    echo "Configuracao SSH criada com sucesso em $HOME/.ssh/config"
+#else
+#    echo "Arquivo de configuracao ja existe: $HOME/.ssh/config"
+#    # Verifica se a configuração específica já está presente
+#    if ! grep -q "Host sav_servidor" "$HOME/.ssh/config" 2>/dev/null; then
+#        echo -e "\n A configuracao 'sav_servidor' NAO esta presente no arquivo."
+#        echo "Deseja adiciona-la? (s/n)"
+#        read -r resposta
+#        if [[ "$resposta" =~ ^[Ss]$ ]]; then
+#            cat << 'EOF' >> "$HOME/.ssh/config"
+#
+## Configuracao adicionada automaticamente
+#Host sav_servidor
+#    HostName $IPSERVER
+#    Port 41122
+#    User atualiza
+#    ControlMaster auto
+##    ControlPath ~/.ssh/control/%r@%h:%p
+#    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
+#    ControlPersist 10m
+#EOF
+#            echo "Configuracao 'sav_servidor' adicionada com sucesso!"
+#        fi
+#    fi
+#fi
+#
 read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
 continuar=${continuar,,}
 if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
@@ -749,24 +852,36 @@ read -rp " Informe o diretorio raiz sem o /->" -n1 destino
 echo
 echo destino="${destino}" >>.atualizac
 echo ${linha}
-##--
 echo "###           ( FACILITADOR DE ACESSO REMOTO )         ###"
 read -rp " Informe se ativa o acesso facil ->" -n1 acessossh
 echo
 echo ${linha}
-if [[ "${acessossh}" =~ ^[Nn]$ ]] || [[ "${BANCO}" == "" ]]; then
+if [[ "${acessossh}" =~ ^[Nn]$ ]] || [[ "${acessossh}" == "" ]]; then
     echo "acessossh=n" >>.atualizac
 else
     [[ "${acessossh}" =~ ^[Ss]$ ]]
     echo "acessossh=s" >>.atualizac
 fi
 echo
-##--
+
+echo "###           ( IP do servidor da SAV )         ###"
+read -rp " Informe o ip do servidor->" IPSERVER
+echo
+if [[ "${IPSERVER}" == "" ]]; then
+    echo "Necessario informar O IP"
+    exit
+else
+    echo "IPSERVER=${IPSERVER}" >>.atualizac
+    echo "IP do servidor:${IPSERVER}"
+    echo ${linha}
+fi
+echo
+
 echo "###          Tipo de acesso                  ###"
 read -rp "Servidor OFF [S ou N] ->" -n1 SERACESOFF
 echo
 if [[ "${SERACESOFF}" =~ ^[Nn]$ ]] || [[ "${SERACESOFF}" == "" ]]; then
-    echo "SERACESOFF=" >>.atualizac
+    echo "SERACESOFF=n" >>.atualizac
 elif [[ "${SERACESOFF}" =~ ^[Ss]$ ]]; then
     echo "SERACESOFF=/sav/portalsav/Atualiza" >>.atualizac
 fi
