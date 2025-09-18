@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 17/09/2025
+#versao de 18/09/2025
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -232,8 +232,7 @@ clear
 SERVER_IP="${IPSERVER}"        # IP do servidor (padrão: 177.45.80.10)
 SERVER_PORT="${SERVER_PORT:-41122}"            # Porta SFTP (padrão: 41122)
 SERVER_USER="${SERVER_USER:-atualiza}"         # Usuário SSH (padrão: atualiza)
-CONTROL_PATH_BASE="${CONTROL_PATH_BASE:-${destino}${pasta}/.ssh/control}"
-
+CONTROL_PATH_BASE="${CONTROL_PATH_BASE:-/${destino}${pasta}/.ssh/control}"
 # VALIDAÇÃO DAS VARIÁVEIS OBRIGATÓRIAS
 if [[ -z "$SERVER_IP" || -z "$SERVER_PORT" || -z "$SERVER_USER" ]]; then
     echo "Erro: Variaveis obrigatorias nao definidas!"
@@ -262,7 +261,7 @@ fi
 if [[ ! -d "$CONTROL_PATH" ]]; then
     echo "Criando diretorio de controle $CONTROL_PATH..."
     mkdir -p "$CONTROL_PATH" || {
-        echo "Falha: Permissao negada para criar $CONTROL_PATH."
+        echo "Falha: Permissao negada para criar $SSH_CONFIG_DIR."
         exit 1
     }
     chmod 700 "$CONTROL_PATH"
