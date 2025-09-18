@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#versao de 18/09/2025
+#versao de 18/09/2025.03
 
 # Constantes
 readonly linha="#-------------------------------------------------------------------#"
@@ -227,6 +227,7 @@ clear
     echo
     echo ${linha}
     
+if [[ "${acessossh}" = "s" ]]; then
 
 # CONFIGURAÇÕES PERSONALIZÁVEIS (ALTERE AQUI OU VIA VARIÁVEIS DE AMBIENTE)
 SERVER_IP="${IPSERVER}"        # IP do servidor (padrão: 177.45.80.10)
@@ -315,12 +316,16 @@ echo "   Usuário:          $SERVER_USER"
 echo "   ControlPath:      $CONTROL_PATH/%r@%h:%p"
 echo -e "\n Validacao concluida! Teste com:"
 echo "   sftp sav_servidor"
+echo
+echo
+fi
 read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
 continuar=${continuar,,}
 if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
-    echo "Finalizando o script de setup."
+    echo "Finalizando o script de acesso."
     exit 0
 fi
+
 echo
 echo "Continuando o processo normal..."
 sleep 1
