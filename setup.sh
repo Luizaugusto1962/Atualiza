@@ -316,63 +316,6 @@ echo "   Usuário:          $SERVER_USER"
 echo "   ControlPath:      $CONTROL_PATH/%r@%h:%p"
 echo -e "\n Validacao concluida! Teste com:"
 echo "   sftp sav_servidor"
-#
-## Rotina para cria acesso ao ssh
-## Verifica se o arquivo ~/.ssh/config NÃO existe
-#if [[ ! -f "$HOME/.ssh/config" ]]; then
-#    # Cria diretório .ssh com permissões seguras (se não existir)
-#    mkdir -p "$HOME/.ssh"
-#    chmod 700 "$HOME/.ssh"
-#    
-#    # Cria diretório de controle para multiplexação
-#    mkdir -p "$HOME/.ssh/control"
-#    chmod 700 "$HOME/.ssh/control"
-#
-#    # Cria diretório de controle para multiplexação
-#    mkdir -p "${destino}${pasta}/.ssh/control"
-#    chmod 700 "${destino}${pasta}/.ssh/control"
-#
-#    # Adiciona configuração SSH com as definições solicitadas
-#    cat << 'EOF' >> "$HOME/.ssh/config"
-#Host sav_servidor
-#    HostName $IPSERVER
-#    Port 41122
-#    User atualiza
-#    ControlMaster auto
-##    ControlPath ~/.ssh/control/%r@%h:%p
-#    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
-#    ControlPersist 10m
-#EOF
-#
-#    # Define permissões seguras para o arquivo de configuração
-#    chmod 600 "$HOME/.ssh/config"
-#    
-#    echo "Configuracao SSH criada com sucesso em $HOME/.ssh/config"
-#else
-#    echo "Arquivo de configuracao ja existe: $HOME/.ssh/config"
-#    # Verifica se a configuração específica já está presente
-#    if ! grep -q "Host sav_servidor" "$HOME/.ssh/config" 2>/dev/null; then
-#        echo -e "\n A configuracao 'sav_servidor' NAO esta presente no arquivo."
-#        echo "Deseja adiciona-la? (s/n)"
-#        read -r resposta
-#        if [[ "$resposta" =~ ^[Ss]$ ]]; then
-#            cat << 'EOF' >> "$HOME/.ssh/config"
-#
-## Configuracao adicionada automaticamente
-#Host sav_servidor
-#    HostName $IPSERVER
-#    Port 41122
-#    User atualiza
-#    ControlMaster auto
-##    ControlPath ~/.ssh/control/%r@%h:%p
-#    ControlPath /u/sav/tools/.ssh/control/%r@%h:%p
-#    ControlPersist 10m
-#EOF
-#            echo "Configuracao 'sav_servidor' adicionada com sucesso!"
-#        fi
-#    fi
-#fi
-#
 read -rp "Deseja iniciar uma nova configuracao? [s/N] " continuar
 continuar=${continuar,,}
 if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
@@ -385,7 +328,6 @@ sleep 1
 clear
 
 ### Cria o bat se o servidor for em modo offline ------------------
-
 _ATUALIZA_BAT() {
     {
         cat <<'EOF'
