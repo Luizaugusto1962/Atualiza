@@ -15,7 +15,7 @@
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="17/09/2025-00"
+UPDATE="18/09/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -89,7 +89,7 @@ UPDATE="17/09/2025-00"
 #               5.3.2 - Restaura Backup da base de dados                                                               #
 #               5.3.3 - Enviar Backup selecionado                                                                      #
 #                                                                                                                      #
-#           5.4 - Enviar e Receber Arquivos "Avulsos"                                                                  #
+#           5.4 - Enviar e Receber Arquivos "Avulsos"                                                     #20272F             #
 #               5.4.1 - Enviar arquivo(s)                                                                              #
 #               5.4.2 - Receber arquivo(s)                                                                             #
 #                                                                                                                      #
@@ -2481,9 +2481,9 @@ _atualizacao() {
     ###   200-mensagens do Menu Programas.
     M201="Menu de Programas "
     M202="Escolha o tipo de Atualizacao:         "
-    M203="1${NORM} - Programa ou Pacote ON-Line    "
-    M204="2${NORM} - Programa ou Pacote em OFF-Line"
-    M205="3${NORM} - Progamas em Pacote            "
+    M203="1${NORM} - Programa(s) ON-Line    "
+    M204="2${NORM} - Programa(s) OFF-Line"
+    M205="3${NORM} - Programa(s) em Pacote            "
     M206="Escolha Desatualizar:                 "
     M207="4${NORM} - Voltar programa Atualizado    "
     M209="9${NORM} - ${RED}Menu Anterior        "
