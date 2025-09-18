@@ -2481,9 +2481,9 @@ _atualizacao() {
     ###   200-mensagens do Menu Programas.
     M201="Menu de Programas "
     M202="Escolha o tipo de Atualizacao:         "
-    M203="1${NORM} - Programa(s) ON-Line    "
-    M204="2${NORM} - Programa(s) OFF-Line"
-    M205="3${NORM} - Programa(s) em Pacote            "
+    M203="1${NORM} - Programa(s) ON-Line           "
+    M204="2${NORM} - Programa(s) OFF-Line          "
+    M205="3${NORM} - Programa(s) em Pacote         "
     M206="Escolha Desatualizar:                 "
     M207="4${NORM} - Voltar programa Atualizado    "
     M209="9${NORM} - ${RED}Menu Anterior        "
@@ -4317,10 +4317,10 @@ _lembretes() {
         clear
         ###-800-mensagens do Menu Bloco de anotacao.
         M800=" Bloco de Notas  "
-        M802="1${NORM} - Escrever nova nota   "
-        M803="2${NORM} - Visualizar nota      "
-        M804="3${NORM} - Editar nota          "
-        M805="4${NORM} - Apagar nota          "
+        M802="1${NORM} - Escrever nova nota    "
+        M803="2${NORM} - Visualizar nota       "
+        M804="3${NORM} - Editar nota           "
+        M805="4${NORM} - Apagar nota           "
         M806="9${NORM} - ${RED}Menu Anterior"
 
         printf "\n"
