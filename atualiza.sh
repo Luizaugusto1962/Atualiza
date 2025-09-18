@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #set -euo pipefail  # Tratamento rigoroso de erros
+export LC_ALL=C
+cd "$(dirname "$0")" || exit 1
 
 #                                                                                                                      #
 #    ________  __      ________  ___________  _______  ___      ___       __            ________     __  ___      ___  #
@@ -450,6 +452,7 @@ DEFAULT_VERSAO=""
 if [[ -z "${VERSAO}" ]]; then
     VERSAO="${DEFAULT_VERSAO}"
 fi
+
 # Convertendo arquivos
 if [[ -e "atualizac" ]]; then
     mv -f atualizac .atualizac
