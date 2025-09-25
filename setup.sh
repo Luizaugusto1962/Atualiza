@@ -269,12 +269,12 @@ if [[ ! -d "$CONTROL_PATH" ]]; then
 fi
 
 # CONFIGURAÇÃO SSH
-if [[ ! -f "$HOME/.ssh/config" ]]; then
-    mkdir -p "$HOME/.ssh"
-    chmod 700 "$HOME/.ssh"
+if [[ ! -f "/root/.ssh/config" ]]; then
+    mkdir -p "/root/.ssh"
+    chmod 700 "/root/.ssh"
     
     # Injeta as variáveis diretamente na configuração (sem aspas em EOF para expansão)
-    cat << EOF >> "$HOME/.ssh/config"
+    cat << EOF >> "/root/.ssh/config"
 Host sav_servidor
     HostName $SERVER_IP
     Port $SERVER_PORT
@@ -283,18 +283,18 @@ Host sav_servidor
     ControlPath $CONTROL_PATH/%r@%h:%p
     ControlPersist 10m
 EOF
-    chmod 600 "$HOME/.ssh/config"
+    chmod 600 "/root/.ssh/config"
     echo "Configuracao SSH criada com parametros:"
 else
-    echo "Arquivo de configuracao ja existe: $HOME/.ssh/config"
+    echo "Arquivo de configuracao ja existe: /root/.ssh/config"
     
     # Verifica se a configuração específica já está presente
-    if ! grep -q "Host sav_servidor" "$HOME/.ssh/config" 2>/dev/null; then
+    if ! grep -q "Host sav_servidor" "/root/.ssh/config" 2>/dev/null; then
         echo -e "\nA configuracao 'sav_servidor' NAO esta presente no arquivo."
         echo "Deseja adiciona-la com os parametros atuais? (s/n)"
         read -r resposta
         if [[ ! "$resposta" =~ ^[Ss]$ ]]; then exit 0; fi
-        cat << EOF >> "$HOME/.ssh/config"
+        cat << EOF >> "/root/.ssh/config"
 
 # Configuração adicionada automaticamente
 Host sav_servidor
