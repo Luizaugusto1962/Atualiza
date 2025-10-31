@@ -17,7 +17,7 @@ cd "$(dirname "$0")" || exit 1
 ##  Feito por: Luiz Augusto                                                                                            #
 ##  email luizaugusto@sav.com.br                                                                                       #
 ##  Versao do atualiza.sh                                                                                              #
-UPDATE="18/09/2025-00"
+UPDATE="31/10/2025-00"
 #                                                                                                                      #
 #--------------------------------------------------------------------------------------------------#                   #
 # Arquivos de trabalho:                                                                                                #
@@ -2566,7 +2566,7 @@ _iscobol() {
     _principal
 }
 
-#-Mostrar a versao do Linux que esta sendo usada.--------------------------------------------------#
+#-Mostrar a versao do Linux que esta sendo usada.#
 #-Mostra informacoes sobre o sistema, como:
 #
 #   - tipo de OS
