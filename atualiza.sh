@@ -4126,7 +4126,7 @@ _update_online() {
     }
 
     # Verificar e mover arquivos
-    for file in atualiza.sh setup.sh; do
+    for file in atualiza.sh setup.sh atu1010.sh; do
         if [ ! -f "$file" ]; then
             _mensagec "${RED}" "Erro: Arquivo $file nao encontrado."
             return 1
