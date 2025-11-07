@@ -3,7 +3,7 @@
 
 #
 # atu2025.sh - Script para atualizar arquivos .sh e limpar arquivos antigos
-# Versão: 10/10/2025-00
+# Versão: 07/11/2025-00
 #
 
 # Diretório de ferramentas
@@ -362,6 +362,8 @@ main() {
     
     if _executar_update; then
         log "Rotina concluída com sucesso."
+        cd "${TOOLS}/libs" || { log "Erro ao mudar para ${TOOLS}."; exit 1; }
+        ./setup.sh
         exit 0
     else
         log "Rotina concluída com erros."
