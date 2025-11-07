@@ -363,7 +363,7 @@ main() {
     if _executar_update; then
         log "Rotina concluída com sucesso."
         cd "${TOOLS}/libs" || { log "Erro ao mudar para ${TOOLS}."; exit 1; }
-        ./setup.sh
+        ./setup.sh --edit 
         exit 0
     else
         log "Rotina concluída com erros."
