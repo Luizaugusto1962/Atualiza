@@ -2959,7 +2959,7 @@ _rebuildall() {
         M996="Recuperacao em desenvolvimento :"
         _mensagec "${RED}" "${M996}"
         _press
-        _rebuild1
+        _rebuild
         return 0
     fi
     # Solicita o nome do arquivo
