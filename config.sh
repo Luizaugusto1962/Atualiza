@@ -715,6 +715,10 @@ _ir_para_tools() {
 # Funcao para resetar variaveis (cleanup)
 # -----------------------------------------------------------------------------
 _limpar_estado_variaveis() {
+    # Desativar nounset temporariamente para evitar erro com arrays nao definidos
+    local _nounset=0
+    [[ $- == *u* ]] && _nounset=1 && set +u
+
     unset -v "${CORES[@]}" 2>/dev/null || true
     unset -v "${ATUALIZAC[@]}" 2>/dev/null || true
     unset -v "${CAMINHOS_BASE[@]}" 2>/dev/null || true
@@ -725,6 +729,10 @@ _limpar_estado_variaveis() {
     unset -v "${LOGIS[@]}" 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
+
+    # Restaurar nounset se estava ativo
+    [[ "${_nounset}" -eq 1 ]] && set -u
+    return 0
 }
 
 # -----------------------------------------------------------------------------
