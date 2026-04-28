@@ -16,7 +16,6 @@ Offline="${Offline:-}"      # Variavel do status de conexao (s/n).
 down_dir="${down_dir:-}"    # Variavel do diretorio de download para atualizacao offline.
 
 # Executa atualizacao do script
-# Executa atualizacao do script
 _executar_update() {
     local temp_dir="${RECEBE}/temp_update/"
     local zipfile="atualiza.zip"
