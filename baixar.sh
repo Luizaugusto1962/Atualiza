@@ -5,7 +5,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/04/2026-02
+# Versao: 28/04/2026-03
 #
 # Variaveis globais esperadas
 cfg_dir="${cfg_dir:-}"      # Caminho do diretorio de configuracao do programa.
@@ -257,7 +257,7 @@ fi
 
 _atualizar_online() {
 # URL do arquivo zip de atualizacao no GitHub
-    local link="https://codeload.github.com/Luizaugusto1962/atualiza2026/zip/refs/tags/atualiza"
+    local link="https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip"
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
 
 if ! cd "${RECEBE}"; then
