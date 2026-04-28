@@ -719,14 +719,7 @@ _limpar_estado_variaveis() {
     local _nounset=0
     [[ $- == *u* ]] && _nounset=1 && set +u
 
-    unset -v "${CORES[@]}" 2>/dev/null || true
-    unset -v "${ATUALIZAC[@]}" 2>/dev/null || true
-    unset -v "${CAMINHOS_BASE[@]}" 2>/dev/null || true
-    unset -v "${CAMINHOS_BASE2[@]}" 2>/dev/null || true
-    unset -v "${BIBLIOTECA_SAV[@]}" 2>/dev/null || true
-    unset -v "${COMANDOS[@]}" 2>/dev/null || true
-    unset -v "${OUTROS[@]}" 2>/dev/null || true
-    unset -v "${LOGIS[@]}" 2>/dev/null || true
+    unset -v CORES ATUALIZAC CAMINHOS_BASE CAMINHOS_BASE2 BIBLIOTECA_SAV COMANDOS OUTROS LOGIS 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
 
