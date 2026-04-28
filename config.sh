@@ -15,15 +15,15 @@
 # VARIÁVEIS GLOBAIS DOCUMENTADAS
 # =============================================================================
 
-# Arrays para organizacao das variaveis
-declare -a CORES=(RED GREEN YELLOW BLUE PURPLE CYAN NORM)
-declare -a ATUALIZAC=(sistema verclass dbmaker base base2 base3 acessossh ipserver Offline enviabackup empresa VERSAOANT)
-declare -a CAMINHOS_BASE=(BASE1 BASE2 BASE3 SCRIPT_DIR raiz base base2 base3 biblioteca bases_backup logs olds cfg libs envia recebe)
-declare -a CAMINHOS_BASE2=(INI UMADATA acessoff E_EXEC T_TELAS X_XML)
-declare -a BIBLIOTECA_SAV=(SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4)
-declare -a COMANDOS=(cmd_unzip cmd_zip cmd_find cmd_who DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO jut JUTIL ISCCLIENT ISCCLIENTT)
-declare -a OUTROS=(SERVER_PORTA USUARIO VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_ipserver UPDATE JUTIL ISCCLIENT Offline base_trabalho)
-declare -a LOGIS=(LOG LOG_ATU LOG_LIMPA LOG_TMP)
+# Listas para organizacao das variaveis
+CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
+ATUALIZAC="sistema verclass dbmaker base base2 base3 acessossh ipserver Offline enviabackup empresa VERSAOANT"
+CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR raiz base base2 base3 biblioteca bases_backup logs olds cfg libs envia recebe"
+CAMINHOS_BASE2="INI UMADATA acessoff E_EXEC T_TELAS X_XML"
+BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
+COMANDOS="cmd_unzip cmd_zip cmd_find cmd_who DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO jut JUTIL ISCCLIENT ISCCLIENTT"
+OUTROS="SERVER_PORTA USUARIO VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_ipserver UPDATE JUTIL ISCCLIENT Offline base_trabalho"
+LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
 
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
 # Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
@@ -715,11 +715,15 @@ _ir_para_tools() {
 # Funcao para resetar variaveis (cleanup)
 # -----------------------------------------------------------------------------
 _limpar_estado_variaveis() {
-    # Desativar nounset temporariamente para evitar erro com arrays nao definidos
+    # Desativar nounset temporariamente para evitar erro com variaveis nao definidas
     local _nounset=0
     [[ $- == *u* ]] && _nounset=1 && set +u
 
-    unset -v CORES ATUALIZAC CAMINHOS_BASE CAMINHOS_BASE2 BIBLIOTECA_SAV COMANDOS OUTROS LOGIS 2>/dev/null || true
+    for var in $CORES $ATUALIZAC $CAMINHOS_BASE $CAMINHOS_BASE2 $BIBLIOTECA_SAV $COMANDOS $OUTROS $LOGIS; do
+        unset "${var}" 2>/dev/null || true
+    done
+
+    unset CORES ATUALIZAC CAMINHOS_BASE CAMINHOS_BASE2 BIBLIOTECA_SAV COMANDOS OUTROS LOGIS 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
 
