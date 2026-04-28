@@ -13,7 +13,7 @@
 #   ./atualiza.sh --cadastro       - Executa o cadastro de usuarios
 
 # Configuracoes de seguranca para o script.
-set -euo pipefail 
+set -eo pipefail 
 export LC_ALL=C
 
 # Verificacoes basicas

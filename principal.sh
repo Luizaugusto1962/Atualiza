@@ -14,7 +14,7 @@
 # -e: Sai imediatamente se um comando falhar
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
-set -euo pipefail
+set -eo pipefail
 
 # =============================================================================
 # VERSAO DO SISTEMA
