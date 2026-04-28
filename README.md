@@ -1,131 +1,67 @@
-# Atualiza
+# atualiza2026
 
-## Shell Script para atualizar o sistema da SAV
+Sistema modular de atualização SAV — utilitário de linha de comando para gerenciar
+programas, arquivos, backups e bibliotecas do sistema **IsCOBOL / ISAM**.
 
-- Atualiza programas avulsos
-- Atualiza Biblioteca
-- Volta de programa ou biblioteca
-- Limpa arquivos Temporários
-- Recupera arquivos avulso ou os principais
+---
 
-Rotina para atualizar programas e bibliotecas da SAV.
+## Uso
 
-Feito por Luiz Augusto.
+```bash
+./atualiza.sh                  # Executa o programa principal
+./atualiza.sh --setup          # Configuração inicial do sistema
+./atualiza.sh --setup --edit   # Editar configurações existentes
+./atualiza.sh --cadastro       # Cadastro de usuários
+```
 
-email [luizaugusto@sav.com.br](mailto:luizaugusto@sav.com.br)
+---
 
-Menus
+## Estrutura de Arquivos
 
-### 1 - Atualização de Programas Avulsos
+| Arquivo          | Responsabilidade                                      |
+|------------------|-------------------------------------------------------|
+| `atualiza.sh`    | Ponto de entrada principal; roteia para módulos       |
+| `principal.sh`   | Inicialização, carregamento de módulos e main loop    |
+| `config.sh`      | Configurações, validações e variáveis globais         |
+| `auth.sh`        | Autenticação de usuários (login / cadastro / senha)   |
+| `menus.sh`       | Sistema de menus interativos                          |
+| `utils.sh`       | Utilitários: formatação, log, validação, progresso    |
+| `arquivos.sh`    | Limpeza, recuperação, transferência e expurgo         |
+| `backup.sh`      | Backup completo, incremental e restauração            |
+| `programas.sh`   | Atualização, reversão e gestão de programas           |
+| `biblioteca.sh`  | Gestão de bibliotecas do sistema                      |
+| `baixar.sh`      | Atualização do sistema                                |
+| `sistema.sh`     | Informações do SO, versões, parâmetros                |
+| `vaievem.sh`     | Transferência de arquivos via rsync/scp               |
+| `lembrete.sh`    | Bloco de notas / lembretes internos                   |
+| `setup.sh`       | Configuração inicial interativa                       |
+| `help.sh`        | Sistema de ajuda e manual interativo                  |
+| `cadastro.sh`    | Cadastro standalone de usuários                       |
 
-### 2 - Atualização de Biblioteca
+---
 
-### 3 - Versão do Iscobol
+## Pré-requisitos
 
-### 4 - Versão do Linux
+- Bash 4.0+
+- `zip`, `unzip`, `rsync`, `wget`
+- Terminal com suporte a cores (`tput`)
 
-### 5 - Ferramentas
+---
 
-     1 - Atualização de Programas
-           1.1 - Programa ou Pacote ON-Line
-     Acessa o servidor da SAV via scp com o usuário ATUALIZA
-     Faz um backup do programa que esta em uso e salva na pasta ?/sav/tmp/olds
-     com o nome "Nome do programa-anterior.zip" descompacta o novo no diretório
-     dos programa e salva o a atualização na pasta ?/sav/tmp/progs.
+## Configuração
 
-           1.2 - Programa ou Pacote OFF-Line
-     Atualiza o arquivo de programa ".zip" que deve ter sido colocado em ?/sav/tmp.
-     O processo de atualização e idêntico ao passo acima.
+O sistema usa o diretório `cfg/` para armazenar:
 
-           1.3 - Voltar programa Atualizado
-     Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com o nome de ("programa"-anterior.zip)
-     na pasta dos programas.
+- `.config` — configurações da empresa (gerado pelo `--setup`)
+- `.senhas` — hashes de senha dos usuários (`chmod 0600`)
+- `lembrete` — notas internas
+- `.versao` — versão atual da biblioteca
 
-     2 - Atualização de Biblioteca
+---
 
-           2.1 - Atualização do Transpc
-     Atualiza a biblioteca que esta no diretório /u/varejo/trans_pc/ do servidor da SAV.
-     Faz um backup de todos os programas que esta em uso e salva na pasta ?/sav/tmp/olds
-     com o nome "backup-(versão Informada).zip" descompacta os novos no diretório
-     dos programas e salva os zips da biblioteca na pasta ?/sav/tmp/biblioteca mudando a
-     extensão de .zip para .bkp.
+## Segurança
 
-           2.2 - Atualização do Savatu
-     Atualiza a biblioteca que esta no diretório /home/savatu/biblioteca/temp/(diretório
-     conforme  sistema que esta sendo usado.
-     Mesmo procedimento acima.
-
-           2.3 - Atualização  OFF-Line
-     Atualiza a biblioteca que deve estar salva no diretório ?/sav/tmp
-     Mesmo procedimento acima.
-
-           2.4 - Voltar antes da Biblioteca
-     Descompacta o arquivo salvo anteriormente em ?/sav/tmp/olds com nome ("backup-Versão da biblioteca".zip
-     na pasta dos programas.
-
-     3 - Versão do Iscobol
-           Verifica qual a Versão do iscobol que esta sendo usada.
-
-     4 - Versão do Linux
-           Verifica qual o Linux em uso.
-
-     5 - Ferramentas
-          5.1 - Limpar Temporários
-              5.1.1 - Le os arquivos da lista "atualizat" compactando na pasta ?/sav/tmp/backup
-                      com o nome de Temp(dia+mes+ano) e excluindo da pasta de dados.
-
-              5.1.2 - Adiciona arquivos no "ATUALIZAT"
-
-          5.2 - Recuperar arquivos
-              5.2.1 - Um arquivo ou Todos
-                  Opção pede para informa um arquivo específico, somente o nome sem a extensão
-                  ou se deixar em branco o nome do arquivo vai recuperar todos os arquivos com as extensões,
-                  "*.ARQ.dat" "*.DAT.dat" "*.LOG.dat" "*.PAN.dat"
-
-              5.2.2 - Arquivos Principais
-                  Roda o Jtuil somente nos arquivos que estão na lista "atualizaj".
-
-          5.3 - Backup da base de dados
-              5.3.1 - Faz um backup da pasta de dados  com a opção de enviar para o servidor da SAV.
-
-              5.3.2 - Restaura Backup da base de dados.
-
-              5.3.3 - Enviar Backup selecionado.
-
-          5.4 - Envia e Recebe Arquivos "Avulsos".
-              5.4.1 - Enviar arquivo(s).
-
-              5.4.2 - Receber arquivo(s).
-
-          5.5 - Expurgador de arquivos
-              Excluir, zips e bkps com mais de 30 dias processado dos diretórios:
-               /backup, /olds /progs e /logs.
-
-          5.6 - Parâmetros
-                Variáveis e caminhos necessários para o funcionamento do atualiza.sh
-
-          5.7 - Update
-              Atualização do programa atualiza.sh.
-
-          5.8 - Lembretes
-
-            5.8.1 - Escrever uma nova nota
-
-            5.8.2 - Visualiza nota
-
-            5.8.3 - Editar nota
-
-            5.8.4 - Apagar nota
-
-Arquivos de trabalho:
-
-".atualizac" = Contem a configuração referente a empresa.
-
-".atualizap" = Configuracao do parametro do sistema.
-
-"atualizaj" = Lista de arquivos principais para dar rebuild.
-
-"atualizat = Lista de arquivos temporarios a ser excluidos da pasta de dados.
-Sao zipados em /backup/Temps-dia-mes-ano-horario.zip.
-
-"setup.sh" = Configurador para criar os arquivos .atualizac e .atualizap.
+- Senhas armazenadas como **SHA-256** (nunca em texto plano)
+- Arquivo `.senhas` com permissão `0600`
+- Validação do arquivo `.config` antes do carregamento (detecta comandos suspeitos)
+- Modo `set -euo pipefail` em todos os scripts principais

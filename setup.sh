@@ -1,687 +1,535 @@
 #!/usr/bin/env bash
 #
-#versao de 18/09/2025.03
-_manutencao_setup
-# Constantes
-readonly linha="#-------------------------------------------------------------------#"
-readonly traco="#####################################################################"
+# setup.sh - Gerencia a configuracao do sistema
+# Este script gerencia a criacao e a edicao dos arquivos de configuracao
+# .config, que e essencial para o funcionamento do sistema.
+# Padroes e regras de desenvolvimento: ver AGENTS.md
+#
+# Modos de Operacao:
+#   ./atualiza.sh --setup          - Configuracao inicial interativa
+#   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
+#
+# SISTEMA SAV - Script de Atualizacao Modular
+# Versao: 16/04/2026-02
+
+#---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
+# Variaveis globais esperadas
+verclass="${verclass:-}"
 
 # Variáveis globais
-declare -l sistema base base2 base3 BANCO destino SERACESOFF ENVIABACK
-declare -u EMPRESA
-
-editar_variavel() {
-    local nome="$1"
-    local valor_atual="${!nome}"
-
-    # Função para editar variável com prompt
-    read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
-    alterar=${alterar,,}
-    if [[ "$alterar" =~ ^s$ ]]; then
-        if [[ "$nome" == "sistema" ]]; then
-            echo
-            echo "Escolha o sistema:"
-            echo "1) IsCobol"
-            echo "2) Micro Focus Cobol"
-            read -rp "Opcao [1-2]: " opcao
-            case "$opcao" in
-            1) sistema="iscobol" ;;
-            2) sistema="cobol" ;;
-            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
-            esac
-
-        elif [[ "$nome" == "BANCO" ]]; then
-            echo
-            echo ${linha}
-            echo "O sistema usa banco de dados?"
-            echo "1) Sim"
-            echo "2) Nao"
-            read -rp "Opcao [1-2]: " opcao
-            case "$opcao" in
-            1) BANCO="s" ;;
-            2) BANCO="n" ;;
-            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
-            esac
-
-        elif [[ "$nome" == "acessossh" ]]; then
-            echo
-            echo ${linha}
-            echo "Metodo de acesso facil?"
-            echo "1) Sim"
-            echo "2) Nao"
-            read -rp "Opcao [1-2]: " opcao
-            case "$opcao" in
-            1) acessossh="s" ;;
-            2) acessossh="n" ;;
-            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
-            esac
-
-        elif [[ "$nome" == "IPSERVER" ]]; then
-            echo
-            echo "${linha}"
-            read -rp "Digite o IP do Servidor SAV (ou pressione Enter para manter $valor_atual): " novo_ip
-        if [[ -n "$novo_ip" ]]; then
-            IPSERVER="$novo_ip"
-        else
-            IPSERVER="$valor_atual"
-            echo "Mantendo valor anterior: $valor_atual"
-        fi    
-
-        elif [[ "$nome" == "SERACESOFF" ]]; then
-            echo
-            echo ${linha}
-            echo "O sistema em modo Offline ?"
-            echo "1) Sim"
-            echo "2) Nao"
-            read -rp "Opcao [1-2]: " opcao
-            case "$opcao" in
-            1) SERACESOFF="/sav/portalsav/Atualiza" ;;
-            2) SERACESOFF="n" ;;
-            *) echo "Opcao invalida. Mantendo valor anterior: $valor_atual" ;;
-            esac
-        else
-            read -rp "Novo valor para ${nome}: " novo_valor
-            eval "$nome=\"$novo_valor\""
-        fi
-    fi
-    echo ${linha}
+declare -l sistema base base2 base3 dbmaker enviabackup
+declare -u empresa
+ip_do_server="${ip_do_server:-179.94.20.40}"
+# Limpar tela
+_limpa_tela() {
+    clear
 }
 
-# Atualiza as variáveis SAVATU* com base na verclass
-atualizar_savatu_variaveis() {
-    local ano="${verclass}"
-    local sufixo="IS${ano}"
+# Diretorio do servidor offline
+# Configuracao inicial do sistema
+_initial_setup() {
+    _limpa_tela
 
-    SAVATU="tempSAV_${sufixo}_*_"
-    SAVATU1="tempSAV_${sufixo}_classA_"
-    SAVATU2="tempSAV_${sufixo}_classB_"
-    SAVATU3="tempSAV_${sufixo}_tel_isc_"
-    SAVATU4="tempSAV_${sufixo}_xml_"
+    # Constantes
+    local tracejada="#-------------------------------------------------------------------#"
+    local traco="#####################################################################"
 
-    echo "Variaveis SAVATU atualizadas com base em verclass:"
-    echo "SAVATU=$SAVATU"
-    echo "SAVATU1=$SAVATU1"
-    echo "SAVATU2=$SAVATU2"
-    echo "SAVATU3=$SAVATU3"
-    echo "SAVATU4=$SAVATU4"
-    echo ${linha}
-}
+    # Header inicial
+    echo "$traco"
+    echo "###      ( Parametros para serem usados no atualiza.sh )          ###"
+    echo "$traco"
+    # Criar arquivo de configuracao
+    {
+        echo "$traco"
+        echo "###      ( Parametros para serem usados no atualiza.sh )          ###"
+        echo "$traco"
+    } > .config
 
-# Se os arquivos existem, carrega e pergunta se quer editar campo a campo
-if [[ -f ".atualizac" && -f ".atualizap" ]]; then
-    echo "=================================================="
-    echo "Arquivos .atualizac e .atualizap ja existem."
-    echo "Carregando parametros para edicao..."
-    echo "=================================================="
+    # Selecionar sistema (IsCobol ou Microfocus)
+    echo "Em qual sistema o SAV esta rodando?"
+    echo "1) Iscobol"
+    echo "2) Microfocus"
+    read -n1 -rp "Escolha o sistema: " escolha
     echo
 
-    # Carrega os valores existentes do arquivo .atualizac
-    "." ./.atualizac || {
-        echo "Erro: Falha ao carregar .atualizac"
+    case "$escolha" in
+        1) _setup_iscobol ;;
+        2) _setup_cobol ;;
+        *)
+            echo "Alternativa incorreta, saindo!"
+            sleep 1
+            exit 1
+            ;;
+    esac
+
+    # Configuracoes adicionais
+    _setup_banco_de_dados
+    _setup_diretorios
+    _setup_acesso_remoto
+    _setup_backup
+    _setup_empresa
+
+    # Criar atalho global
+    echo "cd ${SCRIPT_DIR:-SCRIPT_DIR}" > /usr/local/bin/atualiza
+    echo "./atualiza.sh" >> /usr/local/bin/atualiza
+    chmod +x /usr/local/bin/atualiza
+
+    echo "Pronto!"
+}
+
+# Edicao de configuracoes existentes
+_edit_setup() {
+    local tracejada="#-------------------------------------------------------------------#"
+
+    # Mover para o diretorio de configuracao
+    cd "${cfg_dir}" || {
+        echo "Erro: Diretorio 'cfg' nao encontrado."
         exit 1
     }
 
-    # Carrega os valores existentes do arquivo .atualizap
-    "." ./.atualizap || {
-        echo "Erro: Falha ao carregar .atualizap"
+    # Verificar se os arquivos de configuracao existem
+    if [[ ! -f "${cfg_dir}/.config" ]]; then
+        echo "Arquivos de configuracao nao encontrados. Execute o setup inicial primeiro."
         exit 1
-    }
+    fi
+    clear 
+    echo "=================================================="
+    echo "Carregando parametros para edicao..."
+    echo "=================================================="
 
-    # Faz backup dos arquivos
-    cp .atualizac .atualizac.bak || {
-        echo "Erro: Falha ao criar backup de .atualizac"
-        exit 1
-    }
-    cp .atualizap .atualizap.bak || {
-        echo "Erro: Falha ao criar backup de .atualizap"
-        exit 1
-    }
-fi
-## Criando o progama atualiza em /usr/local/bin
-{
-echo "#!/usr/bin/env bash"
-echo "#--------------------------------------------#"
-echo "##  Rotina para atualizar SAV                #"
-echo "##  Feito por: Luiz Augusto                  #"
-echo "##  email luizaugusto@sav.com.br             #"
-echo "##  Rotina para chamar o atualiza.sh         #"
-echo "#--------------------------------------------#" 
-echo "cd /${destino}${pasta:-/sav/tools}" 
-echo ./atualiza.sh 
-} >/usr/local/bin/atualiza
-chmod +x /usr/local/bin/atualiza
+    # Carregar configuracoes existentes
+    "." ./.config
 
-clear
+    # Fazer backup
+    cp .config .config.bkp
 
-    # Edita as variáveis
-    editar_variavel sistema
-    editar_variavel verclass
+    # Edicao interativa das variaveis
+    _editar_variavel sistema
+    _editar_variavel verclass
+    _editar_variavel dbmaker
+    _editar_variavel acessossh
+    _editar_variavel ipserver
+    _editar_variavel Offline
+    _editar_variavel enviabackup
+    _editar_variavel empresa
+    _editar_variavel base
+    _editar_variavel base2
+    _editar_variavel base3
 
-    if [[ -n "$verclass" ]]; then
-        verclass_sufixo="${verclass: -2}"
-        class="-class${verclass_sufixo}"
-        mclass="-mclass${verclass_sufixo}"
-        echo "class e mclass foram atualizados automaticamente:"
-        echo "class=${class}"
-        echo "mclass=${mclass}"
-        atualizar_savatu_variaveis
-    else
-        editar_variavel class
-        editar_variavel mclass
+    # Recriar arquivos de configuracao
+    _recreate_config_files
+
+    echo "Arquivos .config atualizado com sucesso!"
+
+    # Configurar SSH se habilitado
+    if [[ "${acessossh}" == "s" ]]; then
+        _configure_ssh_access
     fi
 
-    editar_variavel BANCO
-    editar_variavel destino
-    editar_variavel acessossh
-    editar_variavel IPSERVER
-    editar_variavel SERACESOFF
-    editar_variavel ENVIABACK
-    editar_variavel EMPRESA
-    editar_variavel base
-    editar_variavel base2
-    editar_variavel base3
+    echo "$tracejada"
+    read -rp "Pressione Enter para sair..."
+    exit 0
+}
 
-    # Recria .atualizac
-    echo "Recriando .atualizac com os novos parametros..."
-    echo ${linha}
+#---------- FUNcoES DE SETUP INICIAL ----------#
+
+# Configuracao para IsCobol
+_setup_iscobol() {
+    sistema="iscobol"
+    echo "sistema=iscobol" >> .config
+    echo "$tracejada"
+    echo "Escolha a versao do Iscobol:"
+    echo "1) Versao 2018"
+    echo "2) Versao 2020"
+    echo "3) Versao 2023"
+    echo "4) Versao 2024"
+    echo "5) Versao 2025"
+    read -rp "Escolha a versao -> " -n1 VERSAO
+    echo
+
+    case "$VERSAO" in
+        1) _2018 ;;
+        2) _2020 ;;
+        3) _2023 ;;
+        4) _2024 ;;
+        5) _2025 ;;
+        *)
+            echo "Alternativa incorreta, saindo!"
+            sleep 1
+            exit 1
+            ;;
+    esac
+
+    }
+
+
+# Configuracao para Micro Focus Cobol
+_setup_cobol() {
+    sistema="cobol"
+    {
+        echo "sistema=cobol"
+    } >> .config
+}
+# Funcoes de versao do IsCobol
+_2018() {
+    {
+        echo "verclass=2018"
+    } >> .config
+    verclass="2018"
+}
+_2020() {
+    {
+        echo "verclass=2020"
+    } >> .config
+    verclass="2020"
+}
+_2023() {
+    {
+        echo "verclass=2023"
+    } >> .config
+    verclass="2023"
+}
+_2024() {
+    {
+        echo "verclass=2024"
+    } >> .config
+    verclass="2024"
+}
+
+_2025() {
+    {
+        echo "verclass=2025"
+    } >> .config
+    verclass="2025"
+}
+# Configuracoes adicionais
+_setup_banco_de_dados() {
+    echo "$tracejada"
+    while true; do
+        read -rp "Sistema em banco de dados [S/N]: " -n1 dbmaker
+        echo
+        if [[ "${dbmaker,,}" =~ ^[sn]$ ]]; then
+            break
+        else
+            echo "Entrada inválida. Digite S ou N."
+        fi
+    done
+    if [[ "${dbmaker,,}" == "s" ]]; then
+        echo "dbmaker=s" >> .config
+    else
+        echo "dbmaker=n" >> .config
+    fi
+}
+_setup_diretorios() {
+    echo ${tracejada}
+    echo "###     ( Nome de pasta no servidor )              ###"
+    read -rp "Nome da pasta da base de dados (Ex: /dados_jisam) [/dados_jisam]: " base
+    base="${base:-/dados_jisam}"
+    echo "base=${base}" >> .config
+    echo ${tracejada}
+    read -rp "Nome da pasta da segunda base  (Opcional): " base2
+    [[ -n "$base2" ]] && echo "base2=${base2}" >> .config || echo "#base2=" >> .config
+    echo ${tracejada}
+    read -rp "Nome da pasta da terceira base (Opcional): " base3
+    [[ -n "$base3" ]] && echo "base3=${base3}" >> .config || echo "#base3=" >> .config
+    echo ${tracejada}
+}
+_setup_acesso_remoto() {
+    echo "###      ( FACILITADOR DE ACESSO REMOTO )         ###"
+    while true; do
+        read -rp "Ativar acesso facil (SSH) [S/N]: " -n1 acessossh
+        echo
+        if [[ "${acessossh,,}" =~ ^[sn]$ ]]; then
+            break
+        else
+            echo "Entrada invalida. Digite S ou N."
+        fi
+    done
+    if [[ "${acessossh,,}" == "s" ]]; then
+        echo "acessossh=s" >> .config
+    else
+        echo "acessossh=n" >> .config
+    fi
+    echo ${tracejada}
+    echo "###      ( IP do servidor da SAV )         ###"
+    read -rp "Informe o IP do servidor [${ip_do_server}]: " ipserver
+    ipserver="${ipserver:-${ip_do_server}}"
+    echo "ipserver=${ipserver}" >> .config
+    echo "IP do servidor: ${ipserver}"
+    echo ${tracejada}
+
+    echo "###      ( Tipo de acesso        )         ###"
+    while true; do
+        read -rp "Servidor OFF [S/N]: " -n1 opt 
+        echo
+        if [[ "${opt,,}" =~ ^[sn]$ ]]; then
+            break
+        else
+            echo "Entrada invalida. Digite S ou N."
+        fi
+    done
+    if [[ "${opt,,}" == "s" ]]; then
+        Offline="s"
+        echo "Offline=s" >> .config
+    else
+        Offline="n"
+        echo "Offline=n" >> .config
+    fi
+}
+
+_setup_backup() {
+    if [[ "${Offline}" == "s" ]]; then
+        echo ${tracejada}
+        echo "###     ( Modo Offline Ativado )                ###"
+        echo "###     Backup local sera criado na pasta do script ###"
+        echo "###     O backup deve ser enviado manualmente para a SAV ###"
+        echo ${tracejada}
+        echo "enviabackup=${acessoff}" >> .config
+        return
+    else
+        echo ${tracejada}
+        echo "###     ( Nome de pasta no servidor da SAV )                ###"
+        echo "Nome de pasta no servidor da SAV, informar somento o nome do cliente"
+        read -rp "(Ex: cliente/\"NOME_da_pasta_do_CLIENTE\"): " enviabackup
+        echo "enviabackup=/cliente/${enviabackup}_jisam" >> .config
+    fi
+}
+_setup_empresa() {
+    echo ${tracejada}
+    echo "###     ( NOME DA empresa )                   ###"
+    echo "###   Nao pode conter espacos entre os nomes    ###"
+    echo ${tracejada}
+    read -rp "Nome da Empresa (sem espacos): " empresa
+    echo "empresa=${empresa}" >> .config
+}
+
+#---------- FUNCOES DE EDICAO ----------#
+
+# Edita uma variavel de forma interativa
+_editar_variavel() {
+    local nome="$1"
+    local valor_atual="${!nome}"
+    local tracejada="#-------------------------------------------------------------------#"
+
+    while true; do
+        read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
+        if [[ "${alterar,,}" =~ ^[sn]$ ]]; then
+            break
+        else
+            echo "Entrada inválida. Digite S ou N."
+        fi
+    done
+    if [[ "${alterar,,}" == "s" ]]; then
+        case "$nome" in
+            "sistema")
+                echo "1) IsCobol"
+                echo "2) Micro Focus Cobol"
+                read -rp "Opcao [1-2]: " opt
+                [[ "$opt" == "1" ]] && sistema="iscobol"
+                [[ "$opt" == "2" ]] && sistema="cobol"
+                ;;
+            "dbmaker"|"acessossh")
+                while true; do
+                    read -rp "Novo valor (s/n): " opt
+                    if [[ "${opt,,}" =~ ^[sn]$ ]]; then
+                        [[ "${opt,,}" == "s" ]] && declare -g "$nome"="s"
+                        [[ "${opt,,}" == "n" ]] && declare -g "$nome"="n"
+                        break
+                    else
+                        echo "Entrada inválida. Digite s ou n."
+                    fi
+                done
+                ;;
+            "Offline")
+                while true; do
+                    read -rp "Sistema em modo Offline? (s/n): " opt            
+                    if [[ "${opt,,}" =~ ^[sn]$ ]]; then
+                        [[ "${opt,,}" == "s" ]] && declare -g "Offline"="s"
+                        [[ "${opt,,}" == "n" ]] && declare -g "Offline"="n"
+                        break
+                    else
+                        echo "Entrada inválida. Digite s ou n."
+                    fi
+                done
+                ;;
+
+            *)
+                read -rp "Novo valor para ${nome}: " novo_valor
+                declare -g "$nome"="$novo_valor"
+                ;;
+        esac
+    fi
+    echo "$tracejada"
+}
+
+# Recria os arquivos de configuracao
+_recreate_config_files() {
+    local tracejada="#-------------------------------------------------------------------#"
+    echo "Recriando arquivos de configuracao..."
 
     {
         echo "sistema=${sistema}"
         [[ -n "$verclass" ]] && echo "verclass=${verclass}"
-        [[ -n "$class" ]] && echo "class=${class}"
-        [[ -n "$mclass" ]] && echo "mclass=${mclass}"
-        [[ -n "$BANCO" ]] && echo "BANCO=${BANCO}"
-        [[ -n "$destino" ]] && echo "destino=${destino}"
-        [[ -n "$acessossh" ]] && echo "acessossh=${acessossh}"
-        [[ -n "$IPSERVER" ]] && echo "IPSERVER=${IPSERVER}"      
-        [[ -n "$SERACESOFF" ]] && echo "SERACESOFF=${SERACESOFF}"
-        [[ -n "$ENVIABACK" ]] && echo "ENVIABACK=${ENVIABACK}"
-        [[ -n "$EMPRESA" ]] && echo "EMPRESA=${EMPRESA}"
-        [[ -n "$base" ]] && echo "base=${base}"
-        [[ -n "$base2" ]] && echo "base2=${base2}"
-        [[ -n "$base3" ]] && echo "base3=${base3}"
-    } >.atualizac
+        echo "dbmaker=${dbmaker}"
+        echo "acessossh=${acessossh}"
+        echo "ipserver=${ipserver}"
+        echo "Offline=${Offline}"
+        echo "enviabackup=${enviabackup}"
+        echo "empresa=${empresa}"
+        echo "base=${base}"
+        [[ -n "$base2" ]] && echo "base2=${base2}" || echo "#base2="
+        [[ -n "$base3" ]] && echo "base3=${base3}" || echo "#base3="
+    } > .config
+    echo "$tracejada"
+}
 
-    # Recria .atualizap
-    echo "Recriando .atualizap com os parametros atualizados..."
-    echo ${linha}
+#---------- FUNCOES AUXILIARES ----------#
+# Configura acesso SSH facilitado
+#===================================================================
+# _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
+#===================================================================
+_configure_ssh_access() {
+    local SERVER_IP="${ipserver}"
+    local SERVER_PORTA="${SERVER_PORTA:-41122}"
+    local SERVER_USER="${USUARIO:-atualiza}"
+    local SSH_DIR="${HOME}/.ssh"
+    local SSH_CONFIG_FILE="${SSH_DIR}/config"
+    local CONTROL_PATH_BASE="${SSH_DIR}/control"
 
-    {
-        echo "exec=sav/classes"
-        echo "telas=sav/tel_isc"
-        echo "xml=sav/xml"
-        echo "SAVATU=${SAVATU}"
-        echo "SAVATU1=${SAVATU1}"
-        echo "SAVATU2=${SAVATU2}"
-        echo "SAVATU3=${SAVATU3}"
-        echo "SAVATU4=${SAVATU4}"
-        echo "pasta=/sav/tools"
-        echo "progs=/progs"
-        echo "olds=/olds"
-        echo "logs=/logs"
-        echo "backup=/backup"
-    } >.atualizap
+    # Validação das variáveis obrigatórias
+    if [[ -z "${SERVER_IP}" ]]; then
+        echo "Erro: Variavel 'ipserver' nao foi definida."
+        return 1
+    fi
 
-    echo
-    echo "Arquivos .atualizac e .atualizap atualizados com sucesso!"
-    echo
-    echo ${linha}
-    
-if [[ "${acessossh}" = "s" ]]; then
+    # Cria os diretórios padrão com permissões corretas
+    mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
+    chmod 0755 "${SSH_DIR}" "${CONTROL_PATH_BASE}"
 
-# CONFIGURAÇÕES PERSONALIZÁVEIS (ALTERE AQUI OU VIA VARIÁVEIS DE AMBIENTE)
-SERVER_IP="${IPSERVER}"        # IP do servidor (padrão: 177.45.80.10)
-SERVER_PORT="${SERVER_PORT:-41122}"            # Porta SFTP (padrão: 41122)
-SERVER_USER="${SERVER_USER:-atualiza}"         # Usuário SSH (padrão: atualiza)
-CONTROL_PATH_BASE="${CONTROL_PATH_BASE:-/${destino}${pasta}/.ssh/control}"
-# VALIDAÇÃO DAS VARIÁVEIS OBRIGATÓRIAS
-if [[ -z "$SERVER_IP" || -z "$SERVER_PORT" || -z "$SERVER_USER" ]]; then
-    echo "Erro: Variaveis obrigatorias nao definidas!"
-    echo "Defina via ambiente ou edite as configuracoes no inicio do script:"
-    echo "  export SERVER_IP='seu.ip.aqui'"
-    echo "  export SERVER_PORT='porta'"
-    echo "  export SERVER_USER='usuario'"
-    exit 1
-fi
+    # ====================== CRIAÇÃO / ATUALIZAÇÃO DO ARQUIVO ~/.ssh/config ======================
+    if [[ ! -f "${SSH_CONFIG_FILE}" ]] || ! grep -q "^Host sav_servidor" "${SSH_CONFIG_FILE}"; then
+        cat >> "${SSH_CONFIG_FILE}" << EOF
 
-# PREPARAÇÃO DOS DIRETÓRIOS
-SSH_CONFIG_DIR="$(dirname "$CONTROL_PATH_BASE")"
-CONTROL_PATH="$CONTROL_PATH_BASE"
-
-# Verifica/cria diretório base
-if [[ ! -d "$SSH_CONFIG_DIR" ]]; then
-    echo "Criando diretorio $SSH_CONFIG_DIR..."
-    mkdir -p "$SSH_CONFIG_DIR" || {
-        echo "Falha: Permissao negada para criar $SSH_CONFIG_DIR. Use sudo se necessario."
-        exit 1
-    }
-    chmod 700 "$SSH_CONFIG_DIR"
-fi
-
-# Verifica/cria diretório de controle
-if [[ ! -d "$CONTROL_PATH" ]]; then
-    echo "Criando diretorio de controle $CONTROL_PATH..."
-    mkdir -p "$CONTROL_PATH" || {
-        echo "Falha: Permissao negada para criar $SSH_CONFIG_DIR."
-        exit 1
-    }
-    chmod 700 "$CONTROL_PATH"
-fi
-
-# CONFIGURAÇÃO SSH
-if [[ ! -f "/root/.ssh/config" ]]; then
-    mkdir -p "/root/.ssh"
-    chmod 700 "/root/.ssh"
-    
-    # Injeta as variáveis diretamente na configuração (sem aspas em EOF para expansão)
-    cat << EOF >> "/root/.ssh/config"
+# ================================================
+# Configuração SAV - Gerada automaticamente
+# ================================================
 Host sav_servidor
-    HostName $SERVER_IP
-    Port $SERVER_PORT
-    User $SERVER_USER
+    HostName ${SERVER_IP}
+    Port ${SERVER_PORTA}
+    User ${SERVER_USER}
+#   StrictHostKeyChecking accept-new
     ControlMaster auto
-    ControlPath $CONTROL_PATH/%r@%h:%p
+    ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
     ControlPersist 10m
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    ConnectTimeout 15
 EOF
-    chmod 600 "/root/.ssh/config"
-    echo "Configuracao SSH criada com parametros:"
-else
-    echo "Arquivo de configuracao ja existe: /root/.ssh/config"
-    
-    # Verifica se a configuração específica já está presente
-    if ! grep -q "Host sav_servidor" "/root/.ssh/config" 2>/dev/null; then
-        echo -e "\nA configuracao 'sav_servidor' NAO esta presente no arquivo."
-        echo "Deseja adiciona-la com os parametros atuais? (s/n)"
-        read -r resposta
-        if [[ ! "$resposta" =~ ^[Ss]$ ]]; then exit 0; fi
-        cat << EOF >> "/root/.ssh/config"
-
-# Configuração adicionada automaticamente
-Host sav_servidor
-    HostName $SERVER_IP
-    Port $SERVER_PORT
-    User $SERVER_USER
-    ControlMaster auto
-    ControlPath $CONTROL_PATH/%r@%h:%p
-    ControlPersist 10m
-EOF
-        echo "Configuracao 'sav_servidor' adicionada com parametros:"
-    fi
-fi
-
-# EXIBE OS PARÂMETROS UTILIZADOS
-echo -e "\n   IP do Servidor:   $SERVER_IP"
-echo "   Porta:            $SERVER_PORT"
-echo "   Usuário:          $SERVER_USER"
-echo "   ControlPath:      $CONTROL_PATH/%r@%h:%p"
-echo -e "\n Validacao concluida! Teste com:"
-echo "   sftp sav_servidor"
-echo
-echo
-fi
-read -rp "Deseja iniciar uma nova configuracao dos arquivos .atualizac/p ? [s/N] " continuar
-continuar=${continuar,,}
-if [[ "$continuar" =~ ^n$ || "$continuar" == "" ]]; then
-    echo "Finalizando o script de configuracao para o atualiza.sh."
-    exit 0
-fi
-echo
-echo "Continuando o processo normal..."
-sleep 1
-clear
-
-complemento=""
-mcomplemento=""
-
-linha="#-------------------------------------------------------------------#"
-traco="#####################################################################"
-###
-echo ${traco}
-echo ${traco} >.atualizac
-echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >>.atualizac
-echo "###      ( Parametros para serem usados no atualiza.sh )          ###"
-echo ${traco} >>.atualizac
-echo ${traco} >.atualizap
-echo "###      ( Parametros para serem usados no atualiza.sh )          ###" >>.atualizap
-echo ${traco} >>.atualizap
-_ISCOBOL() {
-    sistema="iscobol"
-    echo ${traco}
-    echo "###           (CONFIGURACAO PARA O SISTEMA EM ISCOBOL)           ###"
-    echo ${traco}
-    echo "sistema=iscobol"
-    echo "sistema=iscobol" >>.atualizac
-    echo ${linha}
-    echo "Escolha a versao do Iscobol"
-    echo
-    echo "1- Versao 2018"
-    echo
-    echo "2- Versao 2020"
-    echo
-    echo "3- Versao 2023"
-    echo
-    echo "4- Versao 2024"
-    echo
-    read -rp "Escolha a versao -> " -n1 VERSAO
-    echo
-    case ${VERSAO} in
-    1) _2018 ;;
-    2) _2020 ;;
-    3) _2023 ;;
-    4) _2024 ;;
-    *)
-        echo
-        echo Alternativas incorretas, saindo!
-        sleep 1
-        exit
-        ;;
-    esac
-    {
-        echo "exec=sav/classes"
-        echo "telas=sav/tel_isc"
-        echo "xml=sav/xml"
-        classA="IS${VERCLASS}""_*_" # Usanda esta variavel para baixar todos os zips da atualizacao.
-        classB="IS${VERCLASS}""_classA_"
-        classC="IS${VERCLASS}""_classB_"
-        classD="IS${VERCLASS}""_tel_isc_"
-        classE="IS${VERCLASS}""_xml_"
-        echo "SAVATU=tempSAV_""${classA}"
-        echo "SAVATU1=tempSAV_""${classB}"
-        echo "SAVATU2=tempSAV_""${classC}"
-        echo "SAVATU3=tempSAV_""${classD}"
-        echo "SAVATU4=tempSAV_""${classE}"
-    } >>.atualizap
-}
-
-# _2018
-#
-# Define as variaveis para o Iscobol da versao 2018.
-#
-# As variaveis class e mclass recebem seus valores para a versao 2018.
-#
-# A variavel VERCLASS recebe o valor 2018.
-#
-# As variaveis sao escritas no arquivo .atualizac.
-_2018() {
-    {
-        complemento="-class"
-        mcomplemento="-mclass"
-        VERCLASS="2018"
-        echo "verclass=${VERCLASS}"
-        echo "class=-class"
-        echo "mclass=-mclass"
-    } >>.atualizac
-}
-
-# _2020
-#
-# Define as variaveis para o Iscobol da versao 2020.
-#
-# As variaveis class e mclass recebem seus valores para a versao 2020.
-#
-# A variavel VERCLASS recebe o valor 2020.
-#
-# As variaveis sao escritas no arquivo .atualizac.
-_2020() {
-    {
-        complemento="-class20"
-        mcomplemento="-mclass20"
-        VERCLASS="2020"
-        echo "verclass=${VERCLASS}"
-        echo "class=-class20"
-        echo "mclass=-mclass20"
-    } >>.atualizac
-}
-
-# _2023
-#
-# Define as variaveis para o Iscobol da versao 2023.
-#
-# As variaveis class e mclass recebem seus valores para a versao 2023.
-#
-# A variavel VERCLASS recebe o valor 2023.
-#
-# As variaveis sao escritas no arquivo .atualizac.
-_2023() {
-    {
-        complemento="-class23"
-        mcomplemento="-mclass23"
-        VERCLASS="2023"
-        echo "verclass=${VERCLASS}"
-        echo "class=-class23"
-        echo "mclass=-mclass23"
-    } >>.atualizac
-}
-
-# _2024
-#
-# Define as variaveis para o Iscobol da versao 2024.
-#
-# As variaveis class e mclass recebem seus valores para a versao 2024.
-#
-# A variavel VERCLASS recebe o valor 2024.
-#
-# As variaveis sao escritas no arquivo .atualizac.
-_2024() {
-    {
-        complemento="-class24"
-        mcomplemento="-mclass24"
-        VERCLASS="2024"
-        echo "verclass=${VERCLASS}"
-        echo "class=-class24"
-        echo "mclass=-mclass24"
-    } >>.atualizac
-}
-
-# _COBOL
-#
-# Define as variaveis para o Micro Focus da versao COBOL.
-#
-# As variaveis class e mclass recebem seus valores para a versao COBOL.
-#
-# A variavel sistema recebe o valor COBOL.
-#
-# As variaveis sao escritas no arquivo .atualizac.
-_COBOL() {
-    sistema="cobol"
-    {
-        complemento="-6"
-        mcomplemento="-m6"
-        echo "sistema=cobol"
-        echo "class=-6"
-        echo "mclass=-m6"
-    } >>.atualizac
-    {
-        echo "exec=sav/int"
-        echo "telas=sav/tel"
-        echo "SAVATU1=tempSAVintA_"
-        echo "SAVATU2=tempSAVintB_"
-        echo "SAVATU3=tempSAVtel_"
-        echo "${linha}"
-    } >>.atualizap
-}
-
-echo "  Em qual sistema que o SAV esta rodando "
-echo "1) Iscobol"
-echo
-echo "2) Microfocus"
-echo
-read -n1 -rp "Escolha o sistema " escolha
-case ${escolha} in
-1)
-    echo ") Iscobol"
-    _ISCOBOL
-    ;;
-2)
-    echo ") Microfocus"
-    _COBOL
-    ;;
-*)
-    echo
-    echo Alternativas incorretas, saindo!
-    sleep 1
-    exit
-    ;;
-esac
-clear
-echo ${traco}
-echo "###           ( Banco de Dados )                               ###"
-read -rp " ( Sistema em banco de dados [S/N]  ->" -n1 BANCO
-echo
-echo ${linha}
-if [[ "${BANCO}" =~ ^[Nn]$ ]] || [[ "${BANCO}" == "" ]]; then
-    echo "BANCO=n" >>.atualizac
-else
-    [[ "${BANCO}" =~ ^[Ss]$ ]]
-    echo "BANCO=s" >>.atualizac
-fi
-echo "###              ( PASTA DO SISTEMA )         ###"
-read -rp " Informe o diretorio raiz sem o /->" -n1 destino
-echo
-echo destino="${destino}" >>.atualizac
-echo ${linha}
-echo "###           ( FACILITADOR DE ACESSO REMOTO )         ###"
-read -rp " Informe se ativa o acesso facil ->" -n1 acessossh
-echo
-echo ${linha}
-if [[ "${acessossh}" =~ ^[Nn]$ ]] || [[ "${acessossh}" == "" ]]; then
-    echo "acessossh=n" >>.atualizac
-else
-    [[ "${acessossh}" =~ ^[Ss]$ ]]
-    echo "acessossh=s" >>.atualizac
-fi
-echo
-
-echo "###           ( IP do servidor da SAV )         ###"
-read -rp " Informe o ip do servidor->" IPSERVER
-echo
-if [[ "${IPSERVER}" == "" ]]; then
-    echo "Necessario informar O IP"
-    exit
-else
-    echo "IPSERVER=${IPSERVER}" >>.atualizac
-    echo "IP do servidor:${IPSERVER}"
-    echo ${linha}
-fi
-echo
-
-echo "###          Tipo de acesso                  ###"
-read -rp "Servidor OFF [S ou N] ->" -n1 SERACESOFF
-echo
-if [[ "${SERACESOFF}" =~ ^[Nn]$ ]] || [[ "${SERACESOFF}" == "" ]]; then
-    echo "SERACESOFF=n" >>.atualizac
-elif [[ "${SERACESOFF}" =~ ^[Ss]$ ]]; then
-    echo "SERACESOFF=/sav/portalsav/Atualiza" >>.atualizac
-fi
-echo ${linha}
-echo "###          ( Nome de pasta no servidor da SAV )                ###"
-echo "Nome de pasta no servidor da SAV, informar somento e pasta do cliente"
-read -rp "/cliente/" ENVIABACK
-echo
-if [[ "${ENVIABACK}" == "" ]]; then
-    if [[ "${SERACESOFF}" =~ ^[Nn]$ ]] || [[ "${SERACESOFF}" == "" ]]; then
-        echo "ENVIABACK="""
-        echo "ENVIABACK=""" >>.atualizac
+        chmod 0600 "${SSH_CONFIG_FILE}"
+        echo "Configuracao SSH criada/adicionada em ~/.ssh/config"
     else
-        echo "ENVIABACK=/sav/portalsav/Atualiza"
-        echo "ENVIABACK=/sav/portalsav/Atualiza" >>.atualizac
+        echo " Configuracao SSH 'sav_servidor' ja existe em ~/.ssh/config"
     fi
-else
-    echo "ENVIABACK=cliente/""${ENVIABACK}"
-    echo "ENVIABACK=cliente/""${ENVIABACK}" >>.atualizac
-fi
-echo ${linha}
-echo "###           ( NOME DA EMPRESA )            ###"
-echo "###   Nao pode ter espacos entre os nomes    ###"
-echo ${linha}
-read -rp "Nome da Empresa-> " EMPRESA
-echo
-echo EMPRESA="${EMPRESA}"
-echo EMPRESA="${EMPRESA}" >>.atualizac
-echo ${linha}
-echo "###    ( DIRETORIO DA BASE DE DADOS )        ###"
-echo ${linha}
-read -rp "Nome de pasta da base, Ex: sav/dados_? -:> " base
-if [[ "${base}" == "" ]]; then
-    echo "Necessario pasta informar a base de dados"
-    exit
-else
-    echo "base=/""${base}" >>.atualizac
-    echo "base=/""${base}"
-fi
 
-echo ${linha}
-read -rp "Nome de pasta da base2, Ex: sav/dados_? -:> " base2
-if [[ "${base2}" == "" ]]; then
-    echo "#base2=" >>.atualizac
-    echo "#base2="
-else
-    echo "base2=/""${base2}" >>.atualizac
-    echo "base2=/""${base2}"
-fi
-echo ${linha}
+    # ====================== TESTE DE CONEXÃO ======================
+    echo
+    echo "Testando conexao com o servidor SAV (${SERVER_IP})..."
 
-read -rp "Nome de pasta da base3, Ex: sav/dados_? -:> " base3
-if [[ "${base3}" == "" ]]; then
-    echo "#base3=" >>.atualizac
-    echo "#base3="
-else
-    echo "base3=/""${base3}" >>.atualizac
-    echo "base3=/""${base3}"
-fi
-echo ${linha}
-echo ${linha} >>.atualizac
-clear
-
-{
-    echo "pasta=/sav/tools"
-    echo "progs=/progs"
-    echo "olds=/olds"
-    echo "logs=/logs"
-    echo "backup=/backup"
-    echo ${linha}
-} >>.atualizap
-
-if [[ "${SERACESOFF}" =~ ^[Ss]$ ]]; then
-    if [[ "${sistema}" = "cobol" ]]; then
-        {
-            echo "@echo off"
-            echo "cls"
-            echo "setlocal EnableDelayedExpansion"
-            echo
-            echo ":: Configuracoes"
-            echo "set class=""${complemento}"
-            echo "set mclass=""${mcomplemento}"
-            echo "set SAVATU1=tempSAVintA_"
-            echo "set SAVATU2=tempSAVintB_"
-            echo "set SAVATU3=tempSAVtel_"
-        } >atualiza.bat
-    else
-        {
-            echo "@echo off"
-            echo "cls"
-            echo "setlocal EnableDelayedExpansion"
-            echo
-            echo ":: Configuracoes"
-            echo "set class=""${complemento}"
-            echo "set mclass=""${mcomplemento}"
-            echo "set SAVATU1=tempSAV_${classB}"
-            echo "set SAVATU2=tempSAV_${classC}"
-            echo "set SAVATU3=tempSAV_${classD}"
-            echo "set SAVATU4=tempSAV_${classE}"
-        } >atualiza.bat
+    # Teste silencioso primeiro
+    if ssh -o BatchMode=yes sav_servidor exit 2>/dev/null; then
+        echo "Conexao SSH estabelecida com sucesso!"
+        return 0
     fi
-    # Check if the batch file was created successfully
-    if [[ -f "atualiza.bat" ]]; then
-        _ATUALIZA_BAT
+
+    # Primeira conexão - modo interativo
+    echo "Primeira conexao: confirme a identidade do servidor abaixo."
+    echo "   (Digite 'yes' quando aparecer a mensagem de fingerprint)"
+    echo
+
+    if ssh sav_servidor exit; then
+        echo "Servidor autenticado e fingerprint adicionado ao known_hosts."
+        return 0
     else
-        echo "Falhou ao criar o arquivo atualiza.bat." >&2
+        echo "Erro: nao foi possivel conectar ao servidor."
+        echo "   Verifique:"
+        echo "     • IP correto (${SERVER_IP})"
+        echo "     • Porta ${SERVER_PORTA} liberada"
+        echo "     • Usuario '${SERVER_USER}' existe no servidor remoto"
+        echo "     • Firewall permite a conexao"
+        return 1
+    fi
+}
+
+
+#---------- PONTO DE ENTRADA PRINCIPAL ----------#
+
+# Funcao principal que direciona para o modo correto
+main() {
+
+# Diretorio do script (compativel com chamada direta ou via atualiza.sh)
+# Quando chamado diretamente de /libs, sobe um nivel para o diretorio do atualiza.sh
+    if [[ -z "${SCRIPT_DIR}" ]]; then
+        _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        if [[ "$(basename "${_self_dir}")" == "libs" ]]; then
+            SCRIPT_DIR="$(dirname "${_self_dir}")"
+        else
+            SCRIPT_DIR="${_self_dir}"
+        fi
+        unset _self_dir
+    fi
+# Definição de variáveis globais
+raiz="${SCRIPT_DIR%/*}"
+acessoff="${acessoff:-${raiz}/portalsav/Atualiza}"
+
+# Diretorios dos modulos e configuracoes
+lib_dir="${lib_dir:-${SCRIPT_DIR}/libs}"
+cfg_dir="${cfg_dir:-${SCRIPT_DIR}/cfg}"
+
+cd "${SCRIPT_DIR}" || exit 1
+
+# Verifica se o diretorio libs existe
+    if [[ ! -d "${lib_dir}" ]]; then
+        echo "ERRO: Diretorio ${lib_dir} nao encontrado."
         exit 1
     fi
-fi
 
-## Criando atualiza em /usr/local/bin
-echo "cd ${destino}${pasta:-/sav/tools}" >/usr/local/bin/atualiza
-echo ./atualiza.sh >/usr/local/bin/atualiza
-chmod +x /usr/local/bin/atualiza
-echo "Pronto !!!"
+# Verifica se o diretorio cfg existe
+    if [[ ! -d "${cfg_dir}" ]]; then
+        echo "ERRO: Diretorio ${cfg_dir} nao encontrado."
+        exit 1
+    fi
+
+    # Verificar modo de operacao
+    if [[ "$1" == "--edit" ]]; then
+        _edit_setup
+    else
+        # Verificar se os arquivos de configuracao ja existem
+
+        if [[ -f "${cfg_dir}/.config" ]]; then  
+            _limpa_tela
+            echo "Arquivos de configuracao ja existem."
+            while true; do
+                read -rp "Deseja sobrescrevê-los com a configuracao inicial? [s/N]: " choice
+                if [[ "${choice,,}" =~ ^[sn]$ ]]; then
+                    break
+                else
+                    echo "Entrada inválida. Digite S ou N."
+                fi
+            done
+            if [[ "${choice,,}" == "s" ]]; then
+                cd cfg || exit 1
+                _initial_setup
+            else
+                echo "Operacao cancelada. Use './atualiza.sh --setup --edit' para modificar."
+                exit 0
+            fi
+        else
+            mkdir -p cfg
+            cd cfg || exit 1
+            _initial_setup
+        fi
+    fi
+}
+
+# Executar a funcao principal
+main "$@"
