@@ -14,12 +14,12 @@
 # -e: Sai imediatamente se um comando falhar
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
-set -eo pipefail
+set -euo pipefail
 
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="28/04/26-v.1"
+declare -rx UPDATE="29/04/26-v.1"
 
 # =============================================================================
 # DIRETÓRIOS DO SCRIPT
@@ -105,9 +105,6 @@ done
 
 # =============================================================================
 # CARREGAMENTO DE MÓDULOS
-# =============================================================================
-
-# -----------------------------------------------------------------------------
 # Carrega um módulo com verificação de segurança
 # Parâmetros:
 #   $1 - Nome do módulo (sem extensão)
@@ -180,13 +177,12 @@ _carregar_modulos() {
 
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA
-
 # -----------------------------------------------------------------------------
 # Inicializa o sistema carregando configurações e validando ambiente
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _inicializar_sistema() {
-        # Carregar módulos do sistema
+    # Carregar módulos do sistema
     if ! _carregar_modulos; then
         printf "ERRO: Falha ao carregar modulos.\n" >&2
         return 1
@@ -222,8 +218,6 @@ _inicializar_sistema() {
 # =============================================================================
 # FUNÇÃO PRINCIPAL
 # =============================================================================
-
-# -----------------------------------------------------------------------------
 # Função principal do programa
 # -----------------------------------------------------------------------------
 _main() {

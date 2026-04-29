@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # menus.sh - Sistema de Menus com Suporte a Ajuda
 # Responsavel pela apresentacao e navegacao dos menus do sistema
@@ -10,7 +11,9 @@
 #
 # Variaveis globais esperadas
 sistema="${sistema:-}"                    # Nome do sistema (iscobol, savatu, transpc).
-cfg_dir="${cfg_dir:-${SCRIPT_DIR}/cfg}"    # Diretorio de configuracoes
+cfg_dir="${cfg_dir:-${SCRIPT_DIR:-.}/cfg}"    # Diretorio de configuracoes
+verclass="${verclass:-}"                  # Versao atual do sistema
+#UPDATE="${UPDATE:-}"                      # Aviso de update disponivel
 
 if [[ ! -d "${cfg_dir}" ]]; then
     mkdir -p "${cfg_dir}" || {
@@ -87,7 +90,7 @@ _principal() {
         _meia_linha "-" "${YELLOW}"
 #        printf "\n"
         _mensagec "${WHITE}" "9${RED} -|: Sair do Sistema "
-        _mensaged "${BLUE}" "${UPDATE}"     
+        _mensaged "${BLUE}" "${UPDATE:-}"     
         
         # Usar funcao centralizada
         local opcao

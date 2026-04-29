@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # vaievem.sh - Modulo de Operacoes de Sincronizacao
 # Responsavel por operacoes de download/upload via rsync, sftp e ssh
@@ -30,8 +31,7 @@ arquivos_encontrados=()                        # Array para armazenar arquivos e
 _download_sftp_ssh() {
     local arquivo_remoto="$1"
     local destino_local="${2:-.}"
-    local nome_arquivo
-    nome_arquivo=$(basename "$arquivo_remoto")
+    local nome_arquivo="${arquivo_remoto##*/}"
 
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Erro: Arquivo remoto nao especificado para SFTP SSH"
@@ -67,8 +67,8 @@ EOF
         "abandoned"
     )
 
-    local regex_erro
-    regex_erro=$(IFS='|'; echo "${padroes_erro[*]}")
+    local IFS='|'
+    local regex_erro="${padroes_erro[*]}"
 
     if echo "$sftp_output" | grep -qiE "$regex_erro"; then
         _log_erro "Falha no download SFTP SSH: ${arquivo_remoto}"
@@ -109,8 +109,7 @@ _download_scp() {
 
     if scp -P "$porta" "${rem_user}@${servidor}:${arquivo_remoto}" "$destino_local"; then
         # Verificar se arquivo realmente existe e nao esta vazio
-        local nome_arquivo
-        nome_arquivo=$(basename "$arquivo_remoto")
+        local nome_arquivo="${arquivo_remoto##*/}"
         local arquivo_destino="${destino_local%/}/${nome_arquivo}"
 
         if [[ -f "$arquivo_destino" && -s "$arquivo_destino" ]]; then
@@ -162,20 +161,20 @@ _upload_rsync() {
 
 # Download da biblioteca via SFTP/SCP (funcao principal)
 _baixar_biblioteca_sincroniza() {
-    _log "Iniciando download da biblioteca: ${SAVATU}${VERSAO}"
+    _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
 
     # Usar subshell para nao alterar o diretorio do chamador
     (
         cd "${down_dir:-}" || return 1
 
         if [[ "${acessossh}" == "s" ]]; then
-            local src="${USUARIO}@${ipserver}:${destino_biblioteca}${SAVATU}${VERSAO}.zip"
+            local src="${USUARIO}@${ipserver}:${destino_biblioteca}${SAVATU:-}${VERSAO:-}.zip"
 
             if sftp -P "$SERVER_PORTA" "${src}" "."; then
-                _log_sucesso "Download da biblioteca concluido: ${SAVATU}${VERSAO}.zip"
+                _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
             else
-                _log_erro "Falha no download da biblioteca: ${SAVATU}${VERSAO}.zip"
+                _log_erro "Falha no download da biblioteca: ${SAVATU:-}${VERSAO:-}.zip"
                 return 1
             fi
         else

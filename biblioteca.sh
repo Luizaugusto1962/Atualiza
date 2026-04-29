@@ -18,6 +18,7 @@ down_dir="${down_dir:-}"               # Diretorio de download
 cfg_dir="${cfg_dir:-}"                 # Diretorio de configuracao
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
+declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
 
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
@@ -44,8 +45,10 @@ _limpar_interrupcao() {
     done
         
     # Verificar se backup parcial existe e sugerir rollback
-    local ultimo_backup="${BIBLIOTECA}/backup_biblioteca_antes_da_versao-*.zip"
-    if [[ -n "$(ls -A "${ultimo_backup}" 2>/dev/null)" ]]; then
+    shopt -s nullglob
+    local backups_parciais=("${BIBLIOTECA}"/backup_biblioteca_antes_da_versao-*.zip)
+    shopt -u nullglob
+    if (( ${#backups_parciais[@]} > 0 )); then
         _mensagec "${YELLOW}" "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
     fi
     
@@ -309,7 +312,7 @@ _executar_atualizacao_biblioteca() {
     local raiz_local
     raiz_local="${SCRIPT_DIR%/*}"
     local principal_local
-    principal_local="$(dirname "$raiz_local")"
+    principal_local="${raiz_local%/*}"
 
     # Processar cada arquivo de atualizacao
     for arquivo in "${arquivos_update[@]}"; do
@@ -474,10 +477,10 @@ _solicitar_versao_biblioteca() {
 
 # Define variaveis da biblioteca baseado na versao
 _definir_variaveis_biblioteca() {
-    ATUALIZA1="${SAVATU1}${VERSAO}.zip"
-    ATUALIZA2="${SAVATU2}${VERSAO}.zip"
-    ATUALIZA3="${SAVATU3}${VERSAO}.zip"
-    ATUALIZA4="${SAVATU4}${VERSAO}.zip"
+    ATUALIZA1="${SAVATU1:-}${VERSAO}.zip"
+    ATUALIZA2="${SAVATU2:-}${VERSAO}.zip"
+    ATUALIZA3="${SAVATU3:-}${VERSAO}.zip"
+    ATUALIZA4="${SAVATU4:-}${VERSAO}.zip"
 }
 
 _obter_arquivos_atualizacao() {

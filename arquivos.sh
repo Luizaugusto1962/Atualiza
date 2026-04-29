@@ -250,7 +250,8 @@ _recuperar_arquivo_especifico() {
         
         local nome_arquivo
         read -rp "${YELLOW}Nome do arquivo: ${NORM}" nome_arquivo
-        nome_arquivo=$(echo "$nome_arquivo" | xargs) # Remove espacos extras
+        nome_arquivo="${nome_arquivo#"${nome_arquivo%%[![:space:]]*}"}" # trim left
+        nome_arquivo="${nome_arquivo%"${nome_arquivo##*[![:space:]]}"}" # trim right
 
         _linha "-" "${BLUE}"
         
@@ -258,7 +259,9 @@ _recuperar_arquivo_especifico() {
             # Pergunta confirmação antes de recuperar todos
             _mensagec "${YELLOW}" "Deseja recuperar TODOS os arquivos principais?"
             read -rp "${YELLOW}[S/N]: ${NORM}" confirmar_todos
-            confirmar_todos=$(echo "$confirmar_todos" | xargs | tr '[:lower:]' '[:upper:]')
+            confirmar_todos="${confirmar_todos#"${confirmar_todos%%[![:space:]]*}"}"
+            confirmar_todos="${confirmar_todos%"${confirmar_todos##*[![:space:]]}"}"
+            confirmar_todos="${confirmar_todos^^}"
             
             if [[ "$confirmar_todos" =~ ^[Ss]$ ]]; then
                 # Recupera todos → executa e sai do loop
@@ -281,7 +284,9 @@ _recuperar_arquivo_especifico() {
         # Só pergunta se quer continuar se foi um arquivo específico
         _mensagec "${CYAN}" "Deseja recuperar mais arquivos?"
         read -rp "${YELLOW}[S/N]: ${NORM}" continuar
-        continuar=$(echo "$continuar" | xargs | tr '[:lower:]' '[:upper:]')
+        continuar="${continuar#"${continuar%%[![:space:]]*}"}"
+        continuar="${continuar%"${continuar##*[![:space:]]}"}"
+        continuar="${continuar^^}"
         
         # Se vazio, assumir "N"
         [[ -z "$continuar" ]] && continuar="N"
@@ -325,7 +330,8 @@ _recuperar_arquivo_individual() {
     
     # Validar nome do arquivo
     # Converter para maiusculo e remover espacos
-    nome_arquivo=$(echo "$nome_arquivo" | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')
+    nome_arquivo="${nome_arquivo^^}"
+    nome_arquivo="${nome_arquivo//[[:space:]]/}"
 
     if [[ -z "$nome_arquivo" ]]; then
         _mensagec "${RED}" "Nome de arquivo vazio apos normalizacao."
@@ -525,7 +531,7 @@ _enviar_arquivo_avulso() {
         # Confirmar envio
         local confirmacao
         read -rp "${YELLOW}Deseja enviar todos esses arquivos? [S/N]: ${NORM}" confirmacao
-        confirmacao=$(echo "$confirmacao" | tr '[:lower:]' '[:upper:]')
+        confirmacao="${confirmacao^^}"
         
         if [[ "$confirmacao" != "S" ]]; then
             _mensagec "${YELLOW}" "Envio cancelado pelo usuario"
@@ -643,7 +649,7 @@ _executar_expurgador() {
    
     # Limpar arquivos antigos nos diretorios padrao
     for diretorio in "${diretorios_limpeza[@]}"; do
-        if [[ -d "$diretorio" ]]; then
+        if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local arquivos_removidos
             arquivos_removidos=$(find "$diretorio" -mtime +30 -type f -delete -print 2>/dev/null | wc -l)
             _mensagec "${GREEN}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
@@ -659,7 +665,7 @@ _executar_expurgador() {
 
     # Limpar arquivos ZIP antigos especificos
     for diretorio in "${diretorios_zip[@]}"; do
-        if [[ -d "$diretorio" ]]; then
+        if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local zips_removidos
             zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -delete -print 2>/dev/null | wc -l)
             _mensagec "${GREEN}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"

@@ -18,6 +18,7 @@ mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao
 
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
+declare -g ARQUIVO_COMPILADO_ATUAL=""
 declare -a PROGRAMAS_SELECIONADOS=()
 declare -a ARQUIVOS_PROGRAMA=()
 

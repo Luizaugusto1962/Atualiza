@@ -689,6 +689,9 @@ _validar_configuracao() {
 # Retorna: 0 sempre
 # -----------------------------------------------------------------------------
 _verificar_remover_ssh() {
+    if [[ -z "${SCRIPT_DIR:-}" ]]; then
+        return 1
+    fi
     local ssh_dir="${SCRIPT_DIR}/.ssh"
     if [[ -d "${ssh_dir}" ]]; then
         rm -rf "${ssh_dir}" || {

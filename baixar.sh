@@ -17,10 +17,6 @@ down_dir="${down_dir:-}"    # Variavel do diretorio de download para atualizacao
 
 # Executa atualizacao do script
 _executar_update() {
-    local temp_dir="${RECEBE}/temp_update/"
-    local zipfile="atualiza.zip"
-    local down_dir="${down_dir}"
- 
     _configurar_acessos
     if [[ "${Offline}" =~ ^[sn]$ ]]; then
         if [[ "${Offline}" == "n" ]]; then
@@ -34,6 +30,8 @@ _executar_update() {
 
 # Atualizacao online via GitHub
 _atualizando() {
+    local zipfile="atualiza.zip"
+    
     _configurar_diretorios
 
     # Criar backup do arquivo atual
@@ -227,7 +225,7 @@ if ! cd "${RECEBE}"; then
 fi
 
 # Confirmar que estamos no diretório correto antes de deletar
-if [[ "$(pwd)" != "${RECEBE}" ]]; then
+if [[ "$PWD" != "${RECEBE}" ]]; then
     _mensagec "${RED}" "ERRO: Falha na verificacao de seguranca do diretorio."
     _read_sleep 2
     exit 1
@@ -257,6 +255,9 @@ fi
 _atualizar_online() {
 # URL do arquivo zip de atualizacao no GitHub
     local link="https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip"
+    local temp_dir="${RECEBE}/temp_update/"
+    local zipfile="atualiza.zip"
+    
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
 
 if ! cd "${RECEBE}"; then

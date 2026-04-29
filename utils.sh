@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # utils.sh - Modulo de Utilitarios e Funcoes Auxiliares  
 # Funcoes basicas para formatacao, mensagens, validacao e controle de fluxo
@@ -385,9 +386,9 @@ _limpar_arquivos_antigos() {
     local count=0
     local arquivos
 
-    # Validação do diretório
-    if [[ ! -d "$diretorio" ]]; then
-        _log_erro "Diretorio nao encontrado: $diretorio"
+    # Validação do diretório e segurança contra limpeza na raiz
+    if [[ ! -d "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
+        _log_erro "Diretorio nao encontrado ou inseguro para remocao: $diretorio"
         return 1
     fi
 

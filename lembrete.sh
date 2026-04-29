@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas

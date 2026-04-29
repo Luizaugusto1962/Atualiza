@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # backup.sh - Modulo do Sistema de Backup
 # Responsavel por backup completo, incremental e restauracao
@@ -15,13 +16,17 @@ raiz="${raiz:-}"           # Caminho raiz do sistema.
 empresa="${empresa:-}"     # Nome da empresa (usado no nome do backup)
 ipserver="${ipserver:-}"   # IP do servidor para envio de backup
 cmd_zip="${cmd_zip:-}"     # Comando para compactar arquivos.
+BASEBACKUP="${BASEBACKUP:-}" # Diretorio base de armazenamento de backups
+
 # Trap para limpeza em caso de interrupcao
 trap '_limpar_backup' INT TERM
 
 _limpar_backup() {
     _log "Backup interrompido. Limpando temporários..."
-    # Remover arquivos parciais
-    rm -f "${BASEBACKUP}"/*.zip.tmp 2>/dev/null || true
+    # Remover arquivos parciais com blindagem contra variaveis nulas
+    if [[ -n "${BASEBACKUP:-}" && "${BASEBACKUP}" != "/" && "${BASEBACKUP}" != "//" ]]; then
+        rm -f "${BASEBACKUP}"/*.zip.tmp 2>/dev/null || true
+    fi
 }
 
 #---------- FUNCOES PRINCIPAIS DE backup ----------#
@@ -408,8 +413,7 @@ _selecionar_backup() {
     _linha
 
     if ((${#arquivos_backup[@]} == 1)); then
-        local nome_unico
-        nome_unico=$(basename "${arquivos_backup[0]}")
+        local nome_unico="${arquivos_backup[0]##*/}"
         if _confirmar "Usar o unico backup encontrado? ${CYAN}${nome_unico}${YELLOW}" "S"; then
             backup_selecionado="${arquivos_backup[0]}"
         else
@@ -452,7 +456,7 @@ _selecionar_backup() {
     fi
 
     # Define o nome do backup selecionado (variavel global)
-    nome_backup=$(basename "$backup_selecionado")
+    nome_backup="${backup_selecionado##*/}"
     _mensagec "${GREEN}" "Selecionado: $nome_backup"
     _linha
 
