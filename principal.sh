@@ -178,7 +178,7 @@ _carregar_modulos() {
     local modulos=(
         "constantes.sh" # Constantes do Sistema SAV
         "utils.sh"      # Utilitarios basicos primeiro
-        "validation.sh" # Validacao centralizada
+        "validacao.sh" # Validacao centralizada
         "config.sh"     # Configuracoes
         "auth.sh"       # Autenticacao
         "lembrete.sh"   # Sistema de lembretes

@@ -60,14 +60,14 @@ test_constantes_file() {
     _test_result "Arquivo constantes.sh válido" "$result" "$message"
 }
 
-# Teste 2: Verificar se validation.sh existe e é válido
-test_validation_file() {
+# Teste 2: Verificar se validacao.sh existe e é válido
+test_validacao_file() {
     local result="FAIL"
     local message=""
     
-    if [[ -f "validation.sh" ]]; then
-        if bash -n "validation.sh" 2>/dev/null; then
-            if grep -q "_validar_caminho" "validation.sh"; then
+    if [[ -f "validacao.sh" ]]; then
+        if bash -n "validacao.sh" 2>/dev/null; then
+            if grep -q "_validar_caminho" "validacao.sh"; then
                 result="PASS"
             else
                 message="Funções de validação não encontradas"
@@ -79,7 +79,7 @@ test_validation_file() {
         message="Arquivo não encontrado"
     fi
     
-    _test_result "Arquivo validation.sh válido" "$result" "$message"
+    _test_result "Arquivo validacao.sh válido" "$result" "$message"
 }
 
 # Teste 3: Verificar se funções duplicadas foram removidas
@@ -103,7 +103,7 @@ test_constants_loading() {
     local files_with_constants=0
     
     # Verificar arquivos que devem carregar constantes
-    local files=("principal.sh" "config.sh" "auth.sh" "utils.sh" "validation.sh")
+    local files=("principal.sh" "config.sh" "auth.sh" "utils.sh" "validacao.sh")
     
     for file in "${files[@]}"; do
         if [[ -f "$file" ]] && grep -q "constantes.sh" "$file"; then
@@ -139,7 +139,7 @@ test_compatibility_aliases() {
 }
 
 # Teste 6: Verificar se validação de configuração foi melhorada
-test_config_validation() {
+test_config_validacao() {
     local result="FAIL"
     local message=""
     
@@ -243,11 +243,11 @@ main() {
     
     # Executar todos os testes
     test_constantes_file
-    test_validation_file
+    test_validacao_file
     test_no_duplicate_functions
     test_constants_loading
     test_compatibility_aliases
-    test_config_validation
+    test_config_validacao
     test_trap_system
     test_syntax_all_files
     test_naming_conventions

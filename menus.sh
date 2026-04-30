@@ -84,7 +84,7 @@ _ler_opcao_menu() {
                 return 0  # Opcao valida
             fi
         else
-            # Fallback se validation.sh nao estiver carregado
+            # Fallback se validacao.sh nao estiver carregado
             if [[ "$opcao" =~ ^[0-9]+$ ]] && (( opcao >= min_opcao && opcao <= max_opcao )); then
                 return 0
             fi

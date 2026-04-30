@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# validation.sh - Modulo de Validacao Centralizada
+# validacao.sh - Modulo de Validacao Centralizada
 # Funcoes para validacao segura de entrada e dados
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
