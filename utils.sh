@@ -13,8 +13,148 @@ set -euo pipefail
 raiz="${raiz:-}"                                       # Diretorio raiz do sistema.
 #LOGS="${LOGS:-$SCRIPT_DIR/logs}"                      # Diretorio de logs.
 
+#---------- FUNCOES DE STRING ----------#
+
+# Remove espacos em branco do inicio e fim de uma string
+# Parametros: $1=string
+# Retorna: string sem espacos nas extremidades
+_trim() {
+    local var="$1"
+    # Remove espacos do inicio
+    var="${var#"${var%%[![:space:]]*}"}"
+    # Remove espacos do fim
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
+}
+
+# Converte string para maiuscula
+# Parametros: $1=string
+# Retorna: string em maiuscula
+_upper() {
+    printf '%s' "${1^^}"
+}
+
+#---------- FUNCOES DE SISTEMA ----------#
+
+# Array global para arquivos temporarios (para limpeza)
+declare -ga TEMP_FILES=()
+declare -ga BACKGROUND_PIDS=()
+
+# Funcao de limpeza chamada na saida
+_cleanup_on_exit() {
+    local exit_code=$?
+    
+    # Matar processos em background
+    if [[ ${#BACKGROUND_PIDS[@]} -gt 0 ]]; then
+        for pid in "${BACKGROUND_PIDS[@]}"; do
+            if kill -0 "$pid" 2>/dev/null; then
+                kill "$pid" 2>/dev/null || true
+            fi
+        done
+    fi
+    
+    # Remover arquivos temporarios
+    if [[ ${#TEMP_FILES[@]} -gt 0 ]]; then
+        for temp_file in "${TEMP_FILES[@]}"; do
+            [[ -e "$temp_file" ]] && rm -f "$temp_file" 2>/dev/null || true
+        done
+    fi
+    
+    return $exit_code
+}
+
+# Funcao para tratar erros
+_handle_error() {
+    local exit_code=$?
+    local line_number="${1:-$LINENO}"
+    
+    printf "ERRO: Falha na linha %d (codigo: %d)\n" "$line_number" "$exit_code" >&2
+    
+    # Log do erro se possivel
+    if command -v _log_erro >/dev/null 2>&1; then
+        _log_erro "Falha na linha $line_number (codigo: $exit_code)"
+    fi
+    
+    _cleanup_on_exit
+    exit $exit_code
+}
+
+# Funcao para tratar interrupcoes
+_handle_interrupt() {
+    printf "\nInterrupcao detectada. Limpando recursos...\n" >&2
+    
+    if command -v _log >/dev/null 2>&1; then
+        _log "Interrupcao detectada pelo usuario"
+    fi
+    
+    _cleanup_on_exit
+    exit 130  # Codigo padrao para SIGINT
+}
+
+# Configurar traps (deve ser chamado pelos modulos principais)
+_setup_traps() {
+    trap '_cleanup_on_exit' EXIT
+    trap '_handle_error $LINENO' ERR
+    trap '_handle_interrupt' INT TERM
+}
+
+# Adicionar arquivo temporario para limpeza automatica
+_add_temp_file() {
+    local temp_file="${1:?Arquivo temporario obrigatorio}"
+    TEMP_FILES+=("$temp_file")
+}
+
+# Adicionar PID para limpeza automatica
+_add_background_pid() {
+    local pid="${1:?PID obrigatorio}"
+    BACKGROUND_PIDS+=("$pid")
+}
+
+# Cria diretorio com permissoes seguras (funcao centralizada e melhorada)
+# Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE) $3=log_dir(opcional)
+# Retorna: 0 se sucesso, 1 se erro
+_criar_diretorio_seguro() {
+    local caminho="${1:?Erro: Caminho obrigatorio}"
+    local permissao="${2:-${PERM_DIR_SECURE:-0755}}"
+    local log_dir="${3:-}"
+    
+    # Validar caminho
+    if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
+        printf "Erro: Caminho invalido ou inseguro: %s\n" "$caminho" >&2
+        return 1
+    fi
+    
+    # Se ja existe, verificar se e diretorio
+    if [[ -e "$caminho" ]]; then
+        if [[ -d "$caminho" ]]; then
+            return 0
+        else
+            printf "Erro: Caminho existe mas nao e diretorio: %s\n" "$caminho" >&2
+            return 1
+        fi
+    fi
+    
+    # Criar diretorio
+    if mkdir -p "$caminho" 2>/dev/null; then
+        # Ajustar permissoes
+        if chmod "$permissao" "$caminho" 2>/dev/null; then
+            # Log opcional
+            if [[ -n "$log_dir" ]] && command -v _log >/dev/null 2>&1; then
+                _log "Diretorio criado: $caminho (permissao: $permissao)" "$log_dir" 2>/dev/null || true
+            fi
+            return 0
+        else
+            printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
+            return 0  # Nao falhar por permissao
+        fi
+    else
+        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
+        return 1
+    fi
+}
+
 # Funcao para limpar tela
-_limpa_tela() {
+_clear_screen() {
     clear
 }
 
@@ -23,8 +163,8 @@ _meio_da_tela() {
     local linhas
     local colunas
 
-    linhas=$(tput lines 2>/dev/null || echo "${LINES:-24}")
-    colunas=$(tput cols 2>/dev/null || echo "${COLUMNS:-80}")
+    linhas=$(tput lines 2>/dev/null || echo "${LINES:-${DEFAULT_LINES}}")
+    colunas=$(tput cols 2>/dev/null || echo "${COLUMNS:-${DEFAULT_COLUMNS}}")
 
     # Usar tput para posicionar o cursor — consistente com o restante do arquivo
     tput clear 2>/dev/null || true
@@ -32,12 +172,12 @@ _meio_da_tela() {
 }
 
 # Exibe mensagem centralizada com cor
-_mensagec() {
+_exibir_mensagem_centralizada() {
     local cor="${1}"
     local mensagem="${2}"
     local colunas
 
-    colunas=$(tput cols 2>/dev/null || echo "${COLUMNS:-80}")
+    colunas=$(tput cols 2>/dev/null || echo "${COLUMNS:-${DEFAULT_COLUMNS}}")
     local tamanho_mensagem=${#mensagem}
 
     if [[ "$colunas" -lt "$tamanho_mensagem" ]]; then
@@ -52,14 +192,14 @@ _mensagec() {
 
 # Exibe mensagem alinhada à direita
 # Parametros: $1=cor $2=mensagem  
-_mensaged() {
+_exibir_mensagem_direita() {
     local cor="${1}"
     local mensagem="${2}"
     local largura_terminal largura_mensagem posicao_inicio
 
     # Obter largura do terminal com fallback seguro
     if ! largura_terminal=$(tput cols 2>/dev/null); then
-        largura_terminal="${COLUMNS:-80}"
+        largura_terminal="${COLUMNS:-${DEFAULT_COLUMNS}}"
     fi
 
     largura_mensagem=${#mensagem}
@@ -81,7 +221,7 @@ _linha() {
     local colunas
 
     if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-80}"
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
     fi
 
     if [[ "$colunas" -lt 10 ]]; then
@@ -108,7 +248,7 @@ _meia_linha() {
     local espacos linhas colunas
 
     if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-80}"
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
     fi
 
     printf -v espacos "%${largura}s" ""
@@ -141,13 +281,13 @@ _read_sleep() {
 
 
 # Aguarda pressionar qualquer tecla com timeout
-_press() {
+_aguardar_tecla() {
     local mensagem="${1:-... Pressione qualquer tecla para continuar ...}"
-    local timeout="${2:-15}"
+    local timeout="${2:-${DEFAULT_PRESS_TIMEOUT}}"
     local colunas
 
     if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-80}"
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
     fi
 
     printf "%s" "${YELLOW}"
@@ -157,6 +297,15 @@ _press() {
     tput sgr0 2>/dev/null || true
 }
 
+#---------- ALIASES PARA COMPATIBILIDADE ----------#
+# Manter compatibilidade com código existente durante transição
+
+# Aliases para funções renomeadas
+_limpa_tela() { _clear_screen "$@"; }
+_mensagec() { _exibir_mensagem_centralizada "$@"; }
+_mensaged() { _exibir_mensagem_direita "$@"; }
+_press() { _aguardar_tecla "$@"; }
+
 _opinvalida() {
     local mensagem="Opcao Invalida"
     local largura
@@ -165,7 +314,7 @@ _opinvalida() {
 
     # Obter largura do terminal com fallback seguro
     if ! largura=$(tput cols 2>/dev/null); then
-        largura="${COLUMNS:-80}"
+        largura="${COLUMNS:-${DEFAULT_COLUMNS}}"
     fi
 
     tamanho_msg=${#mensagem}
@@ -232,7 +381,7 @@ _confirmar() {
     esac
 
     while (( tentativas < max_tentativas )); do
-        if ! read -r -t 30 -p "${YELLOW}${mensagem} ${opcoes}: ${NORM}" resposta; then
+        if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW}${mensagem} ${opcoes}: ${NORM}" resposta; then
             # Timeout ou erro de leitura — usar padrao
             _mensagec "${YELLOW}" "Entrada expirada. Usando padrao: ${padrao}"
             resposta="$padrao"

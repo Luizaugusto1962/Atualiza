@@ -28,14 +28,45 @@ declare -rx UPDATE="30/04/26-v.1"
 # Diretorio do script principal
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 
+## Carregar constantes do sistema
 # Diretorios dos modulos e configuracoes
 lib_dir="${lib_dir:-${SCRIPT_DIR}/libs}"       # Diretorio dos modulos de biblioteca
 cfg_dir="${cfg_dir:-${SCRIPT_DIR}/cfg}"        # Diretorio de configuracoes
 export SCRIPT_DIR lib_dir cfg_dir
 
 # =============================================================================
+# CARREGAR CONSTANTES DO SISTEMA
+# =============================================================================
+# Carregar constantes se disponivel
+if [[ -f "${lib_dir}/constantes.sh" ]]; then
+    # shellcheck source=constantes.sh
+    . "${lib_dir}/constantes.sh"
+fi
+
+# =============================================================================
 # FUNÇÕES AUXILIARES
 # =============================================================================
+
+# Configurar tratamento de sinais e limpeza
+_configurar_ambiente_seguro() {
+    # Carregar funcoes de trap se disponivel
+    if command -v _setup_traps >/dev/null 2>&1; then
+        _setup_traps
+    fi
+    
+    # Configurar umask seguro
+    umask 0022
+    
+    # Definir variaveis de ambiente seguras
+    export PATH="/usr/local/bin:/usr/bin:/bin"
+    export IFS=$' \t\n'
+    
+    # Limitar recursos se possivel
+    if command -v ulimit >/dev/null 2>&1; then
+        ulimit -f 1048576  # Limite de arquivo: 1GB
+        ulimit -t 3600     # Limite de CPU: 1 hora
+    fi
+}
 
 # -----------------------------------------------------------------------------
 # Cria um diretório com permissões seguras
@@ -47,7 +78,7 @@ export SCRIPT_DIR lib_dir cfg_dir
 # -----------------------------------------------------------------------------
 _criar_diretorio_seguro() {
     local caminho="${1:-}"
-    local permissao="${2:-0755}"
+    local permissao="${2:-${PERM_DIR_SECURE}}"
 
     if [[ -z "$caminho" ]]; then
         printf "Erro: Caminho nao pode ser vazio.\n" >&2
@@ -83,15 +114,15 @@ for dir in "${AUX_DIRS[@]}"; do
 
     # Criar diretório caso não exista com permissões seguras
     if [[ ! -d "${dir}" ]]; then
-        if ! _criar_diretorio_seguro "${dir}" 0755; then
+        if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
             printf "ERRO: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
             exit 1
         fi
     fi
 
-    # APLICAR PERMISSOES DE FORMA SEGURA: 0755 ao inves de 0777
-    # Recursivo apenas quando necessario, e com 0755 ao inves de 0777
-    chmod 0755 "${dir}" 2>/dev/null || {
+    # APLICAR PERMISSOES DE FORMA SEGURA: usar constante ao inves de hardcoded
+    # Recursivo apenas quando necessario, e com permissao segura
+    chmod "${PERM_DIR_SECURE}" "${dir}" 2>/dev/null || {
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
     }
 
@@ -133,7 +164,8 @@ _caminho_modulo() {
     fi
 
     # Carregar o módulo
-    if ! "." "${caminho}"; then
+    # shellcheck disable=SC1090
+    if ! . "${caminho}"; then
         printf "ERRO: Falha ao carregar modulo '%s'\n" "${modulo}" >&2
         return 1
     fi
@@ -144,7 +176,9 @@ _caminho_modulo() {
 # Retorna: 0 se todos carregados, 1 se algum falhou
 _carregar_modulos() {
     local modulos=(
+        "constantes.sh" # Constantes do Sistema SAV
         "utils.sh"      # Utilitarios basicos primeiro
+        "validation.sh" # Validacao centralizada
         "config.sh"     # Configuracoes
         "auth.sh"       # Autenticacao
         "lembrete.sh"   # Sistema de lembretes
@@ -182,6 +216,9 @@ _carregar_modulos() {
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _inicializar_sistema() {
+    # Configurar ambiente seguro PRIMEIRO
+    _configurar_ambiente_seguro
+    
     # Carregar módulos do sistema
     if ! _carregar_modulos; then
         printf "ERRO: Falha ao carregar modulos.\n" >&2

@@ -8,24 +8,32 @@
 # Versao: 24/04/2026-02
 # Autor: Luiz Augusto
 #
+
 # Variaveis globais esperadas
 cfg_dir="${cfg_dir:-}"                 # Diretorio de configuracao
 
 # Arquivo de senhas oculto
 SENHA_FILE="${cfg_dir}/.senhas"
 
-# Garantir que o arquivo de senhas tenha permissoes restritas (0600 = somente dono pode ler/escrever)
+# Garantir que o arquivo de senhas tenha permissoes restritas
 if [[ -f "$SENHA_FILE" ]]; then
-    chmod 0600 "$SENHA_FILE" 2>/dev/null || true
+    chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || true
 fi
 
 # Variavel global para armazenar o nome do usuario autenticado
 declare -u usuario           # Variavel global para armazenar o nome do usuario autenticado
 
-# Funcao para hash da senha
+# Funcao para hash da senha usando algoritmo configuravel
 _hash_senha() {
     local senha="$1"
-    printf '%s' "$senha" | sha256sum | cut -d' ' -f1
+    local algoritmo="${HASH_ALGORITHM:-sha256sum}"
+    
+    if ! command -v "$algoritmo" >/dev/null 2>&1; then
+        printf "Erro: Algoritmo de hash '%s' nao encontrado.\n" "$algoritmo" >&2
+        return 1
+    fi
+    
+    printf '%s' "$senha" | "$algoritmo" | cut -d' ' -f1
 }
 
 # Funcao para cadastrar usuario
@@ -67,7 +75,7 @@ _cadastrar_usuario() {
     printf '%s:%s\n' "${usuario}" "${hash_senha}" >> "$SENHA_FILE"
 
     # Restringir permissoes do arquivo de senhas (somente dono: rw)
-    chmod 0600 "$SENHA_FILE" 2>/dev/null || {
+    chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || {
         _mensagec "${YELLOW}" "AVISO: Nao foi possivel restringir permissoes de ${SENHA_FILE}"
         _log "AVISO: Permissoes de ${SENHA_FILE} nao alteradas"
     }
@@ -206,7 +214,7 @@ _alterar_senha() {
     done < "$SENHA_FILE" > "$tmp_senhas"
 
     if mv -f "$tmp_senhas" "$SENHA_FILE"; then
-        chmod 0600 "$SENHA_FILE" 2>/dev/null || true
+        chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || true
         _mensagec "${GREEN}" "Senha alterada com sucesso."
     else
         rm -f "$tmp_senhas"

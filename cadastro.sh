@@ -12,6 +12,7 @@
 #   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
 #   ./cadastro.sh             - Chamada direta
 #
+
 # Variaveis globais esperadas
 cfg_dir="${cfg_dir:-}"                 # Diretorio de configuracao
 lib_dir="${lib_dir:-}"                 # Diretorio de modulos de biblioteca

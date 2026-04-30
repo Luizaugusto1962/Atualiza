@@ -6,6 +6,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 23/04/2026-01
 #
+
 # Variaveis globais esperadas
 sistema="${sistema:-}"                    # Tipo de sistema (ex: iscobol, outros).
 base="${base:-}"                          # Caminho do diretorio da segunda base de dados.
@@ -259,9 +260,8 @@ _recuperar_arquivo_especifico() {
             # Pergunta confirmação antes de recuperar todos
             _mensagec "${YELLOW}" "Deseja recuperar TODOS os arquivos principais?"
             read -rp "${YELLOW}[S/N]: ${NORM}" confirmar_todos
-            confirmar_todos="${confirmar_todos#"${confirmar_todos%%[![:space:]]*}"}"
-            confirmar_todos="${confirmar_todos%"${confirmar_todos##*[![:space:]]}"}"
-            confirmar_todos="${confirmar_todos^^}"
+            confirmar_todos=$(_trim "$confirmar_todos")
+            confirmar_todos=$(_upper "$confirmar_todos")
             
             if [[ "$confirmar_todos" =~ ^[Ss]$ ]]; then
                 # Recupera todos → executa e sai do loop
@@ -299,7 +299,7 @@ _recuperar_arquivo_especifico() {
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
     local base_trabalho="$1"
-    local -a extensoes=('*.ARQ.dat' '*.DAT.dat' '*.LOG.dat' '*.PAN.dat')
+    local -a extensoes=("${DATA_EXTENSIONS[@]}")
     _mensagec "${RED}" "Recuperando todos os arquivos principais..."
     _linha "-" "${YELLOW}"
     
@@ -428,7 +428,7 @@ _executar_jutil() {
             if "${jut}" -rebuild "$arquivo" -a -f; then
                 _log_sucesso "Rebuild executado: $(basename "$arquivo")"
                 # garantir permissões máximas após o rebuild
-                chmod 0755 "$arquivo" 2>/dev/null || \
+                chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
                 _mensagec "${YELLOW}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
                 # garantir permissões máximas nos arquivos .idx gerados pelo jutil
                 local dir_arquivo base_arquivo arquivo_idx
@@ -436,7 +436,7 @@ _executar_jutil() {
                 base_arquivo="$(basename "$arquivo" .dat)"
                 for arquivo_idx in "${dir_arquivo}/${base_arquivo}"*.idx; do
                     if [[ -f "$arquivo_idx" ]]; then
-                        chmod 0755 "$arquivo_idx" 2>/dev/null || \
+                        chmod "${PERM_FILE_EXEC}" "$arquivo_idx" 2>/dev/null || \
                         _mensagec "${YELLOW}" "Aviso: nao foi possivel alterar permissoes de $arquivo_idx"
                     fi
                 done

@@ -91,7 +91,7 @@ EOF
 _download_scp() {
     local arquivo_remoto="$1"
     local destino_local="${2:-.}"
-    local servidor="${3:-$ipserver}"
+    local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$SERVER_PORTA}"
     local rem_user="${5:-$USUARIO}"
 
@@ -130,7 +130,7 @@ _download_scp() {
 _upload_rsync() {
     local arquivo_local="$1"
     local destino_remoto="$2"
-    local servidor="${3:-$ipserver}"
+    local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$SERVER_PORTA}"
     local rem_user="${5:-$USUARIO}"
 
@@ -168,7 +168,7 @@ _baixar_biblioteca_sincroniza() {
         cd "${down_dir:-}" || return 1
 
         if [[ "${acessossh}" == "s" ]]; then
-            local src="${USUARIO}@${ipserver}:${destino_biblioteca}${SAVATU:-}${VERSAO:-}.zip"
+            local src="${USUARIO}@${DEFAULT_IP_SERVER}:${destino_biblioteca}${SAVATU:-}${VERSAO:-}.zip"
 
             if sftp -P "$SERVER_PORTA" "${src}" "."; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
@@ -189,7 +189,7 @@ _baixar_biblioteca_sincroniza() {
             fi
 
             for arquivo in "${arquivos_update[@]}"; do
-                local src="${USUARIO}@${ipserver}:${destino_biblioteca}${arquivo}"
+                local src="${USUARIO}@${DEFAULT_IP_SERVER}:${destino_biblioteca}${arquivo}"
 
                 if scp -P "$SERVER_PORTA" "${src}" "."; then
                     _log_sucesso "Download concluido: ${arquivo}"

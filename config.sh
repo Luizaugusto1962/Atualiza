@@ -17,12 +17,12 @@
 
 # Listas para organizacao das variaveis
 CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
-ATUALIZAC="sistema verclass dbmaker base base2 base3 acessossh ipserver Offline enviabackup empresa VERSAOANT"
+ATUALIZAC="sistema verclass dbmaker base base2 base3 acessossh Offline enviabackup empresa VERSAOANT"
 CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR raiz base base2 base3 biblioteca bases_backup logs olds cfg libs envia recebe"
 CAMINHOS_BASE2="INI UMADATA acessoff E_EXEC T_TELAS X_XML"
 BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
 COMANDOS="cmd_unzip cmd_zip cmd_find cmd_who DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO jut JUTIL ISCCLIENT ISCCLIENTT"
-OUTROS="SERVER_PORTA USUARIO VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_ipserver UPDATE JUTIL ISCCLIENT Offline base_trabalho"
+OUTROS="SERVER_PORTA USUARIO VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_IP_SERVER UPDATE JUTIL ISCCLIENT Offline base_trabalho"
 LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
 
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
@@ -42,8 +42,8 @@ if [[ -n "${cfg_dir}" ]]; then
             return 1
         }
     fi
-    # PERMISSAO CORRIGIDA: 0755 e mais seguro que 0777
-    chmod 0755 "${cfg_dir}" 2>/dev/null || {
+    # PERMISSAO CORRIGIDA: usar constante ao inves de hardcoded
+    chmod "${PERM_DIR_SECURE}" "${cfg_dir}" 2>/dev/null || {
         printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${cfg_dir}'." >&2
     }
 fi
@@ -81,7 +81,6 @@ cmd_find="${cmd_find:-}"                         # Comando para buscar arquivos.
 cmd_who="${cmd_who:-}"                           # Comando para saber quem esta logado no sistema.
 SERVER_PORTA="${SERVER_PORTA:-}"                 # Variavel que define a porta a ser usada para.
 USUARIO="${USUARIO:-}"                           # Variavel que define o usuario a ser usado.
-ipserver="${ipserver:-}"                         # Variavel que define o ip do servidor da SAV.
 destino_biblioteca="${destino_biblioteca:-}"     # Variavel que define o caminho do diretorio da biblioteca do servidor da SAV.
 RED="${RED:-}"                                   # Cor vermelha
 GREEN="${GREEN:-}"                               # Cor verde
@@ -112,49 +111,16 @@ BASEBACKUP="${BASEBACKUP:-}"                     # Diretorio de backup de base
 
 
 # Configuracoes padrao
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"          # Comando padrao para descompactar
-DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"                # Comando padrao para compactar
-DEFAULT_FIND="${DEFAULT_FIND:-find}"             # Comando padrao para buscar arquivos
-DEFAULT_WHO="${DEFAULT_WHO:-who}"                # Comando padrao para verificar usuarios
-DEFAULT_PORTA="${DEFAULT_PORTA:-41122}"          # Porta padrao
-DEFAULT_USUARIO="${DEFAULT_USUARIO:-atualiza}"   # Usuario padrao
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"                     # Comando padrao para descompactar
+DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"                           # Comando padrao para compactar
+DEFAULT_FIND="${DEFAULT_FIND:-find}"                        # Comando padrao para buscar arquivos
+DEFAULT_WHO="${DEFAULT_WHO:-who}"                           # Comando padrao para verificar usuarios
+DEFAULT_PORTA="${DEFAULT_PORTA:-${DEFAULT_SSH_PORT}}"       # Porta padrao
+DEFAULT_USUARIO="${DEFAULT_USUARIO:-${DEFAULT_SSH_USER}}"   # Usuario padrao
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
 # =============================================================================
-
-# -----------------------------------------------------------------------------
-# Cria um diretório com permissões seguras
-# Parâmetros:
-#   $1 - Caminho do diretório
-#   $2 - Permissões (opcional, padrão: 0755)
-# Retorna: 0 se criado/existente, 1 se erro
-# -----------------------------------------------------------------------------
-_criar_diretorio() {
-    local caminho="${1}"
-    local permissao="${2:-0755}"
-    local log_dir="${3:-}"
-
-    if [[ -z "$caminho" ]]; then
-        printf "Erro: Caminho nao pode ser vazio.\n" >&2
-        return 1
-    fi
-
-    if [[ -d "$caminho" ]]; then
-        return 0
-    fi
-
-    if mkdir -p "$caminho" 2>/dev/null; then
-        chmod "$permissao" "$caminho" 2>/dev/null || true
-        if [[ -n "$log_dir" ]]; then
-            _log "Diretorio criado: $caminho" "$log_dir" 2>/dev/null || true
-        fi
-        return 0
-    else
-        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        return 1
-    fi
-}
 
 # -----------------------------------------------------------------------------
 # Funcao para definir cores do terminal
@@ -186,7 +152,7 @@ _definir_cores() {
         CYAN=""
         WHITE=""
         NORM=""
-        COLUMNS=80
+        COLUMNS=${DEFAULT_COLUMNS}
     fi
 
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
@@ -258,8 +224,8 @@ _configurar_diretorios() {
     # Definir diretorio de configuracao
     raiz="${SCRIPT_DIR%/*}"
 
-    # Criar diretorio de configuracao se nao existir - usando funcao auxiliar
-    _criar_diretorio "${cfg_dir}" 0755 "${LOG_ATU}" || {
+    # Criar diretorio de configuracao se nao existir - usando funcao centralizada
+    _criar_diretorio_seguro "${cfg_dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${cfg_dir}" >&2
         return 1
     }
@@ -284,11 +250,11 @@ _configurar_diretorios() {
     # Exportar variaveis de diretorio para uso global
     export OLDS PROGS LOGS ENVIA RECEBE LIBS BACKUP BIBLIOTECA BASEBACKUP
 
-    # Criar diretorios se nao existirem - usando funcao auxiliar com permissao segura
+    # Criar diretorios se nao existirem - usando funcao centralizada
     local dirs=("${BIBLIOTECA}" "${BASEBACKUP}" "${OLDS}" "${PROGS}" "${LOGS}" "${ENVIA}" "${RECEBE}" "${LIBS}" "${BACKUP}")
     local dir=""
     for dir in "${dirs[@]}"; do
-        _criar_diretorio "${dir}" 0755 "${LOG_ATU}" || {
+        _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
             printf "Erro ao criar diretorio %s\n" "${dir}" >&2
             return 1
         }
@@ -379,7 +345,7 @@ _configurar_variaveis_sistema() {
 }
 
 # -----------------------------------------------------------------------------
-# Valida o conteudo de um arquivo de configuracao
+# Valida o conteudo de um arquivo de configuracao de forma RIGOROSA
 # Verifica se o arquivo contem apenas atribuicoes de variaveis simples
 # Parâmetros:
 #   $1 - Caminho do arquivo de configuracao
@@ -389,12 +355,28 @@ _validar_config_file() {
     local config_file="${1}"
     local linha=""
     local num_linha=0
+    local erros=0
 
     if [[ ! -f "$config_file" ]]; then
+        printf "ERRO: Arquivo de configuracao nao encontrado: %s\n" "$config_file" >&2
         return 1
     fi
 
-    # Ler linha por linha e validar
+    # Verificar permissoes do arquivo
+    if [[ ! -r "$config_file" ]]; then
+        printf "ERRO: Arquivo de configuracao sem permissao de leitura: %s\n" "$config_file" >&2
+        return 1
+    fi
+
+    # Verificar se arquivo nao e muito grande (limite: 1MB)
+    local tamanho
+    tamanho=$(wc -c < "$config_file" 2>/dev/null || echo 0)
+    if (( tamanho > 1048576 )); then
+        printf "ERRO: Arquivo de configuracao muito grande: %d bytes\n" "$tamanho" >&2
+        return 1
+    fi
+
+    # Ler linha por linha e validar RIGOROSAMENTE
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         ((num_linha++))
 
@@ -416,29 +398,45 @@ _validar_config_file() {
         # Validar que e uma atribuicao de variavel simples
         # Formato esperado: VARIAVEL="valor" ou VARIAVEL='valor' ou VARIAVEL=valor
         if ! [[ "$linha" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-            printf "AVISO: Linha %d tem formato invalido: %s\n" "$num_linha" "$linha" >&2
-            return 1
+            printf "ERRO: Linha %d tem formato invalido: %s\n" "$num_linha" "$linha" >&2
+            ((erros++))
+            continue
         fi
 
         # Verificar se ha comandos potencialmente perigosos
-        # Usar grep -F para buscar literais sem interpretacao de regex
-        # Para buscar barra invertida literal, usar "\\"
-        if printf '%s\n' "$linha" | grep -qF ';' || \
-           printf '%s\n' "$linha" | grep -qF '|' || \
-           printf '%s\n' "$linha" | grep -qF '&' || \
-           printf '%s\n' "$linha" | grep -qF '`' || \
-           printf '%s\n' "$linha" | grep -qF "\\"; then
-           printf "AVISO: Linha %d pode conter comandos perigosos: %s\n" "$num_linha" "$linha" >&2
-            return 1
+        # Lista expandida de caracteres perigosos
+        if printf '%s\n' "$linha" | grep -qE '[\$\`\;|\&<>(){}]'; then
+            printf "ERRO: Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
+            ((erros++))
+            continue
+        fi
+
+        # Verificar se ha tentativas de command substitution
+        if [[ "$linha" =~ \$\( ]] || [[ "$linha" =~ \` ]]; then
+            printf "ERRO: Linha %d contem command substitution: %s\n" "$num_linha" "$linha" >&2
+            ((erros++))
+            continue
+        fi
+
+        # Verificar se ha tentativas de expansao de variavel suspeita
+        if [[ "$linha" =~ \$\{.*\} ]]; then
+            printf "ERRO: Linha %d contem expansao de variavel suspeita: %s\n" "$num_linha" "$linha" >&2
+            ((erros++))
+            continue
         fi
 
     done < "$config_file"
+
+    if (( erros > 0 )); then
+        printf "ERRO: Arquivo de configuracao contem %d erro(s). Carregamento bloqueado.\n" "$erros" >&2
+        return 1
+    fi
 
     return 0
 }
 
 # -----------------------------------------------------------------------------
-# Carregar arquivo de configuracao da empresa com validacao
+# Carregar arquivo de configuracao da empresa com validacao SEGURA
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _carregar_config_empresa() {
@@ -472,11 +470,60 @@ _carregar_config_empresa() {
         return 1
     fi
 
-    # Carregar configuracoes
-    if ! "." "${config_file}"; then
+    # Carregar configuracoes de forma SEGURA (sem sourcing direto)
+    if ! _carregar_config_seguro "${config_file}"; then
         printf "ERRO: Falha ao carregar arquivo de configuracao %s.\n" "${config_file}" >&2
         return 1
     fi
+
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+# Carrega configuracao de forma segura sem sourcing direto
+# Parametros: $1 - arquivo de configuracao
+# Retorna: 0 se sucesso, 1 se erro
+# -----------------------------------------------------------------------------
+_carregar_config_seguro() {
+    local config_file="${1}"
+    local linha key value
+
+    while IFS= read -r linha || [[ -n "$linha" ]]; do
+        # Pular linhas vazias e comentarios
+        [[ -z "$linha" ]] && continue
+        [[ "$linha" =~ ^[[:space:]]*# ]] && continue
+
+        # Remover espacos iniciais
+        linha="${linha#"${linha%%[![:space:]]*}"}"
+        
+        # Ignorar linhas apos comentario inline
+        if [[ "$linha" == *'#'* ]]; then
+            linha="${linha%%#*}"
+        fi
+
+        # Ignorar se a linha ficou vazia apos remover comentario
+        [[ -z "$linha" ]] && continue
+
+        # Extrair chave e valor de forma segura
+        if [[ "$linha" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            
+            # Remover aspas se presentes
+            if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+                value="${BASH_REMATCH[1]}"
+            fi
+            
+            # Validar que o valor nao contem comandos perigosos
+            if [[ "$value" =~ [\$\`\;] ]]; then
+                printf "AVISO: Valor suspeito ignorado para %s: %s\n" "$key" "$value" >&2
+                continue
+            fi
+            
+            # Declarar variavel de forma segura
+            declare -g "$key=$value"
+        fi
+    done < "$config_file"
 
     return 0
 }
@@ -490,7 +537,7 @@ _configurar_acessos() {
         if [[ "${Offline}" == "s" ]]; then
             down_dir="${acessoff}"
             if [[ ! -d "${down_dir}" ]]; then
-                _criar_diretorio "${down_dir}" 0755 "${LOG_ATU}" || {
+                _criar_diretorio_seguro "${down_dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
                     printf "Erro ao criar diretorio offline %s\n" "${down_dir}" >&2
                     return 1
                 }

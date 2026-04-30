@@ -7,6 +7,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 17/04/2026-00
 #
+
 # Variaveis globais esperadas
 sistema="${sistema:-}"      # Nome do sistema (iscobol, savatu, transpc).
 cmd_zip="${cmd_zip:-}"      # Comando de compactacao (zip)

@@ -8,6 +8,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 28/04/2026-02
 #
+
 # Variaveis globais esperadas
 cfg_dir="${cfg_dir:-}"      # Caminho do diretorio de configuracao do programa.
 lib_dir="${lib_dir:-}"      # Diretorio dos modulos de biblioteca.
@@ -21,7 +22,7 @@ sistema="${sistema:-}"      # Variavel do sistema em uso (ex: iscobol, linux).
 dbmaker="${dbmaker:-}"      # Variavel do banco de dados em uso (ex: dbase, mysql).
 raiz="${raiz:-}"            # Variavel do diretorio raiz do sistema.
 enviabackup="${enviabackup:-}"  # Variavel do diretorio para envio de backup.
-ipserver="${ipserver:-}"    # Variavel do IP do servidor.
+DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-}"    # Variavel do IP do servidor.
 Offline="${Offline:-}"      # Variavel do status de conexao (s/n).
 verclass="${verclass:-}"    # Variavel da versao da classe.
 down_dir="${down_dir:-}"    # Variavel do diretorio de download para atualizacao offline.
@@ -200,7 +201,7 @@ _mostrar_parametros() {
     printf "${GREEN}Variavel da mclass: ${NORM}${mclass}${NORM}%*s\n"
     printf "${GREEN}Porta de conexao: ${NORM}${SERVER_PORTA}${NORM}%*s\n"
     printf "${GREEN}Usuario de conexao: ${NORM}${USUARIO}${NORM}%*s\n"
-    printf "${GREEN}Servidor IP: ${NORM}${ipserver}${NORM}%*s\n"
+    printf "${GREEN}Servidor IP: ${NORM}${DEFAULT_IP_SERVER}${NORM}%*s\n"
     _linha "=" "${GREEN}"
     _press
 }

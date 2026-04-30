@@ -7,6 +7,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 14/04/2026-00
 #
+
 # Variaveis globais esperadas
 sistema="${sistema:-}"                 # Tipo de sistema (iscobol/mf)
 cmd_zip="${cmd_zip:-}"                 # Comando de compactacao (zip)

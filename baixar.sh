@@ -7,6 +7,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 28/04/2026-03
 #
+
 # Variaveis globais esperadas
 cfg_dir="${cfg_dir:-}"      # Caminho do diretorio de configuracao do programa.
 lib_dir="${lib_dir:-}"      # Diretorio dos modulos de biblioteca.
@@ -41,7 +42,7 @@ _atualizando() {
             _read_sleep 2
             return 1
         }
-        chmod 0755 "${BACKUP}"
+        chmod "${PERM_DIR_SECURE}" "${BACKUP}"
     fi
 
     # Fazer backup dos arquivos atuais
@@ -134,7 +135,7 @@ _atualizando() {
         if ! mkdir -p "$cfg_target" 2>/dev/null; then
             _mensagec "${RED}" "Erro ao criar diretorio de destino: $cfg_target"
             ((arquivos_erro++)) || true
-            chmod 0755 "$cfg_target" 2>/dev/null || true
+            chmod "${PERM_DIR_SECURE}" "$cfg_target" 2>/dev/null || true
             continue
         fi
 
@@ -176,7 +177,7 @@ _atualizando() {
         if ! mkdir -p "$sh_target" 2>/dev/null; then
             _mensagec "${RED}" "Erro ao criar diretorio: $sh_target"
             ((arquivos_erro++)) || true
-            chmod 0755 "$sh_target" 2>/dev/null || true
+            chmod "${PERM_DIR_SECURE}" "$sh_target" 2>/dev/null || true
             continue
 
         fi
@@ -214,21 +215,21 @@ _atualizando() {
 if [[ ! -d "${RECEBE}" ]]; then
     _mensagec "${RED}" "ERRO: Diretorio '${RECEBE}' nao encontrado."
     _read_sleep 2
-    exit 1
+    return 1
 fi
 
 # Mudar para o diretório RECEBE com verificação
 if ! cd "${RECEBE}"; then
    _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${RECEBE}'."
     _read_sleep 2
-    exit 1
+    return 1
 fi
 
 # Confirmar que estamos no diretório correto antes de deletar
 if [[ "$PWD" != "${RECEBE}" ]]; then
     _mensagec "${RED}" "ERRO: Falha na verificacao de seguranca do diretorio."
     _read_sleep 2
-    exit 1
+    return 1
 fi
 
 # Verificar se há arquivos para remover
@@ -249,7 +250,7 @@ fi
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
 
-    exit 0
+    return 0
 }
 
 _atualizar_online() {
@@ -263,13 +264,13 @@ _atualizar_online() {
 if ! cd "${RECEBE}"; then
    _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${RECEBE}'."
     _read_sleep 2
-    exit 1
+    return 1
 fi
     # Criar e acessar diretorio temporario
     mkdir -p "$temp_dir" || {
         _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
         _read_sleep 2
-        chmod 0755 "$temp_dir" 2>/dev/null || true
+        chmod "${PERM_DIR_SECURE}" "$temp_dir" 2>/dev/null || true
         return 1
     }
 
@@ -299,7 +300,7 @@ _atualizar_offline() {
     mkdir -p "$temp_dir" || {
         _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
         _read_sleep 2
-        chmod 0755 "$temp_dir" 2>/dev/null || true
+        chmod "${PERM_DIR_SECURE}" "$temp_dir" 2>/dev/null || true
         return 1
     }
 

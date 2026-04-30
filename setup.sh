@@ -108,7 +108,7 @@ _edit_setup() {
     _editar_variavel verclass
     _editar_variavel dbmaker
     _editar_variavel acessossh
-    _editar_variavel ipserver
+    _editar_variavel DEFAULT_IP_SERVER
     _editar_variavel Offline
     _editar_variavel enviabackup
     _editar_variavel empresa
@@ -252,10 +252,10 @@ _setup_acesso_remoto() {
     fi
     echo ${tracejada}
     echo "###      ( IP do servidor da SAV )         ###"
-    read -rp "Informe o IP do servidor [${ip_do_server}]: " ipserver
-    ipserver="${ipserver:-${ip_do_server}}"
-    echo "ipserver=${ipserver}" >> .config
-    echo "IP do servidor: ${ipserver}"
+    read -rp "Informe o IP do servidor [${ip_do_server}]: " DEFAULT_IP_SERVER
+    DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${ip_do_server}}"
+    echo "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER}" >> .config
+    echo "IP do servidor: ${DEFAULT_IP_SERVER}"
     echo ${tracejada}
 
     echo "###      ( Tipo de acesso        )         ###"
@@ -372,7 +372,7 @@ _recreate_config_files() {
         [[ -n "$verclass" ]] && echo "verclass=${verclass}"
         echo "dbmaker=${dbmaker}"
         echo "acessossh=${acessossh}"
-        echo "ipserver=${ipserver}"
+        echo "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER}"
         echo "Offline=${Offline}"
         echo "enviabackup=${enviabackup}"
         echo "empresa=${empresa}"
@@ -389,8 +389,8 @@ _recreate_config_files() {
 # _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
 #===================================================================
 _configure_ssh_access() {
-    local SERVER_IP="${ipserver}"
-    local SERVER_PORTA="${SERVER_PORTA:-41122}"
+    local SERVER_IP="${ip_do_server}"
+    local SERVER_PORTA="${SERVER_PORTA:-${DEFAULT_SSH_PORT}}"
     local SERVER_USER="${USUARIO:-atualiza}"
     local SSH_DIR="${HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
@@ -404,7 +404,7 @@ _configure_ssh_access() {
 
     # Cria os diretórios padrão com permissões corretas
     mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
-    chmod 0755 "${SSH_DIR}" "${CONTROL_PATH_BASE}"
+    chmod "${PERM_DIR_SECURE}" "${SSH_DIR}" "${CONTROL_PATH_BASE}"
 
     # ====================== CRIAÇÃO / ATUALIZAÇÃO DO ARQUIVO ~/.ssh/config ======================
     if [[ ! -f "${SSH_CONFIG_FILE}" ]] || ! grep -q "^Host sav_servidor" "${SSH_CONFIG_FILE}"; then
@@ -421,11 +421,11 @@ Host sav_servidor
     ControlMaster auto
     ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
     ControlPersist 10m
-    ServerAliveInterval 30
-    ServerAliveCountMax 3
-    ConnectTimeout 15
+    ServerAliveInterval ${SSH_ALIVE_INTERVAL}
+    ServerAliveCountMax ${SSH_ALIVE_COUNT}
+    ConnectTimeout ${SSH_TIMEOUT}
 EOF
-        chmod 0600 "${SSH_CONFIG_FILE}"
+        chmod "${PERM_FILE_PRIVATE}" "${SSH_CONFIG_FILE}"
         echo "Configuracao SSH criada/adicionada em ~/.ssh/config"
     else
         echo " Configuracao SSH 'sav_servidor' ja existe em ~/.ssh/config"

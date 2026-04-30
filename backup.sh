@@ -9,6 +9,7 @@ set -euo pipefail
 # Versao: 27/04/2026-01
 # Autor: Luiz Augusto
 #
+
 # Variaveis globais esperadas
 base="${base:-}"           # Caminho do diretorio da segunda base de dados.
 Offline="${Offline:-}"     # Indicador de ambiente offline (s/n)
@@ -287,9 +288,26 @@ _executar_backup_completo() {
         return 1
     fi
     
-    # Executar backup com tratamento de erro
-    if ! "$cmd_zip" "$arquivo_destino" ./*.* \
-         -x ./*.zip ./*.tar ./*.gz ./*.log ./*.tmp ./*.old >/dev/null 2>&1; then
+    # Coletar arquivos para backup de forma eficiente
+    local -a arquivos_backup=()
+    local arquivo
+    
+    # Usar find para coletar arquivos de forma otimizada
+    while IFS= read -r -d '' arquivo; do
+        arquivos_backup+=("$arquivo")
+    done < <(find . -maxdepth 1 -type f \
+        ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" \
+        ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
+        -print0 2>/dev/null)
+    
+    # Verificar se ha arquivos para backup
+    if [[ ${#arquivos_backup[@]} -eq 0 ]]; then
+        _mensagec "${YELLOW}" "AVISO: Nenhum arquivo encontrado para backup"
+        return 1
+    fi
+    
+    # Executar backup em lote (mais eficiente)
+    if ! "$cmd_zip" "$arquivo_destino" "${arquivos_backup[@]}" >/dev/null 2>&1; then
         _mensagec "${RED}" "ERRO: Falha ao criar arquivo de backup"
         return 1
     fi

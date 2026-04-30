@@ -9,6 +9,7 @@ set -euo pipefail
 # Versao: 27/04/2026-01
 # Autor: Luiz Augusto
 #
+
 # Variaveis globais esperadas
 sistema="${sistema:-}"                    # Nome do sistema (iscobol, savatu, transpc).
 cfg_dir="${cfg_dir:-${SCRIPT_DIR:-.}/cfg}"    # Diretorio de configuracoes
@@ -21,7 +22,7 @@ if [[ ! -d "${cfg_dir}" ]]; then
         return 1
     }
 fi
-chmod 0755 "${cfg_dir}" 2>/dev/null || {
+chmod "${PERM_DIR_SECURE}" "${cfg_dir}" 2>/dev/null || {
     printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${cfg_dir}'."
 }
 
@@ -34,33 +35,74 @@ empresa="${empresa:-}"                    # Nome da empresa (usado para exibir n
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 
 # Funcao auxiliar para leitura de opcao com suporte a ajuda contextual
-# Uso: _ler_opcao_menu "contexto"
+# Uso: _ler_opcao_menu "contexto" min_opcao max_opcao
 # Retorna: 0 se opcao normal, 1 se comando de ajuda processado
 _ler_opcao_menu() {
     local contexto="${1:-geral}"
+    local min_opcao="${2:-0}"
+    local max_opcao="${3:-9}"
     
     # Exibir linha de ajuda
     _linha "="
     printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)${NORM}"
     _linha "=" "${GREEN}"
     
-    # Ler opcao do usuario
-    read -rp "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao
+    # Loop de validacao com limite de tentativas
+    local tentativas=0
+    local max_tentativas=3
     
-    # Verificar comandos de ajuda
-    case "${opcao,,}" in
-        "?"|"h"|"help"|"ajuda")
-            _exibir_ajuda_contextual "$contexto"
-            return 1
-            ;;
-        "m"|"manual")
-            _exibir_manual_completo
-            return 1
-            ;;
-    esac
+    while (( tentativas < max_tentativas )); do
+        # Ler opcao do usuario com timeout
+        if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
+            printf "\n${RED}Timeout na entrada. Saindo...${NORM}\n"
+            exit 0
+        fi
+        
+        # Sanitizar entrada
+        opcao=$(_sanitizar_entrada "$opcao" 2>/dev/null || printf '%s' "$opcao")
+        opcao=$(_trim "$opcao" 2>/dev/null || printf '%s' "$opcao")
+        
+        # Verificar comandos de ajuda
+        case "${opcao,,}" in
+            "?"|"h"|"help"|"ajuda")
+                _exibir_ajuda_contextual "$contexto"
+                return 1
+                ;;
+            "m"|"manual")
+                _exibir_manual_completo
+                return 1
+                ;;
+            "q"|"quit"|"sair"|"exit")
+                printf "${GREEN}Saindo do sistema...${NORM}\n"
+                exit 0
+                ;;
+        esac
+        
+        # Validar se e um numero valido
+        if command -v _validar_opcao_menu >/dev/null 2>&1; then
+            if _validar_opcao_menu "$opcao" "$min_opcao" "$max_opcao"; then
+                return 0  # Opcao valida
+            fi
+        else
+            # Fallback se validation.sh nao estiver carregado
+            if [[ "$opcao" =~ ^[0-9]+$ ]] && (( opcao >= min_opcao && opcao <= max_opcao )); then
+                return 0
+            fi
+        fi
+        
+        # Opcao invalida
+        ((tentativas++))
+        printf "${RED}Opcao invalida: '%s'. " "$opcao"
+        printf "Digite um numero entre %d e %d.${NORM}\n" "$min_opcao" "$max_opcao"
+        
+        if (( tentativas < max_tentativas )); then
+            printf "${YELLOW}Tentativa %d de %d. Tente novamente.${NORM}\n" "$((tentativas + 1))" "$max_tentativas"
+        fi
+    done
     
-    # Retorna 0 para processar a opcao normalmente
-    return 0
+    # Excedeu tentativas
+    printf "${RED}Maximo de tentativas excedido. Saindo...${NORM}\n"
+    exit 1
 }
 
 #---------- MENU PRINCIPAL ----------#
