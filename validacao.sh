@@ -7,15 +7,6 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 30/04/2026-01
 
-# =============================================================================
-# CARREGAR CONSTANTES DO SISTEMA
-# =============================================================================
-# Carregar constantes se disponivel
-if [[ -f "${SCRIPT_DIR:-$(dirname "${BASH_SOURCE[0]}")}/constantes.sh" ]]; then
-    # shellcheck source=constantes.sh
-    . "${SCRIPT_DIR:-$(dirname "${BASH_SOURCE[0]}")}/constantes.sh"
-fi
-
 #---------- FUNCOES DE VALIDACAO DE ENTRADA ----------#
 
 # Valida nome de variavel (apenas letras, numeros e underscore)

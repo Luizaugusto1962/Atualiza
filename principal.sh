@@ -40,7 +40,7 @@ export SCRIPT_DIR lib_dir cfg_dir
 # Carregar constantes se disponivel
 if [[ -f "${lib_dir}/constantes.sh" ]]; then
     # shellcheck source=constantes.sh
-    . "${lib_dir}/constantes.sh"
+    "." "${lib_dir}/constantes.sh"
 fi
 
 # =============================================================================
@@ -178,7 +178,7 @@ _carregar_modulos() {
     local modulos=(
         "constantes.sh" # Constantes do Sistema SAV
         "utils.sh"      # Utilitarios basicos primeiro
-        "validacao.sh" # Validacao centralizada
+        "validacao.sh"  # Validacao centralizada
         "config.sh"     # Configuracoes
         "auth.sh"       # Autenticacao
         "lembrete.sh"   # Sistema de lembretes

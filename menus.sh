@@ -54,7 +54,7 @@ _ler_opcao_menu() {
     while (( tentativas < max_tentativas )); do
         # Ler opcao do usuario com timeout
         if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
-            printf "\n${RED}Timeout na entrada. Saindo...${NORM}\n"
+            printf '\n%sTimeout na entrada. Saindo...%s\n' "${RED}" "${NORM}"
             exit 0
         fi
         
@@ -73,7 +73,7 @@ _ler_opcao_menu() {
                 return 1
                 ;;
             "q"|"quit"|"sair"|"exit")
-                printf "${GREEN}Saindo do sistema...${NORM}\n"
+                printf '%s' "${GREEN}Saindo do sistema...${NORM}\n"
                 exit 0
                 ;;
         esac
@@ -92,16 +92,16 @@ _ler_opcao_menu() {
         
         # Opcao invalida
         ((tentativas++))
-        printf "${RED}Opcao invalida: '%s'. " "$opcao"
-        printf "Digite um numero entre %d e %d.${NORM}\n" "$min_opcao" "$max_opcao"
+        printf '%s' "${RED}Opcao invalida: '${opcao}'. "
+        printf '%s\n' "${RED}Digite um numero entre ${min_opcao} e ${max_opcao}.${NORM}"
         
         if (( tentativas < max_tentativas )); then
-            printf "${YELLOW}Tentativa %d de %d. Tente novamente.${NORM}\n" "$((tentativas + 1))" "$max_tentativas"
+            printf '%s\n' "${YELLOW}Tentativa ${tentativas + 1} de ${max_tentativas}. Tente novamente.${NORM}"
         fi
     done
     
     # Excedeu tentativas
-    printf "${RED}Maximo de tentativas excedido. Saindo...${NORM}\n"
+    printf '%s\n' "${RED}Maximo de tentativas excedido. Saindo...${NORM}"
     exit 1
 }
 
