@@ -9,44 +9,6 @@
 
 #---------- FUNCOES DE VALIDACAO DE ENTRADA ----------#
 
-# Valida nome de variavel (apenas letras, numeros e underscore)
-# Parametros: $1=nome_variavel
-# Retorna: 0=valido 1=invalido
-_validar_nome_variavel() {
-    local nome="${1:-}"
-    [[ -n "$nome" ]] && [[ "$nome" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]
-}
-
-# Valida valor de configuracao (sem caracteres perigosos)
-# Parametros: $1=valor
-# Retorna: 0=valido 1=invalido
-_validar_valor_config() {
-    local valor="${1:-}"
-    # Rejeitar valores com caracteres perigosos
-    [[ ! "$valor" =~ [\$\`\;\|\&\<\>\(\)] ]]
-}
-
-# Valida caminho de arquivo/diretorio (sem path traversal)
-# Parametros: $1=caminho
-# Retorna: 0=valido 1=invalido
-_validar_caminho() {
-    local caminho="${1:-}"
-    
-    # Verificar se nao esta vazio
-    [[ -n "$caminho" ]] || return 1
-    
-    # Rejeitar caminhos com path traversal
-    [[ ! "$caminho" =~ \.\. ]] || return 1
-    
-    # Rejeitar caminhos absolutos suspeitos
-    case "$caminho" in
-        /etc/*|/usr/*|/bin/*|/sbin/*|/root/*|/home/*)
-            return 1
-            ;;
-    esac
-    
-    return 0
-}
 
 # Valida nome de programa (letras maiusculas e numeros apenas)
 # Parametros: $1=nome_programa
@@ -88,14 +50,6 @@ _validar_usuario() {
 _validar_arquivo_legivel() {
     local arquivo="${1:-}"
     [[ -n "$arquivo" ]] && [[ -f "$arquivo" ]] && [[ -r "$arquivo" ]]
-}
-
-# Valida se diretorio existe e e acessivel
-# Parametros: $1=caminho_diretorio
-# Retorna: 0=valido 1=invalido
-_validar_diretorio_acessivel() {
-    local dir="${1:-}"
-    [[ -n "$dir" ]] && [[ -d "$dir" ]] && [[ -r "$dir" ]] && [[ -x "$dir" ]]
 }
 
 # Valida se arquivo e de propriedade do usuario atual
