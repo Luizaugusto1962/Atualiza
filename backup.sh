@@ -6,27 +6,26 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/04/2026-01
+# Versao: 05/05/2026-01
 # Autor: Luiz Augusto
 #
 
 # Variaveis globais esperadas
-base="${base:-}"           # Caminho do diretorio da segunda base de dados.
-Offline="${Offline:-}"     # Indicador de ambiente offline (s/n)
-raiz="${raiz:-}"           # Caminho raiz do sistema.
-empresa="${empresa:-}"     # Nome da empresa (usado no nome do backup)
-ipserver="${ipserver:-}"   # IP do servidor para envio de backup
-cmd_zip="${cmd_zip:-}"     # Comando para compactar arquivos.
-BASEBACKUP="${BASEBACKUP:-}" # Diretorio base de armazenamento de backups
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                     # Caminho do diretorio da segunda base de dados.
+CFG_OFFLINE="${CFG_OFFLINE:-}"                       # Indicador de ambiente offline (s/n)
+RAIZ="${RAIZ:-}"                                     # Caminho RAIZ do sistema.
+CFG_EMPRESA="${CFG_EMPRESA:-}"                       # Nome da empresa (usado no nome do backup)
+DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-}"           # IP do servidor para envio de backup
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                       # Comando para compactar arquivos.
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                   # Comando para descompactar arquivos.
+DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}" # Diretorio base de armazenamento de backups
 
-# Trap para limpeza em caso de interrupcao
-trap '_limpar_backup' INT TERM
-
+# NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {
     _log "Backup interrompido. Limpando temporários..."
     # Remover arquivos parciais com blindagem contra variaveis nulas
-    if [[ -n "${BASEBACKUP:-}" && "${BASEBACKUP}" != "/" && "${BASEBACKUP}" != "//" ]]; then
-        rm -f "${BASEBACKUP}"/*.zip.tmp 2>/dev/null || true
+    if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" && "${DEFAULT_BASEBACKUP_DIR}" != "/" && "${DEFAULT_BASEBACKUP_DIR}" != "//" ]]; then
+        rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
     fi
 }
 
@@ -38,20 +37,20 @@ _validar_pre_backup() {
     local -n _base_ref="$1"   # nameref para definir base_trabalho no chamador
 
     # Validar comando de compactacao
-    if [[ -z "$cmd_zip" ]]; then
+    if [[ -z "$DEFAULT_ZIP" ]]; then
         _mensagec "${RED}" "Erro: Comando de compactacao nao configurado"
         _read_sleep 3
         return 1
     fi
 
-    if ! command -v "$cmd_zip" &>/dev/null; then
-        _mensagec "${RED}" "Erro: Comando '$cmd_zip' nao disponivel no sistema"
+    if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
+        _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel no sistema"
         _read_sleep 3
         return 1
     fi
 
     # Escolher base se necessario
-    if [[ -n "${base2}" ]]; then
+    if [[ -n "${CFG_BASE_DIR2}" ]]; then
         _menu_escolha_base || return 1
         if [[ -z "${base_trabalho}" ]]; then
             _linha
@@ -62,7 +61,7 @@ _validar_pre_backup() {
         fi
         _base_ref="${base_trabalho}"
     else
-        _base_ref="${raiz}${base}"
+        _base_ref="${RAIZ}${CFG_BASE_DIR}"
     fi
 
     # Validar se o diretorio base existe
@@ -73,15 +72,15 @@ _validar_pre_backup() {
     fi
 
     # Verificar se o diretorio de backup existe
-    if [[ ! -d "$BASEBACKUP" ]]; then
-        _mensagec "$YELLOW" "Diretorio de backups em $BASEBACKUP nao encontrado..."
+    if [[ ! -d "$DEFAULT_BASEBACKUP_DIR" ]]; then
+        _mensagec "$YELLOW" "Diretorio de backups em $DEFAULT_BASEBACKUP_DIR nao encontrado..."
         _read_sleep 3
         return 1
     fi
 
     # Verificar espaco em disco
-    if ! _verificar_espaco_disco "$BASEBACKUP"; then
-        _mensagec "$RED" "Espaco em disco insuficiente em $BASEBACKUP"
+    if ! _verificar_espaco_disco "$DEFAULT_BASEBACKUP_DIR"; then
+        _mensagec "$RED" "Espaco em disco insuficiente em $DEFAULT_BASEBACKUP_DIR"
         _read_sleep 3
         return 1
     fi
@@ -94,6 +93,9 @@ _executar_backup() {
     local base_trabalho=""
     local ano_agora
     ano_agora=$(date +%Y)
+
+    # Registrar trap local apenas durante o backup
+    trap '_limpar_backup' INT TERM
 
     # Validar pre-requisitos e definir base_trabalho
     if ! _validar_pre_backup base_trabalho; then
@@ -111,8 +113,8 @@ _executar_backup() {
 
     # Gerar nome do arquivo
     local nome_backup
-    nome_backup="${empresa}_${tipo_backup}_$(date +%Y%m%d%H%M).zip"
-    local caminho_backup="${BASEBACKUP}/$nome_backup"
+    nome_backup="${CFG_EMPRESA}_${tipo_backup}_$(date +%Y%m%d%H%M).zip"
+    local caminho_backup="${DEFAULT_BASEBACKUP_DIR}/$nome_backup"
 
     # Verificar backups recentes
     if _verificar_backups_recentes; then
@@ -207,6 +209,9 @@ _executar_backup() {
     if _confirmar "Deseja enviar backup para servidor?" "N"; then
         _enviar_backup_servidor "$nome_backup"
     fi
+
+    # Restaurar trap original ao encerrar o backup
+    trap '_encerrar_programa 130' INT TERM
 }
 
 # Restaura backup do sistema
@@ -244,8 +249,8 @@ _enviar_backup_avulso() {
         return 0
     fi
 
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then
-        if [[ "${Offline}" == "s" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _mover_backup_offline "$nome_backup"
             return
         fi
@@ -275,6 +280,7 @@ _validar_backup_criado() {
 # Executa backup completo
 _executar_backup_completo() {
     local arquivo_destino="$1"
+    local arquivos_temp
 
     # Validar parâmetro
     if [[ -z "$arquivo_destino" ]]; then
@@ -287,31 +293,30 @@ _executar_backup_completo() {
         _mensagec "${RED}" "ERRO: Falha ao acessar diretorio de trabalho"
         return 1
     fi
-    
-    # Coletar arquivos para backup de forma eficiente
-    local -a arquivos_backup=()
-    local arquivo
-    
-    # Usar find para coletar arquivos de forma otimizada
-    while IFS= read -r -d '' arquivo; do
-        arquivos_backup+=("$arquivo")
-    done < <(find . -maxdepth 1 -type f \
-        ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" \
-        ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-        -print0 2>/dev/null)
-    
-    # Verificar se ha arquivos para backup
-    if [[ ${#arquivos_backup[@]} -eq 0 ]]; then
-        _mensagec "${YELLOW}" "AVISO: Nenhum arquivo encontrado para backup"
+
+    arquivos_temp=$(mktemp) || {
+        _mensagec "${RED}" "ERRO: Falha ao criar arquivo temporario"
+        return 1
+    }
+
+    find . -maxdepth 1 -type f \
+         ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
+         -printf '%P\0' > "$arquivos_temp"
+
+    if [[ ! -s "$arquivos_temp" ]]; then
+        _mensagec "${YELLOW}" "Nenhum arquivo no nivel superior para backup"
+        rm -f "$arquivos_temp"
         return 1
     fi
-    
-    # Executar backup em lote (mais eficiente)
-    if ! "$cmd_zip" "$arquivo_destino" "${arquivos_backup[@]}" >/dev/null 2>&1; then
+
+    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >/dev/null 2>&1; then
         _mensagec "${RED}" "ERRO: Falha ao criar arquivo de backup"
+        rm -f "$arquivos_temp"
         return 1
     fi
-    
+
+    rm -f "$arquivos_temp"
+
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
         return 1
@@ -352,20 +357,20 @@ _executar_backup_incremental() {
         return 1  
     }
 
-    # Buscar arquivos modificados
-    find . -type f -newermt "$data_referencia" \
+    # Buscar arquivos modificados apenas no nivel superior
+    find . -maxdepth 1 -type f -newermt "$data_referencia" \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -print0 > "$arquivos_temp"
+         -printf '%P\0' > "$arquivos_temp"
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
     if [[ ! -s "$arquivos_temp" ]]; then
-        _mensagec "${YELLOW}" "Nenhum arquivo modificado desde $data_referencia"
+        _mensagec "${YELLOW}" "Nenhum arquivo modificado desde $data_referencia no nivel superior"
         rm -f "$arquivos_temp"
         return 0
     fi
 
     # Executar compactacao
-    if ! xargs -0 "$cmd_zip" "$arquivo_destino" < "$arquivos_temp" >/dev/null 2>&1; then
+    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >/dev/null 2>&1; then
         _mensagec "${RED}" "ERRO: Falha ao compactar arquivos"
         rm -f "$arquivos_temp"
         return 1  
@@ -387,7 +392,7 @@ _executar_backup_incremental() {
 # Muda para o diretorio de trabalho
 # Retorna: 0 se sucesso, 1 se erro
 _diretorio_trabalho() {
-    local base_trabalho="${BASE_TRABALHO:-${raiz}${base}}"
+    local base_trabalho="${BASE_TRABALHO:-${RAIZ}${CFG_BASE_DIR}}"
 
     if [[ ! -d "$base_trabalho" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
@@ -410,11 +415,11 @@ _selecionar_backup() {
 
     # Carrega todos os .zip disponiveis
     shopt -s nullglob
-    arquivos_backup=("${BASEBACKUP}/${empresa}"_*.zip)
+    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip)
     shopt -u nullglob  # Restaurar imediatamente para nao afetar outros globos
 
     if ((${#arquivos_backup[@]} == 0)); then
-        _mensagec "${RED}" "Nenhum backup (${empresa}_*.zip) encontrado"
+        _mensagec "${RED}" "Nenhum backup (${CFG_EMPRESA}_*.zip) encontrado"
         _press
         return 1  # Sinaliza ausencia de backups para o chamador
     fi
@@ -486,7 +491,7 @@ _selecionar_backup() {
 # Restaura backup completo
 _restaurar_backup_completo() {
     local arquivo_backup="$1"
-    local base_trabalho="${raiz}${base}"
+    local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
     
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
@@ -498,7 +503,7 @@ _restaurar_backup_completo() {
     _mensagec "${YELLOW}" "Restaurando todos os arquivos..."
     _linha
     
-    if ! "${cmd_unzip:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+    if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
         _press
         return 0
@@ -512,8 +517,7 @@ _restaurar_backup_completo() {
 _restaurar_arquivo_especifico() {
     local arquivo_backup="$1"
     local nome_arquivo
-    local base_trabalho="${raiz}${base}"
-#    local continuar
+    local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
    
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
@@ -550,7 +554,7 @@ _restaurar_arquivo_especifico() {
         _mensagec "${YELLOW}" "Restaurando ${nome_arquivo}..."
         _linha
        
-        if ! "${cmd_unzip:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+        if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
             _press
         else
@@ -576,23 +580,23 @@ _restaurar_arquivo_especifico() {
 # Envia backup para servidor
 _enviar_backup_servidor() {
     local nome_backup="$1"
-    local destino_remoto
+    local DESTINO_REMOTO
 
     # Validar se arquivo existe
-    if [[ ! -f "${BASEBACKUP}/${nome_backup}" ]]; then
+    if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _read_sleep 3
         return 0
     fi
 
     # Determinar destino
-    if [[ -n "${enviabackup}" ]]; then
-        destino_remoto="${enviabackup}"
+    if [[ -n "${CFG_BACKUP_PATH}" ]]; then
+        DESTINO_REMOTO="${CFG_BACKUP_PATH}"
     else
-        read -rp "${YELLOW}Diretorio de destino no servidor: ${NORM}" destino_remoto
-        while [[ -z "$destino_remoto" ]]; do
+        read -rp "${YELLOW}Diretorio de destino no servidor: ${NORM}" DESTINO_REMOTO
+        while [[ -z "$DESTINO_REMOTO" ]]; do
             _mensagec "$RED" "Diretorio nao pode estar vazio"
-            read -rp "${YELLOW}Diretorio de destino: ${NORM}" destino_remoto
+            read -rp "${YELLOW}Diretorio de destino: ${NORM}" DESTINO_REMOTO
         done
     fi
 
@@ -600,9 +604,9 @@ _enviar_backup_servidor() {
     _mensagec "${YELLOW}" "Enviando backup via vaievem..."
     _linha
     
-    if _upload_rsync "${BASEBACKUP}/${nome_backup}" "${destino_remoto}"; then
+    if _upload_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
-        _mensagec "${GREEN}" "Backup enviado com sucesso para \"${destino_remoto}\""
+        _mensagec "${GREEN}" "Backup enviado com sucesso para \"${DESTINO_REMOTO}\""
         _linha
         
         # Perguntar sobre manter backup local
@@ -610,7 +614,7 @@ _enviar_backup_servidor() {
             _mensagec "${YELLOW}" "Backup local mantido"
             _read_sleep 2
         else
-            if rm -f "${BASEBACKUP}/${nome_backup}"; then
+            if rm -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"; then
                 _mensagec "${YELLOW}" "Backup local excluido"
                 _read_sleep 2
             else
@@ -631,7 +635,7 @@ _mover_backup_offline() {
     local nome_backup="$1"
     
     # Validar se arquivo existe
-    if [[ ! -f "${BASEBACKUP}/${nome_backup}" ]]; then
+    if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _press
         return 0
@@ -656,7 +660,7 @@ _mover_backup_offline() {
         fi
     fi
     
-    if mv -f "${BASEBACKUP}/${nome_backup}" "$down_dir"; then
+    if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$down_dir"; then
         _mensagec "${GREEN}" "Backup movido para: ${down_dir}"
         _press
     else
@@ -669,22 +673,22 @@ _mover_backup_offline() {
 # Envia backup via rede
 _enviar_backup_rede() {
     local nome_backup="$1"
-    local destino_remoto
+    local DESTINO_REMOTO
     
     # Validar se arquivo existe
-    if [[ ! -f "${BASEBACKUP}/${nome_backup}" ]]; then
+    if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _press
         return 0
     fi
     
-    if [[ -n "${enviabackup}" ]]; then
-        destino_remoto="${enviabackup}"
+    if [[ -n "${CFG_BACKUP_PATH}" ]]; then
+        DESTINO_REMOTO="${CFG_BACKUP_PATH}"
     else
-        read -rp "${YELLOW}Diretorio remoto: ${NORM}" destino_remoto
-        while [[ -z "$destino_remoto" ]]; do
+        read -rp "${YELLOW}Diretorio remoto: ${NORM}" DESTINO_REMOTO
+        while [[ -z "$DESTINO_REMOTO" ]]; do
             _mensagec "$RED" "Diretorio nao informado"
-            read -rp "${YELLOW}Diretorio remoto: ${NORM}" destino_remoto
+            read -rp "${YELLOW}Diretorio remoto: ${NORM}" DESTINO_REMOTO
         done
     fi
 
@@ -692,9 +696,9 @@ _enviar_backup_rede() {
     _mensagec "${YELLOW}" "Enviando backup via vaievem..."
     _linha
     
-    if _upload_rsync "${BASEBACKUP}/${nome_backup}" "${destino_remoto}"; then
+    if _upload_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
-        _mensagec "${GREEN}" "Backup enviado para \"${destino_remoto}\" no servidor ${ipserver}"
+        _mensagec "${GREEN}" "Backup enviado para \"${DESTINO_REMOTO}\" no servidor ${DEFAULT_IP_SERVER}"
         _read_sleep 3
     else
         _linha
@@ -723,11 +727,11 @@ _verificar_espaco_disco() {
 
 # Verifica backups recentes (ultimos 2 dias)
 _verificar_backups_recentes() {
-    if find "${BASEBACKUP}" -maxdepth 1 -ctime -2 -name "${empresa}*zip" -print -quit | grep -q .; then
+    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*zip" -print -quit | grep -q .; then
         _linha
-        _mensagec "$CYAN" "Ja existe backup recente em $BASEBACKUP:"
+        _mensagec "$CYAN" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
-        ls -ltrh "${BASEBACKUP}/${empresa}"_*.zip 2>/dev/null
+        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip 2>/dev/null
         _linha
         return 0
     fi
@@ -870,13 +874,13 @@ _executar_backup_multiplos_padroes() {
 
     # Gerar nome do arquivo
     local nome_backup
-    nome_backup="${empresa}_multiplos_$(date +%Y%m%d%H%M).zip"
-    caminho_backup="${BASEBACKUP}/${nome_backup}"
+    nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).zip"
+    caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
     _mensagec "${YELLOW}" "Criando backup com multiplos padroes..."
     _linha
 
     # Executar compactação com os arquivos especificados
-    if ! "$cmd_zip" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
+    if ! "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro ao criar backup"
         [[ -f "$caminho_backup" ]] && rm -f "$caminho_backup"
         _read_sleep 3
@@ -913,17 +917,17 @@ _finalizar_backup_sucesso() {
     local nome_backup="$1"
     local tamanho_backup
     
-    if [[ -f "${BASEBACKUP}/${nome_backup}" ]]; then
-        tamanho_backup=$(du -h "${BASEBACKUP}/${nome_backup}" | cut -f1)
+    if [[ -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
+        tamanho_backup=$(du -h "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" | cut -f1)
         _linha
         _mensagec "$GREEN" "Backup Concluido!"
         _linha
         _mensagec "$YELLOW" "Arquivo: $nome_backup"
-        _mensagec "$YELLOW" "Local: ${BASEBACKUP}"
+        _mensagec "$YELLOW" "Local: ${DEFAULT_BASEBACKUP_DIR}"
         _mensagec "$YELLOW" "Tamanho: ${tamanho_backup}"
         _linha
     else
-        _mensagec "$YELLOW" "O backup $nome_backup foi criado em ${BASEBACKUP}"
+        _mensagec "$YELLOW" "O backup $nome_backup foi criado em ${DEFAULT_BASEBACKUP_DIR}"
         _linha
         _mensagec "$YELLOW" "Backup Concluido!"
         _linha

@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 #
 # help.sh - Sistema de Ajuda e Manual do Usuario
-# Fornece documentacao completa e help contextual para o sistema
+# Fornece documentacao completa e help contextual para o sistema SAV
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/04/2026-01
+# Versao: 05/05/2026-01
 #
 
 
 # Variaveis globais esperadas
-cfg_dir="${cfg_dir:-}"     # Diretorio de configuracoes
+CFG_DIR="${CFG_DIR:-}"     # Diretorio de configuracoes
 
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
 
 # Arquivo de manual principal
-MANUAL_FILE="${cfg_dir}/manual.txt"
+MANUAL_FILE="${CFG_DIR}/manual.txt"
 
 # Exibe conteúdo com paginaçao automática
 # Parâmetros: 
@@ -180,20 +180,21 @@ _exibir_ajuda_contextual() {
     local secao_nome
 
     case "$contexto" in
-        principal)    secao_nome="MENU_PRINCIPAL" ;;
-        programas)    secao_nome="MENU_PROGRAMAS" ;;
-        biblioteca)   secao_nome="MENU_BIBLIOTECA" ;;
-        arquivos)     secao_nome="MENU_ARQUIVOS" ;;
-        ferramentas)  secao_nome="MENU_FERRAMENTAS" ;;
-        temporarios)  secao_nome="MENU_TEMPORARIOS" ;;
-        recuperacao)  secao_nome="MENU_RECUPERACAO" ;;
-        backup)       secao_nome="MENU_BACKUP" ;;
+        principal)     secao_nome="MENU_PRINCIPAL" ;;
+        programas)     secao_nome="MENU_PROGRAMAS" ;;
+        biblioteca)    secao_nome="MENU_BIBLIOTECA" ;;
+        arquivos)      secao_nome="MENU_ARQUIVOS" ;;
+        ferramentas)   secao_nome="MENU_FERRAMENTAS" ;;
+        temporarios)   secao_nome="MENU_TEMPORARIOS" ;;
+        recuperacao)   secao_nome="MENU_RECUPERACAO" ;;
+        backup)        secao_nome="MENU_BACKUP" ;;
         transferencia) secao_nome="MENU_TRANSFERENCIA" ;;
-        setups)       secao_nome="MENU_SETUPS" ;;
-        lembretes)    secao_nome="MENU_LEMBRETES" ;;
-        aviso)        secao_nome="MENU_AVISO" ;;
-        logs)         secao_nome="MENU_LOGS" ;;
-        *)            secao_nome="MENU_PRINCIPAL" ;;
+        configs)       secao_nome="MENU_CONFIGS" ;;
+        setups)        secao_nome="MENU_SETUPS" ;;
+        lembretes)     secao_nome="MENU_LEMBRETES" ;;
+        aviso)         secao_nome="MENU_AVISO" ;;
+        logs)          secao_nome="MENU_LOGS" ;;
+        *)             secao_nome="MENU_PRINCIPAL" ;;
     esac
 
     _exibir_secao_manual "$contexto" "$secao_nome"

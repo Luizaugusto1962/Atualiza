@@ -5,18 +5,18 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/04/2026-00
+# Versao: 05/05/2026-00
 #
 
 # Variaveis globais esperadas
-sistema="${sistema:-}"                 # Tipo de sistema (iscobol/mf)
-cmd_zip="${cmd_zip:-}"                 # Comando de compactacao (zip)
-cmd_unzip="${cmd_unzip:-}"             # Comando de descompactacao (unzip)
-cmd_find="${cmd_find:-}"               # Comando de busca (find)
-acessossh="${acessossh:-}"             # Acesso via SSH (s/n)
-Offline="${Offline:-}"                 # Modo offline (s/n)
-down_dir="${down_dir:-}"               # Diretorio de download
-cfg_dir="${cfg_dir:-}"                 # Diretorio de configuracao
+CFG_SISTEMA="${CFG_SISTEMA:-}"                 # Tipo de sistema (iscobol/mf)
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                 # Comando de compactacao (zip)
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"             # Comando de descompactacao (unzip)
+DEFAULT_FIND="${DEFAULT_FIND:-}"               # Comando de busca (find)
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"           # Acesso via SSH (s/n)
+CFG_OFFLINE="${CFG_OFFLINE:-}"                 # Modo offline (s/n)
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"   # Diretorio de download
+CFG_DIR="${CFG_DIR:-}"                         # Diretorio de configuracao
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
@@ -47,7 +47,7 @@ _limpar_interrupcao() {
         
     # Verificar se backup parcial existe e sugerir rollback
     shopt -s nullglob
-    local backups_parciais=("${BIBLIOTECA}"/backup_biblioteca_antes_da_versao-*.zip)
+    local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backup_biblioteca_antes_da_versao-*.zip)
     shopt -u nullglob
     if (( ${#backups_parciais[@]} > 0 )); then
         _mensagec "${YELLOW}" "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
@@ -73,8 +73,8 @@ _atualizar_transpc() {
         return 0
     fi
 
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then
-        if [[ "${Offline}" == "s" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
             _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF ativo"
             _linha
@@ -100,15 +100,15 @@ _atualizar_transpc() {
 _atualizar_biblioteca_offline() {
     _limpa_tela
        _linha
-    _mensagec "${YELLOW}" "Diretorio de download: ${WHITE}${down_dir}"
+    _mensagec "${YELLOW}" "Diretorio de download: ${WHITE}${DEFAULT_RECEBE_DIR}"
      _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then
         return 0
     fi
 
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then
-        if [[ "${Offline}" == "s" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _processar_biblioteca_offline
         else
             _salvar_atualizacao_biblioteca
@@ -133,7 +133,7 @@ _reverter_biblioteca() {
         return 0
     fi
 
-    local arquivo_backup="${BIBLIOTECA}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
+    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
 
     if [[ ! -r "${arquivo_backup}" ]]; then
         _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${arquivo_backup}"
@@ -154,7 +154,7 @@ _reverter_biblioteca() {
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
     _configurar_acessos
-    cd "$down_dir" || return 1
+    cd "$DEFAULT_RECEBE_DIR" || return 1
 
     _definir_variaveis_biblioteca
   
@@ -162,7 +162,7 @@ _processar_biblioteca_offline() {
     read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
 
     for arquivo in "${arquivos_update[@]}"; do
-        if [[ -f "${down_dir}/${arquivo}" ]]; then
+        if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
             _mensagec "${GREEN}" "Arquivo encontrado: ${arquivo}"
             _linha
         else
@@ -175,7 +175,7 @@ _processar_biblioteca_offline() {
 
 # Salva atualizacao da biblioteca
 _salvar_atualizacao_biblioteca() {
-    cd "${down_dir}" || return 1
+    cd "${DEFAULT_RECEBE_DIR}" || return 1
 
     _limpa_tela
     _definir_variaveis_biblioteca
@@ -198,13 +198,16 @@ _salvar_atualizacao_biblioteca() {
 
 # Processa a atualizacao da biblioteca
 _processar_atualizacao_biblioteca() {
+    # Registrar trap local apenas durante o processamento
+    trap '_limpar_interrupcao INT' INT
+    trap '_limpar_interrupcao TERM' TERM
     local arquivo_backup="backup_biblioteca_antes_da_versao-${VERSAO}.zip"
-    local caminho_backup="${BIBLIOTECA}/${arquivo_backup}"
+    local caminho_backup="${DEFAULT_BIBLIOTECA_DIR}/${arquivo_backup}"
 
     # Inicializar contadores para progresso geral (opcional, para log final)
     local contador=0
     local total_etapas=2 # Para sistemas nao-iscobol
-    if [[ "$sistema" = "iscobol" ]]; then
+    if [[ "$CFG_SISTEMA" = "iscobol" ]]; then
         total_etapas=3 # Para iscobol inclui XML
     fi
 
@@ -217,7 +220,7 @@ _processar_atualizacao_biblioteca() {
     # Compactacao em E_EXEC
     cd "$E_EXEC" || return 1
     {
-        "$cmd_find" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "$cmd_zip" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
     } &
     local pid_zip_exec=$!
     pids+=("$pid_zip_exec")  # Registrar PID para trap
@@ -235,7 +238,7 @@ _processar_atualizacao_biblioteca() {
     # Compactacao em T_TELAS
     cd "$T_TELAS" || return 1
     {
-        "$cmd_find" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec "$cmd_zip" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
     } &
     local pid_zip_telas=$!
     pids+=("$pid_zip_telas")  # Registrar PID
@@ -250,10 +253,10 @@ _processar_atualizacao_biblioteca() {
     fi
 
     # Compactacao em X_XML (apenas para IsCOBOL)
-    if [[ "$sistema" == "iscobol" ]]; then
+    if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
         cd "$X_XML" || return 1
         {
-            "$cmd_find" "$X_XML"/ -type f \( -iname "*.xml" \) -exec "$cmd_zip" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+            "$DEFAULT_FIND" "$X_XML"/ -type f \( -iname "*.xml" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
         } &
         local pid_zip_xml=$!
         pids+=("$pid_zip_xml")  # Registrar PID
@@ -296,7 +299,7 @@ _processar_atualizacao_biblioteca() {
 # Executa a atualizacao da biblioteca
 _executar_atualizacao_biblioteca() {
     # Ir para o diretório envia onde estão os arquivos
-    cd "${down_dir:-}" || return 1
+    cd "${DEFAULT_RECEBE_DIR:-}" || return 1
     
     _definir_variaveis_biblioteca
      
@@ -310,10 +313,10 @@ _executar_atualizacao_biblioteca() {
     local contador=1
 
 # Definir diretorio de configuracao usando variaveis locais
-    local raiz_local
-    raiz_local="${SCRIPT_DIR%/*}"
+    local RAIZ_LOCAL
+    RAIZ_LOCAL="${SCRIPT_DIR%/*}"
     local principal_local
-    principal_local="${raiz_local%/*}"
+    principal_local="${RAIZ_LOCAL%/*}"
 
     # Processar cada arquivo de atualizacao
     for arquivo in "${arquivos_update[@]}"; do
@@ -325,7 +328,7 @@ _executar_atualizacao_biblioteca() {
 
             # Descompactar arquivo em background
             {
-            "${cmd_unzip}" -o "${arquivo}" -d "${principal_local}" >>"${LOG_ATU}" 2>&1
+            "${DEFAULT_UNZIP}" -o "${arquivo}" -d "${principal_local}" >>"${LOG_ATU}" 2>&1
             } &
             local pid_unzip=$!
             pids+=("$pid_unzip")  # Registrar PID para trap
@@ -350,7 +353,7 @@ _executar_atualizacao_biblioteca() {
     _linha
     
     # Ir para o diretório envia para renomear os arquivos
-    cd "${down_dir:-}" || return 1
+    cd "${DEFAULT_RECEBE_DIR:-}" || return 1
     
     # Mover arquivos .zip para .bkp
     for arquivo_zip in *_"${VERSAO}".zip; do
@@ -362,7 +365,7 @@ _executar_atualizacao_biblioteca() {
     # Mover backups para diretorio
     local arquivos=(*_"${VERSAO}".bkp)
     if (( ${#arquivos[@]} )); then
-        mv -- "${arquivos[@]}" "${OLDS}" || {
+        mv -- "${arquivos[@]}" "${DEFAULT_OLDS_DIR}" || {
         _mensagec "${YELLOW}" "Erro ao mover arquivos de backup."
         _read_sleep 2
         return 1
@@ -379,12 +382,12 @@ _executar_atualizacao_biblioteca() {
     _linha
 
     # Salvar versao anterior (substituir se existir, adicionar se nao existir)
-    if grep -q "^VERSAOANT=" "${cfg_dir}/.versao" 2>/dev/null; then
+    if grep -q "^VERSAOANT=" "${CFG_DIR}/.versao" 2>/dev/null; then
         # Substituir linha existente
-        sed -i "s/^VERSAOANT=.*/VERSAOANT=${VERSAO}/" "${cfg_dir}/.versao"
+        sed -i "s/^VERSAOANT=.*/VERSAOANT=${VERSAO}/" "${CFG_DIR}/.versao"
     else
         # Adicionar nova linha
-        if ! printf "VERSAOANT=%s\n" "${VERSAO}" >> "${cfg_dir}/.versao"; then
+        if ! printf "VERSAOANT=%s\n" "${VERSAO}" >> "${CFG_DIR}/.versao"; then
             _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
             _press
             return 1
@@ -393,21 +396,24 @@ _executar_atualizacao_biblioteca() {
 
     pids=()  # Limpar PIDs apos sucesso
     _press
+
+    # Restaurar trap original ao encerrar o processamento
+    trap '_encerrar_programa 130' INT TERM
 }
 
 #---------- FUNCOES DE REVERSAO ----------#
 # Reverte biblioteca completa
 _reverter_biblioteca_completa() {
     local arquivo_backup="$1"
-    local raiz="/"
+    local RAIZ="/"
 
-    if ! cd "${BIBLIOTECA}"; then
-        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${BIBLIOTECA}"
+    if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
         _press
         return 1
     fi
 
-    if ! "${cmd_unzip}" -o "${arquivo_backup}" -d "${raiz}" >>"${LOG_ATU}"; then
+    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${RAIZ}" >>"${LOG_ATU}"; then
         _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
         _press
         return 1
@@ -425,8 +431,8 @@ _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
 
-    if ! cd "${BIBLIOTECA}"; then
-        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${BIBLIOTECA}"
+    if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
+        _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
         _read_sleep 2
         return 1
     fi
@@ -444,7 +450,7 @@ _reverter_programa_especifico_biblioteca() {
     _linha
 
     local padrao="*/"
-    if ! "${cmd_unzip}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "/" >>"${LOG_ATU}"; then
+    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "/" >>"${LOG_ATU}"; then
         _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
         _press
         return 1
@@ -485,7 +491,7 @@ _definir_variaveis_biblioteca() {
 }
 
 _obter_arquivos_atualizacao() {
-    if [[ "${sistema}" == "iscobol" ]]; then
+    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
         echo "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}"
     else
         echo "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" 

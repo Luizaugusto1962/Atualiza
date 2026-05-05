@@ -10,16 +10,25 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/04/2026-02
+# Versao: 05/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"
 
+
+# =============================================================================
+# CARREGAR CONSTANTES DO SISTEMA
+# =============================================================================
+# Carregar constantes se disponivel
+if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
+    "." "${LIB_DIR}/constantes.sh"
+fi
+
 # Variáveis globais
 declare -l sistema base base2 base3 dbmaker enviabackup
 declare -u empresa
-ip_do_server="${ip_do_server:-179.94.20.40}"
+
 # Limpar tela
 _limpa_tela() {
     clear
@@ -66,13 +75,20 @@ _initial_setup() {
     _setup_banco_de_dados
     _setup_diretorios
     _setup_acesso_remoto
+    _setup_offline
     _setup_backup
     _setup_empresa
 
-    # Criar atalho global
-    echo "cd ${SCRIPT_DIR:-SCRIPT_DIR}" > /usr/local/bin/atualiza
-    echo "./atualiza.sh" >> /usr/local/bin/atualiza
-    chmod +x /usr/local/bin/atualiza
+    # Criar atalho global (requer permissao de root)
+    if [[ $EUID -eq 0 ]]; then
+        echo "cd ${SCRIPT_DIR:-SCRIPT_DIR}" > /usr/local/bin/atualiza
+        echo "./atualiza.sh" >> /usr/local/bin/atualiza
+        chmod +x /usr/local/bin/atualiza
+        echo "Atalho /usr/local/bin/atualiza criado com sucesso."
+    else
+        echo "AVISO: Sem permissao de root. Atalho global nao criado."
+        echo "Execute 'sudo ${SCRIPT_DIR}/atualiza.sh --setup' para criar o atalho."
+    fi
 
     echo "Pronto!"
 }
@@ -82,13 +98,13 @@ _edit_setup() {
     local tracejada="#-------------------------------------------------------------------#"
 
     # Mover para o diretorio de configuracao
-    cd "${cfg_dir}" || {
+    cd "${CFG_DIR}" || {
         echo "Erro: Diretorio 'cfg' nao encontrado."
         exit 1
     }
 
     # Verificar se os arquivos de configuracao existem
-    if [[ ! -f "${cfg_dir}/.config" ]]; then
+    if [[ ! -f "${CFG_DIR}/.config" ]]; then
         echo "Arquivos de configuracao nao encontrados. Execute o setup inicial primeiro."
         exit 1
     fi
@@ -108,18 +124,19 @@ _edit_setup() {
     _editar_variavel verclass
     _editar_variavel dbmaker
     _editar_variavel acessossh
-    _editar_variavel DEFAULT_IP_SERVER
     _editar_variavel Offline
-    _editar_variavel enviabackup
+    if [[ "${Offline}" == "n" ]]; then
+        _editar_variavel enviabackup
+    fi
     _editar_variavel empresa
     _editar_variavel base
     _editar_variavel base2
     _editar_variavel base3
 
     # Recriar arquivos de configuracao
-    _recreate_config_files
+     _recreate_config_files
 
-    echo "Arquivos .config atualizado com sucesso!"
+    echo "Arquivo .config atualizado com sucesso!"
 
     # Configurar SSH se habilitado
     if [[ "${acessossh}" == "s" ]]; then
@@ -223,14 +240,14 @@ _setup_banco_de_dados() {
 _setup_diretorios() {
     echo ${tracejada}
     echo "###     ( Nome de pasta no servidor )              ###"
-    read -rp "Nome da pasta da base de dados (Ex: /dados_jisam) [/dados_jisam]: " base
+    read -rp "Nome da pasta da base de dados principal (Ex: /dados_jisam): " base
     base="${base:-/dados_jisam}"
     echo "base=${base}" >> .config
     echo ${tracejada}
-    read -rp "Nome da pasta da segunda base  (Opcional): " base2
+    read -rp "Nome da pasta da segunda base de dados (Opcional): " base2
     [[ -n "$base2" ]] && echo "base2=${base2}" >> .config || echo "#base2=" >> .config
     echo ${tracejada}
-    read -rp "Nome da pasta da terceira base (Opcional): " base3
+    read -rp "Nome da pasta da terceira base de dados (Opcional): " base3
     [[ -n "$base3" ]] && echo "base3=${base3}" >> .config || echo "#base3=" >> .config
     echo ${tracejada}
 }
@@ -251,13 +268,8 @@ _setup_acesso_remoto() {
         echo "acessossh=n" >> .config
     fi
     echo ${tracejada}
-    echo "###      ( IP do servidor da SAV )         ###"
-    read -rp "Informe o IP do servidor [${ip_do_server}]: " DEFAULT_IP_SERVER
-    DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${ip_do_server}}"
-    echo "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER}" >> .config
-    echo "IP do servidor: ${DEFAULT_IP_SERVER}"
-    echo ${tracejada}
-
+}    
+_setup_offline() {    
     echo "###      ( Tipo de acesso        )         ###"
     while true; do
         read -rp "Servidor OFF [S/N]: " -n1 opt 
@@ -276,24 +288,33 @@ _setup_acesso_remoto() {
         echo "Offline=n" >> .config
     fi
 }
-
 _setup_backup() {
-    if [[ "${Offline}" == "s" ]]; then
-        echo ${tracejada}
+    echo "${tracejada}"
+    if [[ "${Offline,,}" == "s" ]]; then
         echo "###     ( Modo Offline Ativado )                ###"
         echo "###     Backup local sera criado na pasta do script ###"
         echo "###     O backup deve ser enviado manualmente para a SAV ###"
-        echo ${tracejada}
-        echo "enviabackup=${acessoff}" >> .config
-        return
+        echo "${tracejada}"
+        
+        # Define automaticamente o caminho do backup offline na memória e no arquivo
+        enviabackup=""
+        echo "enviabackup=" >> .config
+        echo "Diretorio de backup definido automaticamente: ${CFG_OFFLINE}"
+        
     else
-        echo ${tracejada}
         echo "###     ( Nome de pasta no servidor da SAV )                ###"
-        echo "Nome de pasta no servidor da SAV, informar somento o nome do cliente"
-        read -rp "(Ex: cliente/\"NOME_da_pasta_do_CLIENTE\"): " enviabackup
-        echo "enviabackup=/cliente/${enviabackup}_jisam" >> .config
+        echo "Informe o nome da pasta no servidor da SAV (somente o nome inicial do cliente)"
+        echo "Exemplo: para o cliente 'Fulano', digite somente 'fulano'"
+        echo "${tracejada}"
+        
+        read -rp "Nome do diretorio sem a /: " enviabackup
+        
+        # Monta o caminho completo esperado e salva
+        enviabackup="/cliente/${enviabackup}_jisam"
+        echo "enviabackup=${enviabackup}" >> .config
     fi
 }
+
 _setup_empresa() {
     echo ${tracejada}
     echo "###     ( NOME DA empresa )                   ###"
@@ -344,7 +365,8 @@ _editar_variavel() {
                 while true; do
                     read -rp "Sistema em modo Offline? (s/n): " opt            
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
-                        [[ "${opt,,}" == "s" ]] && declare -g "Offline"="s"
+                        [[ "${opt,,}" == "s" ]] && declare -g "Offline"="s" 
+                        echo "enviabackup=" >> .config
                         [[ "${opt,,}" == "n" ]] && declare -g "Offline"="n"
                         break
                     else
@@ -372,7 +394,6 @@ _recreate_config_files() {
         [[ -n "$verclass" ]] && echo "verclass=${verclass}"
         echo "dbmaker=${dbmaker}"
         echo "acessossh=${acessossh}"
-        echo "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER}"
         echo "Offline=${Offline}"
         echo "enviabackup=${enviabackup}"
         echo "empresa=${empresa}"
@@ -389,16 +410,16 @@ _recreate_config_files() {
 # _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
 #===================================================================
 _configure_ssh_access() {
-    local SERVER_IP="${ip_do_server}"
-    local SERVER_PORTA="${SERVER_PORTA:-${DEFAULT_SSH_PORT}}"
-    local SERVER_USER="${USUARIO:-atualiza}"
+    local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
+    local DEFAULT_PORTA="${DEFAULT_PORTA:-${DEFAULT_SSH_PORT}}"       # Porta padrao
+    local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
     local SSH_DIR="${HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
     local CONTROL_PATH_BASE="${SSH_DIR}/control"
 
     # Validação das variáveis obrigatórias
-    if [[ -z "${SERVER_IP}" ]]; then
-        echo "Erro: Variavel 'ipserver' nao foi definida."
+    if [[ -z "${DEFAULT_IP_SERVER}" ]]; then
+        echo "Erro: Variavel 'DEFAULT_IP_SERVER' nao foi definida."
         return 1
     fi
 
@@ -414,9 +435,9 @@ _configure_ssh_access() {
 # Configuração SAV - Gerada automaticamente
 # ================================================
 Host sav_servidor
-    HostName ${SERVER_IP}
-    Port ${SERVER_PORTA}
-    User ${SERVER_USER}
+    HostName ${DEFAULT_IP_SERVER}
+    Port ${DEFAULT_PORTA}
+    User ${DEFAULT_SSH_USER}
 #   StrictHostKeyChecking accept-new
     ControlMaster auto
     ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
@@ -433,7 +454,7 @@ EOF
 
     # ====================== TESTE DE CONEXÃO ======================
     echo
-    echo "Testando conexao com o servidor SAV (${SERVER_IP})..."
+    echo "Testando conexao com o servidor SAV (${DEFAULT_IP_SERVER})..."
 
     # Teste silencioso primeiro
     if ssh -o BatchMode=yes sav_servidor exit 2>/dev/null; then
@@ -452,9 +473,8 @@ EOF
     else
         echo "Erro: nao foi possivel conectar ao servidor."
         echo "   Verifique:"
-        echo "     • IP correto (${SERVER_IP})"
-        echo "     • Porta ${SERVER_PORTA} liberada"
-        echo "     • Usuario '${SERVER_USER}' existe no servidor remoto"
+        echo "     • Porta ${DEFAULT_PORTA} liberada"
+        echo "     • Usuario '${DEFAULT_SSH_USER}' existe no servidor remoto"
         echo "     • Firewall permite a conexao"
         return 1
     fi
@@ -478,24 +498,24 @@ main() {
         unset _self_dir
     fi
 # Definição de variáveis globais
-raiz="${SCRIPT_DIR%/*}"
-acessoff="${acessoff:-${raiz}/portalsav/Atualiza}"
+RAIZ="${SCRIPT_DIR%/*}"
+CFG_OFFLINE="${CFG_OFFLINE:-${RAIZ}/portalsav/Atualiza}"
 
 # Diretorios dos modulos e configuracoes
-lib_dir="${lib_dir:-${SCRIPT_DIR}/libs}"
-cfg_dir="${cfg_dir:-${SCRIPT_DIR}/cfg}"
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"
 
 cd "${SCRIPT_DIR}" || exit 1
 
 # Verifica se o diretorio libs existe
-    if [[ ! -d "${lib_dir}" ]]; then
-        echo "ERRO: Diretorio ${lib_dir} nao encontrado."
+    if [[ ! -d "${LIB_DIR}" ]]; then
+        echo "ERRO: Diretorio ${LIB_DIR} nao encontrado."
         exit 1
     fi
 
 # Verifica se o diretorio cfg existe
-    if [[ ! -d "${cfg_dir}" ]]; then
-        echo "ERRO: Diretorio ${cfg_dir} nao encontrado."
+    if [[ ! -d "${CFG_DIR}" ]]; then
+        echo "ERRO: Diretorio ${CFG_DIR} nao encontrado."
         exit 1
     fi
 
@@ -505,7 +525,7 @@ cd "${SCRIPT_DIR}" || exit 1
     else
         # Verificar se os arquivos de configuracao ja existem
 
-        if [[ -f "${cfg_dir}/.config" ]]; then  
+        if [[ -f "${CFG_DIR}/.config" ]]; then  
             _limpa_tela
             echo "Arquivos de configuracao ja existem."
             while true; do

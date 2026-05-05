@@ -5,22 +5,22 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/04/2026-03
+# Versao: 05/05/2026-03
 #
 
 # Variaveis globais esperadas
-cfg_dir="${cfg_dir:-}"      # Caminho do diretorio de configuracao do programa.
-lib_dir="${lib_dir:-}"      # Diretorio dos modulos de biblioteca.
-cmd_unzip="${cmd_unzip:-}"  # Comando de descompactacao (unzip).
-sistema="${sistema:-}"      # Variavel do sistema em uso (ex: iscobol, linux).
-Offline="${Offline:-}"      # Variavel do status de conexao (s/n).
-down_dir="${down_dir:-}"    # Variavel do diretorio de download para atualizacao offline.
+CFG_DIR="${CFG_DIR:-}"      # Caminho do diretorio de configuracao do programa.
+LIB_DIR="${LIB_DIR:-}"      # Diretorio dos modulos de biblioteca.
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip).
+CFG_SISTEMA="${CFG_SISTEMA:-}"      # Variavel do sistema em uso (ex: iscobol, linux).
+CFG_OFFLINE="${CFG_OFFLINE:-}"      # Variavel do status de conexao (s/n).
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
 
 # Executa atualizacao do script
 _executar_update() {
     _configurar_acessos
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then
-        if [[ "${Offline}" == "n" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_OFFLINE}" == "n" ]]; then
             _atualizar_online
         else
             _atualizar_offline
@@ -36,19 +36,19 @@ _atualizando() {
     _configurar_diretorios
 
     # Criar backup do arquivo atual
-    if [[ ! -d "${BACKUP}" ]]; then
-        mkdir -p "${BACKUP}" || {
+    if [[ ! -d "${DEFAULT_BACKUP_DIR}" ]]; then
+        mkdir -p "${DEFAULT_BACKUP_DIR}" || {
             _mensagec "${RED}" "Erro: Nao foi possivel criar diretorio de backup"
             _read_sleep 2
             return 1
         }
-        chmod "${PERM_DIR_SECURE}" "${BACKUP}"
+        chmod "${PERM_DIR_SECURE}" "${DEFAULT_BACKUP_DIR}"
     fi
 
     # Fazer backup dos arquivos atuais
     local backup_sucesso=0
     local backup_erro=0
-    cd "${lib_dir}" || {
+    cd "${LIB_DIR}" || {
         _mensagec "${RED}" "Erro: Diretorio de atualizacao nao encontrado"
         _read_sleep 2
         return 1
@@ -64,7 +64,7 @@ _atualizando() {
          fi
 
         # Copiar o arquivo para o diretorio de backup
-        if cp -f "$arquivo" "$BACKUP/$arquivo.bkp"; then
+        if cp -f "$arquivo" "$DEFAULT_BACKUP_DIR/$arquivo.bkp"; then
             _mensagec "${GREEN}" "Backup do arquivo $arquivo feito com sucesso"
             ((backup_sucesso++)) || true
         else
@@ -91,24 +91,24 @@ _atualizando() {
         data_zip=$(date +"%d%m")
         local zip_nome="${data_zip}_backup.zip"
 
-        if cd "${BACKUP}" && zip -jm "${zip_nome}" ./*.sh.bkp >>"$LOG_ATU" 2>&1; then
-            _mensagec "${GREEN}" "Backup compactado com sucesso: ${BACKUP}/${zip_nome}"
+        if cd "${DEFAULT_BACKUP_DIR}" && zip -jm "${zip_nome}" ./*.sh.bkp >>"$LOG_ATU" 2>&1; then
+            _mensagec "${GREEN}" "Backup compactado com sucesso: ${DEFAULT_BACKUP_DIR}/${zip_nome}"
         else
             _mensagec "${YELLOW}" "Aviso: Nao foi possivel compactar os arquivos de backup"
         fi
     fi
 
     # Acessar diretorio de trabalho
-    cd "$RECEBE" || {
-        _mensagec "${RED}" "Erro: Diretorio $RECEBE nao acessivel"
+    cd "$DEFAULT_RECEBE_DIR" || {
+        _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao acessivel"
         _read_sleep 2
         return 1
     }
 
     # Descompactar
-    if ! "${cmd_unzip}" -o -j "$zipfile" >>"$LOG_ATU" 2>&1; then
+    if ! "${DEFAULT_UNZIP}" -o -j "$zipfile" >>"$LOG_ATU" 2>&1; then
         _mensagec "${RED}" "Erro ao descompactar atualizacao"
-        _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $ENVIA"
+        _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $DEFAULT_ENVIA_DIR"
         _read_sleep 2 
         return 1
     fi
@@ -117,7 +117,7 @@ _atualizando() {
     local arquivos_erro=0
 
     #---------- INSTALAR ARQUIVOS DE CONFIGURAÇÃO ----------#
-    # Processa arquivos de parametros para o destino ${cfg_dir}
+    # Processa arquivos de parametros para o destino ${CFG_DIR}
     local -a cfg_files=("manual.txt" "avisos" "indexar" "limpetmp" ".senhas")
     
     for cfg_arquivo in "${cfg_files[@]}"; do
@@ -128,8 +128,8 @@ _atualizando() {
         # Definir permissões executáveis
         chmod +x "$cfg_arquivo" 2>/dev/null || true
 
-        # Definir destino (cfg_dir para todos os arquivos de config)
-        local cfg_target="${cfg_dir}"
+        # Definir destino (CFG_DIR para todos os arquivos de config)
+        local cfg_target="${CFG_DIR}"
         
         # Criar destino se não existir
         if ! mkdir -p "$cfg_target" 2>/dev/null; then
@@ -170,7 +170,7 @@ _atualizando() {
         if [[ "$arquivo" == "atualiza.sh" ]]; then
             sh_target="${SCRIPT_DIR}"
         else
-            sh_target="${lib_dir}"
+            sh_target="${LIB_DIR}"
         fi
 
         # Criar destino se não existir
@@ -210,59 +210,58 @@ _atualizando() {
         _mensagec "${GREEN}" "SUCESSO: $arquivos_instalados arquivo(s) instalado(s)"
     fi
 
-# Limpar diretorio de trabalho
-# Verificar se o diretório RECEBE existe
-if [[ ! -d "${RECEBE}" ]]; then
-    _mensagec "${RED}" "ERRO: Diretorio '${RECEBE}' nao encontrado."
-    _read_sleep 2
-    return 1
-fi
-
-# Mudar para o diretório RECEBE com verificação
-if ! cd "${RECEBE}"; then
-   _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${RECEBE}'."
-    _read_sleep 2
-    return 1
-fi
-
-# Confirmar que estamos no diretório correto antes de deletar
-if [[ "$PWD" != "${RECEBE}" ]]; then
-    _mensagec "${RED}" "ERRO: Falha na verificacao de seguranca do diretorio."
-    _read_sleep 2
-    return 1
-fi
-
-# Verificar se há arquivos para remover
-if [[ -n "$(ls -A 2>/dev/null)" ]]; then
-    _mensagec "${YELLOW}" "Limpando conteudo do diretorio: ${RECEBE}"
-    
-    # Remover apenas o conteúdo, não o próprio diretório
-    if rm -rf ./* ./.[!.]* 2>/dev/null; then
-        _mensagec "${GREEN}" "Diretorio limpo com sucesso."
-    else
-        _mensagec "${YELLOW}" "AVISO: Alguns arquivos podem nao ter sido removidos."
+    # Limpar diretorio de trabalho
+    # Verificar se o diretório RECEBE existe
+    if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: Diretorio '${DEFAULT_RECEBE_DIR}' nao encontrado."
+        _read_sleep 2
+        return 1
     fi
-else
-    _mensagec "${GREEN}" "Diretorio ja esta vazio."
-fi
+    
+    # Mudar para o diretório RECEBE com verificação
+    if ! cd "${DEFAULT_RECEBE_DIR}"; then
+       _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${DEFAULT_RECEBE_DIR}'."
+        _read_sleep 2
+        return 1
+    fi
+    
+    # Confirmar que estamos no diretório correto antes de deletar
+    if [[ "$PWD" != "${DEFAULT_RECEBE_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: Falha na verificacao de seguranca do diretorio."
+        _read_sleep 2
+        return 1
+    fi
+    
+    # Verificar se há arquivos para remover
+    if [[ -n "$(ls -A 2>/dev/null)" ]]; then
+        _mensagec "${YELLOW}" "Limpando conteudo do diretorio: ${DEFAULT_RECEBE_DIR}"
+        
+        # Remover apenas o conteúdo, não o próprio diretório
+        if rm -rf ./* ./.[!.]* 2>/dev/null; then
+            _mensagec "${GREEN}" "Diretorio limpo com sucesso."
+        else
+            _mensagec "${YELLOW}" "AVISO: Alguns arquivos podem nao ter sido removidos."
+        fi
+    else
+        _mensagec "${GREEN}" "Diretorio ja esta vazio."
+    fi
     _linha
     _mensagec "${GREEN}" "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
-
     return 0
 }
 
 _atualizar_online() {
 # URL do arquivo zip de atualizacao no GitHub
     local link="https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip"
-    local temp_dir="${RECEBE}/temp_update/"
+    local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     local zipfile="atualiza.zip"
     
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
 
-if ! cd "${RECEBE}"; then
-   _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${RECEBE}'."
+if ! cd "${DEFAULT_RECEBE_DIR}"; then
+   _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${DEFAULT_RECEBE_DIR}'."
     _read_sleep 2
     return 1
 fi
@@ -275,7 +274,7 @@ fi
     }
 
     # Baixar arquivo
-    if ! wget -q -c "$link" -O "$zipfile"; then
+    if ! wget -q -c --timeout=30 "$link" -O "$zipfile"; then
         _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao"
         _mensagec "${YELLOW}" "Verifique sua conexao com a internet e tente novamente"
         _read_sleep 2
@@ -286,13 +285,13 @@ fi
 
 # Atualizacao offline via arquivo local
 _atualizar_offline() {
-    local temp_dir="${RECEBE}/temp_update/"
+    local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     local zipfile="atualiza.zip"
 
     # Verificar se o arquivo zip existe
-    if [[ ! -f "${down_dir}/${zipfile}" ]]; then
-        _mensagec "${RED}" "Erro: $zipfile nao encontrado em $down_dir"
-        _mensagec "${YELLOW}" "Certifique-se de que o arquivo $zipfile esteja presente no diretorio $down_dir"
+    if [[ ! -f "${DEFAULT_RECEBE_DIR}/${zipfile}" ]]; then
+        _mensagec "${RED}" "Erro: $zipfile nao encontrado em $DEFAULT_RECEBE_DIR"
+        _mensagec "${YELLOW}" "Certifique-se de que o arquivo $zipfile esteja presente no diretorio $DEFAULT_RECEBE_DIR"
         _read_sleep 2
         return 1
     fi
@@ -304,8 +303,8 @@ _atualizar_offline() {
         return 1
     }
 
-    mv "${down_dir}/${zipfile}" "${RECEBE}" || {
-        _mensagec "${RED}" "Erro: Nao foi possivel mover $zipfile para $RECEBE"
+    mv "${DEFAULT_RECEBE_DIR}/${zipfile}" "${DEFAULT_RECEBE_DIR}" || {
+        _mensagec "${RED}" "Erro: Nao foi possivel mover $zipfile para $DEFAULT_RECEBE_DIR"
         _read_sleep 2
         return 1
     }

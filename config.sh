@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/04/2026-02
+# Versao: 05/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -17,12 +17,12 @@
 
 # Listas para organizacao das variaveis
 CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
-ATUALIZAC="sistema verclass dbmaker base base2 base3 acessossh Offline enviabackup empresa VERSAOANT"
-CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR raiz base base2 base3 biblioteca bases_backup logs olds cfg libs envia recebe"
-CAMINHOS_BASE2="INI UMADATA acessoff E_EXEC T_TELAS X_XML"
+ATUALIZAC="CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT"
+CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds cfg libs envia recebe"
+CAMINHOS_BASE2="INI UMADATA CFG_OFFLINE E_EXEC T_TELAS X_XML"
 BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
-COMANDOS="cmd_unzip cmd_zip cmd_find cmd_who DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO jut JUTIL ISCCLIENT ISCCLIENTT"
-OUTROS="SERVER_PORTA USUARIO VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_PORTA DEFAULT_USUARIO DEFAULT_IP_SERVER UPDATE JUTIL ISCCLIENT Offline base_trabalho"
+COMANDOS="DEFAULT_ZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO REBUILD JUTIL ISCCLIENT ISCCLIENTT"
+OUTROS="DEFAULT_SSH_PORTA DEFAULT_SSH_USER VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER UPDATE JUTIL ISCCLIENT CFG_OFFLINE base_trabalho"
 LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
 
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
@@ -30,93 +30,77 @@ LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
 # As variaveis com o prefixo "destino" sao usadas para definir o caminho
 # dos diretorios que serao usados pelo programa.
 
-raiz="${raiz:-}"                                 # Caminho do diretorio raiz do programa.
-cfg_dir="${cfg_dir:-}"                           # Caminho do diretorio de configuracao do programa.
-backup="${backup:-}"                             # Caminho do diretorio de backup da base.
+RAIZ="${RAIZ:-}"                                 # Caminho do diretorio RAIZ do programa.
+CFG_DIR="${CFG_DIR:-}"                           # Caminho do diretorio de configuracao do programa.
+REBUILD="${REBUILD:-}"                                   # Caminho do utilitario jutil.
 
 # Criar diretorio de configuracao se especificado e nao existir
-if [[ -n "${cfg_dir}" ]]; then
-    if [[ ! -d "${cfg_dir}" ]]; then
-        mkdir -p "${cfg_dir}" || {
-            printf '%s\n' "ERRO: Nao foi possivel criar o diretorio de configuracao '${cfg_dir}'." >&2
+if [[ -n "${CFG_DIR}" ]]; then
+    if [[ ! -d "${CFG_DIR}" ]]; then
+        mkdir -p "${CFG_DIR}" || {
+            printf '%s\n' "ERRO: Nao foi possivel criar o diretorio de configuracao '${CFG_DIR}'." >&2
             return 1
         }
     fi
     # PERMISSAO CORRIGIDA: usar constante ao inves de hardcoded
-    chmod "${PERM_DIR_SECURE}" "${cfg_dir}" 2>/dev/null || {
-        printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${cfg_dir}'." >&2
+    chmod "${PERM_DIR_SECURE}" "${CFG_DIR}" 2>/dev/null || {
+        printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'." >&2
     }
 fi
 
-lib_dir="${lib_dir:-}"                           # Caminho do diretorio de bibliotecas do programa.
-base="${base:-}"                                 # Caminho do diretorio da base de dados.
-base2="${base2:-}"                               # Caminho do diretorio da segunda base de dados.
-base3="${base3:-}"                               # Caminho do diretorio da terceira base de dados.
-progs="${progs:-}"                               # Caminho do diretorio dos programas.
-envia="${envia:-}"                               # Caminho do diretorio de envio.
-recebe="${recebe:-}"                             # Caminho do diretorio de recebimento.
-bkbase="${bkbase:-}"                             # Caminho do diretorio de backup da base.
-logs="${logs:-}"                                 # Caminho do diretorio dos arquivos de log.
-olds="${olds:-}"                                 # Caminho do diretorio dos arquivos de backup.
-libs="${libs:-}"                                 # Caminho do diretorio das bibliotecas.
-sistema="${sistema:-}"                           # Tipo de sistema que esta sendo usado (iscobol ou isam).
-SAVATU="${SAVATU:-}"                             # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU1="${SAVATU1:-}"                           # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU2="${SAVATU2:-}"                           # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU3="${SAVATU3:-}"                           # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU4="${SAVATU4:-}"                           # Caminho do diretorio da biblioteca do servidor da SAV.
-verclass="${verclass:-}"                         # Ano da versao
-dbmaker="${dbmaker:-}"                           # Variavel que define o tipo de banco de dados usado pelo sistema.
-enviabackup="${enviabackup:-}"                   # Variavel que define o caminho para onde sera enviado o backup.
-VERSAO="${VERSAO:-}"                             # Variavel que define a versao do programa.
-INI="${INI:-}"                                   # Variavel que define o caminho do arquivo de configuracao do sistema.
-Offline="${Offline:-}"                           # Variavel que define se o sistema esta em modo offline.
-down_dir="${down_dir:-}"                         # Variavel que define o caminho do diretorio do servidor off.
-acessoff="${acessoff:-}"                       # Variavel que define o caminho do diretorio do servidor off.
-acessossh="${acessossh:-}"                       # Variavel que define o caminho do diretorio do servidor off.
-VERSAOANT="${VERSAOANT:-}"                       # Variavel que define a versao do programa anterior.
-cmd_unzip="${cmd_unzip:-}"                       # Comando para descompactar arquivos.
-cmd_zip="${cmd_zip:-}"                           # Comando para compactar arquivos.
-cmd_find="${cmd_find:-}"                         # Comando para buscar arquivos.
-cmd_who="${cmd_who:-}"                           # Comando para saber quem esta logado no sistema.
-SERVER_PORTA="${SERVER_PORTA:-}"                 # Variavel que define a porta a ser usada para.
-USUARIO="${USUARIO:-}"                           # Variavel que define o usuario a ser usado.
-destino_biblioteca="${destino_biblioteca:-}"     # Variavel que define o caminho do diretorio da biblioteca do servidor da SAV.
-RED="${RED:-}"                                   # Cor vermelha
-GREEN="${GREEN:-}"                               # Cor verde
-YELLOW="${YELLOW:-}"                             # Cor amarela
-BLUE="${BLUE:-}"                                 # Cor azul
-PURPLE="${PURPLE:-}"                             # Cor roxa
-CYAN="${CYAN:-}"                                 # Cor ciano
-NORM="${NORM:-}"                                 # Cor normal
-COLUMNS="${COLUMNS:-}"                           # Numero de colunas do terminal
-LOG="${LOG:-}"                                   # Variavel que define o caminho do arquivo de log.
-LOG_ATU="${LOG_ATU:-}"                           # Variavel que define o caminho do arquivo de log de atualizacao.
-LOG_LIMPA="${LOG_LIMPA:-}"                       # Variavel que define o caminho do arquivo de log de limpeza.
-LOG_TMP="${LOG_TMP:-}"                           # Variavel que define o caminho do arquivo de log temporario.
-UMADATA="${UMADATA:-}"                           # Variavel que define o caminho do arquivo de dados da UMA.
-ISCCLIENT="${ISCCLIENT:-}"                       # Variavel que define o caminho do cliente ISC.
-base_trabalho="${base_trabalho:-}"               # Variavel que define o caminho do diretorio de trabalho.
-
-# Definir diretorios de trabalho
-OLDS="${OLDS:-}"                                 # Diretorio de arquivos antigos
-BIBLIOTECA="${BIBLIOTECA:-}"                     # Diretorio de biblioteca do servidor da SAV
-PROGS="${PROGS:-}"                               # Diretorio de programas
-LOGS="${LOGS:-}"                                 # Diretorio de logs
-ENVIA="${ENVIA:-}"                               # Diretorio de envio
-RECEBE="${RECEBE:-}"                             # Diretorio de recebimento
-LIBS="${LIBS:-}"                                 # Diretorio de bibliotecas
-BACKUP="${BACKUP:-}"                             # Diretorio de backup
-BASEBACKUP="${BASEBACKUP:-}"                     # Diretorio de backup de base
-
-
-# Configuracoes padrao
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"                     # Comando padrao para descompactar
-DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"                           # Comando padrao para compactar
-DEFAULT_FIND="${DEFAULT_FIND:-find}"                        # Comando padrao para buscar arquivos
-DEFAULT_WHO="${DEFAULT_WHO:-who}"                           # Comando padrao para verificar usuarios
-DEFAULT_PORTA="${DEFAULT_PORTA:-${DEFAULT_SSH_PORT}}"       # Porta padrao
-DEFAULT_USUARIO="${DEFAULT_USUARIO:-${DEFAULT_SSH_USER}}"   # Usuario padrao
+# =============================================================================
+# Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
+# =============================================================================
+LIB_DIR="${LIB_DIR:-}"                                      # Caminho do diretorio de bibliotecas do programa.
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                            # Caminho do diretorio da base de dados.
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                          # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                          # Caminho do diretorio da terceira base de dados.
+DEFAULT_BACKUP_DIR="${DEFAULT_BACKUP_DIR:-}"                # Diretório de backup padrão
+DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                    # Diretório de logs padrão
+DEFAULT_BIBLIOTECA_DIR="${DEFAULT_BIBLIOTECA_DIR:-}"        # Diretório de biblioteca padrão
+DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"        # Diretório de backup de base padrão
+DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-}"                    # Diretório de arquivos antigos padrão
+DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"                  # Diretório de programas padrão
+DEFAULT_ENVIA_DIR="${SCRIPT_DIR}/envia"                     # Diretório de envio padrão
+DEFAULT_RECEBE_DIR="${SCRIPT_DIR}/recebe"                   # Diretório de recebimento padrão
+CFG_SISTEMA="${CFG_SISTEMA:-}"                              # Tipo de sistema que esta sendo usado (iscobol ou isam).
+SAVATU="${SAVATU:-}"                                        # Caminho do diretorio da biblioteca do servidor da SAV.
+SAVATU1="${SAVATU1:-}"                                      # Caminho do diretorio da biblioteca do servidor da SAV.
+SAVATU2="${SAVATU2:-}"                                      # Caminho do diretorio da biblioteca do servidor da SAV.
+SAVATU3="${SAVATU3:-}"                                      # Caminho do diretorio da biblioteca do servidor da SAV.
+SAVATU4="${SAVATU4:-}"                                      # Caminho do diretorio da biblioteca do servidor da SAV.
+CFG_VERCLASS="${CFG_VERCLASS:-}"                            # Tipo de compilacao do Iscobol.
+CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"                      # Variavel que define o tipo de banco de dados usado pelo sistema.
+CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"                      # Variavel que define o caminho para onde sera enviado o backup.
+VERSAO="${VERSAO:-}"                                        # Variavel que define a versao do programa.
+INI="${INI:-}"                                              # Variavel que define o caminho do arquivo de configuracao do sistema.
+CFG_OFFLINE="${CFG_OFFLINE:-}"                              # Variavel que define se o sistema esta em modo offline.
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                # Variavel que define o caminho do diretorio do servidor off.
+CFG_OFFLINE="${CFG_OFFLINE:-}"                              # Variavel que define o caminho do diretorio do servidor off.
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"                        # Variavel que define o caminho do diretorio do servidor off.
+VERSAOANT="${VERSAOANT:-}"                                  # Variavel que define a versao do programa anterior.
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                          # Comando para descompactar arquivos.
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                              # Comando para compactar arquivos.
+DEFAULT_FIND="${DEFAULT_FIND:-}"                            # Comando para buscar arquivos.
+DEFAULT_WHO="${DEFAULT_WHO:-}"                              # Comando para saber quem esta logado no sistema.
+DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-}"                  # Variavel que define a porta a ser usada para SSH
+DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-}"                    # Variavel que define o usuario a ser usado para SSH
+DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"                # Variavel que define o caminho do diretorio da biblioteca do servidor da SAV.
+RED="${RED:-}"                                              # Cor vermelha
+GREEN="${GREEN:-}"                                          # Cor verde
+YELLOW="${YELLOW:-}"                                        # Cor amarela
+BLUE="${BLUE:-}"                                            # Cor azul
+PURPLE="${PURPLE:-}"                                        # Cor roxa
+CYAN="${CYAN:-}"                                            # Cor ciano
+NORM="${NORM:-}"                                            # Cor normal
+COLUMNS="${COLUMNS:-}"                                      # Numero de colunas do terminal
+LOG="${LOG:-}"                                              # Variavel que define o caminho do arquivo de log.
+LOG_ATU="${LOG_ATU:-}"                                      # Variavel que define o caminho do arquivo de log de atualizacao.
+LOG_LIMPA="${LOG_LIMPA:-}"                                  # Variavel que define o caminho do arquivo de log de limpeza.
+LOG_TMP="${LOG_TMP:-}"                                      # Variavel que define o caminho do arquivo de log temporario.
+UMADATA="${UMADATA:-}"                                      # Variavel que define o caminho do arquivo de dados da UMA.
+ISCCLIENT="${ISCCLIENT:-}"                                  # Variavel que define o caminho do cliente ISC.
+base_trabalho="${base_trabalho:-}"                          # Variavel que define o caminho do diretorio de trabalho.
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
@@ -163,28 +147,9 @@ _definir_cores() {
 # Retorna: 0 se todos os comandos existirem, 1 caso contrario
 # -----------------------------------------------------------------------------
 _configurar_comandos() {
-    # Comando para descompactar
-    if [[ -z "${cmd_unzip}" ]]; then
-        cmd_unzip="${DEFAULT_UNZIP}"
-    fi
-
-    # Comando para compactar
-    if [[ -z "${cmd_zip}" ]]; then
-        cmd_zip="${DEFAULT_ZIP}"
-    fi
-
-    # Comando para localizar arquivos
-    if [[ -z "${cmd_find}" ]]; then
-        cmd_find="${DEFAULT_FIND}"
-    fi
-
-    # Comando para verificar usuarios
-    if [[ -z "${cmd_who}" ]]; then
-        cmd_who="${DEFAULT_WHO}"
-    fi
 
     # Validar se os comandos existem
-    local cmds=("$cmd_unzip" "$cmd_zip" "$cmd_find" "$cmd_who")
+    local cmds=("$DEFAULT_ZIP" "$DEFAULT_ZIP" "$DEFAULT_FIND" "$DEFAULT_WHO")
     local cmd=""
     local missing=()
 
@@ -222,36 +187,17 @@ _configurar_diretorios() {
     fi
 
     # Definir diretorio de configuracao
-    raiz="${SCRIPT_DIR%/*}"
+    #RAIZ="${SCRIPT_DIR%/*}"
 
     # Criar diretorio de configuracao se nao existir - usando funcao centralizada
-    _criar_diretorio_seguro "${cfg_dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${cfg_dir}" >&2
+    _criar_diretorio_seguro "${CFG_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${CFG_DIR}" >&2
         return 1
     }
 
-    # Diretorios de destino para diferentes tipos de biblioteca
-    destino_server="${destino_server:-/u/varejo/man/}"                          # Diretorio do servidor de atualizacao
-    destino_biblioteca="${destino_biblioteca:-/u/varejo/trans_pc/}"             # Diretorio de transporte PC
-    export destino_server destino_biblioteca
-
-
-    # Definir diretorios de trabalho
-    OLDS="${OLDS:-${SCRIPT_DIR}/olds}"                         # Diretorio de arquivos antigos
-    BIBLIOTECA="${BIBLIOTECA:-${SCRIPT_DIR}/biblioteca}"       # Diretorio de biblioteca do servidor da SAV
-    PROGS="${PROGS:-${SCRIPT_DIR}/progs}"                      # Diretorio de programas
-    LOGS="${LOGS:-${SCRIPT_DIR}/logs}"                         # Diretorio de logs
-    ENVIA="${ENVIA:-${SCRIPT_DIR}/envia}"                      # Diretorio de envio
-    RECEBE="${RECEBE:-${SCRIPT_DIR}/recebe}"                   # Diretorio de recebimento
-    LIBS="${LIBS:-${SCRIPT_DIR}/libs}"                         # Diretorio de bibliotecas
-    BACKUP="${BACKUP:-${SCRIPT_DIR}/backup}"                   # Diretorio de backup
-    BASEBACKUP="${BASEBACKUP:-${SCRIPT_DIR}/bkbase}"           # Diretorio de backup de base
-
-    # Exportar variaveis de diretorio para uso global
-    export OLDS PROGS LOGS ENVIA RECEBE LIBS BACKUP BIBLIOTECA BASEBACKUP
 
     # Criar diretorios se nao existirem - usando funcao centralizada
-    local dirs=("${BIBLIOTECA}" "${BASEBACKUP}" "${OLDS}" "${PROGS}" "${LOGS}" "${ENVIA}" "${RECEBE}" "${LIBS}" "${BACKUP}")
+    local dirs=("${DEFAULT_BIBLIOTECA_DIR}" "${DEFAULT_BASEBACKUP_DIR}" "${DEFAULT_OLDS_DIR}" "${DEFAULT_PROGS_DIR}" "${DEFAULT_LOGS_DIR}" "${DEFAULT_ENVIA_DIR}" "${DEFAULT_RECEBE_DIR}" "${DEFAULT_BACKUP_DIR}")
     local dir=""
     for dir in "${dirs[@]}"; do
         _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
@@ -265,50 +211,31 @@ _configurar_diretorios() {
 # Configurar variaveis do sistema
 # -----------------------------------------------------------------------------
 _configurar_variaveis_sistema() {
-    acessoff="${acessoff:-${raiz}/portalsav/Atualiza}"                                 # Diretorio do servidor offline
+#    CFG_OFFLINE="${CFG_OFFLINE:-${RAIZ}/portalsav/Atualiza}"                                 # Diretorio do servidor offline
 
-    if [[ "${sistema}" == "iscobol" ]]; then
+    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
 
         # Caminhos dos executaveis e dados
-        E_EXEC="${E_EXEC:-${raiz}/classes}"      # Diretorio de executaveis para Iscobol
-        T_TELAS="${T_TELAS:-${raiz}/tel_isc}"    # Diretorio de telas para Iscobol
-        X_XML="${X_XML:-${raiz}/xml}"            # Diretorio de telas para Iscobol
-        BASE1="${BASE1:-${raiz}${base}}"         # Base de dados principal para Iscobol
-        BASE2="${BASE2:-${raiz}${base2}}"        # Segunda base de dados para Iscobol
-        BASE3="${BASE3:-${raiz}${base3}}"        # Terceira base de dados para Iscobol
-        export E_EXEC T_TELAS X_XML BASE1 BASE2 BASE3 acessoff
+        E_EXEC="${E_EXEC:-${RAIZ}/classes}"      # Diretorio de executaveis para Iscobol
+        T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"    # Diretorio de telas para Iscobol
+        X_XML="${X_XML:-${RAIZ}/xml}"            # Diretorio de xmls para Iscobol
+        BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"         # Base de dados principal
+        BASE2="${BASE2:-${RAIZ}${CFG_BASE_DIR2}}"        # Segunda base de dados
+        BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"        # Terceira base de dados
+        export E_EXEC T_TELAS X_XML BASE1 BASE2 BASE3 CFG_OFFLINE
     else
-        E_EXEC="${E_EXEC:-${raiz}/int}"
-        T_TELAS="${T_TELAS:-${raiz}/tel}"
-        BASE1="${BASE1:-${raiz}${base}}"
-        BASE2="${BASE2:-${raiz}${base2}}"
-        BASE3="${BASE3:-${raiz}${base3}}"
-        export E_EXEC T_TELAS BASE1 BASE2 BASE3 acessoff
-    fi
-    # Configuracao do diretorio e utilitarios do SAVISC.
-    SAVISC="${SAVISC:-${raiz}/savisc/iscobol/bin/}"
-
-    # Utilitarios
-    ISCCLIENT="${ISCCLIENT:-iscclient}"
-
-    # Caminho completo do jutil
-    JUTIL="${JUTIL:-jutil}"
-    jut="${SAVISC}${JUTIL}"
-    export SAVISC ISCCLIENT jut
-
-    # Configurar porta e acesso
-    if [[ -z "${SERVER_PORTA}" ]]; then
-        SERVER_PORTA="${DEFAULT_PORTA}"
-    fi
-
-    if [[ -z "${USUARIO}" ]]; then
-        USUARIO="${DEFAULT_USUARIO}"
+        E_EXEC="${E_EXEC:-${RAIZ}/int}"
+        T_TELAS="${T_TELAS:-${RAIZ}/tel}"
+        BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"
+        BASE2="${BASE2:-${RAIZ}${CFG_BASE_DIR2}}"
+        BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"
+        export E_EXEC T_TELAS BASE1 BASE2 BASE3 CFG_OFFLINE
     fi
 
     # Configurar logs
-    LOG_ATU="${LOG_ATU:-${LOGS}/atualiza.$(date +"%Y-%m-%d").log}"
-    LOG_LIMPA="${LOG_LIMPA:-${LOGS}/limpando.$(date +"%Y-%m-%d").log}"
-    LOG_TMP="${LOG_TMP:-${LOGS}/}"
+    LOG_ATU="${LOG_ATU:-${DEFAULT_LOGS_DIR}/atualiza.$(date +"%Y-%m-%d").log}"
+    LOG_LIMPA="${LOG_LIMPA:-${DEFAULT_LOGS_DIR}/limpando.$(date +"%Y-%m-%d").log}"
+    LOG_TMP="${LOG_TMP:-${DEFAULT_LOGS_DIR}/}"
 
     # Data atual formatada - CORRIGIDO: com aspas
     UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
@@ -317,16 +244,16 @@ _configurar_variaveis_sistema() {
     INI="${INI:-backup-${VERSAO}.zip}"
 
     # Gerar sufixos de arquivos com base no tipo de compilacao.
-    if [[ "${sistema}" = "iscobol" ]]; then
-        verclass_sufixo="${verclass: -2}"
+    if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
+        verclass_sufixo="${CFG_VERCLASS: -2}"
         class="-class${verclass_sufixo}"
         mclass="-mclass${verclass_sufixo}"
 #   Bibliotecas Iscobol
-        local classA="IS${verclass}_classA_"
-        local classB="IS${verclass}_classB_"
-        local classC="IS${verclass}_tel_isc_"
-        local classD="IS${verclass}_xml_"
-        local classX="IS${verclass}_*_"
+        local classA="IS${CFG_VERCLASS}_classA_"
+        local classB="IS${CFG_VERCLASS}_classB_"
+        local classC="IS${CFG_VERCLASS}_tel_isc_"
+        local classD="IS${CFG_VERCLASS}_xml_"
+        local classX="IS${CFG_VERCLASS}_*_"
         SAVATU1="tempSAV_${classA}"
         SAVATU2="tempSAV_${classB}"
         SAVATU3="tempSAV_${classC}"
@@ -352,25 +279,25 @@ _configurar_variaveis_sistema() {
 # Retorna: 0 se valido, 1 se invalido
 # -----------------------------------------------------------------------------
 _validar_config_file() {
-    local config_file="${1}"
+    local CONFIG_FILE="${1}"
     local linha=""
     local num_linha=0
     local erros=0
 
-    if [[ ! -f "$config_file" ]]; then
-        printf "ERRO: Arquivo de configuracao nao encontrado: %s\n" "$config_file" >&2
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        printf "ERRO: Arquivo de configuracao nao encontrado: %s\n" "$CONFIG_FILE" >&2
         return 1
     fi
 
     # Verificar permissoes do arquivo
-    if [[ ! -r "$config_file" ]]; then
-        printf "ERRO: Arquivo de configuracao sem permissao de leitura: %s\n" "$config_file" >&2
+    if [[ ! -r "$CONFIG_FILE" ]]; then
+        printf "ERRO: Arquivo de configuracao sem permissao de leitura: %s\n" "$CONFIG_FILE" >&2
         return 1
     fi
 
     # Verificar se arquivo nao e muito grande (limite: 1MB)
     local tamanho
-    tamanho=$(wc -c < "$config_file" 2>/dev/null || echo 0)
+    tamanho=$(wc -c < "$CONFIG_FILE" 2>/dev/null || echo 0)
     if (( tamanho > 1048576 )); then
         printf "ERRO: Arquivo de configuracao muito grande: %d bytes\n" "$tamanho" >&2
         return 1
@@ -400,7 +327,7 @@ _validar_config_file() {
         if ! [[ "$linha" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
             printf "ERRO: Linha %d tem formato invalido: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
-            continue
+            return 1
         fi
 
         # Verificar se ha comandos potencialmente perigosos
@@ -408,7 +335,7 @@ _validar_config_file() {
         if printf '%s\n' "$linha" | grep -qE '[\$\`\;|\&<>(){}]'; then
             printf "ERRO: Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
-            continue
+            return 1
         fi
 
         # Verificar se ha tentativas de command substitution
@@ -425,7 +352,7 @@ _validar_config_file() {
             continue
         fi
 
-    done < "$config_file"
+    done < "$CONFIG_FILE"
 
     if (( erros > 0 )); then
         printf "ERRO: Arquivo de configuracao contem %d erro(s). Carregamento bloqueado.\n" "$erros" >&2
@@ -440,10 +367,10 @@ _validar_config_file() {
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _carregar_config_empresa() {
-    local config_file="${cfg_dir}/.config"
+    local CONFIG_FILE="${CFG_DIR}/.config"
 
     # Verificar se o arquivo de configuracao existe e tem permissao de leitura
-    if [[ ! -e "${config_file}" ]]; then
+    if [[ ! -e "${CONFIG_FILE}" ]]; then
         printf "ERRO: Arquivo de configuracao nao existe no diretorio.\n" >&2
         printf "ATENCAO: Execute './atualiza.sh --setup' para criar as configuracoes.\n" >&2
         if command -v _read_sleep >/dev/null 2>&1; then
@@ -452,8 +379,8 @@ _carregar_config_empresa() {
         return 1
     fi
 
-    if [[ ! -r "${config_file}" ]]; then
-        printf "ERRO: Arquivo %s sem permissao de leitura.\n" "${config_file}" >&2
+    if [[ ! -r "${CONFIG_FILE}" ]]; then
+        printf "ERRO: Arquivo %s sem permissao de leitura.\n" "${CONFIG_FILE}" >&2
         if command -v _read_sleep >/dev/null 2>&1; then
             _read_sleep 2 2>/dev/null || true
         fi
@@ -461,7 +388,7 @@ _carregar_config_empresa() {
     fi
 
     # Validar conteudo do arquivo antes de carregar - MEDIDA DE SEGURANCA
-    if ! _validar_config_file "${config_file}"; then
+    if ! _validar_config_file "${CONFIG_FILE}"; then
         printf "ERRO: Arquivo de configuracao contem formato invalido ou comandos suspeitos.\n" >&2
         printf "AVISO: Carregamento do arquivo de configuracao bloqueado por seguranca.\n" >&2
         if command -v _read_sleep >/dev/null 2>&1; then
@@ -471,8 +398,8 @@ _carregar_config_empresa() {
     fi
 
     # Carregar configuracoes de forma SEGURA (sem sourcing direto)
-    if ! _carregar_config_seguro "${config_file}"; then
-        printf "ERRO: Falha ao carregar arquivo de configuracao %s.\n" "${config_file}" >&2
+    if ! _carregar_config_seguro "${CONFIG_FILE}"; then
+        printf "ERRO: Falha ao carregar arquivo de configuracao %s.\n" "${CONFIG_FILE}" >&2
         return 1
     fi
 
@@ -485,7 +412,7 @@ _carregar_config_empresa() {
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _carregar_config_seguro() {
-    local config_file="${1}"
+    local CONFIG_FILE="${1}"
     local linha key value
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
@@ -523,7 +450,7 @@ _carregar_config_seguro() {
             # Declarar variavel de forma segura
             declare -g "$key=$value"
         fi
-    done < "$config_file"
+    done < "$CONFIG_FILE"
 
     return 0
 }
@@ -533,17 +460,15 @@ _carregar_config_seguro() {
 # Retorna: 0 sempre
 # -----------------------------------------------------------------------------
 _configurar_acessos() {
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then
-        if [[ "${Offline}" == "s" ]]; then
-            down_dir="${acessoff}"
-            if [[ ! -d "${down_dir}" ]]; then
-                _criar_diretorio_seguro "${down_dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-                    printf "Erro ao criar diretorio offline %s\n" "${down_dir}" >&2
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_OFFLINE}" == "s" ]]; then
+            DEFAULT_RECEBE_DIR="${CFG_OFFLINE}"
+            if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
+                _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+                    printf "Erro ao criar diretorio offline %s\n" "${DEFAULT_RECEBE_DIR}" >&2
                     return 1
                 }
             fi
-        else
-            down_dir="${RECEBE}"
         fi
     fi
     return 0
@@ -610,7 +535,7 @@ _validar_diretorios() {
     _verifica_diretorio "${BASE1}" || ((erros++))
 
     # Verificar XML apenas se for IsCOBOL
-    if [[ "${sistema}" == "iscobol" ]]; then
+    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
         _verifica_diretorio "${X_XML}" || ((erros++))
     fi
 
@@ -632,11 +557,11 @@ _validar_diretorios() {
 # -----------------------------------------------------------------------------
 _configurar_ambiente() {
     # Verificar se o jutil existe para sistemas IsCOBOL
-    if [[ "${sistema}" == "iscobol" ]] && [[ ! -x "${jut}" ]]; then
+    if [[ "${CFG_SISTEMA}" == "iscobol" ]] && [[ ! -x "${REBUILD}" ]]; then
         if command -v _mensagec >/dev/null 2>&1; then
-            _mensagec "${YELLOW}" "Aviso: jutil nao encontrado em ${jut}"
+            _mensagec "${YELLOW}" "Aviso: jutil nao encontrado em ${REBUILD}"
         else
-            printf "Aviso: jutil nao encontrado em %s\n" "${jut}" >&2
+            printf "Aviso: jutil nao encontrado em %s\n" "${REBUILD}" >&2
         fi
     fi
 }
@@ -656,7 +581,7 @@ _validar_configuracao() {
     local warnings=0
     
     # Verificar arquivos de configuracao
-    if [[ ! -f "${cfg_dir}/.config" ]]; then
+    if [[ ! -f "${CFG_DIR}/.config" ]]; then
         _mensagec "${RED}" "ERRO: Arquivo .config nao encontrado!"
         ((erros++)) || true
     else
@@ -664,25 +589,25 @@ _validar_configuracao() {
     fi
 
     # Verificar variaveis essenciais
-    if [[ -z "${sistema}" ]]; then
+    if [[ -z "${CFG_SISTEMA}" ]]; then
         _mensagec "${RED}" "ERRO: Variavel 'sistema' nao definida!"
         ((erros++)) || true
-    elif [[ "${sistema}" != "iscobol" && "${sistema}" != "cobol" ]]; then
-        _mensagec "${YELLOW}" "Alerta: Valor desconhecido para 'sistema': ${sistema}"
+    elif [[ "${CFG_SISTEMA}" != "iscobol" && "${CFG_SISTEMA}" != "cobol" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Valor desconhecido para 'sistema': ${CFG_SISTEMA}"
         ((warnings++)) || true
     else
-        _mensagec "${GREEN}" "OK: Sistema definido como ${sistema}"
+        _mensagec "${GREEN}" "OK: Sistema definido como ${CFG_SISTEMA}"
     fi
     
-    if [[ -z "${raiz}" ]]; then
-        _mensagec "${RED}" "ERRO: Variavel 'raiz' nao definida!"
+    if [[ -z "${RAIZ}" ]]; then
+        _mensagec "${RED}" "ERRO: Variavel 'RAIZ' nao definida!"
         ((erros++)) || true
     else
-        _mensagec "${GREEN}" "OK: Diretorio raiz definido"
+        _mensagec "${GREEN}" "OK: Diretorio RAIZ definido"
     fi
     
-    if [[ -z "${dbmaker}" ]]; then
-        _mensagec "${YELLOW}" "Alerta: Variavel 'dbmaker' nao definida"
+    if [[ -z "${CFG_USA_DBMAKER}" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Variavel 'CFG_USA_DBMAKER' nao definida"
         ((warnings++)) || true
     else
         _mensagec "${GREEN}" "OK: Configuracao de banco de dados definida"
@@ -693,7 +618,7 @@ _validar_configuracao() {
     local dirs=("biblioteca" "olds" "logs" "cfg" "libs" "backup" "bases_backup" "envia" "recebe" "E_EXEC" "T_TELAS" "BASE1")
     for dir in "${dirs[@]}"; do
         local dir_path=""
-        # Tratamento especial para E_EXEC e T_TELAS que ficam em ${raiz}
+        # Tratamento especial para E_EXEC e T_TELAS que ficam em ${RAIZ}
         if [[ "$dir" == "E_EXEC" ]] || [[ "$dir" == "T_TELAS" ]] || [[ "$dir" == "BASE1" ]]; then
             dir_path="${!dir:-}"
         else
@@ -708,8 +633,8 @@ _validar_configuracao() {
     done
     
     # Verificar modo offline
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then
-        if [[ "${Offline}" == "n" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_OFFLINE}" == "n" ]]; then
             _mensagec "${WHITE}" "INFO: Servidor em modo On ..."
         else
             _mensagec "${GREEN}" "INFO: Servidor em modo Off ..."

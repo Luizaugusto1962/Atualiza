@@ -4,12 +4,12 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padroes e regras de desenvolvimento: ver AGENTS.md
-# Versao: 02/04/2026-00
+# Versao: 05/05/2026-00
 # Autor: Luiz Augusto
 #
 #---------- FUNcoES DE LEMBRETES ----------#
 # Variaveis globais esperadas
-cfg_dir="${cfg_dir:-}"          # Caminho do diretorio de configuracao do programa.
+CFG_DIR="${CFG_DIR:-}"          # Caminho do diretorio de configuracao do programa.
 
 # Mostra menu de lembretes
 # Escreve nova nota
@@ -19,7 +19,7 @@ _escrever_nova_nota() {
     _mensagec "${YELLOW}" "Digite sua nota (pressione Ctrl+D para finalizar):"
     _linha
 
-    local arquivo_notas="${cfg_dir}/lembrete"
+    local arquivo_notas="${CFG_DIR}/lembrete"
     local tamanho_antes=0
     local tamanho_depois=0
 
@@ -48,7 +48,7 @@ _escrever_nova_nota() {
 
 # Mostra notas iniciais se existirem
 _mostrar_notas_iniciais() {
-    local nota_inicial="${cfg_dir}/lembrete"
+    local nota_inicial="${CFG_DIR}/lembrete"
     
     if [[ -f "$nota_inicial" && -s "$nota_inicial" ]]; then
         _visualizar_notas_arquivo "$nota_inicial"
@@ -63,8 +63,8 @@ _gerar_aviso_entrada() {
     _mensagec "${YELLOW}" "Digite a mensagem de entrada (Ctrl+D para finalizar):"
     _linha
 
-    local arquivo_msg="${cfg_dir}/avisos"
-    local arquivo_tmp="${cfg_dir}/.avisos.tmp"
+    local arquivo_msg="${CFG_DIR}/avisos"
+    local arquivo_tmp="${CFG_DIR}/.avisos.tmp"
 
     # Gravar em arquivo temporario primeiro
     if cat > "$arquivo_tmp"; then
@@ -87,7 +87,7 @@ _gerar_aviso_entrada() {
 
 # Edita nota existente
 _editar_aviso_existente() {
-    local arquivo_avisos="${cfg_dir}/avisos"
+    local arquivo_avisos="${CFG_DIR}/avisos"
     
     _limpa_tela
     if [[ -f "$arquivo_avisos" ]]; then
@@ -103,7 +103,7 @@ _editar_aviso_existente() {
 
 # Exibe a mensagem de entrada e oferece opcao para excluir apos leitura
 _mostrar_aviso() {
-    local arquivo_msg="${cfg_dir}/avisos"
+    local arquivo_msg="${CFG_DIR}/avisos"
     if [[ -f "$arquivo_msg" ]] && grep -q '[^[:space:]]' "$arquivo_msg"; then
         _limpa_tela
         _linha "=" "${CYAN}"
@@ -148,12 +148,12 @@ _apagar_arquivo_cfg() {
 
 # Apaga manualmente a mensagem de entrada
 _apagar_aviso_entrada() {
-    _apagar_arquivo_cfg "${cfg_dir}/avisos" "mensagem de entrada"
+    _apagar_arquivo_cfg "${CFG_DIR}/avisos" "mensagem de entrada"
 }
 
 # Apaga nota existente
 _apagar_nota_existente() {
-    _apagar_arquivo_cfg "${cfg_dir}/lembrete" "todas as notas"
+    _apagar_arquivo_cfg "${CFG_DIR}/lembrete" "todas as notas"
 }
 # Parametros: $1=arquivo_de_notas
 _visualizar_notas_arquivo() {
@@ -202,7 +202,7 @@ _visualizar_notas_arquivo() {
 
 # Edita nota existente
 _editar_nota_existente() {
-    local arquivo_notas="${cfg_dir}/lembrete"
+    local arquivo_notas="${CFG_DIR}/lembrete"
     
     _limpa_tela
     if [[ -f "$arquivo_notas" ]]; then

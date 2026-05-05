@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
-# Versao: 25/04/2026-01
+# Versao: 05/05/2026-01
 # Autor: Luiz Augusto
 # Os programas usados por este script devem estar na pasta /libs.
 # Padroes e regras de desenvolvimento: ver AGENTS.md
@@ -13,7 +13,7 @@
 #   ./atualiza.sh --cadastro       - Executa o cadastro de usuarios
 
 # Configuracoes de seguranca para o script.
-set -euo pipefail 
+set -euo pipefail
 export LC_ALL=C
 
 # Verificacoes basicas

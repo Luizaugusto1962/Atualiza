@@ -6,26 +6,21 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/04/2026-00
+# Versao: 05/05/2026-001
 #
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
 # Variaveis globais esperadas
-acessossh="${acessossh:-s}"                    # Acesso via SSH (s/n)
-arquivo_enviar="${arquivo_enviar:-}"           # Arquivo a ser enviado (pode conter wildcard)
-dir_origem="${dir_origem:-.}"                  # Diretorio de origem para upload
-enviabackup="${enviabackup:-}"                 # Destino remoto para upload de backup (ex: /caminho/destino/)
-destino_remoto="${destino_remoto:-}"           # Destino remoto para upload (ex: /caminho/destino/)
-destino_biblioteca="${destino_biblioteca:-}"   # Diretorio de destino da biblioteca no servidor
-destino_server="${destino_server:-}"           # Diretorio do servidor de atualizacao
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-s}"          # Acesso via SSH (s/n)
+ARQUIVO_ENVIAR="${ARQUIVO_ENVIAR:-}"           # Arquivo a ser enviado (pode conter wildcard)
+DIRETORIO_ORIGEM="${DIRETORIO_ORIGEM:-.}"      # Diretorio de origem para upload
+CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"         # Destino remoto para upload (ex: /caminho/destino/)
+DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"   # Diretorio de destino da biblioteca no servidor
+DESTINO_SERVER="${DESTINO_SERVER:-}"           # Diretorio do servidor de atualizacao
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
-    # Determinar destino
-    if [[ -n "${destino_remoto}" ]]; then
-        destino_remoto="${enviabackup}"
-    fi
 # Download via SFTP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
 _download_sftp_ssh() {
@@ -92,8 +87,8 @@ _download_scp() {
     local arquivo_remoto="$1"
     local destino_local="${2:-.}"
     local servidor="${3:-$DEFAULT_IP_SERVER}"
-    local porta="${4:-$SERVER_PORTA}"
-    local rem_user="${5:-$USUARIO}"
+    local porta="${4:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${5:-$DEFAULT_SSH_USER}"
 
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Erro: Arquivo remoto nao especificado para SCP"
@@ -126,15 +121,15 @@ _download_scp() {
 }
 
 # Upload via RSYNC
-# Parametros: $1=arquivo_local $2=destino_remoto $3=servidor $4=porta $5=usuario
+# Parametros: $1=arquivo_local $2=CFG_BACKUP_PATH $3=servidor $4=porta $5=usuario
 _upload_rsync() {
     local arquivo_local="$1"
-    local destino_remoto="$2"
+    local CFG_BACKUP_PATH="$2"
     local servidor="${3:-$DEFAULT_IP_SERVER}"
-    local porta="${4:-$SERVER_PORTA}"
-    local rem_user="${5:-$USUARIO}"
+    local porta="${4:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${5:-$DEFAULT_SSH_USER}"
 
-    if [[ -z "$arquivo_local" || -z "$destino_remoto" ]]; then
+    if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
         _log_erro "Erro: Parametros obrigatorios nao informados para upload RSYNC"
         return 1
     fi
@@ -146,7 +141,7 @@ _upload_rsync() {
 
     _log "Iniciando upload RSYNC: ${arquivo_local}"
 
-    local destino_completo="${rem_user}@${servidor}:${destino_remoto}"
+    local destino_completo="${rem_user}@${servidor}:${CFG_BACKUP_PATH}"
 
     if rsync -avzP -e "ssh -p ${porta}" "$arquivo_local" "$destino_completo"; then
         _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
@@ -165,12 +160,12 @@ _baixar_biblioteca_sincroniza() {
 
     # Usar subshell para nao alterar o diretorio do chamador
     (
-        cd "${down_dir:-}" || return 1
+        cd "${DEFAULT_RECEBE_DIR:-}" || return 1
 
-        if [[ "${acessossh}" == "s" ]]; then
-            local src="${USUARIO}@${DEFAULT_IP_SERVER}:${destino_biblioteca}${SAVATU:-}${VERSAO:-}.zip"
+        if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
+            local src="${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}:${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
 
-            if sftp -P "$SERVER_PORTA" "${src}" "."; then
+            if sftp -P "$DEFAULT_SSH_PORTA" "${src}" "."; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
             else
@@ -189,9 +184,9 @@ _baixar_biblioteca_sincroniza() {
             fi
 
             for arquivo in "${arquivos_update[@]}"; do
-                local src="${USUARIO}@${DEFAULT_IP_SERVER}:${destino_biblioteca}${arquivo}"
+                local src="${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}:${DESTINO_BIBLIOTECA}${arquivo}"
 
-                if scp -P "$SERVER_PORTA" "${src}" "."; then
+                if scp -P "$DEFAULT_SSH_PORTA" "${src}" "."; then
                     _log_sucesso "Download concluido: ${arquivo}"
                 else
                     _log_erro "Falha no download: ${arquivo}"
@@ -205,10 +200,10 @@ _baixar_biblioteca_sincroniza() {
 
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
-    # Criar diretorio RECEBE se nao existir
-    if [[ ! -d "${down_dir}" ]]; then
-        if ! mkdir -p "${down_dir}"; then
-            _log_erro "Falha ao criar diretorio: ${down_dir}"
+    # Criar diretorio DEFAULT_RECEBE_DIR se nao existir
+    if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
+        if ! mkdir -p "${DEFAULT_RECEBE_DIR}"; then
+            _log_erro "Falha ao criar diretorio: ${DEFAULT_RECEBE_DIR}"
             return 1
         fi
     fi
@@ -222,22 +217,22 @@ _baixar_programas_vaievem() {
 
     # Usar subshell para nao alterar o diretorio do chamador
     (
-        cd "${down_dir:-}" || return 1
+        cd "${DEFAULT_RECEBE_DIR:-}" || return 1
 
         for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
             _linha
             _mensagec "${GREEN}" "Transferindo: $arquivo"
             _linha
 
-            if [[ "${acessossh}" == "s" ]]; then
+            if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
                 _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
 
-                if ! _download_sftp_ssh "${destino_server}${arquivo}" "."; then
+                if ! _download_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
                     return 0
                 fi
             else
-                if ! _download_scp "${destino_server}${arquivo}" "."; then
+                if ! _download_scp "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
                     return 0
                 fi
@@ -252,7 +247,7 @@ _baixar_programas_vaievem() {
                 return 0 
             fi
 
-            if ! "${cmd_unzip:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
+            if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _mensagec "${RED}" "ERRO: Arquivo corrompido: $arquivo"
                 rm -f "$arquivo"
                 _read_sleep 2
@@ -269,29 +264,29 @@ _baixar_programas_vaievem() {
 # Enviar arquivo(s) via RSYNC. Pode lidar com arquivos unicos ou multiplos usando wildcard.
 _enviar_arquivo_multi() {
     # Validar variaveis globais necessarias
-    if [[ -z "$arquivo_enviar" ]]; then
+    if [[ -z "$ARQUIVO_ENVIAR" ]]; then
         _mensagec "${RED}" "Erro: Nenhum arquivo especificado para envio"
         _read_sleep 2
         return 0
     fi
 
-    if [[ -z "${destino_remoto:-}" ]]; then
+    if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
         _mensagec "${RED}" "Erro: Destino remoto nao especificado"
         _read_sleep 2
         return 0
     fi
 
     # Verificar se esta enviando multiplos arquivos ou apenas um
-    if [[ "$arquivo_enviar" == *"*"* ]]; then
+    if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
         # Enviar multiplos arquivos usando _upload_rsync
         local falhas_envio=0
         for arquivo_item in "${arquivos_encontrados[@]}"; do
-            if ! _upload_rsync "$arquivo_item" "${destino_remoto}"; then
+            if ! _upload_rsync "$arquivo_item" "${CFG_BACKUP_PATH}"; then
                 ((falhas_envio++)) || true
             fi
         done
         if (( falhas_envio == 0 )); then
-            _mensagec "${YELLOW}" "Arquivo(s) enviado(s) para \"${destino_remoto}\""
+            _mensagec "${YELLOW}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
             _linha
             _read_sleep 3
         else
@@ -300,8 +295,8 @@ _enviar_arquivo_multi() {
         fi
     else
         # Enviar arquivo unico usando _upload_rsync
-        if _upload_rsync "${dir_origem}/${arquivo_enviar}" "${destino_remoto}"; then
-            _mensagec "${YELLOW}" "Arquivo enviado para \"${destino_remoto}\""
+        if _upload_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
+            _mensagec "${YELLOW}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
             _linha
             _read_sleep 3
         else

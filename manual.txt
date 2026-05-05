@@ -448,36 +448,14 @@ OPCOES DISPONIVEIS:
 ---------------------------------------------------------------
 
 
-1 - VERSAO DO ISCOBOL
-    Exibe informacoes sobre a versao do IsCOBOL instalada.
+1 - CONFIGURACOES DOS SISTEMAS
+    Exibe informacoes sobre as versoes instalada.
     
-    * Mostra numero da versao
-    * Exibe data de compilacao
-    * Lista recursos disponiveis
-    
-    Nota: Disponivel apenas para sistemas IsCOBOL.
+    * Mostra os paramentros do sistema 
+    * Versao usado do IsCobol
+    * Versao do linux do servidor
 
-2 - VERSAO DO LINUX
-    Mostra informacoes detalhadas do sistema operacional.
-    
-    INFORMACOES EXIBIDAS:
-    * Distribuicao e versao do Linux
-    * Hostname do servidor
-    * IP interno e externo
-    * Usuarios logados
-    * Uso de memoria RAM e SWAP
-    * Uso de disco
-    * Tempo de atividade (uptime)
-
-3 - PARAMETROS
-    Visualiza e edita configuracoes do sistema.
-    
-    ACESSO:
-    * Consulta: Visualizacao apenas
-    * Manutencao: Edicao de valores
-    * Validacao: Testa configuracoes
-
-4 - UPDATE
+2 - UPDATE
     Atualiza o proprio sistema de atualizacao.
     
     O QUE ATUALIZA:
@@ -490,7 +468,7 @@ OPCOES DISPONIVEIS:
     * Online: Via o GitHub
     * Offline: Arquivo "atualiza.zip deve ser salvo em /portalsav/Atualiza
 
-5 - LEMBRETES
+3 - LEMBRETES
     Sistema de notas e lembretes.
     
     FUNCOES:
@@ -504,7 +482,7 @@ OPCOES DISPONIVEIS:
     - Anotacoes de manutencao
     - Lembretes de atualizacoes
 
-6 - AVISO
+4 - AVISO
     Sistema de avisos.
     
     FUNCOES:
@@ -517,7 +495,7 @@ OPCOES DISPONIVEIS:
     - Anotacoes de manutencao
     - Aviso sobre atualizacoes
 
-7 - LOGS
+5 - LOGS
     Mostra os logs do sistema.
     
     FUNCOES:
@@ -535,15 +513,56 @@ MANUTENCAO REGULAR:
 1. Consulta dos parametro do progrma
 2. Atualizacao do sistema 
 3. Cadastro no lembretes
-
+4. Cadastro de Avisos
+5. Logs do sistema
 
 ORGANIZACAO:
 * Use lembretes para agendar tarefas
 * Documentar alteracoes importantes
 * Verificar logs
-* Verificar parametro
-* Verificar versao do iscobol
-* Verificar versao do linux
+* Atualiza do programa
+
+
+---------------------------------------------------------------
+[MENU_CONFIGS]
+MENU DE CONFIGURACOES
+---------------------------------------------------------------
+
+Valida as configuracoes dos sistemas
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+
+1 - PARAMETROS DO SISTEMA
+    Visualiza e edita configuracoes do sistema.
+    
+    ACESSO:
+    * Consulta: Visualizacao apenas
+    * Manutencao: Edicao de valores
+    * Validacao: Testa configuracoes
+
+2 - VERSAO DO ISCOBOL
+    Exibe informacoes sobre a versao do IsCOBOL instalada.
+    
+    * Mostra numero da versao
+    * Exibe data de compilacao
+    * Lista recursos disponiveis
+    
+    Nota: Disponivel apenas para sistemas IsCOBOL.
+
+3- VERSAO DO LINUX
+    Mostra informacoes detalhadas do sistema operacional.
+    
+    INFORMACOES EXIBIDAS:
+    * Distribuicao e versao do Linux
+    * Hostname do servidor
+    * IP interno e externo
+    * Usuarios logados
+    * Uso de memoria RAM e SWAP
+    * Uso de disco
+    * Tempo de atividade (uptime)
+
 
 ---------------------------------------------------------------
 [MENU_TEMPORARIOS]
@@ -1248,7 +1267,6 @@ OPCOES DISPONIVEIS:
     * verclass: Versao do IsCOBOL
     * dbmaker: Sistema usa banco (s/n)
     * acessossh: Modo facilitado (s/n)
-    * ipserver: IP do servidor
     * Offline: Modo offline (s/n)
     * enviabackup: Diretorio backup servidor
     * empresa: Nome da empresa
@@ -1328,7 +1346,7 @@ dbmaker:
 
 base:
 * Diretorio principal de dados
-* Caminho relativo a raiz
+* Caminho relativo a RAIZ
 * Ex: /dados_jisam
 
 empresa:
@@ -1551,7 +1569,7 @@ Na inicializacao do sistema:
 * Configure para nao exibir se preferir
 
 MENSAGEM DE ENTRADA:
-* Arquivo separado (${cfg_dir}/entrada)
+* Arquivo separado (${CFG_DIR}/entrada)
 * Pode ser gerado pelo menu de lembretes (opcao 0)
 * Exibido sempre que o programa inicia
 * Apresenta pergunta para excluir logo apos a leitura
@@ -1709,7 +1727,7 @@ Na inicializacao do sistema:
 * Configure para nao exibir se preferir
 
 MENSAGEM DE ENTRADA:
-* Arquivo separado (${cfg_dir}/entrada)
+* Arquivo separado (${CFG_DIR}/entrada)
 * Pode ser gerado pelo menu de lembretes (opcao 0)
 * Exibido sempre que o programa inicia
 * Apresenta pergunta para excluir logo apos a leitura
@@ -1782,7 +1800,7 @@ ESTRUTURA DO SISTEMA:
 -------------------------------------------------------------------
 
 DIRETORIOS PRINCIPAIS:
-/raiz/
+/RAIZ/
   classes/      - Programas compilados
   tel_isc/      - Telas do sistema
   xml/          - Configuracoes XML

@@ -5,15 +5,15 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/04/2026-00
+# Versao: 05/05/2026-00
 #
 
 # Variaveis globais esperadas
-sistema="${sistema:-}"      # Nome do sistema (iscobol, savatu, transpc).
-cmd_zip="${cmd_zip:-}"      # Comando de compactacao (zip)
-cmd_unzip="${cmd_unzip:-}"  # Comando de descompactacao (unzip)
-Offline="${Offline:-}"      # Modo offline (s/n)
-down_dir="${down_dir:-}"    # Diretorio de download de arquivos
+CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
+CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
+#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Diretorio de download de arquivos
 class="${class:-}"          # Sufixo para arquivos de classe
 mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao
 
@@ -27,8 +27,8 @@ declare -a ARQUIVOS_PROGRAMA=()
 
 # Atualizacao de programas via conexao online
 _atualizar_programa_online() {
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then    
-        if [[ "${Offline}" == "s" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then    
+        if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
             _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
             _linha
@@ -70,7 +70,7 @@ _atualizar_programa_offline() {
     fi
     
     _linha
-    _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${WHITE}${down_dir}"
+    _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${WHITE}${DEFAULT_RECEBE_DIR}"
     _linha
     _read_sleep 0
     
@@ -86,8 +86,8 @@ _atualizar_programa_offline() {
 # Atualizacao de programas em pacotes
 _atualizar_programa_pacote() {
         _solicitar_pacotes_atualizacao
-    if [[ "${Offline}" =~ ^[sn]$ ]]; then        
-        if [[ "${Offline}" == "s" ]]; then
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then        
+        if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
             _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
             _mover_arquivos_offline
@@ -109,18 +109,18 @@ _selecionar_programas_reversao() {
     PROGRAMAS_SELECIONADOS=()
     ARQUIVOS_PROGRAMA=()
 
-    if [[ ! -d "${OLDS}" ]]; then
-        _mensagec "${RED}" "Diretorio de backups nao encontrado: ${OLDS}"
+    if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
+        _mensagec "${RED}" "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
         _press
         return 0
     fi
 
     shopt -s nullglob
-    local backups=("${OLDS}"/*-anterior.zip)
+    local backups=("${DEFAULT_OLDS_DIR}"/*-anterior.zip)
     shopt -u nullglob
 
     if (( ${#backups[@]} == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum backup de programa encontrado em ${OLDS}"
+        _mensagec "${YELLOW}" "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
         _press
         return 0
     fi
@@ -331,8 +331,8 @@ _solicitar_pacotes_atualizacao() {
 _baixar_pacotes_vaievem() {
     _configurar_acessos
 
-    cd "${down_dir}" || {
-        _mensagec "${RED}" "Erro: Diretorio $down_dir nao encontrado"
+    cd "${DEFAULT_RECEBE_DIR}" || {
+        _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao encontrado"
         _read_sleep 2
         return 1
     }
@@ -347,7 +347,7 @@ _mover_arquivos_offline() {
     _configurar_acessos
 
         for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-            if [[ -f "${down_dir}/${arquivo}" ]]; then
+            if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
                 _mensagec "${GREEN}" "Arquivo encontrado: ${arquivo}"
             else
                 _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
@@ -358,8 +358,8 @@ _mover_arquivos_offline() {
 
 # Processa atualizacao dos programas
 _processar_atualizacao_programas() {
-    # Ir para o diretório RECEBE onde estão os arquivos baixados
-    cd "${down_dir}" || return 1
+    # Ir para o diretório DEFAULT_RECEBE_DIR onde estão os arquivos baixados
+    cd "${DEFAULT_RECEBE_DIR}" || return 1
 
     local arquivo         # Nome do arquivo
     local extensao        # Extensao do arquivo
@@ -383,12 +383,12 @@ _processar_atualizacao_programas() {
     # Criar backup dos programas antigos
     for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         local programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
-        local arquivo_backup="${OLDS}/${programa}-anterior.zip"
+        local arquivo_backup="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
         local backup_criado=0
         
         # Verificar se ja existe backup e fazer rotacao com data
         if [[ -f "$arquivo_backup" ]]; then
-            if ! mv -f "$arquivo_backup" "${OLDS}/${UMADATA}-${programa}-anterior.zip"; then
+            if ! mv -f "$arquivo_backup" "${DEFAULT_OLDS_DIR}/${UMADATA}-${programa}-anterior.zip"; then
                 _mensagec "${RED}" "ERRO: Falha ao arquivar backup anterior de ${programa}"
                 return 1
             fi
@@ -398,7 +398,7 @@ _processar_atualizacao_programas() {
         
         # Backup de arquivos .class
         if [[ -f "${E_EXEC}/${programa}.class" ]]; then
-            if "${cmd_zip}" -j "$arquivo_backup" "${E_EXEC}/${programa}"*.class >> "${LOG_ATU}" 2>&1; then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${E_EXEC}/${programa}"*.class >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
                 _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .class de ${programa}"
@@ -408,7 +408,7 @@ _processar_atualizacao_programas() {
         
         # Backup de arquivos .int
         if [[ -f "${E_EXEC}/${programa}.int" ]]; then
-            if "${cmd_zip}" -j "$arquivo_backup" "${E_EXEC}/${programa}.int" >> "${LOG_ATU}" 2>&1; then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${E_EXEC}/${programa}.int" >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
                 _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .int de ${programa}"
@@ -418,7 +418,7 @@ _processar_atualizacao_programas() {
         
         # Backup de arquivos .TEL
         if [[ -f "${T_TELAS}/${programa}.TEL" ]]; then
-            if "${cmd_zip}" -j "$arquivo_backup" "${T_TELAS}/${programa}.TEL" >> "${LOG_ATU}" 2>&1; then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${T_TELAS}/${programa}.TEL" >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
                 _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .TEL de ${programa}"
@@ -443,7 +443,7 @@ _processar_atualizacao_programas() {
 
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! "${cmd_unzip}" -o "${arquivo}" >>"${LOG_ATU}"; then
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}"; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
             continue
         fi
@@ -481,7 +481,7 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ -f "${arquivo}" ]]; then
             local backup_file="${arquivo%.zip}.bkp"
-            mv -f "${arquivo}" "${PROGS}/${backup_file}"
+            mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}"
         fi
     done
 
@@ -493,7 +493,7 @@ _processar_atualizacao_programas() {
 # Processa atualizacao de pacotes
 _processar_atualizacao_pacotes() {
     # Ir para o diretório onde estão os pacotes baixados
-    cd "${down_dir}" || return 1
+    cd "${DEFAULT_RECEBE_DIR}" || return 1
     
     # SEGURANCA: Validar diretorio de backups
     if ! _validar_diretorio_backups; then
@@ -510,7 +510,7 @@ _processar_atualizacao_pacotes() {
             return 0
         fi
 
-        if ! "${cmd_unzip}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
             _read_sleep 2
             return 1
@@ -521,7 +521,7 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ -f "${arquivo}" ]]; then
             local backup_file="${arquivo%.zip}.bkp"
-            if ! mv -f "${arquivo}" "${PROGS}/${backup_file}"; then
+            if ! mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}"; then
                 _mensagec "${RED}" "ERRO: Falha ao arquivar pacote ${arquivo}"
                 return 1
             fi
@@ -532,16 +532,16 @@ _processar_atualizacao_pacotes() {
     while read -r classfile; do
         local progname="${classfile##*/}" # Extrair nome do arquivo
         progname="${progname%%.class}"    # Remover extensao
-        local arquivo_backup="${OLDS}/${progname}-anterior.zip"
+        local arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
 
         # Backup dos arquivos antigos
-        if [[ "${sistema}" == "iscobol" ]]; then
-            if ! find "${E_EXEC}" -name "${progname}*.class" -exec "${cmd_zip}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+        if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
+            if ! find "${E_EXEC}" -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
                 _log_erro "Falha ao fazer backup de ${progname}*.class"
                 return 1
             fi
         else
-            if ! find "${E_EXEC}" -name "${progname}*.int" -exec "${cmd_zip}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+            if ! find "${E_EXEC}" -name "${progname}*.int" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
                 _log_erro "Falha ao fazer backup de ${progname}*.int"
                 return 1
             fi
@@ -549,7 +549,7 @@ _processar_atualizacao_pacotes() {
 
         # Backup de arquivos .TEL se existirem
         if [[ -f "${progname}.TEL" ]]; then
-            if ! find "${T_TELAS}" -name "${progname}*.TEL" -exec "${cmd_zip}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+            if ! find "${T_TELAS}" -name "${progname}*.TEL" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
                 _log_erro "Falha ao fazer backup de ${progname}*.TEL"
                 return 1
             fi
@@ -578,12 +578,12 @@ _processar_atualizacao_pacotes() {
 
 # Processa reversao de programas
 _processar_reversao_programas() {
-    # Criar diretório RECEBE se não existir
-    [[ ! -d "${down_dir}" ]] && mkdir -p "${down_dir}"
+    # Criar diretório DEFAULT_RECEBE_DIR se não existir
+    [[ ! -d "${DEFAULT_RECEBE_DIR}" ]] && mkdir -p "${DEFAULT_RECEBE_DIR}"
     
     for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         local programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
-        local arquivo_anterior="${OLDS}/${programa}-anterior.zip"
+        local arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
         
         if [[ -f "$arquivo_anterior" ]]; then
             # SEGURANCA: Validar integridade do backup antes de reverter
@@ -592,7 +592,7 @@ _processar_reversao_programas() {
                 return 1
             fi
 
-            if ! mv -f "$arquivo_anterior" "${down_dir}/${programa}${class}.zip"; then
+            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${class}.zip"; then
                 _mensagec "${RED}" "ERRO: Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
@@ -611,17 +611,17 @@ _processar_reversao_programas() {
 
 # Valida e cria diretorio de backups se nao existir
 _validar_diretorio_backups() {
-    if [[ ! -d "${OLDS}" ]]; then
-        _mensagec "${YELLOW}" "Criando diretorio de backups: ${OLDS}"
-        if ! mkdir -p "${OLDS}"; then
-            _mensagec "${RED}" "ERRO CRITICO: Falha ao criar diretorio de backups ${OLDS}"
+    if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
+        _mensagec "${YELLOW}" "Criando diretorio de backups: ${DEFAULT_OLDS_DIR}"
+        if ! mkdir -p "${DEFAULT_OLDS_DIR}"; then
+            _mensagec "${RED}" "ERRO CRITICO: Falha ao criar diretorio de backups ${DEFAULT_OLDS_DIR}"
             return 1
         fi
     fi
 
     # Validar permissoes de escrita
-    if [[ ! -w "${OLDS}" ]]; then
-        _mensagec "${RED}" "ERRO CRITICO: Sem permissao de escrita em ${OLDS}"
+    if [[ ! -w "${DEFAULT_OLDS_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO CRITICO: Sem permissao de escrita em ${DEFAULT_OLDS_DIR}"
         return 1
     fi
 
@@ -647,7 +647,7 @@ _validar_integridade_backup() {
     fi
 
     # Testar integridade do arquivo zip
-    if ! "${cmd_unzip}" -t "${arquivo_backup}" >/dev/null 2>&1; then
+    if ! "${DEFAULT_UNZIP}" -t "${arquivo_backup}" >/dev/null 2>&1; then
         _mensagec "${RED}" "ERRO: Arquivo de backup invalido ou corrompido: ${arquivo_backup}"
         return 1
     fi

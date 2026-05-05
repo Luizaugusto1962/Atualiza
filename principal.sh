@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padroes e regras de desenvolvimento: ver AGENTS.md
-# Versao: 28/04/2026-01
+# Versao: 05/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -17,11 +17,6 @@
 set -euo pipefail
 
 # =============================================================================
-# VERSAO DO SISTEMA
-# =============================================================================
-declare -rx UPDATE="30/04/26-v.1"
-
-# =============================================================================
 # DIRETÓRIOS DO SCRIPT
 # =============================================================================
 
@@ -30,17 +25,21 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 
 ## Carregar constantes do sistema
 # Diretorios dos modulos e configuracoes
-lib_dir="${lib_dir:-${SCRIPT_DIR}/libs}"       # Diretorio dos modulos de biblioteca
-cfg_dir="${cfg_dir:-${SCRIPT_DIR}/cfg}"        # Diretorio de configuracoes
-export SCRIPT_DIR lib_dir cfg_dir
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"                       # Diretorio dos modulos de biblioteca
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"                        # Diretorio de configuracoes
+
+# =============================================================================
+# VERSAO DO SISTEMA
+# =============================================================================
+declare -rx UPDATE="30/04/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
 # =============================================================================
 # Carregar constantes se disponivel
-if [[ -f "${lib_dir}/constantes.sh" ]]; then
+if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
     # shellcheck source=constantes.sh
-    "." "${lib_dir}/constantes.sh"
+    "." "${LIB_DIR}/constantes.sh"
 fi
 
 # =============================================================================
@@ -103,7 +102,7 @@ _criar_diretorio_seguro() {
 # =============================================================================
 
 # Lista de diretórios obrigatórios
-declare -a AUX_DIRS=("${lib_dir}" "${cfg_dir}")
+declare -a AUX_DIRS=("${LIB_DIR}" "${CFG_DIR}")
 
 for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
@@ -122,7 +121,7 @@ for dir in "${AUX_DIRS[@]}"; do
 
     # APLICAR PERMISSOES DE FORMA SEGURA: usar constante ao inves de hardcoded
     # Recursivo apenas quando necessario, e com permissao segura
-    chmod "${PERM_DIR_SECURE}" "${dir}" 2>/dev/null || {
+    chmod 0755 "${dir}" 2>/dev/null || {
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
     }
 
@@ -134,6 +133,7 @@ for dir in "${AUX_DIRS[@]}"; do
     }
 done
 
+
 # =============================================================================
 # CARREGAMENTO DE MÓDULOS
 # Carrega um módulo com verificação de segurança
@@ -143,7 +143,7 @@ done
 # -----------------------------------------------------------------------------
 _caminho_modulo() {
     local modulo="${1}"
-    local caminho="${lib_dir}/${modulo}"
+    local caminho="${LIB_DIR}/${modulo}"
 
     # Verificar se o arquivo existe
     if [[ ! -f "${caminho}" ]]; then
@@ -195,15 +195,20 @@ _carregar_modulos() {
 
     local modulo=""
     local erros=0
+	local modulos_com_erro=()
 
     for modulo in "${modulos[@]}"; do
         if ! _caminho_modulo "$modulo"; then
-            ((erros++))
+            ((erros++)) || true
+            modulos_com_erro+=("$modulo")
         fi
     done
 
     if (( erros > 0 )); then
-        printf "AVISO: %d modulo(s) falharam ao carregar.\n" "$erros" >&2
+        printf "ERRO: %d modulo(s) falharam ao carregar.\n" "$erros" >&2
+        for _m in "${modulos_com_erro[@]}"; do
+            printf "  - %s\n" "$_m" >&2
+        done
         return 1
     fi
     return 0
@@ -216,9 +221,9 @@ _carregar_modulos() {
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _inicializar_sistema() {
-    # Configurar ambiente seguro PRIMEIRO
+ #   # Configurar ambiente seguro PRIMEIRO
     _configurar_ambiente_seguro
-    
+ #   
     # Carregar módulos do sistema
     if ! _carregar_modulos; then
         printf "ERRO: Falha ao carregar modulos.\n" >&2

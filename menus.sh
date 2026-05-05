@@ -6,31 +6,31 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/04/2026-01
+# Versao: 05/05/2026-01
 # Autor: Luiz Augusto
 #
 
 # Variaveis globais esperadas
-sistema="${sistema:-}"                    # Nome do sistema (iscobol, savatu, transpc).
-cfg_dir="${cfg_dir:-${SCRIPT_DIR:-.}/cfg}"    # Diretorio de configuracoes
-verclass="${verclass:-}"                  # Versao atual do sistema
+CFG_SISTEMA="${CFG_SISTEMA:-}"                    # Nome do sistema (iscobol, savatu, transpc).
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR:-.}/cfg}"    # Diretorio de configuracoes
+CFG_VERCLASS="${CFG_VERCLASS:-}"                  # Versao atual do sistema
 #UPDATE="${UPDATE:-}"                      # Aviso de update disponivel
 
-if [[ ! -d "${cfg_dir}" ]]; then
-    mkdir -p "${cfg_dir}" || {
-        printf '%s\n' "ERRO: Nao foi possivel criar o diretorio de configuracao '${cfg_dir}'."
+if [[ ! -d "${CFG_DIR}" ]]; then
+    mkdir -p "${CFG_DIR}" || {
+        printf '%s\n' "ERRO: Nao foi possivel criar o diretorio de configuracao '${CFG_DIR}'."
         return 1
     }
 fi
-chmod "${PERM_DIR_SECURE}" "${cfg_dir}" 2>/dev/null || {
-    printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${cfg_dir}'."
+chmod "${PERM_DIR_SECURE}" "${CFG_DIR}" 2>/dev/null || {
+    printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'."
 }
 
-base="${base:-}"                          # Caminho do diretorio da primeira base de dados.
-base2="${base2:-}"                        # Caminho do diretorio da segunda base de dados.
-base3="${base3:-}"                        # Caminho do diretorio da terceira base de dados.
-dbmaker="${dbmaker:-}"                    # Caminho do diretorio da base de dados do dbmaker.
-empresa="${empresa:-}"                    # Nome da empresa (usado para exibir no menu)
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                        # Caminho do diretorio da terceira base de dados.
+CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"                    # Caminho do diretorio da base de dados do CFG_USA_DBMAKER.
+CFG_EMPRESA="${CFG_EMPRESA:-}"                            # Nome da empresa (usado para exibir no menu)
 
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 
@@ -39,22 +39,15 @@ empresa="${empresa:-}"                    # Nome da empresa (usado para exibir n
 # Retorna: 0 se opcao normal, 1 se comando de ajuda processado
 _ler_opcao_menu() {
     local contexto="${1:-geral}"
-    local min_opcao="${2:-0}"
-    local max_opcao="${3:-9}"
     
     # Exibir linha de ajuda
     _linha "="
     printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)${NORM}"
     _linha "=" "${GREEN}"
     
-    # Loop de validacao com limite de tentativas
-    local tentativas=0
-    local max_tentativas=3
-    
-    while (( tentativas < max_tentativas )); do
-        # Ler opcao do usuario com timeout
-        if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
-            printf '\n%sTimeout na entrada. Saindo...%s\n' "${RED}" "${NORM}"
+         if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
+            printf '%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
+            _resetando
             exit 0
         fi
         
@@ -77,32 +70,7 @@ _ler_opcao_menu() {
                 exit 0
                 ;;
         esac
-        
-        # Validar se e um numero valido
-        if command -v _validar_opcao_menu >/dev/null 2>&1; then
-            if _validar_opcao_menu "$opcao" "$min_opcao" "$max_opcao"; then
-                return 0  # Opcao valida
-            fi
-        else
-            # Fallback se validacao.sh nao estiver carregado
-            if [[ "$opcao" =~ ^[0-9]+$ ]] && (( opcao >= min_opcao && opcao <= max_opcao )); then
-                return 0
-            fi
-        fi
-        
-        # Opcao invalida
-        ((tentativas++))
-        printf '%s' "${RED}Opcao invalida: '${opcao}'. "
-        printf '%s\n' "${RED}Digite um numero entre ${min_opcao} e ${max_opcao}.${NORM}"
-        
-        if (( tentativas < max_tentativas )); then
-            printf '%s\n' "${YELLOW}Tentativa ${tentativas + 1} de ${max_tentativas}. Tente novamente.${NORM}"
-        fi
-    done
-    
-    # Excedeu tentativas
-    printf '%s\n' "${RED}Maximo de tentativas excedido. Saindo...${NORM}"
-    exit 1
+
 }
 
 #---------- MENU PRINCIPAL ----------#
@@ -114,7 +82,7 @@ _principal() {
         _linha "=" "${GREEN}"
         _mensagec "${RED}" "Menu Principal"
         _linha
-        _mensagec "${GREEN}" ".. Empresa: ${WHITE}${empresa}${GREEN} - Versao Iscobol: ${CYAN}${verclass} .."
+        _mensagec "${GREEN}" ".. Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} - Versao Iscobol: ${CYAN}${CFG_VERCLASS} .."
         _linha
         printf "\n"
         _mensagec "${PURPLE}" " Escolha a opcao:"
@@ -182,9 +150,9 @@ _menu_programas() {
         _meia_linha "-" "${YELLOW}"
         _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
         
-        if [[ -n "${verclass}" ]]; then
+        if [[ -n "${CFG_VERCLASS}" ]]; then
             printf "\n"
-            _mensaged "${BLUE}" "Versao do Iscobol - ${verclass}"
+            _mensaged "${BLUE}" "Versao do Iscobol - ${CFG_VERCLASS}"
         fi
         
         # Usar funcao centralizada
@@ -231,9 +199,9 @@ _menu_biblioteca() {
         printf "\n"
         
         # Carregar versao anterior se disponivel
-        if [[ -f "${cfg_dir}/.versao" ]]; then
-            if ! "." "${cfg_dir}/.versao" 2>/dev/null; then
-                printf '%s\n' "AVISO: Falha ao carregar ${cfg_dir}/.versao" >&2
+        if [[ -f "${CFG_DIR}/.versao" ]]; then
+            if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
+                printf '%s\n' "AVISO: Falha ao carregar ${CFG_DIR}/.versao" >&2
             fi
         fi
 
@@ -275,7 +243,7 @@ _menu_arquivos() {
         _meia_linha "-" "${YELLOW}"
         
         # Verificar se sistema tem banco de dados
-        if [[ "${dbmaker}" != "s" ]]; then
+        if [[ "${CFG_USA_DBMAKER}" != "s" ]]; then
             _mensagec "${GREEN}" "1${NORM} -|: Rotinas de Backup        "
             printf "\n" 
             _mensagec "${GREEN}" "2${NORM} -|: Reconstruir Arquivos     "
@@ -299,7 +267,7 @@ _menu_arquivos() {
 
         case "${opcao}" in
             1) 
-                if [[ "${dbmaker}" = "s" ]]; then
+                if [[ "${CFG_USA_DBMAKER}" = "s" ]]; then
                     _opinvalida
                     _read_sleep 1
                 else
@@ -307,7 +275,7 @@ _menu_arquivos() {
                 fi
                 ;;
             2) 
-                if [[ "${dbmaker}" = "s" ]]; then
+                if [[ "${CFG_USA_DBMAKER}" = "s" ]]; then
                     _opinvalida
                     _read_sleep 1
                 else
@@ -545,7 +513,7 @@ _menu_configs() {
         _meia_linha "-" "${YELLOW}"
         _mensagec "${GREEN}" "1${NORM} -|: Parametros do Sistema   "
         printf "\n" 
-        if [[ "${sistema}" = "iscobol" ]]; then
+        if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
             _mensagec "${GREEN}" "2${NORM} -|: Versao do Iscobol       "
         else
             _mensagec "${GREEN}" "2${NORM} -|: Funcao nao disponivel   "
@@ -607,8 +575,8 @@ _menu_setups() {
             2) 
                _manutencao_setup || true
                 # Apos a manutencao, recarregar as configuracoes
-                if [[ -f "${cfg_dir}/.config" ]]; then
-                    "." "${cfg_dir}/.config"
+                if [[ -f "${CFG_DIR}/.config" ]]; then
+                    "." "${CFG_DIR}/.config"
                     _mensagec "${GREEN}" "Configuracoes recarregadas com sucesso!"
                     _read_sleep 2
                 fi
@@ -655,8 +623,8 @@ _menu_lembretes() {
         case "${opcao}" in
             1) _escrever_nova_nota || true ;;
             2) 
-                if [[ -f "${cfg_dir}/lembrete" ]]; then
-                    _visualizar_notas_arquivo "${cfg_dir}/lembrete" || true
+                if [[ -f "${CFG_DIR}/lembrete" ]]; then
+                    _visualizar_notas_arquivo "${CFG_DIR}/lembrete" || true
                 else
                     _mensagec "${YELLOW}" "Arquivo de notas nao encontrado"
                     _read_sleep 1
@@ -855,13 +823,13 @@ _menu_escolha_base() {
         printf "\n"
         _mensagec "${PURPLE}" " Escolha a opcao:"
         printf "\n"
-        _mensagec "${GREEN}" "1${NORM} -|: Base em ${raiz}${base}"
+        _mensagec "${GREEN}" "1${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR}"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Base em ${raiz}${base2}"
+        _mensagec "${GREEN}" "2${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR2}"
         printf "\n"
         
-        if [[ -n "${base3}" ]]; then
-            _mensagec "${GREEN}" "3${NORM} -|: Base em ${raiz}${base3}"
+        if [[ -n "${CFG_BASE_DIR3}" ]]; then
+            _mensagec "${GREEN}" "3${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR3}"
             printf "\n"
         fi
         
@@ -876,19 +844,19 @@ _menu_escolha_base() {
 
         case "${opcao}" in
             1) 
-                if _definir_base_trabalho "base"; then
+                if _definir_base_trabalho "CFG_BASE_DIR"; then
                     return 0
                 fi
                 ;;
             2) 
-                if _definir_base_trabalho "base2"; then
+                if _definir_base_trabalho "CFG_BASE_DIR2"; then
                     return 0
                 fi
                 ;;
             3) 
-                if [[ -n "${base3}" ]]; then
-                    if _definir_base_trabalho "base3"; then
-                        return 1
+                if [[ -n "${CFG_BASE_DIR3}" ]]; then
+                    if _definir_base_trabalho "CFG_BASE_DIR3"; then
+                        return 0
                     fi
                 else
                     _opinvalida
@@ -955,19 +923,19 @@ _menu_tipo_backup() {
 
 #---------- FUNcoES AUXILIARES DE MENU ----------#
 # Define a base de trabalho atual
-# Parametros: $1=nome_da_base (base, base2, base3)
+# Parametros: $1=nome_da_base (CFG_BASE_DIR, CFG_BASE_DIR2, CFG_BASE_DIR3)
 _definir_base_trabalho() {
     local base_var="$1"
     local base_dir="${!base_var}"
 
-    if [[ -z "${raiz}" ]] || [[ -z "${base_dir}" ]]; then
+    if [[ -z "${RAIZ}" ]] || [[ -z "${base_dir}" ]]; then
         _mensagec "${RED}" "Erro: Variaveis de configuracao nao definidas"
         _linha
         _read_sleep 2
         return 1
     fi
     
-    export base_trabalho="${raiz}${base_dir}"
+    export base_trabalho="${RAIZ}${base_dir}"
     
     if [[ ! -d "${base_trabalho}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"

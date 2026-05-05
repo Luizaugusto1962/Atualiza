@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # auth.sh - Modulo de Autenticacao
 # Responsavel pela autenticacao de usuarios
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/04/2026-02
+# Versao: 05/05/2026-02
 # Autor: Luiz Augusto
 #
 
 # Variaveis globais esperadas
-cfg_dir="${cfg_dir:-}"                 # Diretorio de configuracao
+CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
 
 # Arquivo de senhas oculto
-SENHA_FILE="${cfg_dir}/.senhas"
+SENHA_FILE="${CFG_DIR}/.senhas"
 
 # Garantir que o arquivo de senhas tenha permissoes restritas
 if [[ -f "$SENHA_FILE" ]]; then
@@ -21,7 +22,7 @@ if [[ -f "$SENHA_FILE" ]]; then
 fi
 
 # Variavel global para armazenar o nome do usuario autenticado
-declare -u usuario           # Variavel global para armazenar o nome do usuario autenticado
+declare usuario           # Variavel global para armazenar o nome do usuario autenticado
 
 # Funcao para hash da senha usando algoritmo configuravel
 _hash_senha() {
@@ -89,8 +90,8 @@ _login() {
     local tentativas=1
     local resposta
     # usuario is made global to be used in logging
-
-    while [[ $tentativas -le 2 ]]; do
+    local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
+    while [[ $tentativas -le $max_tentativas ]]; do
         _mensagec "${RED}" "Login no Sistema"
         _linha "=" "${GREEN}"
 
@@ -136,7 +137,7 @@ _login() {
             fi
         fi
 
-        if [[ $tentativas -ge 2 ]]; then
+        if [[ $tentativas -ge $max_tentativas ]]; then
             return 1
         fi
         

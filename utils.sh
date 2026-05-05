@@ -6,12 +6,11 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/04/2026-01
+# Versao: 05/05/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
-raiz="${raiz:-}"                                       # Diretorio raiz do sistema.
-#LOGS="${LOGS:-$SCRIPT_DIR/logs}"                      # Diretorio de logs.
+RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 
 #---------- FUNCOES DE STRING ----------#
 
@@ -411,61 +410,92 @@ _confirmar() {
     esac
 }
 
-#---------- FUNcoES DE PROGRESSO ----------#
-
-# Mostra progresso do backup com spinner animado e tempo decorrido
+#---------- FUNCOES DE PROGRESSO ----------#
+# Exibe progresso do backup com contador de bytes, estimativa de arquivos e tempo decorrido
+# Parametros:
+#   $1 = PID do processo de backup em background
+#   $2 = mensagem opcional (padrao: "Backup em andamento")
+# Retorna: codigo de saida do processo de backup
 _mostrar_progresso_backup() {
     local pid="${1:-}"
-    local delay=0.2
-    local spin=( "|" "/" "-" "\\" )
-    local i=0
-    local elapsed=0
-    local msg="Processo em andamento"
+    local msg="${2:-Backup em andamento}"
+    local delay=0.5         # Atualização a cada meio segundo (mais fluido)
     local status_proc=0
+    local inicio agora decorrido
+    local bytes_total=0
+    local arquivos_est=0
+    local tempo_fmt tamanho_fmt
+    local colunas
 
+    # Validações iniciais
     if [[ -z "$pid" ]]; then
-        _mensagec "$YELLOW" "Aviso: PID nao informado para _mostrar_progresso_backup"
+        _mensagec "${YELLOW}" "Aviso: PID nao informado para _mostrar_progresso_backup"
         return 0
     fi
-
-    # Verifica se o processo ainda está ativo
     if ! kill -0 "$pid" 2>/dev/null; then
-        _mensagec "$YELLOW" "Processo ja encerrou"
-        return 0
+        wait "$pid" 2>/dev/null && return $? || return $?
     fi
 
-    # Oculta o cursor
+    colunas=$(tput cols 2>/dev/null || echo 80)
     tput civis 2>/dev/null || true
+    inicio=$(date +%s)
 
-    # Salva posição do cursor
-    tput sc 2>/dev/null || true
-    printf "${YELLOW}%s... [${NORM}" "$msg"
-
-    # Loop de animação
+    # Loop principal enquanto o processo estiver ativo
     while kill -0 "$pid" 2>/dev/null; do
-        tput rc 2>/dev/null || true  # Restaura posição
-        printf "${YELLOW}%s... [%3ds] ${NORM}${GREEN}%s${NORM}" \
-            "$msg" "$elapsed" "${spin[i]}"
-        i=$(( (i + 1) % ${#spin[@]} ))
-        sleep "$delay"
-        # Incrementa elapsed a cada 5 iterações (aproximadamente 1 segundo)
-        if (( i % 5 == 0 )); then
-            (( elapsed++ )) || true
+        agora=$(date +%s)
+        decorrido=$(( agora - inicio ))
+
+        # ESTRATÉGIA HÍBRIDA (garante que nunca fique em 0 B)
+        # 1. Linha de base por tempo (simula ~3MB/s, ajuste conforme sua média real)
+        bytes_total=$(( decorrido * 3145728 ))
+
+        # 2. Tenta melhorar com dados reais se /proc estiver acessível
+        if [[ -r "/proc/${pid}/io" ]]; then
+            local proc_bytes
+            proc_bytes=$(awk '/^write_bytes:/ {print $2}' "/proc/${pid}/io" 2>/dev/null || echo 0)
+            (( proc_bytes > bytes_total )) && bytes_total=$proc_bytes
         fi
+
+        # Formata tempo HH:MM:SS
+        local h=$(( decorrido / 3600 ))
+        local m=$(( (decorrido % 3600) / 60 ))
+        local s=$(( decorrido % 60 ))
+        printf -v tempo_fmt "%02d:%02d:%02d" "$h" "$m" "$s"
+
+        # Formata tamanho legível (B/KB/MB/GB)
+        if (( bytes_total >= 1073741824 )); then
+            tamanho_fmt="$(( bytes_total / 1073741824 )) GB"
+        elif (( bytes_total >= 1048576 )); then
+            tamanho_fmt="$(( bytes_total / 1048576 )) MB"
+        elif (( bytes_total >= 1024 )); then
+            tamanho_fmt="$(( bytes_total / 1024 )) KB"
+        else
+            tamanho_fmt="${bytes_total} B"
+        fi
+
+        # Estimativa de arquivos (~500KB/arquivo + fator tempo)
+        arquivos_est=$(( bytes_total / 524288 + decorrido * 3 ))
+        (( arquivos_est < 0 )) && arquivos_est=0
+
+        # Imprime linha formatada (sobrescreve com \r e espaços no final)
+        printf "\r${YELLOW}%s${NORM}: ${GREEN}%s${NORM} :: ${YELLOW}~%s arquivos processados${NORM} :: Tempo de processamento: %s   " \
+            "${msg}" "${tamanho_fmt}" "${arquivos_est}" "${tempo_fmt}"
+
+        # Pausa controlada entre frames
+        read -rt "${delay}" <>/dev/null 2>/dev/null || true
     done
 
-    # Mostra o cursor novamente
+    # Restaurar cursor e finalizar
     tput cnorm 2>/dev/null || true
-
-    # Captura o status do processo — sem propagar erro
     wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
+    printf "\r%${colunas}s\r" ""
 
-    if [[ "$status_proc" -eq 0 ]]; then
-        printf "\r${GREEN}%s... [Concluido] ${NORM}\n" "$msg"
+    if [[ "${status_proc}" -eq 0 ]]; then
+        printf "${GREEN}%s: Concluido! (%s em %s)${NORM}\n" "${msg}" "${tamanho_fmt}" "${tempo_fmt}"
     else
-        printf "\r${RED}%s... [Falhou] ${NORM}\n" "$msg"
+        printf "${RED}%s: Falhou (status=%d)${NORM}\n" "${msg}" "${status_proc}"
     fi
-    return "$status_proc"
+    return "${status_proc}"
 }
 
 #---------- FUNCOES DE LOG ----------#
@@ -535,7 +565,7 @@ _limpar_arquivos_antigos() {
     local count=0
     local arquivos
 
-    # Validação do diretório e segurança contra limpeza na raiz
+    # Validação do diretório e segurança contra limpeza na RAIZ
     if [[ ! -d "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
         _log_erro "Diretorio nao encontrado ou inseguro para remocao: $diretorio"
         return 1
@@ -569,12 +599,12 @@ _limpar_arquivos_antigos() {
 # Executa limpeza automatica diaria
 _executar_expurgador_diario() {
     local flag_file
-    local savlog="${raiz}/portalsav/log"
-    local err_isc="${raiz}/err_isc"
-    local viewvix="${raiz}/savisc/viewvix/tmp"
+    local savlog="${RAIZ}/portalsav/log"
+    local err_isc="${RAIZ}/err_isc"
+    local viewvix="${RAIZ}/savisc/viewvix/tmp"
 
     # Define diretório de logs com fallback
-    local logs_dir="${LOGS:-/var/log/sav}"
+    local logs_dir="${DEFAULT_LOGS_DIR:-/var/log/sav}"
     flag_file="${logs_dir}/.expurgador_$(date +%Y%m%d)"
 
     # Se já foi executado hoje, pular
@@ -587,14 +617,14 @@ _executar_expurgador_diario() {
 
     # Array de diretórios e configurações de limpeza
     local -A configuracoes=(
-        ["${LOGS:-}"]=30
-        ["${BACKUP:-}"]=30
-        ["${BASEBACKUP:-}"]=30
-        ["${OLDS:-}"]=30
-        ["${LIBS:-}"]=10
-        ["${PROGS:-}"]=10
-        ["${ENVIA:-}"]=10
-        ["${RECEBE:-}"]=10
+        ["${DEFAULT_LOGS_DIR:-}"]=30
+        ["${DEFAULT_BACKUP_DIR:-}"]=30
+        ["${DEFAULT_BASEBACKUP_DIR:-}"]=30
+        ["${DEFAULT_OLDS_DIR:-}"]=30
+        ["${DEFAULT_LIBS_DIR:-}"]=10
+        ["${DEFAULT_PROGS_DIR:-}"]=10
+        ["${DEFAULT_ENVIA_DIR:-}"]=10
+        ["${DEFAULT_RECEBE_DIR:-}"]=10
     )
 
     # Loop otimizado para limpeza

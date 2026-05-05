@@ -4,31 +4,31 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/04/2026-01
+# Versao: 05/05/2026-01
 #
 
 # Variaveis globais esperadas
-sistema="${sistema:-}"                    # Tipo de sistema (ex: iscobol, outros).
-base="${base:-}"                          # Caminho do diretorio da segunda base de dados.
-base3="${base3:-}"                        # Caminho do diretorio da terceira base de dados.
-cmd_zip="${cmd_zip:-}"                    # Comando para compactacao (ex: zip).
-jut="${jut:-}"                            # Caminho para o utilitario jutil.
-raiz="${raiz:-}"                          # Caminho raiz do sistema.
-cfg_dir="${cfg_dir:-${SCRIPT_DIR}/cfg}"    # Caminho do diretorio de configuracoes.
-LOGS="${LOGS:-${SCRIPT_DIR}/logs}"         # Diretorio de logs
+CFG_SISTEMA="${CFG_SISTEMA:-}"                    # Tipo de sistema (ex: iscobol, outros).
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                  # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                # Caminho do diretorio da terceira base de dados.
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                    # Comando para compactacao (ex: zip).
+REBUILD="${REBUILD:-}"                            # Caminho para o utilitario jutil.
+RAIZ="${RAIZ:-}"                           # Caminho RAIZ do sistema.
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"    # Caminho do diretorio de configuracoes.
+DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"         # Diretorio de logs
 
 #---------- FUNCOES DE LIMPEZA ----------#
 
 # Resolve a base de trabalho ativa para operacoes de arquivos
 _selecionar_base_arquivos() {
 
-    if [[ -n "${base2}" ]]; then
+    if [[ -n "${CFG_BASE_DIR2}" ]]; then
         if ! _menu_escolha_base; then
             # Usuario escolheu voltar (opcao 9) — retorna 1 para o chamador voltar ao menu
             return 1
         fi
     else
-        base_trabalho="${raiz}${base}"
+        base_trabalho="${RAIZ}${CFG_BASE_DIR}"
     fi
 
     # Validar antes de prosseguir
@@ -59,7 +59,7 @@ _executar_limpeza_temporarios() {
 
     # Excluir arquivos de lista antigos para evitar confusao
     for lista in "atualizal" "atualizaj" "atualizaj2" "atualizat" "atualizat2" ".atualizac" ".atualizac.bkp" ".atualizac.bak"; do
-        local caminho_lista="${cfg_dir}/${lista}"
+        local caminho_lista="${CFG_DIR}/${lista}"
         if [[ -f "${caminho_lista}" ]]; then
             if rm -f "${caminho_lista}"; then
                 _log "Lista temporaria removida: ${lista}"
@@ -70,7 +70,7 @@ _executar_limpeza_temporarios() {
     done
 
     # Verificar arquivo de lista de temporarios
-    local arquivo_lista="${cfg_dir}/limpetmp"
+    local arquivo_lista="${CFG_DIR}/limpetmp"
     if [[ ! -f "${arquivo_lista}" ]]; then
         _mensagec "${RED}" "ERRO: Arquivo ${arquivo_lista} nao existe no diretorio"
         _read_sleep 2
@@ -81,15 +81,15 @@ _executar_limpeza_temporarios() {
         return 1
     fi
 
-    local arquivo_lista2="${cfg_dir}/limpetmp2"
+    local arquivo_lista2="${CFG_DIR}/limpetmp2"
 
     # Limpar temporarios antigos do backup
-    find "${BACKUP}" -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
+    find "${DEFAULT_BACKUP_DIR}" -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
 
     # Processar cada base de dados configurada
-    for base_dir in "$base" "$base2" "$base3"; do
+    for base_dir in "$CFG_BASE_DIR" "$CFG_BASE_DIR2" "$CFG_BASE_DIR3"; do
         if [[ -n "$base_dir" ]]; then
-            local caminho_base="${raiz}${base_dir}"
+            local caminho_base="${RAIZ}${base_dir}"
             if [[ -d "$caminho_base" ]]; then
                 _limpar_base_especifica "$caminho_base" "$arquivo_lista"
                 # Processar limpetmp2 na sequencia, se existir
@@ -153,8 +153,8 @@ _limpar_base_especifica() {
         _mensagec "${GREEN}" "Processando padrao: ${YELLOW}${padrao_arquivo}${NORM} (${qtd_padrao} arquivo(s))"
         _read_sleep 1
         
-        # Compactar — $cmd_zip sem aspas para suportar flags (ex: "zip -j")
-        if $cmd_zip "${BACKUP}/${zip_temporarios}" "${arquivos_zip[@]}" >>"${LOG_LIMPA}" 2>&1; then
+        # Compactar — $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
+        if $DEFAULT_ZIP "${DEFAULT_BACKUP_DIR}/${zip_temporarios}" "${arquivos_zip[@]}" >>"${LOG_LIMPA}" 2>&1; then
             _log "Arquivos temporarios compactados: $padrao_arquivo (${qtd_padrao} arquivo(s))" "${LOG_LIMPA}"
             # Remover usando o mesmo array ja coletado.
             if printf '%s\0' "${arquivos_zip[@]}" | xargs -0 rm -f; then
@@ -192,7 +192,7 @@ _adicionar_arquivo_lixo() {
     fi
 
     # Adicionar arquivo à lista
-    echo "$novo_arquivo" >> "${cfg_dir}/limpetmp2"
+    echo "$novo_arquivo" >> "${CFG_DIR}/limpetmp2"
     _mensagec "${CYAN}" "Arquivo '${novo_arquivo}' adicionado com sucesso ao 'limpetmp2'"
     _linha
     
@@ -207,8 +207,8 @@ _lista_arquivos_lixo() {
     _mensagec "${CYAN}" "Lista de arquivos no limpetmp:"
     _linha
 
-    if [[ -f "${cfg_dir}/limpetmp" && -s "${cfg_dir}/limpetmp" ]]; then
-        nl -w3 -s'. ' "${cfg_dir}/limpetmp"
+    if [[ -f "${CFG_DIR}/limpetmp" && -s "${CFG_DIR}/limpetmp" ]]; then
+        nl -w3 -s'. ' "${CFG_DIR}/limpetmp"
     else
         _mensagec "${YELLOW}" "Nenhum arquivo listado no 'limpetmp'"
     fi
@@ -217,8 +217,8 @@ _lista_arquivos_lixo() {
     _mensagec "${CYAN}" "Lista de arquivos no limpetmp2:"
     _linha
 
-    if [[ -f "${cfg_dir}/limpetmp2" && -s "${cfg_dir}/limpetmp2" ]]; then
-        nl -w3 -s'. ' "${cfg_dir}/limpetmp2"
+    if [[ -f "${CFG_DIR}/limpetmp2" && -s "${CFG_DIR}/limpetmp2" ]]; then
+        nl -w3 -s'. ' "${CFG_DIR}/limpetmp2"
     else
         _mensagec "${YELLOW}" "Nenhum arquivo listado no 'limpetmp2'"
     fi
@@ -237,8 +237,8 @@ _recuperar_arquivo_especifico() {
     fi
 
     _limpa_tela
-    if [[ "${sistema}" != "iscobol" ]]; then
-        _mensagec "${RED}" "Recuperacao em desenvolvimento para este sistema"
+    if [[ "${CFG_SISTEMA}" != "iscobol" ]]; then
+        _mensagec "${RED}" "Recuperacao em desenvolvimento para este sistema. Disponivel apenas para IsCOBOL no momento."
         _press
         return 1
     fi
@@ -363,15 +363,15 @@ _recuperar_arquivo_individual() {
 
 # Recupera arquivos principais baseado na lista
 _recuperar_arquivos_principais() {
-    cd "${cfg_dir}" || return 1
+    cd "${CFG_DIR}" || return 1
     
     if ! _selecionar_base_arquivos; then
         return 1
     fi
     
-    if [[ "${sistema}" = "iscobol" ]]; then
+    if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
         # Usar valor padrão se base_trabalho estiver vazia
-        base_trabalho="${base_trabalho:-${raiz}${base}}"
+        base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
         cd "$base_trabalho" || {
             _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
             return 1
@@ -386,9 +386,9 @@ _recuperar_arquivos_principais() {
         {
             ls ATE"${var_ano}"*.dat 2>/dev/null || true
             ls NFE?"${var_ano4}".*.dat 2>/dev/null || true
-        } > "${cfg_dir}/indexar2"
+        } > "${CFG_DIR}/indexar2"
         
-        cd "${cfg_dir}" || return 1
+        cd "${CFG_DIR}" || return 1
         _read_sleep 1
         
         # Verificar arquivos de lista
@@ -403,7 +403,7 @@ _recuperar_arquivos_principais() {
         
         _mensagec "${YELLOW}" "Arquivos principais recuperados"
     else
-        _mensagec "${RED}" "Recuperacao nao disponivel para este sistema"
+        _mensagec "${RED}" "Recuperacao nao disponivel para este sistema. Disponivel apenas para IsCOBOL no momento."
     fi
     _press
 }
@@ -423,9 +423,9 @@ _processar_lista_arquivos() {
 # Executa jutil no arquivo especificado
 _executar_jutil() {
     local arquivo="$1"
-    if [[ -x "${jut}" ]]; then    
+    if [[ -x "${REBUILD}" ]]; then    
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
-            if "${jut}" -rebuild "$arquivo" -a -f; then
+            if "${REBUILD}" -rebuild "$arquivo" -a -f; then
                 _log_sucesso "Rebuild executado: $(basename "$arquivo")"
                 # garantir permissões máximas após o rebuild
                 chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
@@ -449,7 +449,7 @@ _executar_jutil() {
             _mensagec "${YELLOW}" "Arquivo nao encontrado ou vazio: $(basename "$arquivo" 2>/dev/null || echo "$arquivo")"
         fi
     else
-        _mensagec "${RED}" "Erro: jutil nao encontrado em ${jut}"
+        _mensagec "${RED}" "Erro: jutil nao encontrado em ${REBUILD}"
         return 1
     fi    
 }
@@ -459,34 +459,34 @@ _executar_jutil() {
 # Envia arquivo avulso
 _enviar_arquivo_avulso() {
     _limpa_tela
-    local dir_origem arquivo_enviar destino_remoto
+    local DIRETORIO_ORIGEM ARQUIVO_ENVIAR DESTINO_REMOTO
     
     # Solicitar diretorio de origem
     _linha
     _mensagec "${YELLOW}" "1- Origem: Informe o diretorio onde esta o arquivo:"
-    read -rp "${YELLOW} -> ${NORM}" dir_origem
+    read -rp "${YELLOW} -> ${NORM}" DIRETORIO_ORIGEM
     _linha
     
-    if [[ -z "$dir_origem" ]]; then
-        dir_origem="${ENVIA:-}"
-        if [[ -z "$dir_origem" || ! -d "$dir_origem" ]]; then
+    if [[ -z "$DIRETORIO_ORIGEM" ]]; then
+        DIRETORIO_ORIGEM="${DEFAULT_ENVIA_DIR:-}"
+        if [[ -z "$DIRETORIO_ORIGEM" || ! -d "$DIRETORIO_ORIGEM" ]]; then
             _mensagec "${RED}" "Diretorio de origem nao informado ou padrao nao definido"
             _press
             return 1
         fi
         _linha
-        _mensagec "${YELLOW}" "Usando diretorio padrao: ${dir_origem}"
+        _mensagec "${YELLOW}" "Usando diretorio padrao: ${DIRETORIO_ORIGEM}"
         # Verificar se há arquivos no diretório
         shopt -s nullglob
-        local arquivos=("${dir_origem}"/*)
+        local arquivos=("${DIRETORIO_ORIGEM}"/*)
         shopt -u nullglob
         if (( ${#arquivos[@]} == 0 )); then
             _mensagec "${YELLOW}" "Nenhum arquivo encontrado no diretorio"
             _press
             return 1
         fi
-    elif [[ ! -d "$dir_origem" ]]; then
-        _mensagec "${RED}" "Diretorio nao encontrado: ${dir_origem}"
+    elif [[ ! -d "$DIRETORIO_ORIGEM" ]]; then
+        _mensagec "${RED}" "Diretorio nao encontrado: ${DIRETORIO_ORIGEM}"
         _press
         return 1
     fi
@@ -496,26 +496,26 @@ _enviar_arquivo_avulso() {
     _mensagec "${CYAN}" "Informe o arquivo que deseja enviar"
     _mensagec "${CYAN}" "Use * para enviar todas as extensoes (ex: ARQUIVO*)"
     _linha
-    read -rp "${YELLOW}2- Nome do ARQUIVO: ${NORM}" arquivo_enviar
+    read -rp "${YELLOW}2- Nome do ARQUIVO: ${NORM}" ARQUIVO_ENVIAR
     
-    if [[ -z "$arquivo_enviar" ]]; then
+    if [[ -z "$ARQUIVO_ENVIAR" ]]; then
         _mensagec "${RED}" "Nome do arquivo nao informado"
         _press
         return 1
     fi
     
     # Verificar se o arquivo contém wildcard (*)
-    if [[ "$arquivo_enviar" == *"*"* ]]; then
+    if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
         # Listar arquivos que correspondem ao padrão
         shopt -s nullglob
         local arquivos_encontrados=()
         while IFS= read -r -d '' arquivo; do
             arquivos_encontrados+=("$arquivo")
-        done < <(find "${dir_origem}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
+        done < <(find "${DIRETORIO_ORIGEM}" -maxdepth 1 -type f -name "${ARQUIVO_ENVIAR}" -print0)
         shopt -u nullglob
         
         if (( ${#arquivos_encontrados[@]} == 0 )); then
-            _mensagec "${YELLOW}" "Nenhum arquivo encontrado com o padrao: ${arquivo_enviar}"
+            _mensagec "${YELLOW}" "Nenhum arquivo encontrado com o padrao: ${ARQUIVO_ENVIAR}"
             _press
             return 1
         fi
@@ -540,8 +540,8 @@ _enviar_arquivo_avulso() {
         fi
     else
         # Verificação para arquivo único (sem wildcard)
-        if [[ ! -e "${dir_origem}/${arquivo_enviar}" ]]; then
-            _mensagec "${YELLOW}" "${arquivo_enviar} nao encontrado em ${dir_origem}"
+        if [[ ! -e "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" ]]; then
+            _mensagec "${YELLOW}" "${ARQUIVO_ENVIAR} nao encontrado em ${DIRETORIO_ORIGEM}"
             _press
             return 1
         fi
@@ -551,10 +551,10 @@ _enviar_arquivo_avulso() {
     printf "\n"
     _linha
     _mensagec "${YELLOW}" "3- Destino: Informe o diretorio no servidor:"
-    read -rp "${YELLOW} -> ${NORM}" destino_remoto
+    read -rp "${YELLOW} -> ${NORM}" DESTINO_REMOTO
     _linha
     
-    if [[ -z "$destino_remoto" ]]; then
+    if [[ -z "$DESTINO_REMOTO" ]]; then
         _mensagec "${RED}" "Destino nao informado"
         _press
         return 1
@@ -595,7 +595,7 @@ _receber_arquivo_avulso() {
     read -rp "${YELLOW} -> ${NORM}" destino_local
     
     if [[ -z "$destino_local" ]]; then
-        destino_local="${down_dir:-}"
+        destino_local="${DEFAULT_RECEBE_DIR:-}"
     fi
     
     if [[ ! -d "$destino_local" ]]; then
@@ -633,17 +633,16 @@ _executar_expurgador() {
     
     # Definir diretorios para limpeza
     local diretorios_limpeza=(
-        "${BACKUP}/"
-        "${BIBLIOTECA}/"
-        "${ENVIA}/"
-        "${RECEBE}/"
-        "${BASEBACKUP}/"
-        "${OLDS}/"
-        "${PROGS}/"
-        "${LOGS}/"
-        "${raiz}/portalsav/log/"
-        "${raiz}/err_isc/"
-        "${raiz}/savisc/viewvix/tmp/"
+        "${DEFAULT_BACKUP_DIR}/"
+        "${DEFAULT_BIBLIOTECA_DIR}/"
+        "${DEFAULT_ENVIA_DIR}/"
+        "${DEFAULT_RECEBE_DIR}/"
+        "${DEFAULT_BASEBACKUP_DIR}/"
+        "${DEFAULT_OLDS_DIR}/"
+        "${DEFAULT_LOGS_DIR}/"
+        "${RAIZ}/portalsav/log/"
+        "${RAIZ}/err_isc/"
+        "${RAIZ}/savisc/viewvix/tmp/"
     )
    
    
@@ -691,10 +690,10 @@ _executar_expurgador() {
 _listar_logs_atualizacao() {
     _limpa_tela
     _linha
-    _mensagec "${YELLOW}" "Logs de Atualizacao encontrados em ${LOGS}:"
+    _mensagec "${YELLOW}" "Logs de Atualizacao encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
     
-    local logs=("${LOGS}"/atualiza.*)
+    local logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
     if [[ ! -e "${logs[0]}" ]]; then
         _mensagec "${RED}" "Nenhum log de atualizacao encontrado."
         _press
@@ -766,10 +765,10 @@ _listar_logs_atualizacao() {
 _listar_logs_limpeza() {
     _limpa_tela
     _linha
-    _mensagec "${YELLOW}" "Logs de Limpeza encontrados em ${LOGS}:"
+    _mensagec "${YELLOW}" "Logs de Limpeza encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
     
-    local logs=("${LOGS}"/limpando.*)
+    local logs=("${DEFAULT_LOGS_DIR}"/limpando.*)
     if [[ ! -e "${logs[0]}" ]]; then
         _mensagec "${RED}" "Nenhum log de limpeza encontrado."
         _press
