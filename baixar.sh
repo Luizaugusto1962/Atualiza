@@ -249,7 +249,8 @@ _atualizando() {
     _mensagec "${GREEN}" "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
-    return 0
+    exit 1
+#    return 0
 }
 
 _atualizar_online() {
