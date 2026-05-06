@@ -11,13 +11,13 @@ set -euo pipefail
 #
 
 
-base2="" # Diretório base secundário (vazio se não definido)
-base3="" # Diretório base terciário (vazio se não definido)
+base2=""                     # Diretório base secundário (vazio se não definido)
+base3=""                     # Diretório base terciário (vazio se não definido)
 
 # =============================================================================
 # Definir diretorio de trabalho
 # =============================================================================
-RAIZ="${SCRIPT_DIR%/*}"
+RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /libs)
 
 # Diretorio do script principal
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"

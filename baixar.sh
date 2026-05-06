@@ -9,11 +9,11 @@ set -euo pipefail
 #
 
 # Variaveis globais esperadas
-CFG_DIR="${CFG_DIR:-}"      # Caminho do diretorio de configuracao do programa.
-LIB_DIR="${LIB_DIR:-}"      # Diretorio dos modulos de biblioteca.
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip).
-CFG_SISTEMA="${CFG_SISTEMA:-}"      # Variavel do sistema em uso (ex: iscobol, linux).
-CFG_OFFLINE="${CFG_OFFLINE:-}"      # Variavel do status de conexao (s/n).
+CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
+LIB_DIR="${LIB_DIR:-}"                          # Diretorio dos modulos de biblioteca.
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
+CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
+CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
 DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
 
 # Executa atualizacao do script

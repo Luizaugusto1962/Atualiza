@@ -10,7 +10,7 @@
 
 
 # Variaveis globais esperadas
-CFG_DIR="${CFG_DIR:-}"     # Diretorio de configuracoes
+CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracoes
 
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
 

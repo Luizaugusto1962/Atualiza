@@ -8,13 +8,13 @@
 #
 
 # Variaveis globais esperadas
-CFG_SISTEMA="${CFG_SISTEMA:-}"                    # Tipo de sistema (ex: iscobol, outros).
-CFG_BASE_DIR="${CFG_BASE_DIR:-}"                  # Caminho do diretorio da segunda base de dados.
-CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                # Caminho do diretorio da terceira base de dados.
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                    # Comando para compactacao (ex: zip).
-REBUILD="${REBUILD:-}"                            # Caminho para o utilitario jutil.
-RAIZ="${RAIZ:-}"                           # Caminho RAIZ do sistema.
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"    # Caminho do diretorio de configuracoes.
+CFG_SISTEMA="${CFG_SISTEMA:-}"                                     # Tipo de sistema (ex: iscobol, outros).
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do diretorio da terceira base de dados.
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                                     # Comando para compactacao (ex: zip).
+REBUILD="${REBUILD:-}"                                             # Caminho para o utilitario jutil.
+RAIZ="${RAIZ:-}"                                                   # Caminho RAIZ do sistema.
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"                            # Caminho do diretorio de configuracoes.
 DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"         # Diretorio de logs
 
 #---------- FUNCOES DE LIMPEZA ----------#

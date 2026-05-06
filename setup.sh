@@ -14,7 +14,7 @@
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
-verclass="${verclass:-}"
+verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
 
 
 # =============================================================================
