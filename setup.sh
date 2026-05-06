@@ -411,7 +411,7 @@ _recreate_config_files() {
 #===================================================================
 _configure_ssh_access() {
     local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
-    local DEFAULT_PORTA="${DEFAULT_PORTA:-${DEFAULT_SSH_PORT}}"       # Porta padrao
+    local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
     local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
     local SSH_DIR="${HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
@@ -436,7 +436,7 @@ _configure_ssh_access() {
 # ================================================
 Host sav_servidor
     HostName ${DEFAULT_IP_SERVER}
-    Port ${DEFAULT_PORTA}
+    Port ${DEFAULT_SSH_PORTA}
     User ${DEFAULT_SSH_USER}
 #   StrictHostKeyChecking accept-new
     ControlMaster auto
@@ -473,7 +473,7 @@ EOF
     else
         echo "Erro: nao foi possivel conectar ao servidor."
         echo "   Verifique:"
-        echo "     • Porta ${DEFAULT_PORTA} liberada"
+        echo "     • Porta ${DEFAULT_SSH_PORTA} liberada"
         echo "     • Usuario '${DEFAULT_SSH_USER}' existe no servidor remoto"
         echo "     • Firewall permite a conexao"
         return 1
