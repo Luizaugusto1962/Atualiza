@@ -3,8 +3,8 @@
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
 # Versao: 05/05/2026-01
 # Autor: Luiz Augusto
-# Os programas usados por este script devem estar na pasta /libs.
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Os scripts de suporte devem estar no diretório libs ao lado deste script.
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # Uso:
 #   ./atualiza.sh                  - Executa o programa principal
@@ -24,8 +24,9 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # Diretorio do script atual
 
 # Diretorio do script SCRIPT_DIR
-PLIBS_DIR="${SCRIPT_DIR}/libs" # Diretorio das bibliotecas
-export PLIBS_DIR SCRIPT_DIR  # Define variaveis como somente leitura
+PLIBS_DIR="${SCRIPT_DIR}/libs" # Diretorio das bibliotecas usadas pelo script
+export PLIBS_DIR SCRIPT_DIR
+readonly PLIBS_DIR SCRIPT_DIR
 
 # Verifica se o diretorio libs existe
 if [[ ! -d "${PLIBS_DIR}" ]]; then

@@ -2,7 +2,7 @@
 #
 # config.sh - Modulo de Configuracoes e Validacoes
 # Responsavel por carregar configuracoes, validar sistema e definir variaveis globais
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-02
@@ -74,10 +74,9 @@ CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"                      # Variavel que defin
 CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"                      # Variavel que define o caminho para onde sera enviado o backup.
 VERSAO="${VERSAO:-}"                                        # Variavel que define a versao do programa.
 INI="${INI:-}"                                              # Variavel que define o caminho do arquivo de configuracao do sistema.
-CFG_OFFLINE="${CFG_OFFLINE:-}"                              # Variavel que define se o sistema esta em modo offline.
-DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                # Variavel que define o caminho do diretorio do servidor off.
-CFG_OFFLINE="${CFG_OFFLINE:-}"                              # Variavel que define o caminho do diretorio do servidor off.
-CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"                        # Variavel que define o caminho do diretorio do servidor off.
+CFG_OFFLINE="${CFG_OFFLINE:-}"                              # Variavel que define se o sistema esta em modo offline (s/n).
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                # Variavel que define o caminho do diretorio de recebimento offline.
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"                        # Variavel que define se o SSH esta habilitado (s/n).
 VERSAOANT="${VERSAOANT:-}"                                  # Variavel que define a versao do programa anterior.
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                          # Comando para descompactar arquivos.
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                              # Comando para compactar arquivos.
@@ -460,15 +459,17 @@ _carregar_config_seguro() {
 # Retorna: 0 sempre
 # -----------------------------------------------------------------------------
 _configurar_acessos() {
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            DEFAULT_RECEBE_DIR="${CFG_OFFLINE}"
-            if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
-                _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-                    printf "Erro ao criar diretorio offline %s\n" "${DEFAULT_RECEBE_DIR}" >&2
-                    return 1
-                }
-            fi
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]] && [[ "${CFG_OFFLINE}" == "s" ]]; then
+        if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
+            printf "Erro: DEFAULT_RECEBE_DIR nao configurado para modo offline\n" >&2
+            return 1
+        fi
+
+        if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
+            _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+                printf "Erro ao criar diretorio offline %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+                return 1
+            }
         fi
     fi
     return 0

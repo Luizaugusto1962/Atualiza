@@ -2,7 +2,7 @@
 #
 # programas.sh - Modulo de Gestao de Programas
 # Responsavel pela atualizacao, instalacao e reversao de programas
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-00
@@ -85,20 +85,20 @@ _atualizar_programa_offline() {
 
 # Atualizacao de programas em pacotes
 _atualizar_programa_pacote() {
-        _solicitar_pacotes_atualizacao
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then        
-        if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            _linha
-            _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
-            _mover_arquivos_offline
-        else 
-            _baixar_pacotes_vaievem
-        fi
-    fi
-        _processar_atualizacao_pacotes
+    _solicitar_pacotes_atualizacao
+
+    if [[ "${CFG_OFFLINE}" == "s" ]]; then
         _linha
-        _press
-        return 0
+        _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
+        _mover_arquivos_offline
+    else
+        _baixar_pacotes_vaievem
+    fi
+
+    _processar_atualizacao_pacotes
+    _linha
+    _press
+    return 0
 }
 
 #---------- FUNCOES DE REVERSaO ----------#
@@ -358,6 +358,17 @@ _mover_arquivos_offline() {
 
 # Processa atualizacao dos programas
 _processar_atualizacao_programas() {
+    # Validar configuracoes basicas antes de qualquer operacao
+    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        return 1
+    fi
+
+    if [[ -z "${DEFAULT_PROGS_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: DEFAULT_PROGS_DIR nao configurado"
+        return 1
+    fi
+
     # Ir para o diretório DEFAULT_RECEBE_DIR onde estão os arquivos baixados
     cd "${DEFAULT_RECEBE_DIR}" || return 1
 
@@ -492,6 +503,11 @@ _processar_atualizacao_programas() {
 
 # Processa atualizacao de pacotes
 _processar_atualizacao_pacotes() {
+    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        return 1
+    fi
+
     # Ir para o diretório onde estão os pacotes baixados
     cd "${DEFAULT_RECEBE_DIR}" || return 1
     
@@ -640,8 +656,9 @@ _validar_integridade_backup() {
 
     # Verificar tamanho minimo (arquivo zip deve ter pelo menos 22 bytes)
     local tamanho
-    tamanho=$(stat -c%s "${arquivo_backup}" 2>/dev/null)
-    if (( tamanho < 22 )); then
+    tamanho=$(stat -c%s "${arquivo_backup}" 2>/dev/null || true)
+    if [[ -z "${tamanho}" || "${tamanho}" -lt 22 ]]; then
+        tamanho="${tamanho:-0}"
         _mensagec "${RED}" "ERRO: Arquivo de backup corrompido (tamanho: ${tamanho} bytes): ${arquivo_backup}"
         return 1
     fi

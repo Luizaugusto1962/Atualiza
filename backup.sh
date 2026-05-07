@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # backup.sh - Modulo do Sistema de Backup
 # Responsavel por backup completo, incremental e restauracao
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-01
@@ -216,9 +216,6 @@ _executar_backup() {
 
 # Restaura backup do sistema
 _restaurar_backup() {
-    local backup_selecionado=""   # Inicializar para evitar erro com set -u
-    local nome_backup=""
-
     # Seleciona o backup usando a rotina unica
     if ! _selecionar_backup; then
         return 0
@@ -234,16 +231,13 @@ _restaurar_backup() {
 
 
 _enviar_backup_avulso() {
-    local backup_selecionado=""   # Inicializar para evitar erro com set -u
-    local nome_backup=""
-
     # Seleciona o backup usando a rotina unica
     if ! _selecionar_backup; then
         return 0
     fi
 
     # Validar que o nome do backup foi definido
-    if [[ -z "${nome_backup}" ]]; then
+    if [[ -z "${nome_backup:-}" ]]; then
         _mensagec "${RED}" "Erro: Nome do backup nao definido"
         _press
         return 0
@@ -258,6 +252,8 @@ _enviar_backup_avulso() {
         if _confirmar "Enviar backup via rede?" "S"; then
             _enviar_backup_rede "$nome_backup"
         fi
+    else
+        _mensagec "${YELLOW}" "CFG_OFFLINE nao configurado corretamente. Nenhuma acao de envio feita."
     fi
 }
 

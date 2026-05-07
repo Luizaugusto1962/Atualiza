@@ -2,7 +2,7 @@
 #
 # arquivos.sh - Modulo de Gestao de Arquivos
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-01
 #

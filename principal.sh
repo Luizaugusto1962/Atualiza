@@ -2,7 +2,7 @@
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 # Versao: 06/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
@@ -108,7 +108,7 @@ for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
     if [[ -z "${dir}" ]]; then
         printf "ERRO: Variavel de diretorio nao definida.\n" >&2
-        return 1
+        exit 1
     fi
 
     # Criar diretório caso não exista com permissões seguras

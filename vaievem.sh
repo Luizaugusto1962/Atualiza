@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # vaievem.sh - Modulo de Operacoes de Sincronizacao
 # Responsavel por operacoes de download/upload via rsync, sftp e ssh
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-001

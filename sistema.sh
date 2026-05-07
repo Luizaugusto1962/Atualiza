@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # sistema.sh - Modulo de Informacoes do Sistema
 # Responsavel por informacoes do IsCOBOL, Linux, parametros e atualizacoes
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-01
@@ -108,7 +108,11 @@ _mostrar_versao_linux() {
     # Checando Externo IP
     local externalip="Nao disponivel"
     if [[ "${CFG_OFFLINE}" == "n" ]]; then
-        externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
+        if command -v curl >/dev/null 2>&1; then
+            externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
+        else
+            externalip="curl nao instalado"
+        fi
         printf "${GREEN}IP Externo: ${NORM}${externalip}${NORM}%*s\n"
     fi
 

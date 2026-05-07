@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # menus.sh - Sistema de Menus com Suporte a Ajuda
 # Responsavel pela apresentacao e navegacao dos menus do sistema
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-01
@@ -71,6 +71,7 @@ _ler_opcao_menu() {
                 ;;
         esac
 
+    return 0
 }
 
 #---------- MENU PRINCIPAL ----------#
@@ -200,7 +201,7 @@ _menu_biblioteca() {
         
         # Carregar versao anterior se disponivel
         if [[ -f "${CFG_DIR}/.versao" ]]; then
-            if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
+            if ! . "${CFG_DIR}/.versao" 2>/dev/null; then
                 printf '%s\n' "AVISO: Falha ao carregar ${CFG_DIR}/.versao" >&2
             fi
         fi

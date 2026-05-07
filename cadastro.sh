@@ -2,7 +2,7 @@
 #
 # cadastro.sh - Programa de Cadastro de Usuario
 # Permite cadastrar usuarios e senhas para o sistema SAV
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-02

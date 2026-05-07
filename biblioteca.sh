@@ -2,7 +2,7 @@
 #
 # biblioteca.sh - Modulo de Gestao de Biblioteca
 # Responsavel pela atualizacao das bibliotecas do sistema (Transpc, Savatu)
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-00
@@ -153,6 +153,11 @@ _reverter_biblioteca() {
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
+    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        return 1
+    fi
+
     _configurar_acessos
     cd "$DEFAULT_RECEBE_DIR" || return 1
 
@@ -175,6 +180,11 @@ _processar_biblioteca_offline() {
 
 # Salva atualizacao da biblioteca
 _salvar_atualizacao_biblioteca() {
+    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
+        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        return 1
+    fi
+
     cd "${DEFAULT_RECEBE_DIR}" || return 1
 
     _limpa_tela

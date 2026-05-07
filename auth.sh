@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # auth.sh - Modulo de Autenticacao
 # Responsavel pela autenticacao de usuarios
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-02
@@ -23,6 +23,21 @@ fi
 
 # Variavel global para armazenar o nome do usuario autenticado
 declare usuario           # Variavel global para armazenar o nome do usuario autenticado
+
+# Validar nome de usuário (somente letras maiusculas e números)
+_usuario_valido() {
+    local usuario="$1"
+    [[ "$usuario" =~ ^[A-Z0-9._-]+$ ]]
+}
+
+# Buscar hash do usuário no arquivo de senhas
+_obter_hash_usuario() {
+    local usuario="$1"
+    awk -F: -v u="$usuario" '
+        $1 == u {print $2; found=1; exit}
+        END {exit !found}
+    ' "$SENHA_FILE"
+}
 
 # Funcao para hash da senha usando algoritmo configuravel
 _hash_senha() {
@@ -51,8 +66,13 @@ _cadastrar_usuario() {
         return 1
     fi
 
+    if ! _usuario_valido "$usuario"; then
+        _mensagec "${RED}" "Usuario invalido. Use apenas letras maiusculas e numeros."
+        return 1
+    fi
+
     # Verificar se usuario ja existe
-    if grep -q "^${usuario}:" "$SENHA_FILE" 2>/dev/null; then
+    if _obter_hash_usuario "$usuario" >/dev/null 2>&1; then
         _mensagec "${RED}" "Usuario ja existe."
         return 1
     fi
@@ -100,6 +120,8 @@ _login() {
 
         if [[ -z "$usuario" ]]; then
             _mensagec "${RED}" "Nome de usuario nao pode ser vazio."
+        elif ! _usuario_valido "$usuario"; then
+            _mensagec "${RED}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         else
             read -rsp "${YELLOW}Senha: ${NORM}" senha
             printf "\n"
@@ -116,7 +138,7 @@ _login() {
                 _linha "-" "${RED}"
                 return 1
             else
-                stored_hash=$(grep "^${usuario}:" "$SENHA_FILE" | cut -d':' -f2)
+                stored_hash=$(_obter_hash_usuario "$usuario")
                 if [[ -z "$stored_hash" ]]; then
                     _mensagec "${RED}" "Usuario nao encontrado."
                     _linha "-" "${RED}"
@@ -168,7 +190,7 @@ _alterar_senha() {
     printf "\n"
 
     # Verificar senha atual
-    stored_hash=$(grep "^${usuario}:" "$SENHA_FILE" | cut -d':' -f2)
+    stored_hash=$(_obter_hash_usuario "$usuario")
     if [[ -z "$stored_hash" ]]; then
         _mensagec "${RED}" "Usuario nao encontrado."
         _linha "-" "${RED}"

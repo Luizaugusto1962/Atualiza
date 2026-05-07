@@ -3,7 +3,7 @@
 # setup.sh - Gerencia a configuracao do sistema
 # Este script gerencia a criacao e a edicao dos arquivos de configuracao
 # .config, que e essencial para o funcionamento do sistema.
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # Modos de Operacao:
 #   ./atualiza.sh --setup          - Configuracao inicial interativa
@@ -20,6 +20,11 @@ verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 20
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
 # =============================================================================
+# Garantir que o script saiba onde estão os modulos e a configuracao
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"
+
 # Carregar constantes se disponivel
 if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
     "." "${LIB_DIR}/constantes.sh"
@@ -299,7 +304,7 @@ _setup_backup() {
         # Define automaticamente o caminho do backup offline na memória e no arquivo
         enviabackup=""
         echo "enviabackup=" >> .config
-        echo "Diretorio de backup definido automaticamente: ${CFG_OFFLINE}"
+        echo "Diretorio de backup offline sera determinado pelo sistema."
         
     else
         echo "###     ( Nome de pasta no servidor da SAV )                ###"
@@ -499,7 +504,6 @@ main() {
     fi
 # Definição de variáveis globais
 RAIZ="${SCRIPT_DIR%/*}"
-CFG_OFFLINE="${CFG_OFFLINE:-${RAIZ}/portalsav/Atualiza}"
 
 # Diretorios dos modulos e configuracoes
 LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# sistema.sh - Modulo de Informacoes do Sistema
-# Responsavel por informacoes do IsCOBOL, Linux, parametros e atualizacoes
-# Padroes e regras de desenvolvimento: ver AGENTS.md
+# baixar.sh - Modulo de Atualizacao do Script
+# Responsavel por baixa e aplica atualizacoes do sistema de atualização
+# Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 05/05/2026-03
