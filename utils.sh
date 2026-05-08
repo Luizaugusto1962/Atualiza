@@ -3,10 +3,10 @@ set -euo pipefail
 #
 # utils.sh - Modulo de Utilitarios e Funcoes Auxiliares  
 # Funcoes basicas para formatacao, mensagens, validacao e controle de fluxo
-# Padrões e regras de desenvolvimento: ver AGENTS.md
+# Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-01
+# Versao: 08/05/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
@@ -411,7 +411,7 @@ _confirmar() {
 }
 
 #---------- FUNCOES DE PROGRESSO ----------#
-# Exibe progresso do backup com contador de bytes, estimativa de arquivos e tempo decorrido
+# Exibe progresso do backup com animacao de pontos
 # Parametros:
 #   $1 = PID do processo de backup em background
 #   $2 = mensagem opcional (padrao: "Backup em andamento")
@@ -419,82 +419,61 @@ _confirmar() {
 _mostrar_progresso_backup() {
     local pid="${1:-}"
     local msg="${2:-Backup em andamento}"
-    local delay=0.5         # Atualização a cada meio segundo (mais fluido)
+    local delay=0.5
     local status_proc=0
-    local inicio agora decorrido
-    local bytes_total=0
-    local arquivos_est=0
-    local tempo_fmt tamanho_fmt
-    local colunas
+    local colunas prefixo largura_util col
 
     # Validações iniciais
     if [[ -z "$pid" ]]; then
         _mensagec "${YELLOW}" "Aviso: PID nao informado para _mostrar_progresso_backup"
         return 0
     fi
+
+    # Se o processo ja terminou antes de chegarmos aqui, coletar status e sair
     if ! kill -0 "$pid" 2>/dev/null; then
-        wait "$pid" 2>/dev/null && return $? || return $?
+        wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
+        return "${status_proc}"
     fi
 
     colunas=$(tput cols 2>/dev/null || echo 80)
+    prefixo="${msg}: "
+    largura_util=$(( colunas - ${#prefixo} - 10 ))
+    [[ $largura_util -lt 10 ]] && largura_util=10
+
+    # Ocultar cursor durante a animacao
     tput civis 2>/dev/null || true
-    inicio=$(date +%s)
+    printf "${YELLOW}%s${NORM}" "${prefixo}"
+    col=0
 
-    # Loop principal enquanto o processo estiver ativo
+    # Loop de pontos — usa kill -0 para detectar termino
     while kill -0 "$pid" 2>/dev/null; do
-        agora=$(date +%s)
-        decorrido=$(( agora - inicio ))
+        printf "%s" "${GREEN}.${NORM}"
+        (( col++ )) || true
 
-        # ESTRATÉGIA HÍBRIDA (garante que nunca fique em 0 B)
-        # 1. Linha de base por tempo (simula ~3MB/s, ajuste conforme sua média real)
-        bytes_total=$(( decorrido * 3145728 ))
-
-        # 2. Tenta melhorar com dados reais se /proc estiver acessível
-        if [[ -r "/proc/${pid}/io" ]]; then
-            local proc_bytes
-            proc_bytes=$(awk '/^write_bytes:/ {print $2}' "/proc/${pid}/io" 2>/dev/null || echo 0)
-            (( proc_bytes > bytes_total )) && bytes_total=$proc_bytes
+        # Linha cheia — apagar e recomecar
+        if (( col >= largura_util )); then
+            printf "\r%${colunas}s\r" ""
+            printf "${YELLOW}%s${NORM}" "${prefixo}"
+            col=0
         fi
 
-        # Formata tempo HH:MM:SS
-        local h=$(( decorrido / 3600 ))
-        local m=$(( (decorrido % 3600) / 60 ))
-        local s=$(( decorrido % 60 ))
-        printf -v tempo_fmt "%02d:%02d:%02d" "$h" "$m" "$s"
-
-        # Formata tamanho legível (B/KB/MB/GB)
-        if (( bytes_total >= 1073741824 )); then
-            tamanho_fmt="$(( bytes_total / 1073741824 )) GB"
-        elif (( bytes_total >= 1048576 )); then
-            tamanho_fmt="$(( bytes_total / 1048576 )) MB"
-        elif (( bytes_total >= 1024 )); then
-            tamanho_fmt="$(( bytes_total / 1024 )) KB"
-        else
-            tamanho_fmt="${bytes_total} B"
-        fi
-
-        # Estimativa de arquivos (~500KB/arquivo + fator tempo)
-        arquivos_est=$(( bytes_total / 524288 + decorrido * 3 ))
-        (( arquivos_est < 0 )) && arquivos_est=0
-
-        # Imprime linha formatada (sobrescreve com \r e espaços no final)
-        printf "\r${YELLOW}%s${NORM}: ${GREEN}%s${NORM} :: ${YELLOW}~%s arquivos processados${NORM} :: Tempo de processamento: %s   " \
-            "${msg}" "${tamanho_fmt}" "${arquivos_est}" "${tempo_fmt}"
-
-        # Pausa controlada entre frames
         read -rt "${delay}" <>/dev/null 2>/dev/null || true
     done
 
-    # Restaurar cursor e finalizar
+    # Restaurar cursor
     tput cnorm 2>/dev/null || true
-    wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
-    printf "\r%${colunas}s\r" ""
 
+    # Coletar status de saida do processo filho
+    wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
+
+    # Apagar linha de progresso e mostrar resultado
+    printf "\r%${colunas}s\r" ""
     if [[ "${status_proc}" -eq 0 ]]; then
-        printf "${GREEN}%s: Concluido! (%s em %s)${NORM}\n" "${msg}" "${tamanho_fmt}" "${tempo_fmt}"
+        printf "${GREEN}%s: Concluido!${NORM}\n" "${msg}"
     else
         printf "${RED}%s: Falhou (status=%d)${NORM}\n" "${msg}" "${status_proc}"
     fi
+
     return "${status_proc}"
 }
 

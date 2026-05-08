@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-01
+# Versao: 08/05/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -27,6 +27,14 @@ _limpar_backup() {
     if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" && "${DEFAULT_BASEBACKUP_DIR}" != "/" && "${DEFAULT_BASEBACKUP_DIR}" != "//" ]]; then
         rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
     fi
+}
+
+# _log_bkp: log seguro para uso em subshell background.
+# Usa /dev/null como fallback quando LOG_ATU nao estiver exportado.
+_log_bkp() {
+    local destino="${LOG_ATU:-/dev/null}"
+    [[ -z "$destino" ]] && destino="/dev/null"
+    printf "%s\n" "$*" >> "$destino" 2>/dev/null || true
 }
 
 #---------- FUNCOES PRINCIPAIS DE backup ----------#
@@ -195,7 +203,7 @@ _executar_backup() {
 
     # Mostrar barra de progresso e capturar resultado (wait ja feito internamente)
     local resultado=0
-    _mostrar_progresso_backup "$backup_pid" || resultado=$?
+    _mostrar_progresso_backup "$backup_pid" "Backup em andamento" || resultado=$?
 
     if [[ $resultado -eq 0 ]] && [[ -f "$caminho_backup" ]]; then
         _finalizar_backup_sucesso "$nome_backup"
@@ -265,7 +273,7 @@ _validar_backup_criado() {
 
     # Validar se o backup foi criado e tamanho mínimo
     if [[ ! -f "$arquivo_destino" ]] || (( $(wc -c < "$arquivo_destino" 2>/dev/null || echo 0) < 100 )); then
-        _mensagec "${RED}" "ERRO: Backup criado mas vazio ou muito pequeno"
+        _log_bkp "ERRO: Backup criado mas vazio ou muito pequeno: $arquivo_destino"
         rm -f "$arquivo_destino"
         return 1
     fi
@@ -280,18 +288,18 @@ _executar_backup_completo() {
 
     # Validar parâmetro
     if [[ -z "$arquivo_destino" ]]; then
-        _mensagec "${RED}" "ERRO: Caminho do backup nao foi informado"
+        _log_bkp "ERRO: Caminho do backup nao foi informado"
         return 1
     fi
-    
+
     # Validar diretório de trabalho
     if ! _diretorio_trabalho; then
-        _mensagec "${RED}" "ERRO: Falha ao acessar diretorio de trabalho"
+        _log_bkp "ERRO: Falha ao acessar diretorio de trabalho"
         return 1
     fi
 
     arquivos_temp=$(mktemp) || {
-        _mensagec "${RED}" "ERRO: Falha ao criar arquivo temporario"
+        _log_bkp "ERRO: Falha ao criar arquivo temporario"
         return 1
     }
 
@@ -300,13 +308,13 @@ _executar_backup_completo() {
          -printf '%P\0' > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
-        _mensagec "${YELLOW}" "Nenhum arquivo no nivel superior para backup"
+        _log_bkp "Nenhum arquivo no nivel superior para backup"
         rm -f "$arquivos_temp"
         return 1
     fi
 
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >/dev/null 2>&1; then
-        _mensagec "${RED}" "ERRO: Falha ao criar arquivo de backup"
+    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+        _log_bkp "ERRO: Falha ao criar arquivo de backup"
         rm -f "$arquivos_temp"
         return 1
     fi
@@ -318,7 +326,7 @@ _executar_backup_completo() {
         return 1
     fi
 
-    _mensagec "${GREEN}" "Backup criado com sucesso: $arquivo_destino"
+    _log_bkp "SUCESSO: Backup completo criado: $arquivo_destino"
     return 0
 }
 
@@ -331,26 +339,26 @@ _executar_backup_incremental() {
 
     # Validar parâmetros
     if [[ -z "$arquivo_destino" || -z "$data_referencia" ]]; then
-        _mensagec "${RED}" "ERRO: Parametros invalidos para backup incremental"
-        return 1  
+        _log_bkp "ERRO: Parametros invalidos para backup incremental"
+        return 1
     fi
 
     # Validar data
     if ! date -d "$data_referencia" >/dev/null 2>&1; then
-        _mensagec "${RED}" "ERRO: Data invalida: $data_referencia"
-        return 1  
+        _log_bkp "ERRO: Data invalida: $data_referencia"
+        return 1
     fi
 
     # Validar diretório de trabalho
     if ! _diretorio_trabalho; then
-        _mensagec "${RED}" "ERRO: Falha ao acessar diretorio de trabalho"
-        return 1  
+        _log_bkp "ERRO: Falha ao acessar diretorio de trabalho"
+        return 1
     fi
 
     # Criar arquivo temporario para lista de arquivos
     arquivos_temp=$(mktemp) || {
-        _mensagec "${RED}" "ERRO: Falha ao criar arquivo temporario"
-        return 1  
+        _log_bkp "ERRO: Falha ao criar arquivo temporario"
+        return 1
     }
 
     # Buscar arquivos modificados apenas no nivel superior
@@ -360,29 +368,29 @@ _executar_backup_incremental() {
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
     if [[ ! -s "$arquivos_temp" ]]; then
-        _mensagec "${YELLOW}" "Nenhum arquivo modificado desde $data_referencia no nivel superior"
+        _log_bkp "Nenhum arquivo modificado desde $data_referencia"
         rm -f "$arquivos_temp"
         return 0
     fi
 
     # Executar compactacao
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >/dev/null 2>&1; then
-        _mensagec "${RED}" "ERRO: Falha ao compactar arquivos"
+    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+        _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
         rm -f "$arquivos_temp"
-        return 1  
+        return 1
     fi
-    
+
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
         rm -f "$arquivos_temp"
         return 1
     fi
-    
+
     # Limpar arquivo temporario
     rm -f "$arquivos_temp"
-    
-    _mensagec "${GREEN}" "Backup incremental criado com sucesso"
-    return 0  
+
+    _log_bkp "SUCESSO: Backup incremental criado: $arquivo_destino"
+    return 0
 }
 
 # Muda para o diretorio de trabalho
@@ -391,12 +399,12 @@ _diretorio_trabalho() {
     local base_trabalho="${BASE_TRABALHO:-${RAIZ}${CFG_BASE_DIR}}"
 
     if [[ ! -d "$base_trabalho" ]]; then
-        _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
+        _log_bkp "ERRO: Diretorio ${base_trabalho} nao encontrado"
         return 1
     fi
 
     cd "$base_trabalho" || {
-        _mensagec "${RED}" "Erro: Nao foi possivel acessar ${base_trabalho}"
+        _log_bkp "ERRO: Nao foi possivel acessar ${base_trabalho}"
         return 1
     }
 

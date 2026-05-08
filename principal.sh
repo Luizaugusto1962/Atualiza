@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 06/05/2026-01
+# Versao: 08/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -46,28 +46,6 @@ fi
 # FUNÇÕES AUXILIARES
 # =============================================================================
 
-# Configurar tratamento de sinais e limpeza
-_configurar_ambiente_seguro() {
-    # Carregar funcoes de trap se disponivel
-    if command -v _setup_traps >/dev/null 2>&1; then
-        _setup_traps
-    fi
-    
-    # Configurar umask seguro
-    umask 0022
-    
-    # Definir variaveis de ambiente seguras
-    export PATH="/usr/local/bin:/usr/bin:/bin"
-    export IFS=$' \t\n'
-    
-    # Limitar recursos se possivel
-    if command -v ulimit >/dev/null 2>&1; then
-        ulimit -f 1048576  # Limite de arquivo: 1GB
-        ulimit -t 3600     # Limite de CPU: 1 hora
-    fi
-}
-
-# -----------------------------------------------------------------------------
 # Cria um diretório com permissões seguras
 # Usado antes do carregamento dos modulos (config.sh ainda nao disponivel)
 # Parâmetros:
@@ -220,9 +198,7 @@ _carregar_modulos() {
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _inicializar_sistema() {
- #   # Configurar ambiente seguro PRIMEIRO
-    _configurar_ambiente_seguro
- #   
+
     # Carregar módulos do sistema
     if ! _carregar_modulos; then
         printf "ERRO: Falha ao carregar modulos.\n" >&2
