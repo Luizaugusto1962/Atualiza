@@ -144,6 +144,7 @@ _executar_backup() {
 
     _linha
     _mensagec "$YELLOW" "Criando Backup da pasta: ${base_trabalho}..."
+    _linha
     
     # Variavel para armazenar PID do processo em background
     local backup_pid
