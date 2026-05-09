@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-02
+# Versao: 09/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -690,23 +690,6 @@ _ir_para_tools() {
 # -----------------------------------------------------------------------------
 # Funcao para resetar variaveis (cleanup)
 # -----------------------------------------------------------------------------
-_limpar_estado_variaveis2() {
-    # Desativar nounset temporariamente para evitar erro com variaveis nao definidas
-    local _nounset=0
-    [[ $- == *u* ]] && _nounset=1 && set +u
-
-    for var in $CORES $ATUALIZAC $CAMINHOS_BASE $CAMINHOS_BASE2 $BIBLIOTECA_SAV $COMANDOS $OUTROS $LOGIS; do
-        unset "${var}" 2>/dev/null || true
-    done
-
-    unset CORES ATUALIZAC CAMINHOS_BASE CAMINHOS_BASE2 BIBLIOTECA_SAV COMANDOS OUTROS LOGIS 2>/dev/null || true
-
-    tput sgr0 2>/dev/null || true
-
-    # Restaurar nounset se estava ativo
-    [[ "${_nounset}" -eq 1 ]] && set -u
-    return 0
-}
 _limpar_estado_variaveis() {
     unset -v "${CORES[@]}" 2>/dev/null || true
     unset -v "${ATUALIZAC[@]}" 2>/dev/null || true
