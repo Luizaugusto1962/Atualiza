@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-00
+# Versao: 09/05/2026-00
 #
 
 # Variaveis globais esperadas
@@ -13,9 +13,8 @@ CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
 CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Diretorio de download de arquivos
-class="${class:-}"          # Sufixo para arquivos de classe
-mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao
+class="${class:-}"                  # Sufixo para arquivos de classe
+mclass="${mclass:-}"                # Sufixo para arquivos de classe de depuracao
 
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
