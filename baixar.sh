@@ -5,7 +5,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-03
+# Versao: 09/05/2026-03
 #
 
 # Variaveis globais esperadas
@@ -73,6 +73,17 @@ _atualizando() {
             _read_sleep 2
         fi
     done
+
+    # Copiar arquivo atualiza.sh do SCRIPT_DIR para backup
+    if [[ -n "${SCRIPT_DIR}" && -f "${SCRIPT_DIR}/atualiza.sh" ]]; then
+        if cp -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
+            _mensagec "${GREEN}" "Backup do arquivo atualiza.sh feito com sucesso"
+            ((backup_sucesso++)) || true
+        else
+            _mensagec "${RED}" "ERRO: Falha ao fazer backup de atualiza.sh"
+            ((backup_erro++)) || true
+        fi
+    fi
 
     # Verificar se houve erros no backup
     if [[ $backup_erro -gt 0 ]]; then
@@ -197,6 +208,7 @@ _atualizando() {
     if [[ $sh_instalados -eq 0 ]]; then
         _mensagec "${YELLOW}" "Aviso: Nenhum arquivo .sh foi instalado"
     fi
+
 
     #---------- VALIDACAO FINAL ----------#
     # Verificar resultado da instalação
