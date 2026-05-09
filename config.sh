@@ -16,14 +16,14 @@
 # =============================================================================
 
 # Listas para organizacao das variaveis
-CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
-ATUALIZAC="CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT"
-CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds cfg libs envia recebe"
-CAMINHOS_BASE2="INI UMADATA CFG_OFFLINE E_EXEC T_TELAS X_XML"
-BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
-COMANDOS="DEFAULT_ZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO REBUILD JUTIL ISCCLIENT ISCCLIENTT"
-OUTROS="DEFAULT_SSH_PORTA DEFAULT_SSH_USER VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER UPDATE JUTIL ISCCLIENT CFG_OFFLINE base_trabalho"
-LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
+declare -a CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
+declare -a ATUALIZAC="CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT"
+declare -a CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds cfg libs envia recebe"
+declare -a CAMINHOS_BASE2="INI UMADATA CFG_OFFLINE E_EXEC T_TELAS X_XML"
+declare -a BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
+declare -a COMANDOS="DEFAULT_ZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO REBUILD JUTIL ISCCLIENT ISCCLIENTT"
+declare -a OUTROS="DEFAULT_SSH_PORTA DEFAULT_SSH_USER VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER UPDATE JUTIL ISCCLIENT CFG_OFFLINE base_trabalho"
+declare -a LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
 
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
 # Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
@@ -690,7 +690,7 @@ _ir_para_tools() {
 # -----------------------------------------------------------------------------
 # Funcao para resetar variaveis (cleanup)
 # -----------------------------------------------------------------------------
-_limpar_estado_variaveis() {
+_limpar_estado_variaveis2() {
     # Desativar nounset temporariamente para evitar erro com variaveis nao definidas
     local _nounset=0
     [[ $- == *u* ]] && _nounset=1 && set +u
@@ -707,7 +707,18 @@ _limpar_estado_variaveis() {
     [[ "${_nounset}" -eq 1 ]] && set -u
     return 0
 }
+_limpar_estado_variaveis() {
+    unset -v "${CORES[@]}" 2>/dev/null || true
+    unset -v "${ATUALIZAC[@]}" 2>/dev/null || true
+    unset -v "${CAMINHOS_BASE[@]}" 2>/dev/null || true
+    unset -v "${CAMINHOS_BASE2[@]}" 2>/dev/null || true
+    unset -v "${BIBLIOTECA_SAV[@]}" 2>/dev/null || true
+    unset -v "${COMANDOS[@]}" 2>/dev/null || true
+    unset -v "${OUTROS[@]}" 2>/dev/null || true
+    unset -v "${LOGIS[@]}" 2>/dev/null || true
 
+    tput sgr0 2>/dev/null || true
+}
 # -----------------------------------------------------------------------------
 # Resetar estado do sistema
 # -----------------------------------------------------------------------------
