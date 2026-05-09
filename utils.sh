@@ -476,11 +476,12 @@ _mostrar_progresso_backup() {
         
         # Calcular porcentagem
         local porcentagem=$(( progresso * 100 / barra_largura ))
-        
-        # Exibir barra de progresso
-        printf "\r%s: [%s] %3d%% (%02d:%02d)     " \
-            "${msg}" "${barra}" "${porcentagem}" "${min}" "${sec}"
-        
+
+        printf "\r%s%s%s: [%s%s%s] %3d%% (%02d:%02d)     " \
+            "${GREEN}" "${msg}" "${NORM}" \
+            "${YELLOW}" "${barra}" "${NORM}" \
+            "${porcentagem}" "${min}" "${sec}"        
+    
         # Sleep compatível com sistemas antigos
         if command -v sleep >/dev/null 2>&1; then
             sleep "${delay}" 2>/dev/null || sleep 1
