@@ -277,6 +277,12 @@ _atualizar_online() {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
+    cd "${temp_dir}" || {
+        _mensagec "${RED}" "Erro: Diretorio de trabalho $temp_dir nao acessivel"
+        _read_sleep 2
+        return 1
+    }
+
     # Baixar arquivo
     if ! wget -q -c "$link" -O "$zipfile"; then
         _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao"
