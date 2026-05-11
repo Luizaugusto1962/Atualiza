@@ -33,7 +33,7 @@ _executar_update() {
 _atualizando() {
     local zipfile="atualiza.zip"
 
-	local caminho="${1:-${DEFAULT_BACKUP_DIR}}}"
+	local caminho="${1:-${DEFAULT_BACKUP_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
