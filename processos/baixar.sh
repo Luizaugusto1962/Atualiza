@@ -185,10 +185,9 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
         return 1
     }
 
-
         # Mover arquivo para destino
-        if mv -f "$arquivo" "$caminho/"; then
-            _mensagec "${GREEN}" "Instalado $arquivo em $caminho"
+        if mv -f "$arquivo" "$sh_target/"; then
+            _mensagec "${GREEN}" "Instalado $arquivo em $sh_target"
             ((arquivos_instalados++)) || true
             ((sh_instalados++)) || true
         else

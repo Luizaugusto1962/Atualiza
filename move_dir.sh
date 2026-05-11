@@ -6,8 +6,10 @@
 #
 
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Diretorio do script principal
+SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 
 # Mover diretórios
 if [[ -d "${SCRIPT_DIR}/libs" ]]; then
