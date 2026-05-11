@@ -25,7 +25,7 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 
 ## Carregar constantes do sistema
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"                       # Diretorio dos modulos de biblioteca
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"                            # Diretorio dos modulos de biblioteca
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
 
 # =============================================================================
