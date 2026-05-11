@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 05/05/2026-00
+# Versao: 11/05/2026-00
 # Autor: Luiz Augusto
 #
 #---------- FUNcoES DE LEMBRETES ----------#
@@ -126,7 +126,7 @@ _mostrar_aviso() {
 
 # Apaga um arquivo de configuracao apos confirmacao
 # Parametros: $1=caminho_arquivo $2=descricao (ex: "mensagem de entrada", "notas")
-_apagar_arquivo_cfg() {
+_apagar_arquivo_configuracoes() {
     local arquivo="$1"
     local descricao="$2"
 
@@ -148,12 +148,12 @@ _apagar_arquivo_cfg() {
 
 # Apaga manualmente a mensagem de entrada
 _apagar_aviso_entrada() {
-    _apagar_arquivo_cfg "${CFG_DIR}/avisos" "mensagem de entrada"
+    _apagar_arquivo_configuracoes "${CFG_DIR}/avisos" "mensagem de entrada"
 }
 
 # Apaga nota existente
 _apagar_nota_existente() {
-    _apagar_arquivo_cfg "${CFG_DIR}/lembrete" "todas as notas"
+    _apagar_arquivo_configuracoes "${CFG_DIR}/lembrete" "todas as notas"
 }
 # Parametros: $1=arquivo_de_notas
 _visualizar_notas_arquivo() {

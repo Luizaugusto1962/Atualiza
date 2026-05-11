@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/05/2026-00
+# Versao: 11/05/2026-00
 #
 
 # Variaveis globais esperadas
@@ -328,7 +328,7 @@ _solicitar_pacotes_atualizacao() {
 
 # Baixa pacotes para diretorio especifico
 _baixar_pacotes_vaievem() {
-    _configurar_acessos
+    #_configurar_acessos
 
     cd "${DEFAULT_RECEBE_DIR}" || {
         _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao encontrado"
@@ -343,7 +343,7 @@ _baixar_pacotes_vaievem() {
 
 # Move arquivos do servidor offline
 _mover_arquivos_offline() {
-    _configurar_acessos
+    #_configurar_acessos
 
         for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
             if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
@@ -359,12 +359,12 @@ _mover_arquivos_offline() {
 _processar_atualizacao_programas() {
     # Validar configuracoes basicas antes de qualquer operacao
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        _mensagec "${RED}" "ERRO: Diretorio $DEFAULT_RECEBE_DIR nao configurado"
         return 1
     fi
 
     if [[ -z "${DEFAULT_PROGS_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO: DEFAULT_PROGS_DIR nao configurado"
+        _mensagec "${RED}" "ERRO: Diretorio $DEFAULT_PROGS_DIR nao configurado"
         return 1
     fi
 
@@ -516,7 +516,7 @@ _processar_atualizacao_pacotes() {
         return 1
     fi
     # Configura acessos 
-    _configurar_acessos
+    #_configurar_acessos
     # Descompactar pacotes
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo}" ]]; then
@@ -593,9 +593,11 @@ _processar_atualizacao_pacotes() {
 
 # Processa reversao de programas
 _processar_reversao_programas() {
-    # Criar diretório DEFAULT_RECEBE_DIR se não existir
-    [[ ! -d "${DEFAULT_RECEBE_DIR}" ]] && mkdir -p "${DEFAULT_RECEBE_DIR}"
-    
+        _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+        return 1
+    }
+
     for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         local programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
         local arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
@@ -626,21 +628,11 @@ _processar_reversao_programas() {
 
 # Valida e cria diretorio de backups se nao existir
 _validar_diretorio_backups() {
-    if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
-        _mensagec "${YELLOW}" "Criando diretorio de backups: ${DEFAULT_OLDS_DIR}"
-        if ! mkdir -p "${DEFAULT_OLDS_DIR}"; then
-            _mensagec "${RED}" "ERRO CRITICO: Falha ao criar diretorio de backups ${DEFAULT_OLDS_DIR}"
-            return 1
-        fi
-    fi
-
-    # Validar permissoes de escrita
-    if [[ ! -w "${DEFAULT_OLDS_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO CRITICO: Sem permissao de escrita em ${DEFAULT_OLDS_DIR}"
+    	local caminho="${1:-${DEFAULT_OLDS_DIR}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
-    fi
-
-    return 0
+    }
 }
 
 # Valida integridade de arquivo de backup

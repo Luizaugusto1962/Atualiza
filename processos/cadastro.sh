@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-02
+# Versao: 11/05/2026-02
 # Autor: Luiz Augusto
 #
 # Uso:
@@ -18,11 +18,11 @@ CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
 LIB_DIR="${LIB_DIR:-}"                 # Diretorio de modulos de biblioteca
 
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
-# Quando chamado diretamente de /libs, sobe um nivel para o diretorio do atualiza.sh
+# Quando chamado diretamente de /processos, sobe um nivel para o diretorio do atualiza.sh
 if [[ -z "${SCRIPT_DIR}" ]]; then
     _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    # Se estiver dentro de /libs, o SCRIPT_DIR e o pai
-    if [[ "$(basename "${_self_dir}")" == "libs" ]]; then
+    # Se estiver dentro de /processos, o SCRIPT_DIR e o pai
+    if [[ "$(basename "${_self_dir}")" == "processos" ]]; then
         SCRIPT_DIR="$(dirname "${_self_dir}")"
     else
         SCRIPT_DIR="${_self_dir}"
@@ -31,8 +31,8 @@ if [[ -z "${SCRIPT_DIR}" ]]; then
 fi
 
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar modulos necessarios
 "." "${LIB_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }

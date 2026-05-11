@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-01
+# Versao: 11/05/2026-01
 #
 
 # Variaveis globais esperadas
@@ -14,8 +14,8 @@ CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do 
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                                     # Comando para compactacao (ex: zip).
 REBUILD="${REBUILD:-}"                                             # Caminho para o utilitario jutil.
 RAIZ="${RAIZ:-}"                                                   # Caminho RAIZ do sistema.
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"                            # Caminho do diretorio de configuracoes.
-DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"         # Diretorio de logs
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                            # Caminho do diretorio de configuracoes.
+DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretorio de logs
 
 #---------- FUNCOES DE LIMPEZA ----------#
 

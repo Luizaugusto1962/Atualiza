@@ -5,7 +5,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/05/2026-03
+# Versao: 11/05/2026-03
 #
 
 # Variaveis globais esperadas
@@ -18,7 +18,7 @@ DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de downl
 
 # Executa atualizacao do script
 _executar_update() {
-    _configurar_acessos
+    #_configurar_acessos
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "n" ]]; then
             _atualizar_online
@@ -32,18 +32,12 @@ _executar_update() {
 # Atualizacao online via GitHub
 _atualizando() {
     local zipfile="atualiza.zip"
-    
-    _configurar_diretorios
 
-    # Criar backup do arquivo atual
-    if [[ ! -d "${DEFAULT_BACKUP_DIR}" ]]; then
-        mkdir -p "${DEFAULT_BACKUP_DIR}" || {
-            _mensagec "${RED}" "Erro: Nao foi possivel criar diretorio de backup"
-            _read_sleep 2
-            return 1
-        }
-        chmod "${PERM_DIR_SECURE}" "${DEFAULT_BACKUP_DIR}"
-    fi
+	local caminho="${1:-${DEFAULT_BACKUP_DIR}}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        return 1
+    }
 
     # Fazer backup dos arquivos atuais
     local backup_sucesso=0
@@ -129,34 +123,30 @@ _atualizando() {
 
     #---------- INSTALAR ARQUIVOS DE CONFIGURAÇÃO ----------#
     # Processa arquivos de parametros para o destino ${CFG_DIR}
-    local -a cfg_files=("manual.txt" "avisos" "indexar" "limpetmp" ".senhas")
+    local -a configuracoes_files=("manual.txt" "avisos" "indexar" "limpetmp" ".senhas")
     
-    for cfg_arquivo in "${cfg_files[@]}"; do
-        if [[ ! -f "$cfg_arquivo" ]]; then
+    for configuracoes_arquivo in "${configuracoes_files[@]}"; do
+        if [[ ! -f "$configuracoes_arquivo" ]]; then
             continue 
         fi
 
         # Definir permissões executáveis
-        chmod +x "$cfg_arquivo" 2>/dev/null || true
+        chmod +x "$configuracoes_arquivo" 2>/dev/null || true
 
         # Definir destino (CFG_DIR para todos os arquivos de config)
-        local cfg_target="${CFG_DIR}"
-        
-        # Criar destino se não existir
-        if ! mkdir -p "$cfg_target" 2>/dev/null; then
-            _mensagec "${RED}" "Erro ao criar diretorio de destino: $cfg_target"
-            ((arquivos_erro++)) || true
-            chmod "${PERM_DIR_SECURE}" "$cfg_target" 2>/dev/null || true
-            continue
-        fi
 
+	    local caminho="${1:-${CFG_DIR}}"
+        _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        return 1
+    }
         # Mover arquivo para destino
-        if mv -f "$cfg_arquivo" "$cfg_target/$cfg_arquivo"; then
-            _mensagec "${GREEN}" "Arquivo $cfg_arquivo instalado em $cfg_target"
+        if mv -f "$configuracoes_arquivo" "$caminho/$configuracoes_arquivo"; then
+            _mensagec "${GREEN}" "Arquivo $configuracoes_arquivo instalado em $caminho"
             ((arquivos_instalados++)) || true
              
         else
-            _mensagec "${RED}" "ERRO:Falha ao instalar $cfg_arquivo"
+            _mensagec "${RED}" "ERRO:Falha ao instalar $configuracoes_arquivo"
             ((arquivos_erro++)) || true
         fi
     done
@@ -185,13 +175,12 @@ _atualizando() {
         fi
 
         # Criar destino se não existir
-        if ! mkdir -p "$sh_target" 2>/dev/null; then
-            _mensagec "${RED}" "Erro ao criar diretorio: $sh_target"
-            ((arquivos_erro++)) || true
-            chmod "${PERM_DIR_SECURE}" "$sh_target" 2>/dev/null || true
-            continue
+	local caminho="${1:-${sh_target}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        return 1
+    }
 
-        fi
 
         # Mover arquivo para destino
         if mv -f "$arquivo" "$sh_target/"; then
@@ -273,19 +262,17 @@ _atualizar_online() {
     
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
 
-if ! cd "${DEFAULT_RECEBE_DIR}"; then
-   _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${DEFAULT_RECEBE_DIR}'."
-    _read_sleep 2
-    return 1
-fi
-    # Criar e acessar diretorio temporario
-    mkdir -p "$temp_dir" || {
-        _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
-        _read_sleep 2
-        chmod "${PERM_DIR_SECURE}" "$temp_dir" 2>/dev/null || true
+	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
 
+	local caminho="${1:-${temp_dir}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        return 1
+    }
     # Baixar arquivo
     if ! wget -q -c --timeout=30 "$link" -O "$zipfile"; then
         _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao"
@@ -308,11 +295,9 @@ _atualizar_offline() {
         _read_sleep 2
         return 1
     fi
-    # Criar e acessar diretorio temporario
-    mkdir -p "$temp_dir" || {
-        _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
-        _read_sleep 2
-        chmod "${PERM_DIR_SECURE}" "$temp_dir" 2>/dev/null || true
+
+    _criar_diretorio_seguro "${temp_dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${temp_dir}" >&2
         return 1
     }
 

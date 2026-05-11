@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/05/2026-01
+# Versao: 11/05/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
@@ -107,49 +107,6 @@ _add_temp_file() {
 _add_background_pid() {
     local pid="${1:?PID obrigatorio}"
     BACKGROUND_PIDS+=("$pid")
-}
-
-# Cria diretorio com permissoes seguras (funcao centralizada e melhorada)
-# Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE) $3=log_dir(opcional)
-# Retorna: 0 se sucesso, 1 se erro
-_criar_diretorio_seguro() {
-    local caminho="${1:?Erro: Caminho obrigatorio}"
-    local permissao="${2:-${PERM_DIR_SECURE:-0755}}"
-    local log_dir="${3:-}"
-    
-    # Validar caminho
-    if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
-        printf "Erro: Caminho invalido ou inseguro: %s\n" "$caminho" >&2
-        return 1
-    fi
-    
-    # Se ja existe, verificar se e diretorio
-    if [[ -e "$caminho" ]]; then
-        if [[ -d "$caminho" ]]; then
-            return 0
-        else
-            printf "Erro: Caminho existe mas nao e diretorio: %s\n" "$caminho" >&2
-            return 1
-        fi
-    fi
-    
-    # Criar diretorio
-    if mkdir -p "$caminho" 2>/dev/null; then
-        # Ajustar permissoes
-        if chmod "$permissao" "$caminho" 2>/dev/null; then
-            # Log opcional
-            if [[ -n "$log_dir" ]] && command -v _log >/dev/null 2>&1; then
-                _log "Diretorio criado: $caminho (permissao: $permissao)" "$log_dir" 2>/dev/null || true
-            fi
-            return 0
-        else
-            printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            return 0  # Nao falhar por permissao
-        fi
-    else
-        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        return 1
-    fi
 }
 
 # Funcao para limpar tela
@@ -440,7 +397,8 @@ _mostrar_progresso_backup() {
     inicio=$(date +%s 2>/dev/null || echo 0)
     local barra_largura=30
     local progresso=0
-
+    local delay=0.5
+    
     # Tentar ocultar cursor (se suportado)
     printf "\033[?25l" 2>/dev/null || true
 
@@ -486,7 +444,8 @@ _mostrar_progresso_backup() {
         if command -v sleep >/dev/null 2>&1; then
             sleep "${delay}" 2>/dev/null || sleep 1
         else
-            read -t "${delay}" <> /dev/null 2>/dev/null || true
+            read -rt "${delay}" <> /dev/null 2>/dev/null || true 
+ 
         fi
     done
 
@@ -630,7 +589,7 @@ _executar_expurgador_diario() {
     local viewvix="${RAIZ}/savisc/viewvix/tmp"
 
     # Define diretório de logs com fallback
-    local logs_dir="${DEFAULT_LOGS_DIR:-/var/log/sav}"
+    local logs_dir="${DEFAULT_LOGS_DIR:-}"
     flag_file="${logs_dir}/.expurgador_$(date +%Y%m%d)"
 
     # Se já foi executado hoje, pular

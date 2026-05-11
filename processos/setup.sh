@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-02
+# Versao: 11/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -22,8 +22,8 @@ verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 20
 # =============================================================================
 # Garantir que o script saiba onde estão os modulos e a configuracao
 SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar constantes se disponivel
 if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
@@ -104,7 +104,7 @@ _edit_setup() {
 
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
-        echo "Erro: Diretorio 'cfg' nao encontrado."
+        echo "Erro: Diretorio 'configuracoes' nao encontrado."
         exit 1
     }
 
@@ -429,6 +429,7 @@ _configure_ssh_access() {
     fi
 
     # Cria os diretórios padrão com permissões corretas
+    
     mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
     chmod "${PERM_DIR_SECURE}" "${SSH_DIR}" "${CONTROL_PATH_BASE}"
 
@@ -492,10 +493,10 @@ EOF
 main() {
 
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
-# Quando chamado diretamente de /libs, sobe um nivel para o diretorio do atualiza.sh
+# Quando chamado diretamente de /processos, sobe um nivel para o diretorio do atualiza.sh
     if [[ -z "${SCRIPT_DIR}" ]]; then
         _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        if [[ "$(basename "${_self_dir}")" == "libs" ]]; then
+        if [[ "$(basename "${_self_dir}")" == "processos" ]]; then
             SCRIPT_DIR="$(dirname "${_self_dir}")"
         else
             SCRIPT_DIR="${_self_dir}"
@@ -503,21 +504,21 @@ main() {
         unset _self_dir
     fi
 # Definição de variáveis globais
-RAIZ="${SCRIPT_DIR%/*}"
+#RAIZ="${SCRIPT_DIR%/*}"
 
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 cd "${SCRIPT_DIR}" || exit 1
 
-# Verifica se o diretorio libs existe
+# Verifica se o diretorio processos existe
     if [[ ! -d "${LIB_DIR}" ]]; then
         echo "ERRO: Diretorio ${LIB_DIR} nao encontrado."
         exit 1
     fi
 
-# Verifica se o diretorio cfg existe
+# Verifica se o diretorio configuracoes existe
     if [[ ! -d "${CFG_DIR}" ]]; then
         echo "ERRO: Diretorio ${CFG_DIR} nao encontrado."
         exit 1
@@ -541,15 +542,15 @@ cd "${SCRIPT_DIR}" || exit 1
                 fi
             done
             if [[ "${choice,,}" == "s" ]]; then
-                cd cfg || exit 1
+                cd configuracoes || exit 1
                 _initial_setup
             else
                 echo "Operacao cancelada. Use './atualiza.sh --setup --edit' para modificar."
                 exit 0
             fi
         else
-            mkdir -p cfg
-            cd cfg || exit 1
+            mkdir -p configuracoes
+            cd configuracoes || exit 1
             _initial_setup
         fi
     fi

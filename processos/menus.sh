@@ -6,24 +6,20 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-01
+# Versao: 11/05/2026-01
 # Autor: Luiz Augusto
 #
 
 # Variaveis globais esperadas
 CFG_SISTEMA="${CFG_SISTEMA:-}"                            # Nome do sistema (iscobol, savatu, transpc).
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR:-.}/cfg}"                # Diretorio de configuracoes
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"                # Diretorio de configuracoes
 CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao atual do sistema
 #UPDATE="${UPDATE:-}"                                     # Aviso de update disponivel
 
-if [[ ! -d "${CFG_DIR}" ]]; then
-    mkdir -p "${CFG_DIR}" || {
-        printf '%s\n' "ERRO: Nao foi possivel criar o diretorio de configuracao '${CFG_DIR}'."
-        return 1
-    }
-fi
-chmod "${PERM_DIR_SECURE}" "${CFG_DIR}" 2>/dev/null || {
-    printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'."
+caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao 
+_criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+    printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+    return 1
 }
 
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
@@ -201,7 +197,7 @@ _menu_biblioteca() {
         
         # Carregar versao anterior se disponivel
         if [[ -f "${CFG_DIR}/.versao" ]]; then
-            if ! . "${CFG_DIR}/.versao" 2>/dev/null; then
+            if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
                 printf '%s\n' "AVISO: Falha ao carregar ${CFG_DIR}/.versao" >&2
             fi
         fi

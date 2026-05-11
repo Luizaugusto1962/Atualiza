@@ -50,7 +50,7 @@ programas, arquivos, backups e bibliotecas do sistema **IsCOBOL / ISAM**.
 
 ## Configuração
 
-O sistema usa o diretório `cfg/` para armazenar:
+O sistema usa o diretório `configuracoes/` para armazenar:
 
 - `.config` — configurações da CFG_EMPRESA (gerado pelo `--setup`)
 - `.senhas` — hashes de senha dos usuários (`chmod 0600`)

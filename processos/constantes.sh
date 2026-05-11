@@ -5,19 +5,21 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-01
+# Versao: 11/05/2026-01
 #
 set -euo pipefail
 #
 
-
+# =============================================================================
+# Definir diretorio das bases extras
+# =============================================================================
 base2=""                     # Diretório base secundário (vazio se não definido)
 base3=""                     # Diretório base terciário (vazio se não definido)
 
 # =============================================================================
 # Definir diretorio de trabalho
 # =============================================================================
-RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /libs)
+RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /processos)
 
 # Diretorio do script principal
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
@@ -116,16 +118,18 @@ BACKUP_EXTENSIONS=('*.zip' '*.tar' '*.tar.gz')
 # =============================================================================
 # DIRETÓRIOS PADRÃO
 # =============================================================================
-DEFAULT_CONFIG_DIR="${CFG_DIR}"                          # Diretório de configuração padrão
-DEFAULT_LIBS_DIR="${LIB_DIR}"                            # Diretório de bibliotecas padrão  
-DEFAULT_BACKUP_DIR="${SCRIPT_DIR}/backup"                # Diretório de backup padrão
+#DEFAULT_CONFIG_DIR="${CFG_DIR}"                          # Diretório de configuração padrão
+#DEFAULT_LIBS_DIR="${LIB_DIR}"                            # Diretório de bibliotecas padrão
+DEFAULT_CONFIG_DIR="${SCRIPT_DIR}/configuracoes"                          # Diretório de configuração padrão  
+DEFAULT_LIBS_DIR="${SCRIPT_DIR}/processos"               # Diretório de bibliotecas padrão  
+DEFAULT_BACKUP_DIR="${SCRIPT_DIR}/backups"               # Diretório de backup padrão
 DEFAULT_LOGS_DIR="${SCRIPT_DIR}/logs"                    # Diretório de logs padrão
 DEFAULT_BIBLIOTECA_DIR="${SCRIPT_DIR}/biblioteca"        # Diretório de biblioteca padrão
-DEFAULT_BASEBACKUP_DIR="${SCRIPT_DIR}/bkbase"            # Diretório de backup de base padrão
-DEFAULT_OLDS_DIR="${SCRIPT_DIR}/olds"                    # Diretório de arquivos antigos padrão
-DEFAULT_PROGS_DIR="${SCRIPT_DIR}/progs"                  # Diretório de programas padrão
-DEFAULT_ENVIA_DIR="${SCRIPT_DIR}/envia"                  # Diretório de envio padrão
-DEFAULT_RECEBE_DIR="${SCRIPT_DIR}/recebe"                # Diretório de recebimento padrão
+DEFAULT_BASEBACKUP_DIR="${SCRIPT_DIR}/basebackup"        # Diretório de backup de base padrão
+DEFAULT_OLDS_DIR="${SCRIPT_DIR}/backprogramas"           # Diretório de arquivos antigos padrão
+DEFAULT_PROGS_DIR="${SCRIPT_DIR}/programas"              # Diretório de programas padrão
+DEFAULT_ENVIA_DIR="${SCRIPT_DIR}/enviar"                 # Diretório de envio padrão
+DEFAULT_RECEBE_DIR="${SCRIPT_DIR}/receber"               # Diretório de recebimento padrão
 
 # =============================================================================
 # Configurações padrão para comandos externos

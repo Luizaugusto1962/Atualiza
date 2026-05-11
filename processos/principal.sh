@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 08/05/2026-01
+# Versao: 11/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -25,8 +25,8 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 
 ## Carregar constantes do sistema
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/libs}"                       # Diretorio dos modulos de biblioteca
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/cfg}"                        # Diretorio de configuracoes
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"                       # Diretorio dos modulos de biblioteca
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
 
 # =============================================================================
 # VERSAO DO SISTEMA
@@ -46,29 +46,43 @@ fi
 # FUNÇÕES AUXILIARES
 # =============================================================================
 
-# Cria um diretório com permissões seguras
-# Usado antes do carregamento dos modulos (config.sh ainda nao disponivel)
-# Parâmetros:
-#   $1 - Caminho do diretório
-#   $2 - Permissões (opcional, padrão: 0755)
-# Retorna: 0 se criado/existente, 1 se erro
-# -----------------------------------------------------------------------------
+# Cria diretorio com permissoes seguras (funcao centralizada e melhorada)
+# Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE) $3=log_dir(opcional)
+# Retorna: 0 se sucesso, 1 se erro
 _criar_diretorio_seguro() {
     local caminho="${1:-}"
     local permissao="${2:-${PERM_DIR_SECURE}}"
-
-    if [[ -z "$caminho" ]]; then
-        printf "Erro: Caminho nao pode ser vazio.\n" >&2
+    local log_dir="${3:-}"
+    
+    # Validar caminho
+    if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
+        printf "Erro: Caminho invalido ou inseguro: %s\n" "$caminho" >&2
         return 1
     fi
-
-    if [[ -d "$caminho" ]]; then
-        return 0
+    
+    # Se ja existe, verificar se e diretorio
+    if [[ -e "$caminho" ]]; then
+        if [[ -d "$caminho" ]]; then
+            return 0
+        else
+            printf "Erro: Caminho existe mas nao e diretorio: %s\n" "$caminho" >&2
+            return 1
+        fi
     fi
-
+    
+    # Criar diretorio
     if mkdir -p "$caminho" 2>/dev/null; then
-        chmod "$permissao" "$caminho" 2>/dev/null || true
-        return 0
+        # Ajustar permissoes
+        if chmod "$permissao" "$caminho" 2>/dev/null; then
+            # Log opcional
+            if [[ -n "$log_dir" ]] && command -v _log >/dev/null 2>&1; then
+                _log "Diretorio criado: $caminho (permissao: $permissao)" "$log_dir" 2>/dev/null || true
+            fi
+            return 0
+        else
+            printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
+            return 0  # Nao falhar por permissao
+        fi
     else
         printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
         return 1
@@ -92,7 +106,7 @@ for dir in "${AUX_DIRS[@]}"; do
     # Criar diretório caso não exista com permissões seguras
     if [[ ! -d "${dir}" ]]; then
         if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
-            printf "ERRO: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
+                printf "ERRO: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
             exit 1
         fi
     fi

@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-01
+# Versao: 11/05/2026-01
 #
 
 
@@ -130,7 +130,7 @@ _ler_secao_manual() {
 _exibir_manual_completo() {
     if [[ ! -f "$MANUAL_FILE" ]]; then
         _mensagec "${RED}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
-        _mensagec "${YELLOW}" "Crie o arquivo manual.txt no diretorio cfg/"
+        _mensagec "${YELLOW}" "Crie o arquivo manual.txt no diretorio configuracoes/"
         _press
         return 1
     fi
@@ -221,7 +221,7 @@ _verificar_manual() {
         printf "\n"
         _mensagec "${WHITE}" "O arquivo manual.txt deve estar em: ${CYAN}$MANUAL_FILE${NORM}"
         printf "\n"
-        _mensagec "${WHITE}" "Por favor, crie o arquivo manual.txt no diretorio cfg/"
+        _mensagec "${WHITE}" "Por favor, crie o arquivo manual.txt no diretorio configuracoes/"
         printf "\n"
         _linha "=" "${YELLOW}"
         return 1

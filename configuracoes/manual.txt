@@ -166,7 +166,7 @@ OPCOES DISPONIVEIS:
     << IMPORTANTE: >>
     * Apenas programas com backup podem ser revertidos
     * Backup e criado automaticamente em cada atualizacao
-    * Backup fica em: tools/olds/[PROGRAMA]-anterior.zip
+    * Backup fica em: tools/back_programas/[PROGRAMA]-anterior.zip
 
 INFORMACOES IMPORTANTES:
 ---------------------------------------------------------------
@@ -185,7 +185,7 @@ TIPOS DE COMPILACAO:
 BACKUP AUTOMATICO:
 * Criado antes de cada atualizacao
 * Inclui: .class, .int, .TEL
-* Localizacao: tools/olds/
+* Localizacao: tools/back_programas/
 * Formato: [PROGRAMA]-anterior.zip
 
 SOLUCAO DE PROBLEMAS:
@@ -198,7 +198,7 @@ PROBLEMA: "Erro ao descompactar"
 SOLUCAO: Arquivo pode estar corrompido, baixe novamente
 
 PROBLEMA: "Falha no backup"
-SOLUCAO: Verifique espaco ou permissao no disco no diretorio tools/olds/
+SOLUCAO: Verifique espaco ou permissao no disco no diretorio tools/back_programas/
 
 PROBLEMA: "Programa nao encontrado no servidor"
 SOLUCAO: Verifique com suporte se programa esta disponivel
@@ -273,7 +273,7 @@ OPCOES DISPONIVEIS:
        * Reverter programa especifico
     
     BACKUP DA BIBLIOTECA:
-    * Local: tools/olds/backup-[VERSAO].zip
+    * Local: tools/back_programas/backups-[VERSAO].zip
     * Criado automaticamente antes de atualizar
     * Contem todos os arquivos antigos
 
@@ -592,7 +592,7 @@ OPCOES DISPONIVEIS:
     
     DESTINO:
     Arquivos sao compactados em:
-    tools/backup/Temps-[DATA].zip
+    tools/backups/Temps-[DATA].zip
 
 2 - ADICIONAR ARQUIVOS NO LIMPETMP
     Adiciona novo padrao a lista de limpeza.
@@ -607,7 +607,7 @@ OPCOES DISPONIVEIS:
     * *.bkp = Todos arquivos .bkp
     
     ARQUIVO:
-    Padroes sao salvos em: cfg/limpetmp
+    Padroes sao salvos em: configuracoes/limpetmp
 
 3 - LISTAR ARQUIVOS DO limpetmp
     Exibe lista de padroes configurados.
@@ -621,7 +621,7 @@ ARQUIVO limpetmp:
 ---------------------------------------------------------------
 
 LOCALIZACAO:
-cfg/limpetmp
+configuracoes/limpetmp
 
 FORMATO:
 Um padrao por linha, sem comentarios
@@ -658,7 +658,7 @@ a limpeza processa todas automaticamente.
 
 RECUPERACAO:
 Para recuperar arquivo removido:
-1. Localize backup: tools/backup/Temps-[DATA].zip
+1. Localize backup: tools/backups/Temps-[DATA].zip
 2. Descompacte o arquivo necessario
 3. Restaure para local original
 
@@ -705,7 +705,7 @@ OPCOES DISPONIVEIS:
     * Arquivos da lista indexar
     
     LISTA indexar:
-    Local: cfg/indexar
+    Local: configuracoes/indexar
     Contem: Nomes de arquivos criticos do sistema
 
 O QUE E REBUILD:
@@ -861,7 +861,7 @@ OPCOES DISPONIVEIS:
     5. Opcionalmente enviar para servidor
     
     DESTINO:
-    tools/backup/
+    tools/backups/
 
 2 - RESTAURAR BASE DE DADOS
     Restaura backup anterior.
@@ -901,7 +901,7 @@ BACKUP COMPLETO:
 O QUE INCLUI:
 * Todos arquivos de dados (.dat)
 * Arquivos de indice (.idx, .key)
-* Arquivos de configuracao (.cfg)
+* Arquivos de configuracao (.configuracoes)
 * Logs importantes
 
 O QUE EXCLUI:
@@ -951,7 +951,7 @@ COMPONENTES:
 * DATA: Ano, mes, dia, hora, minuto, segundo
 
 LOCALIZACAO:
-tools/bkbase/
+tools/back_bases/
 
 RETENCAO:
 * Local: 30 dias (expurgador)
@@ -1067,7 +1067,7 @@ OPCOES DISPONIVEIS:
     PROCESSO:
     1. Informar diretorio de origem
        * Caminho completo ou
-       * ENTER para usar padrao (tools/envia)
+       * ENTER para usar padrao (tools/enviar)
     
     2. Informar nome do arquivo
        * Nome completo com extensao
@@ -1095,7 +1095,7 @@ OPCOES DISPONIVEIS:
     PROCESSO:
     1. Informar diretorio de origem (servidor)
        * Caminho completo no servidor
-       * Ex: /home/usuario/backup
+       * Ex: /home/usuario/backups
     
     2. Informar nome do arquivo
        * Nome completo com extensao
@@ -1103,7 +1103,7 @@ OPCOES DISPONIVEIS:
     
     3. Informar diretorio destino (local)
        * Caminho completo ou
-       * ENTER para usar padrao (tools/recebe)
+       * ENTER para usar padrao (tools/receber)
     
     4. Fornecer senha do usuario remoto
     
@@ -1120,13 +1120,13 @@ USO DE DIRETORIOS PADRAO:
 -------------------------------------------------------------------
 
 ENVIO:
-Origem padrao: tools/envia/
+Origem padrao: tools/enviar/
 * Coloque arquivo neste diretorio
 * Pressione ENTER ao solicitar origem
 * Sistema usa automaticamente
 
 RECEBIMENTO:
-Destino padrao: tools/recebe/
+Destino padrao: tools/receber/
 * Arquivo baixado neste diretorio
 * Pressione ENTER ao solicitar destino
 * Facilita localizacao
@@ -1306,7 +1306,7 @@ ARQUIVO DE CONFIGURACAO:
 -------------------------------------------------------------------
 
 LOCALIZACAO:
-cfg/.config
+configuracoes/.config
 
 FORMATO:
 Arquivo texto com pares chave=valor
@@ -1386,14 +1386,14 @@ DIRETORIOS FIXOS:
 -------------------------------------------------------------------
 
 Definidos automaticamente em tools/:
-* /progs - Programas atualizados
-* /olds - Backups de reversao
+* /savprogramas - Programas atualizados
+* /back_programas - Backups de reversao
 * /logs - Arquivos de log
-* /cfg - Configuracoes
-* /backup - Backups da base
-* /envia - Arquivos para enviar
-* /recebe - Arquivos recebidos
-* /libs - Bibliotecas do sistema
+* /configuracoes - Configuracoes
+* /backups - Backups da base
+* /enviar - Arquivos para enviar
+* /receber - Arquivos recebidos
+* /processos - Bibliotecas do sistema
 
 NAO MODIFICAR estes diretorios!
 
@@ -1401,7 +1401,7 @@ CONFIGURACAO INICIAL:
 -------------------------------------------------------------------
 
 Para nova instalacao, use:
-./libs/setup.sh
+./processos/setup.sh
 
 WIZARD INTERATIVO:
 1. Escolhe sistema (IsCOBOL/Cobol)
@@ -1416,13 +1416,13 @@ WIZARD INTERATIVO:
 
 RECONFIGURACAO:
 Para modificar instalacao existente:
-./libs/setup.sh --edit
+./processos/setup.sh --edit
 
 SOLUCAO DE PROBLEMAS:
 -------------------------------------------------------------------
 
 PROBLEMA: "Arquivo .config nao encontrado"
-SOLUCAO: Execute ./libs/setup.sh
+SOLUCAO: Execute ./processos/setup.sh
 
 PROBLEMA: "Variavel nao definida"
 SOLUCAO: Execute manutencao de setup
@@ -1505,7 +1505,7 @@ ARQUIVO DE NOTAS:
 -------------------------------------------------------------------
 
 LOCALIZACAO:
-cfg/lembrete
+configuracoes/lembrete
 
 FORMATO:
 Arquivo texto simples
@@ -1669,7 +1669,7 @@ ARQUIVO DE AVISO:
 -------------------------------------------------------------------
 
 LOCALIZACAO:
-cfg/avisos
+configuracoes/avisos
 
 FORMATO:
 Arquivo texto simples
@@ -1684,7 +1684,7 @@ CASOS DE USO:
 -------------------------------------------------------------------
 
 HISTORICO DE MANUTENCAO:
-- Rodar o programa de setupo que esta em /tools/libs/setup.sh
+- Rodar o programa de setupo que esta em /tools/processos/setup.sh
 
 PROBLEMAS CONHECIDOS:
 - Programa ADV000 lento (investigar)
@@ -1807,8 +1807,8 @@ DIRETORIOS PRINCIPAIS:
   dados_jisam/  - Base de dados
   
 tools/
-  libs/         - Bibliotecas do atualiza
-  cfg/          - Configuracoes
+  processos/         - Bibliotecas do atualiza
+  configuracoes/          - Configuracoes
   logs/         - Arquivos de log
   backup/       - Backups da base
   olds/         - Backups de programas
@@ -1819,11 +1819,11 @@ tools/
 ARQUIVOS IMPORTANTES:
 -------------------------------------------------------------------
 
-cfg/.config        - Configuracao principal
-cfg/limpetmp          - Lista de temporarios
-cfg/indexar           - Arquivos principais para o rodar e rebuild
-cfg/lembrete          - Notas/lembretes
-cfg/avisos            - Aviso de entrada
+configuracoes/.config        - Configuracao principal
+configuracoes/limpetmp          - Lista de temporarios
+configuracoes/indexar           - Arquivos principais para o rodar e rebuild
+configuracoes/lembrete          - Notas/lembretes
+configuracoes/avisos            - Aviso de entrada
 logs/atualiza.log     - Log de operacoes
 logs/limpando.log     - Log de limpeza
 

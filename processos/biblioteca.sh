@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/05/2026-00
+# Versao: 11/05/2026-00
 #
 
 # Variaveis globais esperadas
@@ -47,7 +47,7 @@ _limpar_interrupcao() {
         
     # Verificar se backup parcial existe e sugerir rollback
     shopt -s nullglob
-    local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backup_biblioteca_antes_da_versao-*.zip)
+    local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.zip)
     shopt -u nullglob
     if (( ${#backups_parciais[@]} > 0 )); then
         _mensagec "${YELLOW}" "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
@@ -84,7 +84,7 @@ _atualizar_transpc() {
         _linha
         _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
         _linha
-        _configurar_acessos
+        #_configurar_acessos
         # Verificar espaco em disco
         if ! _verificar_espaco_disco "$E_EXEC"; then
             _mensagec "$RED" "Espaco em disco insuficiente em $E_EXEC"
@@ -133,7 +133,7 @@ _reverter_biblioteca() {
         return 0
     fi
 
-    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
+    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backups_biblioteca_antes_da_versao-${versao_reverter}.zip"
 
     if [[ ! -r "${arquivo_backup}" ]]; then
         _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${arquivo_backup}"
@@ -153,12 +153,8 @@ _reverter_biblioteca() {
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
-    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
-        return 1
-    fi
-
-    _configurar_acessos
+    _validar_diretorio_receber
+    #_configurar_acessos
     cd "$DEFAULT_RECEBE_DIR" || return 1
 
     _definir_variaveis_biblioteca

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/05/2026-001
+# Versao: 11/05/2026-001
 #
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
@@ -200,14 +200,11 @@ _baixar_biblioteca_sincroniza() {
 
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
-    # Criar diretorio DEFAULT_RECEBE_DIR se nao existir
-    if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
-        if ! mkdir -p "${DEFAULT_RECEBE_DIR}"; then
-            _log_erro "Falha ao criar diretorio: ${DEFAULT_RECEBE_DIR}"
-            return 1
-        fi
-    fi
-
+   	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        return 1
+    }
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         return 0
     fi

@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/05/2026-02
+# Versao: 11/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -18,7 +18,7 @@
 # Listas para organizacao das variaveis
 declare -a CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
 declare -a ATUALIZAC="CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT"
-declare -a CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds cfg libs envia recebe"
+declare -a CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds configuracoes processos envia recebe"
 declare -a CAMINHOS_BASE2="INI UMADATA CFG_OFFLINE E_EXEC T_TELAS X_XML"
 declare -a BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
 declare -a COMANDOS="DEFAULT_ZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO REBUILD JUTIL ISCCLIENT ISCCLIENTT"
@@ -61,8 +61,8 @@ DEFAULT_BIBLIOTECA_DIR="${DEFAULT_BIBLIOTECA_DIR:-}"        # Diretório de bibl
 DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"        # Diretório de backup de base padrão
 DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-}"                    # Diretório de arquivos antigos padrão
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"                  # Diretório de programas padrão
-DEFAULT_ENVIA_DIR="${SCRIPT_DIR}/envia"                     # Diretório de envio padrão
-DEFAULT_RECEBE_DIR="${SCRIPT_DIR}/recebe"                   # Diretório de recebimento padrão
+DEFAULT_ENVIA_DIR="${SCRIPT_DIR}/enviar"                     # Diretório de envio padrão
+DEFAULT_RECEBE_DIR="${SCRIPT_DIR}/receber"                   # Diretório de recebimento padrão
 CFG_SISTEMA="${CFG_SISTEMA:-}"                              # Tipo de sistema que esta sendo usado (iscobol ou isam).
 SAVATU="${SAVATU:-}"                                        # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU1="${SAVATU1:-}"                                      # Caminho do diretorio da biblioteca do servidor da SAV.
@@ -184,9 +184,6 @@ _configurar_diretorios() {
         fi
         return 1
     fi
-
-    # Definir diretorio de configuracao
-    #RAIZ="${SCRIPT_DIR%/*}"
 
     # Criar diretorio de configuracao se nao existir - usando funcao centralizada
     _criar_diretorio_seguro "${CFG_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
@@ -454,26 +451,6 @@ _carregar_config_seguro() {
     return 0
 }
 
-# -----------------------------------------------------------------------------
-# Configurar acesso offline se necessario
-# Retorna: 0 sempre
-# -----------------------------------------------------------------------------
-_configurar_acessos() {
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]] && [[ "${CFG_OFFLINE}" == "s" ]]; then
-        if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-            printf "Erro: DEFAULT_RECEBE_DIR nao configurado para modo offline\n" >&2
-            return 1
-        fi
-
-        if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
-            _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-                printf "Erro ao criar diretorio offline %s\n" "${DEFAULT_RECEBE_DIR}" >&2
-                return 1
-            }
-        fi
-    fi
-    return 0
-}
 
 # -----------------------------------------------------------------------------
 # Funcao principal de carregamento de configuracoes
@@ -502,7 +479,7 @@ _carregar_configuracoes() {
     _configurar_variaveis_sistema
 
     # Configurar acesso offline
-    _configurar_acessos
+    #_configurar_acessos
 
     # Verificar e remover diretorio .ssh se existir
     _verificar_remover_ssh
@@ -616,7 +593,7 @@ _validar_configuracao() {
    
     
     # Verificar diretorios essenciais
-    local dirs=("biblioteca" "olds" "logs" "cfg" "libs" "backup" "bases_backup" "envia" "recebe" "E_EXEC" "T_TELAS" "BASE1")
+    local dirs=("biblioteca" "olds" "logs" "configuracoes" "processos" "backup" "bases_backup" "envia" "recebe" "E_EXEC" "T_TELAS" "BASE1")
     for dir in "${dirs[@]}"; do
         local dir_path=""
         # Tratamento especial para E_EXEC e T_TELAS que ficam em ${RAIZ}

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/05/2026-01
+# Versao: 11/05/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -650,23 +650,20 @@ _mover_backup_offline() {
     _mensagec "${YELLOW}" "Movendo backup para diretorio offline..."
     _linha
     
-    if [[ -z "${down_dir}" ]]; then
+    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${RED}" "Diretorio offline nao configurado"
         _press
         return 0
     fi
 
-    # Criar diretorio offline se nao existir
-    if [[ ! -d "${down_dir}" ]]; then
-        if ! mkdir -p "${down_dir}"; then
-            _mensagec "${RED}" "Erro ao criar diretorio offline"
-            _press
-            return 0
-        fi
-    fi
+	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        return 1
+    }
     
-    if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$down_dir"; then
-        _mensagec "${GREEN}" "Backup movido para: ${down_dir}"
+    if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$DEFAULT_RECEBE_DIR"; then
+        _mensagec "${GREEN}" "Backup movido para: ${DEFAULT_RECEBE_DIR}"
         _press
     else
         _mensagec "${RED}" "Erro ao mover backup"
