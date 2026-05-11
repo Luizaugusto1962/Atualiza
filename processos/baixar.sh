@@ -33,6 +33,8 @@ _executar_update() {
 _atualizando() {
     local zipfile="atualiza.zip"
 
+    _configurar_diretorios
+
 	local caminho="${1:-${DEFAULT_BACKUP_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
@@ -102,10 +104,12 @@ _atualizando() {
             _mensagec "${YELLOW}" "Aviso: Nao foi possivel compactar os arquivos de backup"
         fi
     fi
-
+local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     # Acessar diretorio de trabalho
-    cd "$DEFAULT_RECEBE_DIR" || {
-        _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao acessivel"
+ #   cd "$DEFAULT_RECEBE_DIR" || {
+     cd "${temp_dir}" || {
+ #        _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao acessivel"
+         _mensagec "${RED}" "Erro: Diretorio $temp_dir nao acessivel"
         _read_sleep 2
         return 1
     }
@@ -113,7 +117,7 @@ _atualizando() {
     # Descompactar
     if ! "${DEFAULT_UNZIP}" -o -j "$zipfile" >>"$LOG_ATU" 2>&1; then
         _mensagec "${RED}" "Erro ao descompactar atualizacao"
-        _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $DEFAULT_ENVIA_DIR"
+        _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $DEFAULT_RECEBE_DIR"
         _read_sleep 2 
         return 1
     fi
@@ -183,8 +187,8 @@ _atualizando() {
 
 
         # Mover arquivo para destino
-        if mv -f "$arquivo" "$sh_target/"; then
-            _mensagec "${GREEN}" "Instalado $arquivo em $sh_target"
+        if mv -f "$arquivo" "$caminho/"; then
+            _mensagec "${GREEN}" "Instalado $arquivo em $caminho"
             ((arquivos_instalados++)) || true
             ((sh_instalados++)) || true
         else
@@ -274,13 +278,13 @@ _atualizar_online() {
         return 1
     }
     # Baixar arquivo
-    if ! wget -q -c --timeout=30 "$link" -O "$zipfile"; then
+    if ! wget -q -c "$link" -O "$zipfile"; then
         _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao"
         _mensagec "${YELLOW}" "Verifique sua conexao com a internet e tente novamente"
         _read_sleep 2
         return 1
     fi
-    _atualizando
+       _atualizando
 }
 
 # Atualizacao offline via arquivo local
@@ -289,9 +293,9 @@ _atualizar_offline() {
     local zipfile="atualiza.zip"
 
     # Verificar se o arquivo zip existe
-    if [[ ! -f "${DEFAULT_RECEBE_DIR}/${zipfile}" ]]; then
-        _mensagec "${RED}" "Erro: $zipfile nao encontrado em $DEFAULT_RECEBE_DIR"
-        _mensagec "${YELLOW}" "Certifique-se de que o arquivo $zipfile esteja presente no diretorio $DEFAULT_RECEBE_DIR"
+    if [[ ! -f "${temp_dir}/${zipfile}" ]]; then
+        _mensagec "${RED}" "Erro: $zipfile nao encontrado em $temp_dir"
+        _mensagec "${YELLOW}" "Certifique-se de que o arquivo $zipfile esteja presente no diretorio $temp_dir"
         _read_sleep 2
         return 1
     fi
@@ -301,8 +305,8 @@ _atualizar_offline() {
         return 1
     }
 
-    mv "${DEFAULT_RECEBE_DIR}/${zipfile}" "${DEFAULT_RECEBE_DIR}" || {
-        _mensagec "${RED}" "Erro: Nao foi possivel mover $zipfile para $DEFAULT_RECEBE_DIR"
+    mv "${temp_dir}/${zipfile}" "${temp_dir}" || {
+        _mensagec "${RED}" "Erro: Nao foi possivel mover $zipfile para $temp_dir"
         _read_sleep 2
         return 1
     }

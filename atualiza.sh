@@ -56,8 +56,20 @@ case "${1:-}" in
             exit 1
         fi
         ;;
+    "")
+        # Verifica se o arquivo principal.sh existe
+        if [[ -f "${PLIBS_DIR}/principal.sh" ]]; then
+            printf "%s\n" "Carregando utilitario..."
+            # Carrega o script principal
+            cd "${PLIBS_DIR}" || exit 1
+            "./principal.sh"
+        else
+            printf "%s\n" "ERRO: Arquivo ${PLIBS_DIR}/principal.sh nao encontrado."
+            exit 1
+        fi
+        ;;
     *)
-        printf "%s\n" "Uso: atualiza.sh [--setup | --cadastro | --move]"
+        printf "%s\n" "Uso: atualiza.sh [--setup | --cadastro]"
         exit 1
         ;;
 esac
