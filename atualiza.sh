@@ -3,7 +3,7 @@
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
 # Versao: 11/05/2026-01
 # Autor: Luiz Augusto
-# Os scripts de suporte devem estar no diretório processos ao lado deste script.
+# Os scripts de suporte devem estar no diretório binarios ao lado deste script.
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # Uso:
@@ -25,9 +25,9 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # Diretorio do script atual
 
 # Diretorio do script SCRIPT_DIR
-PLIBS_DIR="${SCRIPT_DIR}/processos" # Diretorio das bibliotecas usadas pelo script
+PLIBS_DIR="${SCRIPT_DIR}/binarios" # Diretorio das bibliotecas usadas pelo script
 
-# Verifica se o diretorio processos existe
+# Verifica se o diretorio binarios existe
 if [[ ! -d "${PLIBS_DIR}" ]]; then
     printf "%s\n" "ERRO: Diretorio ${PLIBS_DIR} nao encontrado."
     exit 1

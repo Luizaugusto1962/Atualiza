@@ -19,7 +19,7 @@ base3=""                     # Diretório base terciário (vazio se não definid
 # =============================================================================
 # Definir diretorio de trabalho
 # =============================================================================
-RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /processos)
+RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /binarios)
 
 # Diretorio do script principal
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
@@ -35,7 +35,8 @@ if [[ -f "$CONFIG_FILE" ]]; then
     set -a  # Automaticamente exporta variáveis criadas
     "." "$CONFIG_FILE"
     set +a  # Desativa exportação automática
-
+    printf "Configurações carregadas do arquivo: %s\n" "$CONFIG_FILE"
+    
 else
     echo "AVISO: Arquivo de configuração $CONFIG_FILE não encontrado."
     # Definir valores padrão caso o arquivo não exista

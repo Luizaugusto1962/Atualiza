@@ -18,7 +18,7 @@
 # Listas para organizacao das variaveis
 declare -a CORES="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
 declare -a ATUALIZAC="CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT"
-declare -a CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds configuracoes processos envia recebe"
+declare -a CAMINHOS_BASE="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds configuracoes binarios envia recebe"
 declare -a CAMINHOS_BASE2="INI UMADATA CFG_OFFLINE E_EXEC T_TELAS X_XML"
 declare -a BIBLIOTECA_SAV="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
 declare -a COMANDOS="DEFAULT_ZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO REBUILD JUTIL ISCCLIENT ISCCLIENTT"
@@ -32,7 +32,7 @@ declare -a LOGIS="LOG LOG_ATU LOG_LIMPA LOG_TMP"
 
 RAIZ="${RAIZ:-}"                                 # Caminho do diretorio RAIZ do programa.
 CFG_DIR="${CFG_DIR:-}"                           # Caminho do diretorio de configuracao do programa.
-REBUILD="${REBUILD:-}"                                   # Caminho do utilitario jutil.
+REBUILD="${REBUILD:-}"                           # Caminho do utilitario jutil.
 
 # Criar diretorio de configuracao se especificado e nao existir
 if [[ -n "${CFG_DIR}" ]]; then
@@ -194,7 +194,7 @@ _configurar_diretorios() {
 
 
     # Criar diretorios se nao existirem - usando funcao centralizada
-    local dirs=("${DEFAULT_BIBLIOTECA_DIR}" "${DEFAULT_BASEBACKUP_DIR}" "${DEFAULT_OLDS_DIR}" "${DEFAULT_PROGS_DIR}" "${DEFAULT_LOGS_DIR}" "${DEFAULT_ENVIA_DIR}" "${DEFAULT_RECEBE_DIR}" "${DEFAULT_BACKUP_DIR}")
+    local dirs=("${DEFAULT_BIBLIOTECA_ATUAL_DIR}" "${DEFAULT_BIBLIOTECA_DIR}" "${DEFAULT_BASEBACKUP_DIR}" "${DEFAULT_OLDS_DIR}" "${DEFAULT_PROGS_DIR}" "${DEFAULT_LOGS_DIR}" "${DEFAULT_ENVIA_DIR}" "${DEFAULT_RECEBE_DIR}" "${DEFAULT_BACKUP_DIR}")
     local dir=""
     for dir in "${dirs[@]}"; do
         _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
@@ -589,7 +589,7 @@ _validar_configuracao() {
    
     
     # Verificar diretorios essenciais
-    local dirs=("biblioteca" "olds" "logs" "configuracoes" "processos" "backup" "bases_backup" "envia" "recebe" "E_EXEC" "T_TELAS" "BASE1")
+    local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "envia" "recebe" "E_EXEC" "T_TELAS" "BASE1")
     for dir in "${dirs[@]}"; do
         local dir_path=""
         # Tratamento especial para E_EXEC e T_TELAS que ficam em ${RAIZ}

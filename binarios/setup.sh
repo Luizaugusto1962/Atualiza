@@ -20,10 +20,6 @@ verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 20
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
 # =============================================================================
-# Garantir que o script saiba onde estão os modulos e a configuracao
-SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar constantes se disponivel
 if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
@@ -493,10 +489,10 @@ EOF
 main() {
 
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
-# Quando chamado diretamente de /processos, sobe um nivel para o diretorio do atualiza.sh
+# Quando chamado diretamente de /binarios, sobe um nivel para o diretorio do atualiza.sh
     if [[ -z "${SCRIPT_DIR}" ]]; then
         _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        if [[ "$(basename "${_self_dir}")" == "processos" ]]; then
+        if [[ "$(basename "${_self_dir}")" == "binarios" ]]; then
             SCRIPT_DIR="$(dirname "${_self_dir}")"
         else
             SCRIPT_DIR="${_self_dir}"
@@ -507,7 +503,7 @@ main() {
 #RAIZ="${SCRIPT_DIR%/*}"
 
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"
+LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 cd "${SCRIPT_DIR}" || exit 1

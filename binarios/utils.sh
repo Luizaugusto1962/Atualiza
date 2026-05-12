@@ -606,7 +606,6 @@ _executar_expurgador_diario() {
         ["${DEFAULT_BACKUP_DIR:-}"]=30
         ["${DEFAULT_BASEBACKUP_DIR:-}"]=30
         ["${DEFAULT_OLDS_DIR:-}"]=30
-        ["${DEFAULT_LIBS_DIR:-}"]=10
         ["${DEFAULT_PROGS_DIR:-}"]=10
         ["${DEFAULT_ENVIA_DIR:-}"]=10
         ["${DEFAULT_RECEBE_DIR:-}"]=10

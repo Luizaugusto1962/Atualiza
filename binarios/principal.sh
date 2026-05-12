@@ -25,9 +25,10 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 
 ## Carregar constantes do sistema
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/processos}"                            # Diretorio dos modulos de biblioteca
+LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"                            # Diretorio dos modulos de biblioteca
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
-
+PERM_DIR_SECURE="0755"            
+export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE                       # Diretórios seguros (rwxr-xr-x)
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
@@ -37,9 +38,9 @@ declare -rx UPDATE="11/05/26-v.1"
 # CARREGAR CONSTANTES DO SISTEMA
 # =============================================================================
 # Carregar constantes se disponivel
-if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
+if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
     # shellcheck source=constantes.sh
-    "." "${LIB_DIR}/constantes.sh"
+    "." "${LIBS_DIR}/constantes.sh"
 fi
 
 # =============================================================================
@@ -94,7 +95,7 @@ _criar_diretorio_seguro() {
 # =============================================================================
 
 # Lista de diretórios obrigatórios
-declare -a AUX_DIRS=("${LIB_DIR}" "${CFG_DIR}")
+declare -a AUX_DIRS=("${LIBS_DIR}" "${CFG_DIR}")
 
 for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
@@ -135,7 +136,7 @@ done
 # -----------------------------------------------------------------------------
 _caminho_modulo() {
     local modulo="${1}"
-    local caminho="${LIB_DIR}/${modulo}"
+    local caminho="${LIBS_DIR}/${modulo}"
 
     # Verificar se o arquivo existe
     if [[ ! -f "${caminho}" ]]; then

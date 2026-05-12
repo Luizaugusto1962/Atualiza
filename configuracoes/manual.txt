@@ -1393,7 +1393,7 @@ Definidos automaticamente em tools/:
 * /backups - Backups da base
 * /enviar - Arquivos para enviar
 * /receber - Arquivos recebidos
-* /processos - Bibliotecas do sistema
+* /binarios - Bibliotecas do sistema
 
 NAO MODIFICAR estes diretorios!
 
@@ -1401,7 +1401,7 @@ CONFIGURACAO INICIAL:
 -------------------------------------------------------------------
 
 Para nova instalacao, use:
-./processos/setup.sh
+./binarios/setup.sh
 
 WIZARD INTERATIVO:
 1. Escolhe sistema (IsCOBOL/Cobol)
@@ -1416,7 +1416,7 @@ WIZARD INTERATIVO:
 
 RECONFIGURACAO:
 Para modificar instalacao existente:
-./processos/setup.sh --edit
+./binarios/setup.sh --edit
 
 SOLUCAO DE PROBLEMAS:
 -------------------------------------------------------------------
@@ -1684,7 +1684,7 @@ CASOS DE USO:
 -------------------------------------------------------------------
 
 HISTORICO DE MANUTENCAO:
-- Rodar o programa de setupo que esta em /tools/processos/setup.sh
+- Rodar o programa de setupo que esta em /tools/binarios/setup.sh
 
 PROBLEMAS CONHECIDOS:
 - Programa ADV000 lento (investigar)
@@ -1807,25 +1807,25 @@ DIRETORIOS PRINCIPAIS:
   dados_jisam/  - Base de dados
   
 tools/
-  processos/         - Bibliotecas do atualiza
-  configuracoes/          - Configuracoes
-  logs/         - Arquivos de log
-  backup/       - Backups da base
-  olds/         - Backups de programas
-  progs/        - Programas atualizados
-  envia/        - Para envio
-  recebe/       - Recebidos
+  binarios/         - Bibliotecas do atualiza
+  configuracoes/    - Configuracoes
+  logs/             - Arquivos de log
+  backup/           - Backups da base
+  olds/             - Backups de programas
+  progs/            - Programas atualizados
+  envia/            - Para envio
+  recebe/           - Recebidos
 
 ARQUIVOS IMPORTANTES:
 -------------------------------------------------------------------
 
-configuracoes/.config        - Configuracao principal
+configuracoes/.config           - Configuracao principal
 configuracoes/limpetmp          - Lista de temporarios
 configuracoes/indexar           - Arquivos principais para o rodar e rebuild
 configuracoes/lembrete          - Notas/lembretes
 configuracoes/avisos            - Aviso de entrada
-logs/atualiza.log     - Log de operacoes
-logs/limpando.log     - Log de limpeza
+logs/atualiza.log               - Log de operacoes
+logs/limpando.log               - Log de limpeza
 
 CONCEITOS IMPORTANTES:
 -------------------------------------------------------------------
