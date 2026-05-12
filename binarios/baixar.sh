@@ -179,11 +179,13 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
         fi
 
         # Criar destino se não existir
-	local caminho="${1:-${sh_target}}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-        return 1
-    }
+#        if ! mkdir -p "$sh_target" 2>/dev/null; then
+##            _mensagec "${RED}" "Erro ao criar diretorio: $sh_target"
+#            ((arquivos_erro++)) || true
+#            chmod "${PERM_DIR_SECURE}" "$sh_target" 2>/dev/null || true
+#            continue
+
+#        fi
 
         # Mover arquivo para destino
         if mv -f "$arquivo" "$sh_target/"; then
@@ -265,22 +267,29 @@ _atualizar_online() {
     
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
 
-	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+if ! cd "${DEFAULT_RECEBE_DIR}"; then
+   _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${DEFAULT_RECEBE_DIR}'."
+    _read_sleep 2
+    return 1
+fi
+#	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+#    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+#        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+#        return 1
+#    }
+    # Criar e acessar diretorio temporario
+    mkdir -p "$temp_dir" || {
+        _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
+        _read_sleep 2
+        chmod "${PERM_DIR_SECURE}" "$temp_dir" 2>/dev/null || true
         return 1
     }
 
-	local caminho="${1:-${temp_dir}}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-        return 1
-    }
-    cd "${temp_dir}" || {
-        _mensagec "${RED}" "Erro: Diretorio de trabalho $temp_dir nao acessivel"
-        _read_sleep 2
-        return 1
-    }
+#    cd "${temp_dir}" || {
+#        _mensagec "${RED}" "Erro: Diretorio de trabalho $temp_dir nao acessivel"
+#        _read_sleep 2
+#        return 1
+#    }
 
     # Baixar arquivo
     if ! wget -q -c "$link" -O "$zipfile"; then
