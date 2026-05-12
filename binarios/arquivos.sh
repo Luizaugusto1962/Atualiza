@@ -14,8 +14,7 @@ CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do 
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                                     # Comando para compactacao (ex: zip).
 REBUILD="${REBUILD:-}"                                             # Caminho para o utilitario jutil.
 RAIZ="${RAIZ:-}"                                                   # Caminho RAIZ do sistema.
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                            # Caminho do diretorio de configuracoes.
-DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretorio de logs
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                  # Caminho do diretorio de configuracoes.
 
 #---------- FUNCOES DE LIMPEZA ----------#
 
@@ -635,6 +634,8 @@ _executar_expurgador() {
     local diretorios_limpeza=(
         "${DEFAULT_BACKUP_DIR}/"
         "${DEFAULT_BIBLIOTECA_DIR}/"
+        "${DEFAULT_BIBLIOTECA_ATUAL_DIR}/"
+        "${DEFAULT_PROGS_DIR}/"        
         "${DEFAULT_ENVIA_DIR}/"
         "${DEFAULT_RECEBE_DIR}/"
         "${DEFAULT_BASEBACKUP_DIR}/"

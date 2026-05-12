@@ -371,7 +371,7 @@ _executar_atualizacao_biblioteca() {
     # Mover backups para diretorio
     local arquivos=(*_"${VERSAO}".bkp)
     if (( ${#arquivos[@]} )); then
-        mv -- "${arquivos[@]}" "${DEFAULT_OLDS_DIR}" || {
+        mv -- "${arquivos[@]}" "${DEFAULT_BIBLIOTECA_ATUAL_DIR}" || {
         _mensagec "${YELLOW}" "Erro ao mover arquivos de backup."
         _read_sleep 2
         return 1
