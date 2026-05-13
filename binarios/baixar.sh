@@ -147,10 +147,6 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
             continue
         fi
 
-#        _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-#        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-#        return 1
-#    }
         # Mover arquivo para destino
         if mv -f "$configuracoes_arquivo" "$caminho/$configuracoes_arquivo"; then
             _mensagec "${GREEN}" "Arquivo $configuracoes_arquivo instalado em $caminho"
@@ -270,11 +266,7 @@ if ! cd "${DEFAULT_RECEBE_DIR}"; then
     _read_sleep 2
     return 1
 fi
-#	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
-#    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-#        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-#        return 1
-#    }
+
     # Criar e acessar diretorio temporario
     mkdir -p "$temp_dir" || {
         _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
