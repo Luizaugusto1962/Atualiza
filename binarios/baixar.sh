@@ -250,16 +250,6 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
 
-        # Chamar move_dir.sh para organizar diretórios após atualização
-# Verificar se o diretório libs existe antes de executar
-    if [[ -d "${SCRIPT_DIR}/libs" && -f "${SCRIPT_DIR}/move_dir.sh" ]]; then
-        if "${SCRIPT_DIR}/move_dir.sh"; then
-            _mensagec "${GREEN}" "Organizacao de diretorios concluida."
-        else
-            _mensagec "${YELLOW}" "AVISO: Falha ao organizar diretorios."
-        fi
-    fi
-
     exit 1
 }
 
