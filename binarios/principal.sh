@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 11/05/2026-01
+# Versao: 13/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -25,7 +25,7 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 
 ## Carregar constantes do sistema
 # Diretorios dos modulos e configuracoes
-LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"                            # Diretorio dos modulos de biblioteca
+LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"                           # Diretorio dos modulos de biblioteca
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
 PERM_DIR_SECURE="0755"            
 export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE                       # Diretórios seguros (rwxr-xr-x)

@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-02
+# Versao: 13/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -51,7 +51,7 @@ fi
 # =============================================================================
 # Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
 # =============================================================================
-LIB_DIR="${LIB_DIR:-}"                                             # Caminho do diretorio de bibliotecas do programa.
+LIBS_DIR="${LIBS_DIR:-}"                                             # Caminho do diretorio de bibliotecas do programa.
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                                 # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do diretorio da terceira base de dados.
@@ -62,8 +62,8 @@ DEFAULT_BIBLIOTECA_ATUAL_DIR="${DEFAULT_BIBLIOTECA_ATUAL_DIR:-}"   # Diretório 
 DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"               # Diretório de backup de base padrão
 DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-}"                           # Diretório de arquivos antigos padrão
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"                         # Diretório de programas padrão
-DEFAULT_ENVIA_DIR="${SCRIPT_DIR:-}"                                # Diretório de envio padrão
-DEFAULT_RECEBE_DIR="${SCRIPT_DIR:-}"                               # Diretório de recebimento padrão
+DEFAULT_ENVIA_DIR="${DEFAULT_ENVIA_DIR:-}"                         # Diretório de envio padrão
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                       # Diretório de recebimento padrão
 CFG_SISTEMA="${CFG_SISTEMA:-}"                                     # Tipo de sistema que esta sendo usado (iscobol ou isam).
 SAVATU="${SAVATU:-}"                                               # Caminho do diretorio da biblioteca do servidor da SAV.
 SAVATU1="${SAVATU1:-}"                                             # Caminho do diretorio da biblioteca do servidor da SAV.
@@ -105,6 +105,9 @@ base_trabalho="${base_trabalho:-}"                                 # Variavel qu
 # =============================================================================
 # FUNÇÕES AUXILIARES
 # =============================================================================
+
+# Arquivo de backup padrao - CORRIGIDO: com aspas
+INI="${INI:-backup-${VERSAO}.zip}"
 
 # -----------------------------------------------------------------------------
 # Funcao para definir cores do terminal
@@ -228,17 +231,6 @@ _configurar_variaveis_sistema() {
         BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"
         export E_EXEC T_TELAS BASE1 BASE2 BASE3 CFG_OFFLINE
     fi
-
-    # Configurar logs
-    LOG_ATU="${LOG_ATU:-${DEFAULT_LOGS_DIR}/atualiza.$(date +"%Y-%m-%d").log}"
-    LOG_LIMPA="${LOG_LIMPA:-${DEFAULT_LOGS_DIR}/limpando.$(date +"%Y-%m-%d").log}"
-    LOG_TMP="${LOG_TMP:-${DEFAULT_LOGS_DIR}/}"
-
-    # Data atual formatada - CORRIGIDO: com aspas
-    UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
-
-    # Arquivo de backup padrao - CORRIGIDO: com aspas
-    INI="${INI:-backup-${VERSAO}.zip}"
 
     # Gerar sufixos de arquivos com base no tipo de compilacao.
     if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
@@ -589,7 +581,7 @@ _validar_configuracao() {
    
     
     # Verificar diretorios essenciais
-    local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "envia" "recebe" "E_EXEC" "T_TELAS" "BASE1")
+    local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS" "BASE1")
     for dir in "${dirs[@]}"; do
         local dir_path=""
         # Tratamento especial para E_EXEC e T_TELAS que ficam em ${RAIZ}

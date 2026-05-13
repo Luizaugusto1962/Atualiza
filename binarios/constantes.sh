@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 13/05/2026-01
 #
 set -euo pipefail
 #
@@ -35,7 +35,7 @@ if [[ -f "$CONFIG_FILE" ]]; then
     set -a  # Automaticamente exporta variáveis criadas
     "." "$CONFIG_FILE"
     set +a  # Desativa exportação automática
-    printf "Configurações carregadas do arquivo: %s\n" "$CONFIG_FILE"
+#    printf "Configurações carregadas do arquivo: %s\n" "$CONFIG_FILE"
     
 else
     echo "AVISO: Arquivo de configuração $CONFIG_FILE não encontrado."
@@ -119,7 +119,7 @@ BACKUP_EXTENSIONS=('*.zip' '*.tar' '*.tar.gz')
 # DIRETÓRIOS PADRÃO
 # =============================================================================
 #DEFAULT_CONFIG_DIR="${CFG_DIR}"                                # Diretório de configuração padrão
-#DEFAULT_LIBS_DIR="${LIB_DIR}"                                  # Diretório de bibliotecas padrão
+#DEFAULT_LIBS_DIR="${LIBS_DIR}"                                  # Diretório de bibliotecas padrão
 DEFAULT_CONFIG_DIR="${SCRIPT_DIR}/configuracoes"                # Diretório de configuração padrão  
 DEFAULT_LIBS_DIR="${SCRIPT_DIR}/binarios"                       # Diretório de bibliotecas padrão 
 DEFAULT_LOGS_DIR="${SCRIPT_DIR}/logs"                           # Diretório de logs padrão 
@@ -148,7 +148,7 @@ DESTINO_SERVER="/u/varejo/man/"                                 # Diretorio do s
 DESTINO_BIBLIOTECA="/u/varejo/trans_pc/"                        # Diretorio de transporte        PC
 
 # =============================================================================
-    # Configuracao do diretorio e utilitarios do SAVISC.
+# Configuracao do diretorio e utilitarios do SAVISC.
 # =============================================================================    
 SAVISC="${RAIZ}/savisc/iscobol/bin/"                           # Caminho do diretório de instalação do SAVISC
 
@@ -161,10 +161,20 @@ REBUILD="${SAVISC}${JUTIL}"                                   # Caminho completo
   
 acessoff="${acessoff:-${RAIZ}/portalsav/Atualiza}"            # Caminho do portal de atualização (usado para verificar acesso offline) 
 
+#=============================================================================
+# Configurar logs
+#=============================================================================
+LOG_ATU="${LOG_ATU:-${DEFAULT_LOGS_DIR}/atualiza.$(date +"%Y-%m-%d").log}"
+LOG_LIMPA="${LOG_LIMPA:-${DEFAULT_LOGS_DIR}/limpando.$(date +"%Y-%m-%d").log}"
+LOG_TMP="${LOG_TMP:-${DEFAULT_LOGS_DIR}/}"
+
+# Data atual formatada - CORRIGIDO: com aspas
+UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
+
 # =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
-export SCRIPT_DIR LIB_DIR CFG_DIR
+export SCRIPT_DIR LIBS_DIR CFG_DIR
 export CFG_SISTEMA CFG_VERCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE

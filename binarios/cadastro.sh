@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-02
+# Versao: 13/05/2026-02
 # Autor: Luiz Augusto
 #
 # Uso:
@@ -15,7 +15,7 @@
 
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
-LIB_DIR="${LIB_DIR:-}"                 # Diretorio de modulos de biblioteca
+LIBS_DIR="${LIBS_DIR:-}"                 # Diretorio de modulos de biblioteca
 
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
 # Quando chamado diretamente de /binarios, sobe um nivel para o diretorio do atualiza.sh
@@ -31,12 +31,12 @@ if [[ -z "${SCRIPT_DIR}" ]]; then
 fi
 
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/binarios}"
+LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar modulos necessarios
-"." "${LIB_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }
-"." "${LIB_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
+"." "${LIBS_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }
+"." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
 
 # Cores para o menu
         RED=$(tput bold)$(tput setaf 1)          # Vermelho

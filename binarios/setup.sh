@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-02
+# Versao: 13/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -22,8 +22,8 @@ verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 20
 # =============================================================================
 
 # Carregar constantes se disponivel
-if [[ -f "${LIB_DIR}/constantes.sh" ]]; then
-    "." "${LIB_DIR}/constantes.sh"
+if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
+    "." "${LIBS_DIR}/constantes.sh"
 fi
 
 # Variáveis globais
@@ -503,14 +503,14 @@ main() {
 #RAIZ="${SCRIPT_DIR%/*}"
 
 # Diretorios dos modulos e configuracoes
-LIB_DIR="${LIB_DIR:-${SCRIPT_DIR}/binarios}"
+LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 cd "${SCRIPT_DIR}" || exit 1
 
 # Verifica se o diretorio processos existe
-    if [[ ! -d "${LIB_DIR}" ]]; then
-        echo "ERRO: Diretorio ${LIB_DIR} nao encontrado."
+    if [[ ! -d "${LIBS_DIR}" ]]; then
+        echo "ERRO: Diretorio ${LIBS_DIR} nao encontrado."
         exit 1
     fi
 

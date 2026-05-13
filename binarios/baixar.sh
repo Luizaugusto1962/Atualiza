@@ -5,12 +5,13 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-03
+# Versao: 13/05/2026-03
 #
 
 # Variaveis globais esperadas
+
 CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-LIB_DIR="${LIB_DIR:-}"                          # Diretorio dos modulos de biblioteca.
+LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
 CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
 CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
@@ -35,7 +36,7 @@ _atualizando() {
 
     _configurar_diretorios
 
-	local caminho="${1:-${DEFAULT_BACKUP_DIR}}"
+	local caminho="${CFG_DIR}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
@@ -44,7 +45,7 @@ _atualizando() {
     # Fazer backup dos arquivos atuais
     local backup_sucesso=0
     local backup_erro=0
-    cd "${LIB_DIR}" || {
+    cd "${LIBS_DIR}" || {
         _mensagec "${RED}" "Erro: Diretorio de atualizacao nao encontrado"
         _read_sleep 2
         return 1
@@ -106,10 +107,8 @@ _atualizando() {
     fi
 local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     # Acessar diretorio de trabalho
- #   cd "$DEFAULT_RECEBE_DIR" || {
-     cd "${temp_dir}" || {
- #        _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao acessivel"
-         _mensagec "${RED}" "Erro: Diretorio $temp_dir nao acessivel"
+    cd "${temp_dir}" || {
+        _mensagec "${RED}" "Erro: Diretorio $temp_dir nao acessivel"
         _read_sleep 2
         return 1
     }
@@ -117,7 +116,7 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     # Descompactar
     if ! "${DEFAULT_UNZIP}" -o -j "$zipfile" >>"$LOG_ATU" 2>&1; then
         _mensagec "${RED}" "Erro ao descompactar atualizacao"
-        _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $DEFAULT_RECEBE_DIR"
+        _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $temp_dir e se o comando de descompactacao esta configurado corretamente"
         _read_sleep 2 
         return 1
     fi
@@ -139,11 +138,19 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
 
         # Definir destino (CFG_DIR para todos os arquivos de config)
 
-	    local caminho="${1:-${CFG_DIR}}"
-        _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-        return 1
-    }
+	    local caminho="${CFG_DIR}"
+        # Criar destino se não existir
+        if ! mkdir -p "$caminho" 2>/dev/null; then
+            _mensagec "${RED}" "Erro ao criar diretorio de destino: $caminho"
+            ((arquivos_erro++)) || true
+            chmod "${PERM_DIR_SECURE}" "$caminho" 2>/dev/null || true
+            continue
+        fi
+
+#        _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+#        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+#        return 1
+#    }
         # Mover arquivo para destino
         if mv -f "$configuracoes_arquivo" "$caminho/$configuracoes_arquivo"; then
             _mensagec "${GREEN}" "Arquivo $configuracoes_arquivo instalado em $caminho"
@@ -171,25 +178,16 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
         }
 
         # Determinar destino baseado no nome do arquivo
-        local sh_target
+        local sh_destino
         if [[ "$arquivo" == "atualiza.sh" ]]; then
-            sh_target="${SCRIPT_DIR}"
+            sh_destino="${SCRIPT_DIR}"
         else
-            sh_target="${LIB_DIR}"
+            sh_destino="${LIBS_DIR}"
         fi
 
-        # Criar destino se não existir
-#        if ! mkdir -p "$sh_target" 2>/dev/null; then
-##            _mensagec "${RED}" "Erro ao criar diretorio: $sh_target"
-#            ((arquivos_erro++)) || true
-#            chmod "${PERM_DIR_SECURE}" "$sh_target" 2>/dev/null || true
-#            continue
-
-#        fi
-
         # Mover arquivo para destino
-        if mv -f "$arquivo" "$sh_target/"; then
-            _mensagec "${GREEN}" "Instalado $arquivo em $sh_target"
+        if mv -f "$arquivo" "$sh_destino/"; then
+            _mensagec "${GREEN}" "Instalado $arquivo em $sh_destino"
             ((arquivos_instalados++)) || true
             ((sh_instalados++)) || true
         else
@@ -285,11 +283,11 @@ fi
         return 1
     }
 
-#    cd "${temp_dir}" || {
-#        _mensagec "${RED}" "Erro: Diretorio de trabalho $temp_dir nao acessivel"
-#        _read_sleep 2
-#        return 1
-#    }
+    cd "${temp_dir}" || {
+        _mensagec "${RED}" "Erro: Diretorio de trabalho $temp_dir nao acessivel"
+        _read_sleep 2
+        return 1
+    }
 
     # Baixar arquivo
     if ! wget -q -c "$link" -O "$zipfile"; then

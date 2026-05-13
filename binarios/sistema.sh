@@ -6,12 +6,12 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 13/05/2026-01
 #
 
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-LIB_DIR="${LIB_DIR:-}"                          # Diretorio dos modulos de biblioteca.
+LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
 class="${class:-}"                              # Variavel da classe.
 mclass="${mclass:-}"                            # Variavel da mclass.
@@ -184,6 +184,8 @@ _mostrar_parametros() {
     printf "${GREEN}Diretorio dos progs: ${NORM}${DEFAULT_PROGS_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio do backup: ${NORM}${DEFAULT_BACKUP_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio de configuracoes: ${NORM}${CFG_DIR}${NORM}%*s\n"
+    printf "${GREEN}Diretorio de receber: ${NORM}${DEFAULT_RECEBE_DIR}${NORM}%*s\n"
+    printf "${GREEN}Diretorio de enviar: ${NORM}${DEFAULT_ENVIA_DIR}${NORM}%*s\n"    
     printf "${GREEN}Sistema em uso: ${NORM}${CFG_SISTEMA}${NORM}%*s\n"
     printf "${GREEN}Versao do ${CFG_SISTEMA} em uso: ${NORM}${CFG_VERCLASS}${NORM}%*s\n"
     printf "${GREEN}Biblioteca 1: ${NORM}${SAVATU1}${NORM}%*s\n"
