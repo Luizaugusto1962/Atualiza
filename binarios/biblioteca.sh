@@ -133,7 +133,7 @@ _reverter_biblioteca() {
         return 0
     fi
 
-    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backups_biblioteca_antes_da_versao-${versao_reverter}.zip"
+    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
 
     if [[ ! -r "${arquivo_backup}" ]]; then
         _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${arquivo_backup}"
