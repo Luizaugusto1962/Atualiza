@@ -32,7 +32,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE                       # Diret
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="11/05/26-v.1"
+declare -rx UPDATE="13/05/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
@@ -220,6 +220,11 @@ _inicializar_sistema() {
         return 1
     fi
 
+    # Inicializar sistema de gerenciamento de variáveis
+    if command -v _inicializar_sistema_variaveis >/dev/null 2>&1; then
+        _inicializar_sistema_variaveis
+    fi
+
     # Carregar e validar configuracoes
     if ! _carregar_configuracoes; then
         printf "ERRO: Falha ao carregar configuracoes.\n" >&2
@@ -286,6 +291,11 @@ _main() {
     else
         printf "ERRO: Menu principal nao encontrado.\n" >&2
         exit 1
+    fi
+    
+    # Finalizar sistema de variáveis (limpeza explícita)
+    if command -v _finalizar_sistema >/dev/null 2>&1; then
+        _finalizar_sistema
     fi
 }
 

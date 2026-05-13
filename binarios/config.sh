@@ -10,20 +10,275 @@
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
 # =============================================================================
+set -o pipefail  # Falhar se qualquer comando em pipe falhar
+trap '_encerrar_programa' EXIT  # Limpar ao sair
 
 # =============================================================================
-# VARIÁVEIS GLOBAIS DOCUMENTADAS
+# SISTEMA DE GERENCIAMENTO DE VARIÁVEIS
 # =============================================================================
 
-# Listas para organizacao das variaveis
-declare -a CORES=("RED" "GREEN" "YELLOW" "BLUE" "PURPLE" "CYAN" "NORM")
-declare -a ATUALIZAC=("CFG_SISTEMA" "CFG_VERCLASS" "CFG_USA_DBMAKER" "CFG_ACESSO_SSH" "CFG_OFFLINE" "CFG_BACKUP_PATH" "CFG_EMPRESA" "VERSAOANT")
-declare -a CAMINHOS_BASE=("BASE1" "BASE2" "BASE3" "SCRIPT_DIR" "RAIZ" "CFG_BASE_DIR" "CFG_BASE_DIR2" "CFG_BASE_DIR3" "biblioteca" "bases_backup" "logs" "olds" "configuracoes" "binarios" "envia" "recebe")
-declare -a CAMINHOS_BASE2=("INI" "UMADATA" "CFG_OFFLINE" "E_EXEC" "T_TELAS" "X_XML")
-declare -a BIBLIOTECA_SAV=("SAVATU" "SAVATU1" "SAVATU2" "SAVATU3" "SAVATU4")
-declare -a COMANDOS=("DEFAULT_ZIP" "DEFAULT_FIND" "DEFAULT_WHO" "DEFAULT_UNZIP" "REBUILD" "JUTIL" "ISCCLIENT" "ISCCLIENTT")
-declare -a OUTROS=("DEFAULT_SSH_PORTA" "DEFAULT_SSH_USER" "VERSAO" "SAVISC" "DEFAULT_VERSAO" "DEFAULT_ARQUIVO" "DEFAULT_PEDARQ" "DEFAULT_PROG" "DEFAULT_IP_SERVER" "UPDATE" "CFG_OFFLINE" "base_trabalho")
-declare -a LOGIS=("LOG" "LOG_ATU" "LOG_LIMPA" "LOG_TMP")
+# Desativar temporariamente set -u para evitar erros durante inicialização
+# Será reativado após configuração completa
+set +u
+
+# Array para registrar todas as variáveis definidas (para limpeza automática)
+declare -a REGISTRO_VARIAVEIS=()
+# Array para registrar categorias de variáveis
+declare -A REGISTRO_CATEGORIAS=()
+# Contador de variáveis registradas
+declare -g VAR_CONTADOR_REGISTRO=0
+
+# Função para garantir que os arrays existam (proteção contra unbound variable)
+_garantir_arrays() {
+    # Garantir que REGISTRO_VARIAVEIS existe
+    if ! declare -p REGISTRO_VARIAVEIS &>/dev/null; then
+        declare -ga REGISTRO_VARIAVEIS=()
+    fi
+    
+    # Garantir que REGISTRO_CATEGORIAS existe
+    if ! declare -p REGISTRO_CATEGORIAS &>/dev/null; then
+        declare -gA REGISTRO_CATEGORIAS=()
+    fi
+    
+    # Garantir que VAR_CONTADOR_REGISTRO existe
+    if ! declare -p VAR_CONTADOR_REGISTRO &>/dev/null; then
+        declare -g VAR_CONTADOR_REGISTRO=0
+    fi
+}
+
+# Chamar garantia de arrays imediatamente
+_garantir_arrays
+
+# Função para verificar se uma variável já está registrada
+_var_ja_registrada() {
+    local var_name="$1"
+    local var
+    
+    # Garantir que o array existe
+    _garantir_arrays
+    
+    # Verificar se o array existe e não está vazio
+    if declare -p REGISTRO_VARIAVEIS &>/dev/null && [[ ${#REGISTRO_VARIAVEIS[@]} -gt 0 ]]; then
+        for var in "${REGISTRO_VARIAVEIS[@]}"; do
+            [[ "$var" == "$var_name" ]] && return 0
+        done
+    fi
+    return 1
+}
+
+# Reativar set -u após inicialização (exceto para arrays gerenciados)
+# Para variáveis de array, usar verificações explícitas
+set -u
+
+# Função para registrar uma variável no sistema
+_register_var() {
+    local var_name="$1"
+    local var_value="$2"
+    local var_category="${3:-OUTROS}"
+    
+    # Garantir arrays
+    _garantir_arrays
+    
+    # Validar nome da variável
+    if [[ -z "$var_name" ]]; then
+        printf 'AVISO: Nome de variavel vazio, ignorando registro.\n' >&2
+        return 1
+    fi
+    
+    # Pular variáveis que não devem ser modificadas (readonly do principal.sh)
+    # UPDATE é definida como readonly em principal.sh
+    if [[ "$var_name" == "UPDATE" ]]; then
+        return 0
+    fi
+    
+    # Verificar se a variável já é readonly (não pode ser modificada)
+    if [[ -o readonly && -v "$var_name" ]]; then
+        # Variável é readonly, não tentar modificar
+        return 0
+    fi
+    
+    # Tentar verificar se é readonly dinamicamente
+    # Verificar se a variável existe e não pode ser modificada
+    if declare -p "$var_name" 2>/dev/null | grep -q 'declare -r'; then
+        # Variável é readonly, não tentar modificar
+        return 0
+    fi
+    
+    # Verificar se já está registrada (evitar duplicatas)
+    if _var_ja_registrada "$var_name"; then
+        # Atualizar valor existente (somente se não for readonly)
+        declare -g "$var_name"="$var_value" 2>/dev/null || true
+        return 0
+    fi
+    
+    # Definir a variável como global
+    declare -g "$var_name"="$var_value" 2>/dev/null || {
+        # Se falhou, pode ser readonly, ignorar
+        printf 'AVISO: Nao foi possivel definir variavel %s (pode ser readonly).\n' "$var_name" >&2
+        return 0
+    }
+    
+    # Registrar para limpeza posterior
+    REGISTRO_VARIAVEIS+=("$var_name")
+    
+    # Registrar categoria
+    if [[ -n "${REGISTRO_CATEGORIAS[$var_category]+x}" ]]; then
+        REGISTRO_CATEGORIAS["$var_category"]+=" $var_name"
+    else
+        REGISTRO_CATEGORIAS["$var_category"]="$var_name"
+    fi
+    
+    # Incrementar contador
+    ((VAR_CONTADOR_REGISTRO++)) || true
+    
+    return 0
+}
+
+# Função para registrar múltiplas variáveis de uma só vez
+_register_vars_batch() {
+    local var_category="${1:-OUTROS}"
+    shift
+    local var_def var_name var_value
+    
+    for var_def in "$@"; do
+        var_name="${var_def%%=*}"
+        var_value="${var_def#*=}"
+        _register_var "$var_name" "$var_value" "$var_category"
+    done
+}
+
+# Função para obter todas as variáveis de uma categoria
+_get_vars_by_category() {
+    local category="$1"
+    echo "${REGISTRO_CATEGORIAS[$category]:-}"
+}
+
+# Função para verificar se uma variável é readonly
+_is_var_readonly() {
+    local var_name="$1"
+    
+    # Verificar usando declare -p
+    local decl_output
+    decl_output=$(declare -p "$var_name" 2>/dev/null)
+    
+    # Se o comando falhou, a variável não existe
+    if [[ -z "$decl_output" ]]; then
+        return 1
+    fi
+    
+    # Verificar se contém declare -r (readonly) ou declare -rx (readonly + export)
+    if [[ "$decl_output" == *"declare -r"* ]] || [[ "$decl_output" == *"declare -ir"* ]]; then
+        return 0
+    fi
+    
+    return 1
+}
+
+# Função para definir múltiplas variáveis de uma categoria
+_define_category_vars() {
+    local category="$1"
+    shift
+    local var_def
+    
+    for var_def in "$@"; do
+        local var_name="${var_def%%=*}"
+        local var_value="${var_def#*=}"
+        
+        # Pular variáveis readonly que já existem no ambiente
+        if _is_var_readonly "$var_name"; then
+            continue
+        fi
+        
+        _register_var "$var_name" "$var_value" "$category"
+    done
+}
+
+# =============================================================================
+# DEFINIÇÕES DE VARIÁVEIS POR CATEGORIA
+# =============================================================================
+
+# Função para inicializar todas as variáveis do sistema
+_inicializar_variaveis_sistema() {
+    # Limpar registros anteriores
+    REGISTRO_VARIAVEIS=()
+    
+    # CATEGORIA: CORES DO TERMINAL
+    _define_category_vars "CORES" \
+        "RED=\033[31m" \
+        "GREEN=\033[32m" \
+        "YELLOW=\033[33m" \
+        "BLUE=\033[34m" \
+        "PURPLE=\033[35m" \
+        "CYAN=\033[36m" \
+        "NORM=\033[0m"
+    
+    # CATEGORIA: CONFIGURAÇÕES DE ATUALIZAÇÃO
+    _define_category_vars "ATUALIZACAO" \
+        "CFG_SISTEMA=${CFG_SISTEMA:-}" \
+        "CFG_VERCLASS=${CFG_VERCLASS:-}" \
+        "CFG_USA_DBMAKER=${CFG_USA_DBMAKER:-}" \
+        "CFG_ACESSO_SSH=${CFG_ACESSO_SSH:-}" \
+        "CFG_OFFLINE=${CFG_OFFLINE:-}" \
+        "CFG_BACKUP_PATH=${CFG_BACKUP_PATH:-}" \
+        "CFG_EMPRESA=${CFG_EMPRESA:-}" \
+        "VERSAOANT=${VERSAOANT:-}"
+    
+    # CATEGORIA: CAMINHOS E DIRETÓRIOS
+    _define_category_vars "CAMINHOS" \
+        "BASE1=${BASE1:-}" \
+        "BASE2=${BASE2:-}" \
+        "BASE3=${BASE3:-}" \
+        "SCRIPT_DIR=${SCRIPT_DIR:-}" \
+        "RAIZ=${RAIZ:-}" \
+        "CFG_BASE_DIR=${CFG_BASE_DIR:-}" \
+        "CFG_BASE_DIR2=${CFG_BASE_DIR2:-}" \
+        "CFG_BASE_DIR3=${CFG_BASE_DIR3:-}" \
+        "INI=${INI:-}" \
+        "UMADATA=${UMADATA:-}" \
+        "E_EXEC=${E_EXEC:-}" \
+        "T_TELAS=${T_TELAS:-}" \
+        "X_XML=${X_XML:-}"
+    
+    # CATEGORIA: BIBLIOTECA SAV
+    _define_category_vars "BIBLIOTECA" \
+        "SAVATU=${SAVATU:-}" \
+        "SAVATU1=${SAVATU1:-}" \
+        "SAVATU2=${SAVATU2:-}" \
+        "SAVATU3=${SAVATU3:-}" \
+        "SAVATU4=${SAVATU4:-}"
+    
+    # CATEGORIA: COMANDOS DO SISTEMA
+    _define_category_vars "COMANDOS" \
+        "DEFAULT_ZIP=${DEFAULT_ZIP:-}" \
+        "DEFAULT_FIND=${DEFAULT_FIND:-}" \
+        "DEFAULT_WHO=${DEFAULT_WHO:-}" \
+        "DEFAULT_UNZIP=${DEFAULT_UNZIP:-}" \
+        "REBUILD=${REBUILD:-}" \
+        "JUTIL=${JUTIL:-}" \
+        "ISCCLIENT=${ISCCLIENT:-}" \
+        "ISCCLIENTT=${ISCCLIENTT:-}"
+    
+    # CATEGORIA: CONFIGURAÇÕES DIVERSAS
+    _define_category_vars "CONFIGURACOES" \
+        "DEFAULT_SSH_PORTA=${DEFAULT_SSH_PORTA:-}" \
+        "DEFAULT_SSH_USER=${DEFAULT_SSH_USER:-}" \
+        "VERSAO=${VERSAO:-}" \
+        "SAVISC=${SAVISC:-}" \
+        "DEFAULT_VERSAO=${DEFAULT_VERSAO:-}" \
+        "DEFAULT_ARQUIVO=${DEFAULT_ARQUIVO:-}" \
+        "DEFAULT_PEDARQ=${DEFAULT_PEDARQ:-}" \
+        "DEFAULT_PROG=${DEFAULT_PROG:-}" \
+        "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER:-}" \
+        "base_trabalho=${base_trabalho:-}"
+    # NOTA: UPDATE é definida como readonly em principal.sh e não deve ser modificada
+    
+    # CATEGORIA: LOGS
+    _define_category_vars "LOGS" \
+        "LOG=${LOG:-}" \
+        "LOG_ATU=${LOG_ATU:-}" \
+        "LOG_LIMPA=${LOG_LIMPA:-}" \
+        "LOG_TMP=${LOG_TMP:-}"
+}
 
 #-Variaveis de configuracao do sistema ---------------------------------------------------------#
 # Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
@@ -634,18 +889,178 @@ _ir_para_tools() {
     return 0
 }
 
-# -----------------------------------------------------------------------------
-# Funcao para resetar variaveis (cleanup)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# SISTEMA DE LIMPEZA DE VARIÁVEIS
+# =============================================================================
+
+# Função para verificar se uma variável existe
+_var_existe() {
+    local var_name="$1"
+    [[ -n "${!var_name+x}" ]]
+}
+
+# Função melhorada para limpar variáveis registradas
 _limpar_estado_variaveis() {
-    unset -v "${CORES[@]}" 2>/dev/null || true
-    unset -v "${ATUALIZAC[@]}" 2>/dev/null || true
-    unset -v "${CAMINHOS_BASE[@]}" 2>/dev/null || true
-    unset -v "${CAMINHOS_BASE2[@]}" 2>/dev/null || true
-    unset -v "${BIBLIOTECA_SAV[@]}" 2>/dev/null || true
-    unset -v "${COMANDOS[@]}" 2>/dev/null || true
-    unset -v "${OUTROS[@]}" 2>/dev/null || true
-    unset -v "${LOGIS[@]}" 2>/dev/null || true
+    local var_count=0
+    local var
+    
+    # Verificar se o array existe antes de usar
+    if [[ -z "${REGISTRO_VARIAVEIS[*]+x}" ]]; then
+        return 0
+    fi
+    
+    # Iterar sobre cópia do array para evitar problemas com modificação durante iteração
+    local vars_copy=("${REGISTRO_VARIAVEIS[@]:-}")
+    
+    for var in "${vars_copy[@]}"; do
+        # Verificar se a variável ainda existe e não está vazia
+        if [[ -n "${!var+x}" ]]; then
+            unset -v "$var" 2>/dev/null || true
+            ((var_count++)) || true
+        fi
+    done
+    
+    # Limpar array de registro
+    REGISTRO_VARIAVEIS=()
+    
+    # Limpar arrays de categorias
+    if [[ -n "${REGISTRO_CATEGORIAS[*]+x}" ]]; then
+        unset REGISTRO_CATEGORIAS 2>/dev/null || true
+        declare -A REGISTRO_CATEGORIAS=()
+    fi
+    
+    # Limpar contador
+    unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
+    
+    # Resetar terminal
+    tput sgr0 2>/dev/null || true
+    
+    return 0
+}
+
+# Função para limpar variáveis de uma categoria específica
+_limpar_categoria() {
+    local category="$1"
+    local vars="${REGISTRO_CATEGORIAS[$category]:-}"
+    local var
+    
+    if [[ -z "$vars" ]]; then
+        return 0
+    fi
+    
+    for var in $vars; do
+        if [[ -n "${!var+x}" ]]; then
+            unset -v "$var" 2>/dev/null || true
+        fi
+    done
+    
+    # Remover categoria do registro
+    eval "unset 'REGISTRO_CATEGORIAS'['$category']" 2>/dev/null || true
+}
+
+# Função para limpeza de emergência (sem dependências)
+_limpeza_emergencia() {
+    # Lista hardcoded para casos extremos
+    local emergency_vars="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
+    emergency_vars+=" CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE"
+    emergency_vars+=" CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT BASE1 BASE2 BASE3 SCRIPT_DIR"
+    emergency_vars+=" RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 INI UMADATA E_EXEC"
+    emergency_vars+=" T_TELAS X_XML SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4 DEFAULT_ZIP"
+    emergency_vars+=" DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP REBUILD JUTIL ISCCLIENT"
+    emergency_vars+=" ISCCLIENTT DEFAULT_SSH_PORTA DEFAULT_SSH_USER VERSAO SAVISC"
+    emergency_vars+=" DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG"
+    emergency_vars+=" DEFAULT_IP_SERVER UPDATE base_trabalho LOG LOG_ATU LOG_LIMPA LOG_TMP"
+    
+    local var
+    for var in $emergency_vars; do
+        unset -v "$var" 2>/dev/null || true
+    done
+    
+    tput sgr0 2>/dev/null || true
+}
+
+# Função para configurar limpeza automática ao sair
+_configurar_limpeza_automatica() {
+    # Configurar trap para limpeza ao sair
+    trap '_limpar_estado_variaveis' EXIT
+    trap '_limpar_estado_variaveis' INT
+    trap '_limpar_estado_variaveis' TERM
+    
+    # Registrar função de limpeza de emergência para SIGKILL (não capturável, mas boa prática)
+    trap '_limpeza_emergencia' QUIT
+}
+
+# Função principal de inicialização do sistema de variáveis
+_inicializar_sistema_variaveis() {
+    # Reinicializar arrays para garantir estado limpo
+    REGISTRO_VARIAVEIS=()
+    declare -A REGISTRO_CATEGORIAS=()
+    VAR_CONTADOR_REGISTRO=0
+    
+    # Inicializar todas as variáveis
+    _inicializar_variaveis_sistema
+    
+    # Configurar limpeza automática
+    _configurar_limpeza_automatica
+    
+    # Marcar sistema como inicializado
+    _register_var "SISTEMA_VARIAVEIS_INICIALIZADO" "true" "SISTEMA"
+}
+
+# Função para obter estatísticas do registro de variáveis
+_status_registro_variaveis() {
+    local categoria="${1:-}"
+    
+    if [[ -n "$categoria" ]]; then
+        local vars="${REGISTRO_CATEGORIAS[$categoria]:-}"
+        local count=0
+        for _ in $vars; do ((count++)); done
+        printf '%s: %d variaveis\n' "$categoria" "$count"
+    else
+        printf 'Total de variaveis registradas: %d\n' "${VAR_CONTADOR_REGISTRO:-0}"
+        printf 'Total de categorias: %d\n' "${#REGISTRO_CATEGORIAS[@]}"
+        printf '\nCategorias registradas:\n'
+        local cat
+        for cat in "${!REGISTRO_CATEGORIAS[@]}"; do
+            printf '  - %s\n' "$cat"
+        done
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Funcao para resetar variaveis (cleanup) - VERSÃO LEGADA (mantida para compatibilidade)
+# -----------------------------------------------------------------------------
+_limpar_estado_variaveis_legado() {
+    # Versão legada mantida para compatibilidade
+    # Usar _limpar_estado_variaveis() para a nova implementação
+    
+    # Lista de variáveis para limpar (sem usar arrays)
+    local vars_cores="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
+    local vars_atualizac="CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT"
+    local vars_caminhos="BASE1 BASE2 BASE3 SCRIPT_DIR RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 biblioteca bases_backup logs olds configuracoes binarios envia recebe"
+    local vars_caminhos2="INI UMADATA CFG_OFFLINE E_EXEC T_TELAS X_XML"
+    local vars_biblioteca="SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
+    local vars_comandos="DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP REBUILD JUTIL ISCCLIENT ISCCLIENTT"
+    local vars_outros="DEFAULT_SSH_PORTA DEFAULT_SSH_USER VERSAO SAVISC DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG DEFAULT_IP_SERVER UPDATE CFG_OFFLINE base_trabalho"
+    local vars_logs="LOG LOG_ATU LOG_LIMPA LOG_TMP"
+    
+    # Função auxiliar para limpar variáveis
+    _unset_vars() {
+        local var
+        for var in $1; do
+            unset -v "$var" 2>/dev/null || true
+        done
+    }
+    
+    # Limpar todas as categorias
+    _unset_vars "$vars_cores"
+    _unset_vars "$vars_atualizac"
+    _unset_vars "$vars_caminhos"
+    _unset_vars "$vars_caminhos2"
+    _unset_vars "$vars_biblioteca"
+    _unset_vars "$vars_comandos"
+    _unset_vars "$vars_outros"
+    _unset_vars "$vars_logs"
 
     tput sgr0 2>/dev/null || true
 }
@@ -653,8 +1068,29 @@ _limpar_estado_variaveis() {
 # Resetar estado do sistema
 # -----------------------------------------------------------------------------
 _resetando() {
-    _limpar_estado_variaveis
+    # Usar o novo sistema de limpeza se disponível
+    if [[ "${SISTEMA_VARIAVEIS_INICIALIZADO:-}" == "true" ]]; then
+        _limpar_estado_variaveis
+    else
+        # Fallback para versão legada
+        _limpar_estado_variaveis_legado
+    fi
     return 0
+}
+
+# Função para finalizar o sistema (chamada ao sair do programa principal)
+_finalizar_sistema() {
+    # Limpar todas as variáveis registradas
+    _limpar_estado_variaveis
+    
+    # Remover traps
+    trap - EXIT INT TERM QUIT
+    
+    # Resetar terminal final
+    tput sgr0 2>/dev/null || true
+    
+    # Mensagem de finalização (opcional)
+    # printf '[%s] Sistema finalizado e variaveis limpas.\n' "$(date '+%Y-%m-%d %H:%M:%S')" >&2
 }
 
 # -----------------------------------------------------------------------------
@@ -664,6 +1100,16 @@ _resetando() {
 # -----------------------------------------------------------------------------
 _encerrar_programa() {
     local status="${1:-0}"
-    _limpar_estado_variaveis
+    _finalizar_sistema
     exit "$status"
+}
+
+# Função auxiliar para debug - listar variáveis registradas
+_debubglist_vars() {
+    printf '=== Variaveis Registradas ===\n'
+    local var
+    for var in "${REGISTRO_VARIAVEIS[@]:-}"; do
+        printf '  %s=%s\n' "$var" "${!var:-<nao definida>}"
+    done
+    printf 'Total: %d\n' "${#REGISTRO_VARIAVEIS[@]}"
 }
