@@ -747,9 +747,12 @@ _menu_ajuda_principal() {
         printf "\n"
         _linha "=" "${GREEN}"
         
-        local opcao
-        read -rp "${YELLOW}Digite a opcao desejada ->: ${NORM}" opcao
-
+#        local opcao
+#        read -rp "${YELLOW}Digite a opcao desejada ->: ${NORM}" opcao
+    local opcao
+    if ! _ler_opcao_menu "ajuda_principal"; then
+        return
+    fi
         case "${opcao}" in
             1) _exibir_manual_completo ;;
             2) _ajuda_rapida ;;

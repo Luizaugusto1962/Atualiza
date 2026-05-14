@@ -186,27 +186,25 @@ _carregar_modulos() {
         "menus.sh"      # Modulos de Menu
     )
 
-    local modulo=""
     local erros=0
 	local modulos_com_erro=()
 
-    for modulo in "${modulos[@]}"; do
+    for modulo_def in "${modulos[@]}"; do
+        local modulo="${modulo_def%%|*}"
+        local descricao="${modulo_def#*|}"
         if ! _caminho_modulo "$modulo"; then
             ((erros++)) || true
-            modulos_com_erro+=("$modulo")
+            modulos_com_erro+=("$modulo ($descricao)")
         fi
     done
 
     if (( erros > 0 )); then
-        printf "ERRO: %d modulo(s) falharam ao carregar.\n" "$erros" >&2
-        for _m in "${modulos_com_erro[@]}"; do
-            printf "  - %s\n" "$_m" >&2
-        done
+        printf "ERRO: %d modulo(s) falharam ao carregar:\n" "$erros" >&2
+        printf "  - %s\n" "${modulos_com_erro[@]}" >&2
         return 1
     fi
     return 0
 }
-
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA
 # -----------------------------------------------------------------------------
