@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
-# Versao: 13/05/2026-01
+# Versao: 14/05/2026-01
 # Autor: Luiz Augusto
 # Os scripts de suporte devem estar no diretório binarios ao lado deste script.
 # Padrões e regras de desenvolvimento: ver AGENTS.md
@@ -29,6 +29,7 @@ RLIBS_DIR="${SCRIPT_DIR}/libs"
 # Verificar se o diretório libs existe antes de executar
     if [[ -d "${SCRIPT_DIR}/libs" && -f "${RLIBS_DIR}/move_dir.sh" ]]; then
         if "${RLIBS_DIR}/move_dir.sh"; then
+            chmod +x "${RLIBS_DIR}/move_dir.sh"
             "." "${RLIBS_DIR}/move_dir.sh"
             _mensagec "${GREEN}" "Organizacao de diretorios concluida."
         else
