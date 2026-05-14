@@ -230,7 +230,7 @@ _processar_atualizacao_biblioteca() {
     } &
     local pid_zip_exec=$!
     pids+=("$pid_zip_exec")  # Registrar PID para trap
-    _mostrar_progresso_backup "$pid_zip_exec" "Compactando $E_EXEC"
+    _mostrar_progresso "$pid_zip_exec" "Compactando $E_EXEC"
     if wait "$pid_zip_exec"; then
         pids=("${pids[@]/$pid_zip_exec}")  # Remover PID apos concluido
         ((contador++)) || true
@@ -248,7 +248,7 @@ _processar_atualizacao_biblioteca() {
     } &
     local pid_zip_telas=$!
     pids+=("$pid_zip_telas")  # Registrar PID
-    _mostrar_progresso_backup "$pid_zip_telas" "Compactando $T_TELAS"
+    _mostrar_progresso "$pid_zip_telas" "Compactando $T_TELAS"
     if wait "$pid_zip_telas"; then
         ((contador++)) || true
         _mensagec "${GREEN}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
@@ -266,7 +266,7 @@ _processar_atualizacao_biblioteca() {
         } &
         local pid_zip_xml=$!
         pids+=("$pid_zip_xml")  # Registrar PID
-        _mostrar_progresso_backup "$pid_zip_xml" "Compactando $X_XML"
+        _mostrar_progresso "$pid_zip_xml" "Compactando $X_XML"
         if wait "$pid_zip_xml"; then
             ((contador++)) || true
             _mensagec "${GREEN}" "Compactacao de $X_XML concluida [Etapa ${contador}/${total_etapas}]"
@@ -338,7 +338,7 @@ _executar_atualizacao_biblioteca() {
             } &
             local pid_unzip=$!
             pids+=("$pid_unzip")  # Registrar PID para trap
-            _mostrar_progresso_backup "$pid_unzip" "Descompactando ${arquivo}"
+            _mostrar_progresso "$pid_unzip" "Descompactando ${arquivo}"
             if wait "$pid_unzip"; then
                 _mensagec "${GREEN}" "Descompactacao de ${arquivo} concluida com sucesso"
                 ((contador++)) || true

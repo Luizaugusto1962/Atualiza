@@ -204,7 +204,7 @@ _executar_backup() {
 
     # Mostrar barra de progresso e capturar resultado (wait ja feito internamente)
     local resultado=0
-    _mostrar_progresso_backup "$backup_pid" "Backup em andamento" || resultado=$?
+    _mostrar_progresso "$backup_pid" "Backup em andamento" || resultado=$?
 
     if [[ $resultado -eq 0 ]] && [[ -f "$caminho_backup" ]]; then
         _finalizar_backup_sucesso "$nome_backup"

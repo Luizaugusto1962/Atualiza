@@ -12,89 +12,6 @@
 # NOTA: Nao depende de funcoes externas que possam nao estar carregadas
 #
 # =============================================================================
-# ARRAYS GLOBAIS PARA CONTROLE DE RECURSOS
-# =============================================================================
-declare -ga TEMP_FILES=()
-declare -ga BACKGROUND_PIDS=()
-
-# =============================================================================
-# LIMPEZA DE RECURSOS
-# =============================================================================
-
-# Funcao de limpeza chamada na saida
-# Nao configura traps — deve ser chamada pelo handler definido em principal.sh
-_cleanup_on_exit() {
-    local exit_code=$?
-
-    # Matar processos em background
-    if [[ ${#BACKGROUND_PIDS[@]} -gt 0 ]]; then
-        local pid
-        for pid in "${BACKGROUND_PIDS[@]}"; do
-            if kill -0 "$pid" 2>/dev/null; then
-                kill "$pid" 2>/dev/null || true
-            fi
-        done
-        BACKGROUND_PIDS=()
-    fi
-
-    # Remover arquivos temporarios
-    if [[ ${#TEMP_FILES[@]} -gt 0 ]]; then
-        local temp_file
-        for temp_file in "${TEMP_FILES[@]}"; do
-            [[ -e "$temp_file" ]] && rm -f "$temp_file" 2>/dev/null || true
-        done
-        TEMP_FILES=()
-    fi
-
-    return $exit_code
-}
-
-# Adicionar arquivo temporario para limpeza automatica
-_add_temp_file() {
-    local temp_file="${1:?Arquivo temporario obrigatorio}"
-    TEMP_FILES+=("$temp_file")
-}
-
-# Adicionar PID para limpeza automatica
-_add_background_pid() {
-    local pid="${1:?PID obrigatorio}"
-    BACKGROUND_PIDS+=("$pid")
-}
-
-# =============================================================================
-# FUNCOES DE TRATAMENTO DE ERROS
-# =============================================================================
-
-# Funcao para tratar erros de forma segura
-# Nao depende de _log_erro — evita cascata de falhas
-_handle_error() {
-    local exit_code=$?
-    local line_number="${1:-$LINENO}"
-
-    printf "ERRO: Falha na linha %d (codigo: %d)\n" "$line_number" "$exit_code" >&2
-
-    # Tentar log se a funcao existir, sem falhar caso contrario
-    if command -v _log_erro >/dev/null 2>&1; then
-        _log_erro "Falha na linha $line_number (codigo: $exit_code)" 2>/dev/null || true
-    fi
-
-    _cleanup_on_exit
-    exit "$exit_code"
-}
-
-# Funcao para tratar interrupcoes
-_handle_interrupt() {
-    printf "\nInterrupcao detectada. Limpando recursos...\n" >&2
-
-    if command -v _log >/dev/null 2>&1; then
-        _log "Interrupcao detectada pelo usuario" 2>/dev/null || true
-    fi
-
-    _cleanup_on_exit
-    exit 130
-}
-
-# =============================================================================
 # FUNCOES DE STRING
 # =============================================================================
 
@@ -126,10 +43,9 @@ _sanitizar_entrada() {
 # =============================================================================
 # FUNCOES DE TELA
 # =============================================================================
-
-# Limpar tela
+# Funcao para limpar tela
 _clear_screen() {
-    clear 2>/dev/null || true
+    clear
 }
 
 # Posiciona o cursor no meio da tela
@@ -380,13 +296,103 @@ _confirmar() {
 # =============================================================================
 # FUNCOES DE PROGRESSO
 # =============================================================================
+# Exibe barra de progresso visual enquanto processo esta em andamento
+# Parametros:
+#   $1 = PID do processo em background
+#   $2 = mensagem opcional (padrao: "Processando")
+# Retorna: codigo de saida do processo
+_mostrar_progresso() {
+    local pid="${1:-}"
+    local msg="${2:-Processando}"
+    local elapsed=0
+    local barra=""
+    local blocos_total=40
+    local blocos_preenchidos=0
+    local percentual=0
+    local status_proc=0
 
+    if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+        _mensagec "${YELLOW:-}" "Aviso: PID nao informado ou processo ja terminado"
+        return 0
+    fi
+
+    : "${GREEN:=}" "${RED:-}" "${CYAN:=}" "${NORM:=}"
+
+    # Ocultar cursor se suportado
+    printf "\033[?25l" 2>/dev/null || true
+
+    while kill -0 "$pid" 2>/dev/null; do
+        elapsed=$((elapsed + 1))
+
+        # Simular progresso crescente baseado no tempo (0..100)
+        # A barra avanca de forma gradual ate o processo terminar
+        percentual=$(( (elapsed * 100) / (elapsed + 5) ))
+        (( percentual > 95 )) && percentual=$(( 85 + (RANDOM % 11) ))  # Fica oscilando entre 85-95
+        (( percentual > 100 )) && percentual=100
+
+        blocos_preenchidos=$(( (percentual * blocos_total) / 100 ))
+
+        # Montar barra
+        barra=""
+        local i
+        for ((i = 0; i < blocos_preenchidos; i++)); do
+            barra+="█"
+        done
+        for ((i = blocos_preenchidos; i < blocos_total; i++)); do
+            barra+="░"
+        done
+
+        # Formatar tempo decorrido
+        local min=$(( elapsed / 60 ))
+        local seg=$(( elapsed % 60 ))
+        local tempo_str=""
+        (( min > 0 )) && tempo_str="${min}m "
+        tempo_str+="${seg}s"
+
+        # Exibir barra
+        printf "\r%s[INFO]%s %s |%s| %3d%% (%s)" \
+            "${CYAN}" "${NORM}" "${msg}" "${GREEN}${barra}${NORM}" "${percentual}" "${tempo_str}"
+
+        sleep 1 2>/dev/null || sleep 1
+    done
+
+    # Forcar barra 100% ao finalizar
+    barra=""
+    for ((i = 0; i < blocos_total; i++)); do
+        barra+="█"
+    done
+
+    # Restaurar cursor
+    printf "\033[?25h" 2>/dev/null || true
+
+    # Coletar status de saida
+    wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
+
+    # Apagar linha e mostrar resultado
+    local min=$(( elapsed / 60 ))
+    local seg=$(( elapsed % 60 ))
+    local tempo_str=""
+    (( min > 0 )) && tempo_str="${min}m "
+    tempo_str+="${seg}s"
+
+    printf "\r\033[K"  # Limpar linha inteira
+
+    if [[ $status_proc -eq 0 ]]; then
+        printf "%s[ok]%s %s |%s| 100%% (%s) concluido%s\n" \
+            "${GREEN}" "${NORM}" "${msg}" "${GREEN}${barra}${NORM}" "${tempo_str}" "${NORM}"
+    else
+        printf "%s[ERRO]%s %s |%s| %d%% (%s) falhou%s\n" \
+            "${RED}" "${NORM}" "${msg}" "${RED}${barra}${NORM}" "${percentual}" "${tempo_str}" "${NORM}"
+    fi
+
+    return $status_proc
+}
 # Exibe indicador de atividade enquanto processo esta em andamento
 # Parametros:
 #   $1 = PID do processo em background
 #   $2 = mensagem opcional (padrao: "Processo em andamento")
 # Retorna: codigo de saida do processo
-_mostrar_progresso() {
+_mostrar_progresso2() {
     local pid="${1:-}"
     local msg="${2:-Processo em andamento}"
     local spin="/-\|"
