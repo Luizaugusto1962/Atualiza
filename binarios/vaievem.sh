@@ -240,14 +240,14 @@ _baixar_programas_vaievem() {
             # Verificar se arquivo foi baixado
             if [[ ! -f "$arquivo" || ! -s "$arquivo" ]]; then
                 _mensagec "${RED}" "ERRO: Falha ao baixar verificar se existe no servidor: $arquivo"
-                _read_sleep 0
+                _aguardar 0
                 return 0 
             fi
 
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _mensagec "${RED}" "ERRO: Arquivo corrompido: $arquivo"
                 rm -f "$arquivo"
-                _read_sleep 2
+                _aguardar 2
                 return 0
             fi
 
@@ -263,13 +263,13 @@ _enviar_arquivo_multi() {
     # Validar variaveis globais necessarias
     if [[ -z "$ARQUIVO_ENVIAR" ]]; then
         _mensagec "${RED}" "Erro: Nenhum arquivo especificado para envio"
-        _read_sleep 2
+        _aguardar 2
         return 0
     fi
 
     if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
         _mensagec "${RED}" "Erro: Destino remoto nao especificado"
-        _read_sleep 2
+        _aguardar 2
         return 0
     fi
 
@@ -285,7 +285,7 @@ _enviar_arquivo_multi() {
         if (( falhas_envio == 0 )); then
             _mensagec "${YELLOW}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
             _linha
-            _read_sleep 3
+            _aguardar 3
         else
             _mensagec "${RED}" "Erro no envio de ${falhas_envio} arquivo(s)"
             _press
@@ -295,7 +295,7 @@ _enviar_arquivo_multi() {
         if _upload_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
             _mensagec "${YELLOW}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
             _linha
-            _read_sleep 3
+            _aguardar 3
         else
             _mensagec "${RED}" "Erro no envio do arquivo"
             _press

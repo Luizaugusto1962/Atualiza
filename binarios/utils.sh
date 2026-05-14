@@ -245,16 +245,16 @@ _meia_linha() {
 
 # Pausa a execucao por tempo especificado
 # Parametros: $1=tempo_em_segundos
-_read_sleep() {
+_aguardar() {
     local tempo="${1:-}"
 
     if [[ -z "$tempo" ]]; then
-        printf "Erro: Nenhum argumento passado para _read_sleep.\n" >&2
+        printf "Erro: Nenhum argumento passado para _aguardar.\n" >&2
         return 1
     fi
 
     if ! [[ "$tempo" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-        printf "Erro: Argumento invalido para _read_sleep: %s\n" "$tempo" >&2
+        printf "Erro: Argumento invalido para _aguardar: %s\n" "$tempo" >&2
         return 1
     fi
 
@@ -309,7 +309,7 @@ _opinvalida() {
     local i
     for ((i = 0; i < ${#mensagem}; i++)); do
         printf "%s%s%s" "${RED}" "${mensagem:$i:1}" "${NORM}"
-        _read_sleep 0.05
+        _aguardar 0.05
     done
     printf "\n"
     _linha "-" "${YELLOW}"

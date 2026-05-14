@@ -117,7 +117,7 @@ _principal() {
                 ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -166,7 +166,7 @@ _menu_programas() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -220,7 +220,7 @@ _menu_biblioteca() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -266,7 +266,7 @@ _menu_arquivos() {
             1) 
                 if [[ "${CFG_USA_DBMAKER}" = "s" ]]; then
                     _opinvalida
-                    _read_sleep 1
+                    _aguardar 1
                 else
                     _menu_backup || true
                 fi
@@ -274,7 +274,7 @@ _menu_arquivos() {
             2) 
                 if [[ "${CFG_USA_DBMAKER}" = "s" ]]; then
                     _opinvalida
-                    _read_sleep 1
+                    _aguardar 1
                 else
                     _menu_recuperar_arquivos || true
                 fi
@@ -285,7 +285,7 @@ _menu_arquivos() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -333,7 +333,7 @@ _menu_ferramentas() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -373,7 +373,7 @@ _menu_temporarios() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -410,7 +410,7 @@ _menu_recuperar_arquivos() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -454,7 +454,7 @@ _menu_backup() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -492,7 +492,7 @@ _menu_transferencia_arquivos() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -535,7 +535,7 @@ _menu_configs() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -575,14 +575,14 @@ _menu_setups() {
                 if [[ -f "${CFG_DIR}/.config" ]]; then
                     "." "${CFG_DIR}/.config"
                     _mensagec "${GREEN}" "Configuracoes recarregadas com sucesso!"
-                    _read_sleep 2
+                    _aguardar 2
                 fi
                 ;;
             3) _validar_configuracao || true ; _press ;;
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -624,7 +624,7 @@ _menu_lembretes() {
                     _visualizar_notas_arquivo "${CFG_DIR}/lembrete" || true
                 else
                     _mensagec "${YELLOW}" "Arquivo de notas nao encontrado"
-                    _read_sleep 1
+                    _aguardar 1
                 fi
                 ;;
             3) _editar_nota_existente || true ;;
@@ -632,7 +632,7 @@ _menu_lembretes() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -671,7 +671,7 @@ _menu_avisos() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -707,7 +707,7 @@ _menu_logs() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -763,7 +763,7 @@ _menu_ajuda_principal() {
             9) return ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -860,14 +860,14 @@ _menu_escolha_base() {
                     fi
                 else
                     _opinvalida
-                    _read_sleep 1
+                    _aguardar 1
                 fi
                 ;;
             9) return
                 ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -915,7 +915,7 @@ _menu_tipo_backup() {
                 ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
@@ -931,7 +931,7 @@ _definir_base_trabalho() {
     if [[ -z "${RAIZ}" ]] || [[ -z "${base_dir}" ]]; then
         _mensagec "${RED}" "Erro: Variaveis de configuracao nao definidas"
         _linha
-        _read_sleep 2
+        _aguardar 2
         return 1
     fi
     
@@ -940,7 +940,7 @@ _definir_base_trabalho() {
     if [[ ! -d "${base_trabalho}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
         _linha
-        _read_sleep 2
+        _aguardar 2
         return 1
     fi
     

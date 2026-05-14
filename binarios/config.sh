@@ -192,8 +192,8 @@ _configurar_comandos() {
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         printf "Erro: Comandos nao encontrados: %s\n" "${missing[*]}" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi
@@ -449,16 +449,16 @@ _carregar_config_empresa() {
     if [[ ! -e "${config_file}" ]]; then
         printf "AVISO: Arquivo de configuracao nao encontrado: %s\n" "${config_file}" >&2
         printf "ATENCAO: Execute './atualiza.sh --setup' para criar as configuracoes.\n" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi
 
     if [[ ! -r "${config_file}" ]]; then
         printf "ERRO: Arquivo %s sem permissao de leitura.\n" "${config_file}" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi
@@ -467,8 +467,8 @@ _carregar_config_empresa() {
     if ! _validar_config_file "${config_file}"; then
         printf "ERRO: Arquivo de configuracao contem formato invalido ou comandos suspeitos.\n" >&2
         printf "AVISO: Carregamento do arquivo de configuracao bloqueado por seguranca.\n" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi

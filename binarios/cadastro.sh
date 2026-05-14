@@ -79,7 +79,7 @@ main() {
                 ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done

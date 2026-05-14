@@ -47,13 +47,13 @@ _validar_pre_backup() {
     # Validar comando de compactacao
     if [[ -z "$DEFAULT_ZIP" ]]; then
         _mensagec "${RED}" "Erro: Comando de compactacao nao configurado"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
     if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
         _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel no sistema"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
@@ -64,7 +64,7 @@ _validar_pre_backup() {
             _linha
             _mensagec "${RED}" "Erro: Base de trabalho nao foi selecionada"
             _linha
-            _read_sleep 2
+            _aguardar 2
             return 1
         fi
         _base_ref="${base_trabalho}"
@@ -75,21 +75,21 @@ _validar_pre_backup() {
     # Validar se o diretorio base existe
     if [[ ! -d "${_base_ref}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio base '${_base_ref}' nao existe"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
     # Verificar se o diretorio de backup existe
     if [[ ! -d "$DEFAULT_BASEBACKUP_DIR" ]]; then
         _mensagec "$YELLOW" "Diretorio de backups em $DEFAULT_BASEBACKUP_DIR nao encontrado..."
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
     # Verificar espaco em disco
     if ! _verificar_espaco_disco "$DEFAULT_BASEBACKUP_DIR"; then
         _mensagec "$RED" "Espaco em disco insuficiente em $DEFAULT_BASEBACKUP_DIR"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
@@ -128,7 +128,7 @@ _executar_backup() {
     if _verificar_backups_recentes; then
         if ! _confirmar "Ja existe backup recente. Deseja continuar?" "N"; then
             _mensagec "$RED" "Operacao cancelada"
-            _read_sleep 3
+            _aguardar 3
             return 0
         fi
         _linha
@@ -138,7 +138,7 @@ _executar_backup() {
     # Mudar para diretorio base
     if ! _diretorio_trabalho; then
         _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
-        _read_sleep 3
+        _aguardar 3
         return 0
     fi
 
@@ -165,14 +165,14 @@ _executar_backup() {
         # Validar entrada
         if ! [[ "$mes" =~ ^(0[1-9]|1[0-2])$ ]] || ! [[ "$ano" =~ ^[0-9]{4}$ ]]; then
             _mensagec "$RED" "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
-            _read_sleep 2
+            _aguardar 2
             return 0
         fi
 
         # Validar ano nao seja muito antigo ou futuro
         if (( ano < 1990 || ano > ano_agora )); then
             _mensagec "$RED" "Ano fora do intervalo valido (1990-$ano_agora)"
-            _read_sleep 2
+            _aguardar 2
             return 0
         fi
 
@@ -182,13 +182,13 @@ _executar_backup() {
         local data_input
         data_input=$(date -d "$data_referencia" +%Y%m%d 2>/dev/null) || {
             _mensagec "$RED" "Data invalida."
-            _read_sleep 2
+            _aguardar 2
             return 0
         }
 
         if [[ "$data_input" -gt "$data_atual" ]]; then
             _mensagec "$RED" "A data nao pode ser futura."
-            _read_sleep 2
+            _aguardar 2
             return 0
         fi
 
@@ -210,7 +210,7 @@ _executar_backup() {
         _finalizar_backup_sucesso "$nome_backup"
     else
         _mensagec "$RED" "Erro ao criar backup"
-        _read_sleep 3
+        _aguardar 3
         return 0
     fi
 
@@ -448,7 +448,7 @@ _selecionar_backup() {
             _linha
             _mensagec "${YELLOW}" "Operacao cancelada."
             _linha
-            _read_sleep 2
+            _aguardar 2
             return 1
         fi
     else
@@ -590,7 +590,7 @@ _enviar_backup_servidor() {
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
-        _read_sleep 3
+        _aguardar 3
         return 0
     fi
 
@@ -617,20 +617,20 @@ _enviar_backup_servidor() {
         # Perguntar sobre manter backup local
         if _confirmar "Manter backup local?" "S"; then
             _mensagec "${YELLOW}" "Backup local mantido"
-            _read_sleep 2
+            _aguardar 2
         else
             if rm -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"; then
                 _mensagec "${YELLOW}" "Backup local excluido"
-                _read_sleep 2
+                _aguardar 2
             else
                 _mensagec "${RED}" "Erro ao excluir backup local"
-                _read_sleep 2
+                _aguardar 2
             fi
         fi
     else
         _linha
         _mensagec "${RED}" "Erro ao enviar backup"
-        _read_sleep 3
+        _aguardar 3
         return 0
     fi
 }
@@ -701,7 +701,7 @@ _enviar_backup_rede() {
     if _upload_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
         _mensagec "${GREEN}" "Backup enviado para \"${DESTINO_REMOTO}\" no servidor ${DEFAULT_IP_SERVER}"
-        _read_sleep 3
+        _aguardar 3
     else
         _linha
         _mensagec "${RED}" "Erro ao enviar backup via vaievem"
@@ -761,7 +761,7 @@ _executar_backup_multiplos_padroes() {
     # Verificar e mudar para o diretorio de trabalho antes de solicitar os padroes
     if ! _diretorio_trabalho; then
         _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
@@ -779,7 +779,7 @@ _executar_backup_multiplos_padroes() {
         if [[ -z "$padrao_entrada" ]]; then
             if (( contador == 1 )); then
                 _mensagec "${RED}" "Nenhum arquivo foi informado!"
-                _read_sleep 2
+                _aguardar 2
                 return 0
             fi
             break
@@ -819,7 +819,7 @@ _executar_backup_multiplos_padroes() {
 
     if (( ${#padroes[@]} == 0 )); then
         _mensagec "${RED}" "Nenhum arquivo foi adicionado"
-        _read_sleep 2
+        _aguardar 2
         return 0
     fi
 
@@ -854,7 +854,7 @@ _executar_backup_multiplos_padroes() {
     # Verifica se algum arquivo foi encontrado
     if (( ${#arquivos_encontrados[@]} == 0 )); then
         _mensagec "${RED}" "Nenhum arquivo encontrado para os padroes informados!"
-        _read_sleep 3
+        _aguardar 3
         return 0
     fi
 
@@ -868,7 +868,7 @@ _executar_backup_multiplos_padroes() {
     # Confirmar antes de continuar
     if ! _confirmar "Deseja continuar com o backup destes arquivos?" "S"; then
         _mensagec "${RED}" "Operacao cancelada"
-        _read_sleep 2
+        _aguardar 2
         return 0
     fi
 
@@ -885,14 +885,14 @@ _executar_backup_multiplos_padroes() {
     if ! "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro ao criar backup"
         [[ -f "$caminho_backup" ]] && rm -f "$caminho_backup"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
     # Verificar se o backup foi criado
     if [[ ! -f "$caminho_backup" ]]; then
         _mensagec "${RED}" "Erro: Backup nao foi criado"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
@@ -900,7 +900,7 @@ _executar_backup_multiplos_padroes() {
     if ! _validar_integridade_backup "$caminho_backup"; then
         _mensagec "${RED}" "ERRO CRITICO: Backup criado mas invalido (corrompido)"
         rm -f "$caminho_backup"
-        _read_sleep 3
+        _aguardar 3
         return 1
     fi
 
