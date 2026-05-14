@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/05/2026-01
+# Versao: 14/05/2026-02
 # Autor: Luiz Augusto
 #
 # NOTA: Nao configura traps — gerenciamento centralizado em principal.sh
@@ -296,7 +296,65 @@ _confirmar() {
 # =============================================================================
 # FUNCOES DE PROGRESSO
 # =============================================================================
-# Exibe barra de progresso visual enquanto processo esta em andamento
+
+# Verifica se o terminal suporta caracteres especiais Unicode (blocos █░)
+# Retorna: 0 = suporta, 1 = nao suporta
+# Verifica por: locale charmap, LANG/LC_ALL, tipo de terminal e teste de impressao
+_suporta_caracteres_especiais() {
+    # Cache para nao repetir a verificacao na mesma sessao
+    [[ -n "${_CACHE_UNICODE_CHECK:-}" ]] && return "$_CACHE_UNICODE_RESULT"
+
+    # 1. Verificar locale charmap (ex: UTF-8, UTF8)
+    local charset
+    charset=$(locale charmap 2>/dev/null | tr '[:lower:]' '[:upper:]') || charset=""
+    case "$charset" in
+        UTF-8|UTF8)
+            _CACHE_UNICODE_CHECK=1
+            _CACHE_UNICODE_RESULT=0
+            return 0
+            ;;
+    esac
+
+    # 2. Verificar variáveis de ambiente LANG / LC_ALL
+    local lang_env="${LC_ALL:-${LANG:-}}"
+    case "${lang_env^^}" in
+        *UTF-8*|*UTF8*)
+            _CACHE_UNICODE_CHECK=1
+            _CACHE_UNICODE_RESULT=0
+            return 0
+            ;;
+    esac
+
+    # 3. Terminal "dumb" nao suporta caracteres especiais
+    local term_type="${TERM:-dumb}"
+    if [[ "$term_type" == "dumb" ]]; then
+        _CACHE_UNICODE_CHECK=1
+        _CACHE_UNICODE_RESULT=1
+        return 1
+    fi
+
+    # 4. Testar se consegue imprimir um caractere Unicode sem erro
+    local test_output
+    test_output=$(printf '█░' 2>/dev/null)
+    if [[ -n "$test_output" ]]; then
+        # Verificar se o resultado nao foi substituido por '??' (fallback do locale)
+        if [[ "$test_output" != *"?"* ]] || [[ "${#test_output}" -ge 2 ]]; then
+            _CACHE_UNICODE_CHECK=1
+            _CACHE_UNICODE_RESULT=0
+            return 0
+        fi
+    fi
+
+    # Nenhuma verificacao positiva: nao suporta
+    _CACHE_UNICODE_CHECK=1
+    _CACHE_UNICODE_RESULT=1
+    return 1
+}
+
+# -------------------------------------------------------
+# _mostrar_progresso - BARRA VISUAL COM BLOCOS UNICODE
+# (usada quando o terminal suporta caracteres especiais)
+# -------------------------------------------------------
 # Parametros:
 #   $1 = PID do processo em background
 #   $2 = mensagem opcional (padrao: "Processando")
@@ -325,14 +383,13 @@ _mostrar_progresso() {
         elapsed=$((elapsed + 1))
 
         # Simular progresso crescente baseado no tempo (0..100)
-        # A barra avanca de forma gradual ate o processo terminar
         percentual=$(( (elapsed * 100) / (elapsed + 5) ))
-        (( percentual > 95 )) && percentual=$(( 85 + (RANDOM % 11) ))  # Fica oscilando entre 85-95
+        (( percentual > 95 )) && percentual=$(( 85 + (RANDOM % 11) ))
         (( percentual > 100 )) && percentual=100
 
         blocos_preenchidos=$(( (percentual * blocos_total) / 100 ))
 
-        # Montar barra
+        # Montar barra com caracteres Unicode
         barra=""
         local i
         for ((i = 0; i < blocos_preenchidos; i++)); do
@@ -375,7 +432,7 @@ _mostrar_progresso() {
     (( min > 0 )) && tempo_str="${min}m "
     tempo_str+="${seg}s"
 
-    printf "\r\033[K"  # Limpar linha inteira
+    printf "\r\033[K"
 
     if [[ $status_proc -eq 0 ]]; then
         printf "%s[ok]%s %s |%s| 100%% (%s) concluido%s\n" \
@@ -387,7 +444,11 @@ _mostrar_progresso() {
 
     return $status_proc
 }
-# Exibe indicador de atividade enquanto processo esta em andamento
+
+# -------------------------------------------------------
+# _mostrar_progresso2 - SPINNER ASCII (fallback seguro)
+# (usada quando o terminal NAO suporta caracteres especiais)
+# -------------------------------------------------------
 # Parametros:
 #   $1 = PID do processo em background
 #   $2 = mensagem opcional (padrao: "Processo em andamento")
@@ -435,6 +496,25 @@ _mostrar_progresso2() {
     return $status_proc
 }
 
+# -------------------------------------------------------
+# _barra_progresso - ROUTER AUTOMATICO
+# Detecta suporte do terminal e chama a rotina adequada.
+# Se o terminal suportar Unicode → _mostrar_progresso (barra com blocos)
+# Se o terminal NAO suportar   → _mostrar_progresso2 (spinner ASCII)
+# -------------------------------------------------------
+# Parametros:
+#   $1 = PID do processo em background
+#   $2 = mensagem opcional (padrao: "Processando")
+# Retorna: codigo de saida do processo
+_barra_progresso() {
+    if _suporta_caracteres_especiais; then
+        # Terminal suporta Unicode → barra visual completa
+        _mostrar_progresso "$@"
+    else
+        # Fallback seguro: spinner ASCII puro
+        _mostrar_progresso2 "$@"
+    fi
+}
 # =============================================================================
 # FUNCOES DE LOG
 # =============================================================================
