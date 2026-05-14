@@ -99,7 +99,7 @@ MAX_LOGIN_ATTEMPTS="3"                                          # Máximo de ten
 # =============================================================================
 # CONFIGURAÇÕES DE TIMEOUT
 # =============================================================================
-DEFAULT_READ_TIMEOUT="30"                                       # Timeout padrão para leitura de entrada
+DEFAULT_READ_TIMEOUT="60"                                       # Timeout padrão para leitura de entrada
 DEFAULT_PRESS_TIMEOUT="15"                                      # Timeout padrão para pressionar tecla
 SSH_ALIVE_INTERVAL="30"                                         # Intervalo SSH keep-alive
 SSH_ALIVE_COUNT="3"                                             # Máximo de tentativas SSH keep-alive
