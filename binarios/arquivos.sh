@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 14/05/2026-01
 #
 
 # Variaveis globais esperadas
@@ -141,7 +141,7 @@ _limpar_base_especifica() {
 
         # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
         local arquivos_zip=()
-        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo")
+        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo" -mtime +0)
         local qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
@@ -226,7 +226,7 @@ _lista_arquivos_lixo() {
     _press
 }
 
-#---------- FUNCOES DE RECUPERACAO ----------#
+#---------- FUNCOES DE RECUPERACAO  VIA O JUTIL ----------#
 # Recupera arquivo especifico ou todos
 _recuperar_arquivo_especifico() {
     local continuar="S"
