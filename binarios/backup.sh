@@ -16,8 +16,8 @@ CFG_OFFLINE="${CFG_OFFLINE:-}"                           # Indicador de ambiente
 RAIZ="${RAIZ:-}"                                         # Caminho RAIZ do sistema.
 CFG_EMPRESA="${CFG_EMPRESA:-}"                           # Nome da empresa (usado no nome do backup)
 DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-}"               # IP do servidor para envio de backup
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                           # Comando para compactar arquivos.
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                       # Comando para descompactar arquivos.
+#DEFAULT_ZIP="${DEFAULT_ZIP:-}"                           # Comando para compactar arquivos.
+#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                       # Comando para descompactar arquivos.
 DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"     # Diretorio base de armazenamento de backups
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
@@ -56,7 +56,14 @@ _validar_pre_backup() {
         _aguardar 3
         return 1
     fi
-
+    
+    # Garantir que DEFAULT_ZIP nao contenha parametros de senha
+    if [[ "$DEFAULT_ZIP" =~ (-P|-p[^\ ]+|password|pw|senha) ]]; then
+        _mensagec "${RED}" "Erro: Comando de compactacao contem parametro de senha"
+        _mensagec "${RED}" "Remova a senha de DEFAULT_ZIP para gerar backups sem criptografia"
+        _aguardar 5
+        return 1
+    fi
     # Escolher base se necessario
     if [[ -n "${CFG_BASE_DIR2}" ]]; then
         _menu_escolha_base || return 1
