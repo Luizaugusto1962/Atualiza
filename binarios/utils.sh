@@ -393,10 +393,10 @@ _mostrar_progresso() {
         barra=""
         local i
         for ((i = 0; i < blocos_preenchidos; i++)); do
-            barra+="█"
+            barra+="#"
         done
         for ((i = blocos_preenchidos; i < blocos_total; i++)); do
-            barra+="░"
+            barra+="-"
         done
 
         # Formatar tempo decorrido
@@ -416,7 +416,7 @@ _mostrar_progresso() {
     # Forcar barra 100% ao finalizar
     barra=""
     for ((i = 0; i < blocos_total; i++)); do
-        barra+="█"
+        barra+="#"
     done
 
     # Restaurar cursor
