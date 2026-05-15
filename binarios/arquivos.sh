@@ -15,7 +15,7 @@ CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do 
 #REBUILD="${REBUILD:-}"                                             # Caminho para o utilitario jutil.
 #RAIZ="${RAIZ:-}"                                                   # Caminho RAIZ do sistema.
 #
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                  # Caminho do diretorio de configuracoes.
+#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                  # Caminho do diretorio de configuracoes.
 
 #---------- FUNCOES DE LIMPEZA ----------#
 
