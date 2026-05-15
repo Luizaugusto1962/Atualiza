@@ -11,9 +11,9 @@ set -euo pipefail
 #
 
 # Variaveis globais esperadas
-CFG_SISTEMA="${CFG_SISTEMA:-}"                            # Nome do sistema (iscobol, savatu, transpc).
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"                # Diretorio de configuracoes
-CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao atual do sistema
+#CFG_SISTEMA="${CFG_SISTEMA:-}"                            # Nome do sistema (iscobol, savatu, transpc).
+#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"                # Diretorio de configuracoes
+#CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao atual do sistema
 #UPDATE="${UPDATE:-}"                                     # Aviso de update disponivel
 
 caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao 

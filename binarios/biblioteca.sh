@@ -9,14 +9,14 @@
 #
 
 # Variaveis globais esperadas
-CFG_SISTEMA="${CFG_SISTEMA:-}"                 # Tipo de sistema (iscobol/mf)
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                 # Comando de compactacao (zip)
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"             # Comando de descompactacao (unzip)
-DEFAULT_FIND="${DEFAULT_FIND:-}"               # Comando de busca (find)
-CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"           # Acesso via SSH (s/n)
-CFG_OFFLINE="${CFG_OFFLINE:-}"                 # Modo offline (s/n)
-DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"   # Diretorio de download
-CFG_DIR="${CFG_DIR:-}"                         # Diretorio de configuracao
+#CFG_SISTEMA="${CFG_SISTEMA:-}"                 # Tipo de sistema (iscobol/mf)
+#DEFAULT_ZIP="${DEFAULT_ZIP:-}"                 # Comando de compactacao (zip)
+#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"             # Comando de descompactacao (unzip)
+#DEFAULT_FIND="${DEFAULT_FIND:-}"               # Comando de busca (find)
+#CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"           # Acesso via SSH (s/n)
+#CFG_OFFLINE="${CFG_OFFLINE:-}"                 # Modo offline (s/n)
+#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"   # Diretorio de download
+#CFG_DIR="${CFG_DIR:-}"                         # Diretorio de configuracao
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos

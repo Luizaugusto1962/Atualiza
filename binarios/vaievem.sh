@@ -11,12 +11,12 @@ set -euo pipefail
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
 # Variaveis globais esperadas
-CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-s}"          # Acesso via SSH (s/n)
-ARQUIVO_ENVIAR="${ARQUIVO_ENVIAR:-}"           # Arquivo a ser enviado (pode conter wildcard)
-DIRETORIO_ORIGEM="${DIRETORIO_ORIGEM:-.}"      # Diretorio de origem para upload
-CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"         # Destino remoto para upload (ex: /caminho/destino/)
-DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"   # Diretorio de destino da biblioteca no servidor
-DESTINO_SERVER="${DESTINO_SERVER:-}"           # Diretorio do servidor de atualizacao
+#CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-s}"          # Acesso via SSH (s/n)
+#ARQUIVO_ENVIAR="${ARQUIVO_ENVIAR:-}"           # Arquivo a ser enviado (pode conter wildcard)
+#DIRETORIO_ORIGEM="${DIRETORIO_ORIGEM:-.}"      # Diretorio de origem para upload
+#CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"         # Destino remoto para upload (ex: /caminho/destino/)
+#DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"   # Diretorio de destino da biblioteca no servidor
+#DESTINO_SERVER="${DESTINO_SERVER:-}"           # Diretorio do servidor de atualizacao
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#

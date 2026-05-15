@@ -9,10 +9,10 @@
 #
 
 # Variaveis globais esperadas
-CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
-CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
+#CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
+#DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
+#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
+#CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
 class="${class:-}"                  # Sufixo para arquivos de classe
 mclass="${mclass:-}"                # Sufixo para arquivos de classe de depuracao
 
