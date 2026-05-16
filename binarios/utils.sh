@@ -396,7 +396,7 @@ _mostrar_progresso() {
             barra+="#"
         done
         for ((i = blocos_preenchidos; i < blocos_total; i++)); do
-            barra+="-"
+            barra+="."
         done
 
         # Formatar tempo decorrido
