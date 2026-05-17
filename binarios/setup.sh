@@ -10,11 +10,11 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/05/2026-02
+# Versao: 16/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
-verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
+verCLASS="${verCLASS:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
 
 
 # =============================================================================
@@ -122,7 +122,7 @@ _edit_setup() {
 
     # Edicao interativa das variaveis
     _editar_variavel sistema
-    _editar_variavel verclass
+    _editar_variavel verCLASS
     _editar_variavel dbmaker
     _editar_variavel acessossh
     _editar_variavel Offline
@@ -191,34 +191,34 @@ _setup_cobol() {
 # Funcoes de versao do IsCobol
 _2018() {
     {
-        echo "verclass=2018"
+        echo "verCLASS=2018"
     } >> .config
-    verclass="2018"
+    verCLASS="2018"
 }
 _2020() {
     {
-        echo "verclass=2020"
+        echo "verCLASS=2020"
     } >> .config
-    verclass="2020"
+    verCLASS="2020"
 }
 _2023() {
     {
-        echo "verclass=2023"
+        echo "verCLASS=2023"
     } >> .config
-    verclass="2023"
+    verCLASS="2023"
 }
 _2024() {
     {
-        echo "verclass=2024"
+        echo "verCLASS=2024"
     } >> .config
-    verclass="2024"
+    verCLASS="2024"
 }
 
 _2025() {
     {
-        echo "verclass=2025"
+        echo "verCLASS=2025"
     } >> .config
-    verclass="2025"
+    verCLASS="2025"
 }
 # Configuracoes adicionais
 _setup_banco_de_dados() {
@@ -392,7 +392,7 @@ _recreate_config_files() {
 
     {
         echo "sistema=${sistema}"
-        [[ -n "$verclass" ]] && echo "verclass=${verclass}"
+        [[ -n "$verCLASS" ]] && echo "verCLASS=${verCLASS}"
         echo "dbmaker=${dbmaker}"
         echo "acessossh=${acessossh}"
         echo "Offline=${Offline}"

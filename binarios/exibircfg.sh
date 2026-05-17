@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # exibircfg.sh - Exibe todas as constantes do sistema SAV
-# Saida em formato tabular
-#
+## SISTEMA SAV - Script de Atualizacao Modular
+# Versao: 16/05/2026-01
 # Uso: ./exibircfg.sh [filtro]
 #
 # =============================================================================
@@ -185,7 +185,8 @@ exibir_tabular() {
 # =============================================================================
 # FUNCAO: Main
 # =============================================================================
-main() {
+#main() {
+_mostrar_parametros() {
     local filtro="$1"
 
     # Verificar dependencias
@@ -212,4 +213,4 @@ main() {
 # EXECUCAO
 # =============================================================================
 
-main "$@"
+#main "$@"

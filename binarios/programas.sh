@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-00
+# Versao: 16/05/2026-00
 #
 
 # Variaveis globais esperadas
@@ -13,8 +13,8 @@
 #DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
 #DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
 #CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
-class="${class:-}"                  # Sufixo para arquivos de classe
-mclass="${mclass:-}"                # Sufixo para arquivos de classe de depuracao
+CLASS="${CLASS:-}"                  # Sufixo para arquivos de CLASSe
+MCLASS="${MCLASS:-}"                # Sufixo para arquivos de CLASSe de depuracao
 
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
@@ -186,7 +186,7 @@ _selecionar_programas_reversao() {
             seen[$token]=1
             local programa_selecionado="${programas[$((token-1))]}"
             PROGRAMAS_SELECIONADOS+=("${programa_selecionado}")
-            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${class}.zip")
+            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${CLASS}.zip")
         done
 
         break
@@ -221,9 +221,9 @@ _resolver_arquivo_compilado() {
     printf "\n"
 
     if [ "$tipo_compilacao" = "1" ]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${class}.zip"
+        ARQUIVO_COMPILADO_ATUAL="${nome_item}${CLASS}.zip"
     elif [ "$tipo_compilacao" = "2" ]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${mclass}.zip"
+        ARQUIVO_COMPILADO_ATUAL="${nome_item}${MCLASS}.zip"
     else
         return 1
     fi
@@ -258,7 +258,7 @@ _coletar_artefatos_atualizacao() {
                 for idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
                     local prog="${PROGRAMAS_SELECIONADOS[$idx]}"
                     local arq="${ARQUIVOS_PROGRAMA[$idx]}"
-                    if [[ "$arq" == *"${mclass}"* ]]; then
+                    if [[ "$arq" == *"${MCLASS}"* ]]; then
                         _mensagec "${GREEN}" "  -> ${prog} - Depuracao"
                     else
                         _mensagec "${GREEN}" "  -> ${prog} - Normal"
@@ -406,12 +406,12 @@ _processar_atualizacao_programas() {
         
         _mensagec "${YELLOW}" "Salvando programa antigo: ${programa}"
         
-        # Backup de arquivos .class
-        if [[ -f "${E_EXEC}/${programa}.class" ]]; then
-            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${E_EXEC}/${programa}"*.class >> "${LOG_ATU}" 2>&1; then
+        # Backup de arquivos .CLASS
+        if [[ -f "${E_EXEC}/${programa}.CLASS" ]]; then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${E_EXEC}/${programa}"*.CLASS >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
-                _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .class de ${programa}"
+                _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .CLASS de ${programa}"
                 return 1
             fi
         fi
@@ -460,7 +460,7 @@ _processar_atualizacao_programas() {
     done
 
 # Mover arquivos para diretorios corretos
-    for extensao in ".class" ".int" ".TEL"; do
+    for extensao in ".CLASS" ".int" ".TEL"; do
         if compgen -G "*${extensao}" >/dev/null; then
             for arquivo in *"${extensao}"; do
                 if [[ "${extensao}" == ".TEL" ]]; then
@@ -543,16 +543,16 @@ _processar_atualizacao_pacotes() {
         fi
     done
 
-    # Processar arquivos .class encontrados (usando redirection para evitar subshell do pipe)
-    while read -r classfile; do
-        local progname="${classfile##*/}" # Extrair nome do arquivo
-        progname="${progname%%.class}"    # Remover extensao
+    # Processar arquivos .CLASS encontrados (usando redirection para evitar subshell do pipe)
+    while read -r CLASSfile; do
+        local progname="${CLASSfile##*/}" # Extrair nome do arquivo
+        progname="${progname%%.CLASS}"    # Remover extensao
         local arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
 
         # Backup dos arquivos antigos
         if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-            if ! find "${E_EXEC}" -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
-                _log_erro "Falha ao fazer backup de ${progname}*.class"
+            if ! find "${E_EXEC}" -name "${progname}*.CLASS" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+                _log_erro "Falha ao fazer backup de ${progname}*.CLASS"
                 return 1
             fi
         else
@@ -578,8 +578,8 @@ _processar_atualizacao_pacotes() {
         fi
 
         # Mover novos arquivos
-        if ! mv -f "${progname}"*.class "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-            _log_erro "Falha ao mover ${progname}*.class para ${E_EXEC}"
+        if ! mv -f "${progname}"*.CLASS "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
+            _log_erro "Falha ao mover ${progname}*.CLASS para ${E_EXEC}"
             return 1
         fi
         if [[ -f "${progname}.TEL" ]]; then
@@ -588,7 +588,7 @@ _processar_atualizacao_pacotes() {
                 return 1
             fi
         fi
-    done < <(find . -type f -name "*.class")
+    done < <(find . -type f -name "*.CLASS")
 }
 
 # Processa reversao de programas
@@ -609,7 +609,7 @@ _processar_reversao_programas() {
                 return 1
             fi
 
-            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${class}.zip"; then
+            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${CLASS}.zip"; then
                 _mensagec "${RED}" "ERRO: Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi

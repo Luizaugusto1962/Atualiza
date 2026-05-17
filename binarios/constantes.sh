@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/05/2026-01
+# Versao: 16/05/2026-01
 #
 # NOTA: Este arquivo DEVE ser carregado via source (. constantes.sh)
 #       a partir de principal.sh. Nunca executar diretamente.
@@ -62,7 +62,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 
     # Definir valores padrão caso o arquivo não exista
     sistema=""
-    verclass=""
+    verCLASS=""
     dbmaker=""
     acessossh=""
     Offline=""
@@ -95,7 +95,7 @@ enviabackup="${enviabackup:-${RAIZ}/portalsav/Atualiza}"
 # CONFIGURAÇÕES DO SISTEMA (variáveis do .config)
 # =============================================================================
 CFG_SISTEMA="${CFG_SISTEMA:-${sistema}}"
-CFG_VERCLASS="${CFG_VERCLASS:-${verclass}}"
+CFG_VERCLASS="${CFG_VERCLASS:-${verCLASS}}"
 CFG_EMPRESA="${CFG_EMPRESA:-${empresa}}"
 CFG_BASE_DIR="${CFG_BASE_DIR:-${base}}"
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-${base2}}"
@@ -195,6 +195,12 @@ LOG_TMP="${LOG_TMP:-${DEFAULT_LOGS_DIR}/}"
 UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
 
 # =============================================================================
+# CONFIGURACAO DE TIPO DE COMPILACAO
+# =============================================================================
+CLASS="${CLASS:-}"                              
+MCLASS="${MCLASS:-}"                            
+
+# =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
 export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
@@ -212,4 +218,4 @@ export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
 export SAVISC ISCCLIENT JUTIL REBUILD
 export ACESSO_OFF
-export LOG_ATU LOG_LIMPA LOG_TMP UMDATA
+export LOG_ATU LOG_LIMPA LOG_TMP UMDATA CLASS MCLASS

@@ -272,7 +272,7 @@ _configurar_diretorios() {
 _configurar_variaveis_sistema() {
     if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
         # Caminhos dos executaveis e dados para IsCOBOL
-        E_EXEC="${E_EXEC:-${RAIZ}/classes}"
+        E_EXEC="${E_EXEC:-${RAIZ}/CLASS}"
         T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"
         X_XML="${X_XML:-${RAIZ}/xml}"
         BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"
@@ -280,12 +280,12 @@ _configurar_variaveis_sistema() {
         BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"
 
         # Gerar sufixos de arquivos com base no tipo de compilacao
-        verclass_sufixo="${CFG_VERCLASS: -2}"
-        class="-class${verclass_sufixo}"
-        mclass="-mclass${verclass_sufixo}"
+        verCLASS_sufixo="${CFG_VERCLASS: -2}"
+        CLASS="-CLASS${verCLASS_sufixo}"
+        MCLASS="-MCLASS${verCLASS_sufixo}"
 
-        SAVATU1="tempSAV_IS${CFG_VERCLASS}_classA_"
-        SAVATU2="tempSAV_IS${CFG_VERCLASS}_classB_"
+        SAVATU1="tempSAV_IS${CFG_VERCLASS}_CLASSA_"
+        SAVATU2="tempSAV_IS${CFG_VERCLASS}_CLASSB_"
         SAVATU3="tempSAV_IS${CFG_VERCLASS}_tel_isc_"
         SAVATU4="tempSAV_IS${CFG_VERCLASS}_xml_"
         SAVATU="tempSAV_IS${CFG_VERCLASS}_*_"
@@ -297,8 +297,8 @@ _configurar_variaveis_sistema() {
         BASE2="${BASE2:-${RAIZ}${CFG_BASE_DIR2}}"
         BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"
 
-        class="-${class:-6}"
-        mclass="-${mclass:-m6}"
+        CLASS="-${CLASS:-6}"
+        MCLASS="-${MCLASS:-m6}"
 
         SAVATU1="tempSAVintA_"
         SAVATU2="tempSAVintB_"
@@ -307,7 +307,7 @@ _configurar_variaveis_sistema() {
     fi
 
     export E_EXEC T_TELAS X_XML BASE1 BASE2 BASE3 CFG_OFFLINE
-    export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU
+    export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU CLASS MCLASS
 }
 
 # -----------------------------------------------------------------------------

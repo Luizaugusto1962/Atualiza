@@ -124,11 +124,11 @@ OPCOES DISPONIVEIS:
     EXEMPLO:
     Nome do programa: ADV000
     Tipo de compilacao: 1
-    ( Exemplo do nome do programa ADV000-class(versao) )
+    ( Exemplo do nome do programa ADV000-CLASS(versao) )
 
     Nome do programa: ADV000
     Tipo de compilacao: 2
-    ( Exemplo do nome do programa ADV000-mclass(versao) )
+    ( Exemplo do nome do programa ADV000-MCLASS(versao) )
 
     Nome do programa: [ENTER para finalizar]
 
@@ -153,7 +153,7 @@ OPCOES DISPONIVEIS:
     * Menor chance de erros de dependencia
 
     EXEMPLO DE PACOTE:
-    - PACK-class(versao) (contem: ADVA000, ADC001, TRS002, etc)
+    - PACK-CLASS(versao) (contem: ADVA000, ADC001, TRS002, etc)
 
 4 - VOLTAR PROGRAMA ATUALIZADO
     Reverte programa para versao anterior.
@@ -178,13 +178,13 @@ NOMES DE PROGRAMAS:
 
 TIPOS DE COMPILACAO:
 * Normal (1): Para uso em producao
-  - [PROGRAMA]-class
+  - [PROGRAMA]-CLASS
 * Depuracao (2): Para desenvolvimento/testes
-  - [PROGRAMA]-mclass
+  - [PROGRAMA]-MCLASS
 
 BACKUP AUTOMATICO:
 * Criado antes de cada atualizacao
-* Inclui: .class, .int, .TEL
+* Inclui: .CLASS, .int, .TEL
 * Localizacao: tools/back_programas/
 * Formato: [PROGRAMA]-anterior.zip
 
@@ -225,7 +225,7 @@ OPCOES DISPONIVEIS:
     CONTEUDO:
     * Programas de interface
     * Rotinas de conversao
-    * Classes compiladas (.class)
+    * CLASSes compiladas (.CLASS)
     * Telas de interface (.TEL)
     * Arquivos XML de configuracao
     * Programas para o sistema em MicroFocus (.int)
@@ -251,14 +251,14 @@ OPCOES DISPONIVEIS:
     3. Sistema localiza e instala os arquivos
     
     ARQUIVOS NECESSARIOS (IsCOBOL):
-    * tempSAV_IS[ANO]_classA_[VERSAO].zip
-    * tempSAV_IS[ANO]_classB_[VERSAO].zip
+    * tempSAV_IS[ANO]_CLASSA_[VERSAO].zip
+    * tempSAV_IS[ANO]_CLASSB_[VERSAO].zip
     * tempSAV_IS[ANO]_tel_isc_[VERSAO].zip
     * tempSAV_IS[ANO]_xml_[VERSAO].zip
     
     EXEMPLO:
-    * tempSAV_IS2024_classA_5280.zip
-    * tempSAV_IS2024_classB_5280.zip
+    * tempSAV_IS2024_CLASSA_5280.zip
+    * tempSAV_IS2024_CLASSB_5280.zip
     * tempSAV_IS2024_tel_isc_5280.zip
     * tempSAV_IS2024_xml_5280.zip
 
@@ -291,7 +291,7 @@ Sistema verifica:
 
 PASSO 3: BACKUP AUTOMATICO
 Sistema cria backup completo:
-* Classes (.class)
+* CLASSes (.CLASS)
 * Telas (.TEL)
 * XML (.xml)
 * MicroFocus (.int)
@@ -1264,7 +1264,7 @@ OPCOES DISPONIVEIS:
     
     PARAMETROS EDITAVEIS:
     * sistema: iscobol ou cobol
-    * verclass: Versao do IsCOBOL
+    * verCLASS: Versao do IsCOBOL
     * dbmaker: Sistema usa banco (s/n)
     * acessossh: Modo facilitado (s/n)
     * Offline: Modo offline (s/n)
@@ -1313,7 +1313,7 @@ Arquivo texto com pares chave=valor
 
 EXEMPLO:
 sistema=iscobol
-verclass=2024
+verCLASS=2024
 dbmaker=n
 empresa=MINHAEMP
 base=/dados_jisam
@@ -1334,7 +1334,7 @@ sistema:
 * cobol: Micro Focus COBOL
 * Determina modulos a usar
 
-verclass:
+verCLASS:
 * 2018, 2020, 2023, 2024
 * Versao do IsCOBOL
 * Define compatibilidade biblioteca
@@ -1374,13 +1374,13 @@ FORMATO:
 tempSAV_IS[ANO]_[TIPO]_
 
 EXEMPLO (IsCOBOL 2024):
-SAVATU1=tempSAV_IS2024_classA_
-SAVATU2=tempSAV_IS2024_classB_
+SAVATU1=tempSAV_IS2024_CLASSA_
+SAVATU2=tempSAV_IS2024_CLASSB_
 SAVATU3=tempSAV_IS2024_tel_isc_
 SAVATU4=tempSAV_IS2024_xml_
 
 ATUALIZACAO AUTOMATICA:
-Ao mudar verclass, SAVATUs sao atualizados
+Ao mudar verCLASS, SAVATUs sao atualizados
 
 DIRETORIOS FIXOS:
 -------------------------------------------------------------------
@@ -1801,7 +1801,7 @@ ESTRUTURA DO SISTEMA:
 
 DIRETORIOS PRINCIPAIS:
 /RAIZ/
-  classes/      - Programas compilados
+  CLASSes/      - Programas compilados
   tel_isc/      - Telas do sistema
   xml/          - Configuracoes XML
   dados_jisam/  - Base de dados
@@ -1831,7 +1831,7 @@ CONCEITOS IMPORTANTES:
 -------------------------------------------------------------------
 
 PROGRAMA:
-Arquivo executavel individual (.class ou .int)
+Arquivo executavel individual (.CLASS ou .int)
 
 BIBLIOTECA:
 Conjunto completo de programas do sistema
@@ -1942,7 +1942,7 @@ Para ambientes sem conexao com servidor.
 
 PREPARACAO:
 1. Copie arquivos .zip para diretorio offline
-2. Arquivos devem seguir padrao: [PROG]-class[VER].zip
+2. Arquivos devem seguir padrao: [PROG]-CLASS[VER].zip
 
 PROCESSO:
 1. Menu Principal > 1 > 2
