@@ -108,7 +108,7 @@ verificar_dependencias() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        printf "%s[ERRO] Dependências faltando: %s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
+        printf "%s[ERRO] Dependencias faltando: %s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
         return 1
     fi
 
@@ -139,17 +139,17 @@ exibir_tabular() {
     local filtro="$1"
 
     printf "\n"
-    printf "%s%s        CONSTANTES DO SISTEMA SAV - LISTAGEM COMPLETA           %s\n" "$BLUE" "$BOLD" "$NORM"
+    printf "%s        CONSTANTES DO SISTEMA SAV - LISTAGEM COMPLETA           \n" "$BLUE" "$BOLD" "$NORM"
     printf "\n"
 
     # Exibir informações sobre o arquivo de configuração
-    printf "%s%s Fonte de Configuração:%s\n" "$GREEN" "$BOLD" "$NORM"
+    printf "%s%s Fonte de Configuracao:%s\n" "$GREEN" "$BOLD" "$NORM"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
-        printf "   %s✓%s Arquivo: %s\n" "$GREEN" "$NORM" "$CONFIG_FILE"
-        printf "   %s✓%s Status: Carregado com sucesso\n" "$GREEN" "$NORM"
+        printf "   %s Arquivo: \n" "$GREEN" "$NORM" "$CONFIG_FILE"
+        printf "   %s Status: Carregado com sucesso\n" "$GREEN" "$NORM" "$CONFIG_FILE"
     else
-        printf "   %s⚠%s Arquivo: %s\n" "$YELLOW" "$NORM" "$CONFIG_FILE"
-        printf "   %s⚠%s Status: Não encontrado (usando valores padrão)\n" "$YELLOW" "$NORM"
+        printf "   %s Arquivo: \n" "$YELLOW" "$NORM" "$CONFIG_FILE"
+        printf "   %s Status: Não encontrado (usando valores padrão)\n" "$YELLOW" "$NORM" "$CONFIG_FILE"
     fi
     printf "\n"
 
