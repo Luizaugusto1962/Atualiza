@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 18/05/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -85,18 +85,18 @@ _principal() {
         _mensagec "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
         # Opcoes do menu
-        _mensagec "${GREEN}" "1${NORM} -|: Atualizar Programa(s) "
+        _mensageb "${GREEN}" "1${NORM} -|: Atualizar Programa(s)"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Atualizar Biblioteca  "
+        _mensageb "${GREEN}" "2${NORM} -|: Atualizar Biblioteca"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Gerenciar Arquivos    "
+        _mensageb "${GREEN}" "3${NORM} -|: Gerenciar Arquivos"
         printf "\n"
-        _mensagec "${GREEN}" "4${NORM} -|: Ferramentas           "
+        _mensageb "${GREEN}" "4${NORM} -|: Ferramentas"
         printf "\n"        
-        _mensagec "${GREEN}" "0${NORM} -|: Sistema de Ajuda      "
+        _mensageb "${GREEN}" "0${NORM} -|: Sistema de Ajuda"
         _meia_linha "-" "${YELLOW}"
 #        printf "\n"
-        _mensagec "${WHITE}" "9${RED} -|: Sair do Sistema "
+        _mensageb "${WHITE}" "9${RED} -|: Sair do Sistema"
         _mensaged "${BLUE}" "${UPDATE:-}"     
         
         # Usar funcao centralizada
@@ -132,20 +132,20 @@ _menu_programas() {
         _mensagec "${RED}" "Menu de Programas"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" "Escolha o tipo de Atualizacao:"
+        _mensageb "${PURPLE}" "Escolha o tipo de Atualizacao:"
         _meia_linha "-" "${YELLOW}" 
-        _mensagec "${GREEN}" "1${NORM} -|: Programa(s) ON-Line       "
+        _mensageb "${GREEN}" "1${NORM} -|: Programa(s) ON-Line" 
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Programa(s) OFF-Line      "
+        _mensageb "${GREEN}" "2${NORM} -|: Programa(s) OFF-Line"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Programa(s) em Pacote     "
+        _mensageb "${GREEN}" "3${NORM} -|: Programa(s) em Pacote" 
         printf "\n"
-        _mensagec "${PURPLE}" "Escolha Desatualizar:         "
+        _mensageb "${PURPLE}" "Escolha Desatualizar:" 
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "4${NORM} -|: Voltar programa Atualizado"
+        _mensageb "${GREEN}" "4${NORM} -|: Voltar programa Atualizado" 
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
         
         if [[ -n "${CFG_VERCLASS}" ]]; then
             printf "\n"
@@ -181,18 +181,18 @@ _menu_biblioteca() {
         _mensagec "${RED}" "Menu da Biblioteca"
         _linha 
         printf "\n"
-        _mensagec "${PURPLE}" "Escolha o local da Biblioteca:      "
+        _mensageb "${PURPLE}" "Escolha o local da Biblioteca:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Atualizacao do Transpc  "
+        _mensageb "${GREEN}" "1${NORM} -|: Atualizacao do Transpc"
         printf "\n" 
-        _mensagec "${GREEN}" "2${NORM} -|: Atualizacao OFF-Line    "
+        _mensageb "${GREEN}" "2${NORM} -|: Atualizacao OFF-Line"
         printf "\n"
-        _mensagec "${PURPLE}" "Escolha Desatualizar:               "
+        _mensageb "${PURPLE}" "Escolha Desatualizar:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "3${NORM} -|: Voltar o(s) Programa(s) "
+        _mensageb "${GREEN}" "3${NORM} -|: Voltar o(s) Programa(s)"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Carregar versao anterior se disponivel
@@ -233,28 +233,28 @@ _menu_arquivos() {
     while true; do
         _limpa_tela
         _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu Gerencial dos Arquivos"
+        _mensageb "${RED}" "Menu Gerencial dos Arquivos"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
         
         # Verificar se sistema tem banco de dados
         if [[ "${CFG_USA_DBMAKER}" != "s" ]]; then
-            _mensagec "${GREEN}" "1${NORM} -|: Rotinas de Backup        "
+            _mensageb "${GREEN}" "1${NORM} -|: Rotinas de Backup"
             printf "\n" 
-            _mensagec "${GREEN}" "2${NORM} -|: Reconstruir Arquivos     "
+            _mensageb "${GREEN}" "2${NORM} -|: Reconstruir Arquivos"
             printf "\n"
         fi
-        _mensagec "${GREEN}" "3${NORM} -|: Enviar & Receber Arquivos"
+        _mensageb "${GREEN}" "3${NORM} -|: Enviar & Receber Arquivos"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "4${NORM} -|: Arquivos Temporarios     "
+        _mensageb "${GREEN}" "4${NORM} -|: Arquivos Temporarios"
         printf "\n"
-        _mensagec "${GREEN}" "5${NORM} -|: Expurgador de Arquivos   "
+        _mensageb "${GREEN}" "5${NORM} -|: Expurgador de Arquivos"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"        
         # Usar funcao centralizada
         local opcao
@@ -300,22 +300,22 @@ _menu_ferramentas() {
         _mensagec "${RED}" "Menu das Ferramentas"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
 
         # Opcoes do menu 
-        _mensagec "${GREEN}" "1${NORM} -|: Configuracoes         "
+        _mensageb "${GREEN}" "1${NORM} -|: Configuracoes"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Update                "
+        _mensageb "${GREEN}" "2${NORM} -|: Update"
         printf "\n" 
-        _mensagec "${GREEN}" "3${NORM} -|: Lembretes             "
+        _mensageb "${GREEN}" "3${NORM} -|: Lembretes"
         printf "\n"
-        _mensagec "${GREEN}" "4${NORM} -|: Avisos iniciais       "
+        _mensageb "${GREEN}" "4${NORM} -|: Avisos iniciais"
         printf "\n"
-        _mensagec "${GREEN}" "5${NORM} -|: Logs do sistema       "
+        _mensageb "${GREEN}" "5${NORM} -|: Logs do sistema"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior  "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
 
         # Usar funcao centralizada
@@ -348,16 +348,16 @@ _menu_temporarios() {
         _mensagec "${RED}" "Menu de Limpeza"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Limpeza dos Arquivos Temporarios "
+        _mensageb "${GREEN}" "1${NORM} -|: Limpeza dos Arquivos Temporarios"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Adicionar Arquivos Temporarios   "
+        _mensageb "${GREEN}" "2${NORM} -|: Adicionar Arquivos Temporarios"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Listar os registros dos Arquivos "
+        _mensageb "${GREEN}" "3${NORM} -|: Listar os registros dos Arquivos"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -385,17 +385,17 @@ _menu_recuperar_arquivos() {
     while true; do
         _limpa_tela
         _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Recuperacao de Arquivo(s)"
+        _mensageb "${RED}" "Menu de Recuperacao de Arquivo(s)"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Um arquivo ou Todos   "
+        _mensageb "${GREEN}" "1${NORM} -|: Um arquivo ou Todos"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Arquivos Principais   "
+        _mensageb "${GREEN}" "2${NORM} -|: Arquivos Principais"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -425,19 +425,19 @@ _menu_backup() {
         _mensagec "${RED}" "Menu de Backup(s)"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Backup da base de dados      "
+        _mensageb "${GREEN}" "1${NORM} -|: Backup da base de dados "
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Backup com Multiplos Padroes "
+        _mensageb "${GREEN}" "2${NORM} -|: Backup com Multiplos Padroes"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Restaurar base de dados      "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "4${NORM} -|: Enviar Backup                "
+        _mensageb "${GREEN}" "3${NORM} -|: Restaurar base de dados"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${GREEN}" "4${NORM} -|: Enviar Backup"
+        printf "\n"
+        _meia_linha "-" "${YELLOW}"
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -470,14 +470,14 @@ _menu_transferencia_arquivos() {
         _mensagec "${RED}" "Menu de Enviar e Receber Arquivo(s)"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Enviar arquivo(s)     "
+        _mensageb "${GREEN}" "1${NORM} -|: Enviar arquivo(s)"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Receber arquivo(s)    "
+        _mensageb "${GREEN}" "2${NORM} -|: Receber arquivo(s)"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -506,20 +506,20 @@ _menu_configs() {
         _mensagec "${RED}" "Menu das Configuracoes"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Parametros do Sistema   "
+        _mensageb "${GREEN}" "1${NORM} -|: Parametros do Sistema"
         printf "\n" 
         if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
-            _mensagec "${GREEN}" "2${NORM} -|: Versao do Iscobol       "
+            _mensageb "${GREEN}" "2${NORM} -|: Versao do Iscobol"
         else
-            _mensagec "${GREEN}" "2${NORM} -|: Funcao nao disponivel   "
+            _mensageb "${GREEN}" "2${NORM} -|: Funcao nao disponivel"
         fi
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Versao do Linux         "
+        _mensageb "${GREEN}" "3${NORM} -|: Versao do Linux"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -549,16 +549,16 @@ _menu_setups() {
         _mensagec "${RED}" "Menu de Setup do Sistema"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Consulta de setup    "
+        _mensageb "${GREEN}" "1${NORM} -|: Consulta de setup"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Manutencao de setup  "
+        _mensageb "${GREEN}" "2${NORM} -|: Manutencao de setup"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Validar configuracao "
+        _mensageb "${GREEN}" "3${NORM} -|: Validar configuracao"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -594,21 +594,21 @@ _menu_lembretes() {
     while true; do
         _limpa_tela
         _linha "=" "${GREEN}"
-        _mensagec "${RED}" " Bloco de Notas "
+        _mensagec "${RED}" " Menu Bloco de Notas "
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Escrever nova nota    "
+        _mensageb "${GREEN}" "1${NORM} -|: Escrever nova nota"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Visualizar nota       "
+        _mensageb "${GREEN}" "2${NORM} -|: Visualizar nota"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Editar nota           "
+        _mensageb "${GREEN}" "3${NORM} -|: Editar nota"
         printf "\n"
-        _mensagec "${GREEN}" "4${NORM} -|: Apagar nota           "
+        _mensageb "${GREEN}" "4${NORM} -|: Apagar nota"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -646,16 +646,16 @@ _menu_avisos() {
         _mensagec "${RED}" "Menu de Aviso(s)"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Gerar Aviso ao Iniciar  "
+        _mensageb "${GREEN}" "1${NORM} -|: Gerar Aviso ao Iniciar"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Editar Aviso Existente  "
+        _mensageb "${GREEN}" "2${NORM} -|: Editar Aviso Existente"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Apagar Aviso Existente  "
+        _mensageb "${GREEN}" "3${NORM} -|: Apagar Aviso Existente"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
         printf "\n"
         
         # Usar funcao centralizada
@@ -685,14 +685,14 @@ _menu_logs() {
         _mensagec "${RED}" "Menu dos Logs"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Log de Atualizacao "
+        _mensageb "${GREEN}" "1${NORM} -|: Log de Atualizacao"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Log de Limpeza     "
+        _mensageb "${GREEN}" "2${NORM} -|: Log de Limpeza"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior"
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
         printf "\n"
         
         # Usar funcao centralizada
@@ -725,25 +725,25 @@ _menu_ajuda_principal() {
     while true; do
         _limpa_tela
         _linha "=" "${GREEN}"
-        _mensagec "${RED}" "SISTEMA DE AJUDA"
+        _mensageb "${RED}" "SISTEMA DE AJUDA"
         _linha 
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${GREEN}" "1${NORM} -|: Manual Completo    "
+        _mensageb "${GREEN}" "1${NORM} -|: Manual Completo "
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Ajuda Rapida       "
+        _mensageb "${GREEN}" "2${NORM} -|: Ajuda Rapida"
         printf "\n"
-        _mensagec "${GREEN}" "3${NORM} -|: Ajuda no Geral     "
+        _mensageb "${GREEN}" "3${NORM} -|: Ajuda no Geral"
         printf "\n"
-        _mensagec "${GREEN}" "4${NORM} -|: Buscar no Manual   "
+        _mensageb "${GREEN}" "4${NORM} -|: Buscar no Manual"
         printf "\n"
-        _mensagec "${GREEN}" "5${NORM} -|: Exportar Manual    "
+        _mensageb "${GREEN}" "5${NORM} -|: Exportar Manual"
         printf "\n"
-        _mensagec "${GREEN}" "6${NORM} -|: Ajuda por Contexto "
+        _mensageb "${GREEN}" "6${NORM} -|: Ajuda por Contexto"
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
         printf "\n"
         _linha "=" "${GREEN}"
         
@@ -818,24 +818,24 @@ _menu_escolha_base() {
     while true; do
         _limpa_tela
         _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Escolha a Base"
+        _mensageb "${RED}" "Escolha a Base"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         printf "\n"
-        _mensagec "${GREEN}" "1${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR}"
+        _mensageb "${GREEN}" "1${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR}"
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR2}"
+        _mensageb "${GREEN}" "2${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR2}"
         printf "\n"
         
         if [[ -n "${CFG_BASE_DIR3}" ]]; then
-            _mensagec "${GREEN}" "3${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR3}"
+            _mensageb "${GREEN}" "3${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR3}"
             printf "\n"
         fi
         
         printf "\n"
         _meia_linha "-" "${YELLOW}"
-        _mensagec "${WHITE}" "9${RED} -|: Menu Anterior "
+        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
         printf "\n"
         _linha "=" "${GREEN}"
 
@@ -884,13 +884,13 @@ _menu_tipo_backup() {
         _mensagec "${RED}" "Menu de Tipo de Backup(s)"
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
+        _mensageb "${PURPLE}" " Escolha a opcao:"
         printf "\n"
-        _mensagec "${GREEN}" "1${NORM} -|: Backup Completo       "
+        _mensageb "${GREEN}" "1${NORM} -|: Backup Completo "
         printf "\n"
-        _mensagec "${GREEN}" "2${NORM} -|: Backup Incremental    "
+        _mensageb "${GREEN}" "2${NORM} -|: Backup Incremental"
         printf "\n"
-        _mensagec "${WHITE}" "9${NORM} -|: ${RED}Menu Anterior"
+        _mensageb "${WHITE}" "9${NORM} -|: ${RED}Menu Anterior"
         printf "\n"
         _linha "=" "${GREEN}"
 
