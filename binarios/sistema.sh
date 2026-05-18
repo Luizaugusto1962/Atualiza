@@ -161,7 +161,7 @@ _mostrar_versao_linux() {
 #---------- FUNCOES DE PARAMETROS ----------#
 
 # Mostra parametros do sistema
-_mostrar_parametros2() {
+_mostrar_parametros() {
     # Carregar versao antes de exibir
     if [[ -f "${CFG_DIR}/.versao" ]]; then
         "." "${CFG_DIR}/.versao"

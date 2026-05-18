@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# exibircfg.sh - Exibe todas as constantes do sistema SAV
+# variaveis.sh - Exibe todas as constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 16/05/2026-01
-# Uso: ./exibircfg.sh [filtro]
+# Uso: ./variaveis.sh [filtro]
 #
 # =============================================================================
 # CONFIGURACAO INICIAL
@@ -28,11 +28,10 @@ if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
     BOLD="$(tput bold)"
     GREEN="${BOLD}$(tput setaf 2)"
     YELLOW="${BOLD}$(tput setaf 3)"
-    BLUE="${BOLD}$(tput setaf 4)"
     RED="${BOLD}$(tput setaf 1)"
     NORM="$(tput sgr0)"
 else
-    BOLD="" GREEN="" YELLOW="" BLUE="" RED="" NORM=""
+    BOLD="" GREEN="" YELLOW="" RED="" NORM=""
 fi
 
 # Colunas do terminal
@@ -139,7 +138,7 @@ exibir_tabular() {
     local filtro="$1"
 
     printf "\n"
-    printf "%s        CONSTANTES DO SISTEMA SAV - LISTAGEM COMPLETA           \n" "$BLUE" "$BOLD" "$NORM"
+    printf "%s\n" "CONSTANTES DO SISTEMA SAV - LISTAGEM COMPLETA"
     printf "\n"
 
     # Exibir informacoes sobre o arquivo de configuracao
@@ -185,8 +184,8 @@ exibir_tabular() {
 # =============================================================================
 # FUNCAO: Main
 # =============================================================================
-#main() {
-_mostrar_parametros() {
+main() {
+
     local filtro="$1"
 
     # Verificar dependencias
@@ -213,4 +212,4 @@ _mostrar_parametros() {
 # EXECUCAO
 # =============================================================================
 
-#main "$@"
+main "$@"
