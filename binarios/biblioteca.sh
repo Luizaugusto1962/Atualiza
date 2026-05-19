@@ -226,7 +226,7 @@ _processar_atualizacao_biblioteca() {
     # Compactacao em E_EXEC
     cd "$E_EXEC" || return 1
     {
-        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.CLASS" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
     } &
     local pid_zip_exec=$!
     pids+=("$pid_zip_exec")  # Registrar PID para trap

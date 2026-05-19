@@ -280,9 +280,9 @@ _configurar_variaveis_sistema() {
         BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"
 
         # Gerar sufixos de arquivos com base no tipo de compilacao
-        verCLASS_sufixo="${CFG_VERCLASS: -2}"
-        CLASS="-CLASS${verCLASS_sufixo}"
-        MCLASS="-MCLASS${verCLASS_sufixo}"
+        verclass_sufixo="${CFG_VERCLASS: -2}"
+        CLASS="-CLASS${verclass_sufixo}"
+        MCLASS="-MCLASS${verclass_sufixo}"
 
         SAVATU1="tempSAV_IS${CFG_VERCLASS}_CLASSA_"
         SAVATU2="tempSAV_IS${CFG_VERCLASS}_CLASSB_"

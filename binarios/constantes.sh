@@ -62,7 +62,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 
     # Definir valores padrão caso o arquivo não exista
     sistema=""
-    verCLASS=""
+    verclass=""
     dbmaker=""
     acessossh=""
     Offline=""
@@ -95,7 +95,7 @@ enviabackup="${enviabackup:-${RAIZ}/portalsav/Atualiza}"
 # CONFIGURAÇÕES DO SISTEMA (variáveis do .config)
 # =============================================================================
 CFG_SISTEMA="${CFG_SISTEMA:-${sistema}}"
-CFG_VERCLASS="${CFG_VERCLASS:-${verCLASS}}"
+CFG_VERCLASS="${CFG_VERCLASS:-${verclass}}"
 CFG_EMPRESA="${CFG_EMPRESA:-${empresa}}"
 CFG_BASE_DIR="${CFG_BASE_DIR:-${base}}"
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-${base2}}"
@@ -160,10 +160,10 @@ DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-${SCRIPT_DIR}/receber}"
 # =============================================================================
 # COMANDOS EXTERNOS PADRÃO
 # =============================================================================
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"
-DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"
-DEFAULT_FIND="${DEFAULT_FIND:-find}"
-DEFAULT_WHO="${DEFAULT_WHO:-who}"
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-"unzip"}"
+DEFAULT_ZIP="${DEFAULT_ZIP:-"zip"}"
+DEFAULT_FIND="${DEFAULT_FIND:-"find"}"
+DEFAULT_WHO="${DEFAULT_WHO:-"who"}"
 
 # =============================================================================
 # DIRETÓRIOS DE DESTINO

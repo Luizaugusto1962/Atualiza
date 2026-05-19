@@ -1264,7 +1264,7 @@ OPCOES DISPONIVEIS:
     
     PARAMETROS EDITAVEIS:
     * sistema: iscobol ou cobol
-    * verCLASS: Versao do IsCOBOL
+    * verclass: Versao do IsCOBOL
     * dbmaker: Sistema usa banco (s/n)
     * acessossh: Modo facilitado (s/n)
     * Offline: Modo offline (s/n)
@@ -1313,7 +1313,7 @@ Arquivo texto com pares chave=valor
 
 EXEMPLO:
 sistema=iscobol
-verCLASS=2024
+verclass=2024
 dbmaker=n
 empresa=MINHAEMP
 base=/dados_jisam
@@ -1334,7 +1334,7 @@ sistema:
 * cobol: Micro Focus COBOL
 * Determina modulos a usar
 
-verCLASS:
+verclass:
 * 2018, 2020, 2023, 2024
 * Versao do IsCOBOL
 * Define compatibilidade biblioteca
@@ -1380,7 +1380,7 @@ SAVATU3=tempSAV_IS2024_tel_isc_
 SAVATU4=tempSAV_IS2024_xml_
 
 ATUALIZACAO AUTOMATICA:
-Ao mudar verCLASS, SAVATUs sao atualizados
+Ao mudar verclass, SAVATUs sao atualizados
 
 DIRETORIOS FIXOS:
 -------------------------------------------------------------------

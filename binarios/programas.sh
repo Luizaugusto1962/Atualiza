@@ -406,12 +406,12 @@ _processar_atualizacao_programas() {
         
         _mensagec "${YELLOW}" "Salvando programa antigo: ${programa}"
         
-        # Backup de arquivos .CLASS
-        if [[ -f "${E_EXEC}/${programa}.CLASS" ]]; then
-            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${E_EXEC}/${programa}"*.CLASS >> "${LOG_ATU}" 2>&1; then
+        # Backup de arquivos .class
+        if [[ -f "${E_EXEC}/${programa}.class" ]]; then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${E_EXEC}/${programa}"*.class >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
-                _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .CLASS de ${programa}"
+                _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .class de ${programa}"
                 return 1
             fi
         fi
@@ -460,7 +460,7 @@ _processar_atualizacao_programas() {
     done
 
 # Mover arquivos para diretorios corretos
-    for extensao in ".CLASS" ".int" ".TEL"; do
+    for extensao in ".class" ".int" ".TEL"; do
         if compgen -G "*${extensao}" >/dev/null; then
             for arquivo in *"${extensao}"; do
                 if [[ "${extensao}" == ".TEL" ]]; then
@@ -543,16 +543,16 @@ _processar_atualizacao_pacotes() {
         fi
     done
 
-    # Processar arquivos .CLASS encontrados (usando redirection para evitar subshell do pipe)
-    while read -r CLASSfile; do
-        local progname="${CLASSfile##*/}" # Extrair nome do arquivo
-        progname="${progname%%.CLASS}"    # Remover extensao
+    # Processar arquivos .class encontrados (usando redirection para evitar subshell do pipe)
+    while read -r classfile; do
+        local progname="${classfile##*/}" # Extrair nome do arquivo
+        progname="${progname%%.class}"    # Remover extensao
         local arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
 
         # Backup dos arquivos antigos
         if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-            if ! find "${E_EXEC}" -name "${progname}*.CLASS" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
-                _log_erro "Falha ao fazer backup de ${progname}*.CLASS"
+            if ! find "${E_EXEC}" -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+                _log_erro "Falha ao fazer backup de ${progname}*.class"
                 return 1
             fi
         else
@@ -578,8 +578,8 @@ _processar_atualizacao_pacotes() {
         fi
 
         # Mover novos arquivos
-        if ! mv -f "${progname}"*.CLASS "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-            _log_erro "Falha ao mover ${progname}*.CLASS para ${E_EXEC}"
+        if ! mv -f "${progname}"*.class "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
+            _log_erro "Falha ao mover ${progname}*.class para ${E_EXEC}"
             return 1
         fi
         if [[ -f "${progname}.TEL" ]]; then
@@ -588,7 +588,7 @@ _processar_atualizacao_pacotes() {
                 return 1
             fi
         fi
-    done < <(find . -type f -name "*.CLASS")
+    done < <(find . -type f -name "*.class")
 }
 
 # Processa reversao de programas
