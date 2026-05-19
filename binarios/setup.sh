@@ -352,7 +352,7 @@ _editar_variavel() {
                 ;;
             "dbmaker"|"acessossh")
                 while true; do
-                    read -rp "Novo valor (s/n): " opt
+                    read -rp "Novo valor [s/N]: " opt
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
                         [[ "${opt,,}" == "s" ]] && declare -g "$nome"="s"
                         [[ "${opt,,}" == "n" ]] && declare -g "$nome"="n"
@@ -364,7 +364,7 @@ _editar_variavel() {
                 ;;
             "Offline")
                 while true; do
-                    read -rp "Sistema em modo Offline? (s/n): " opt            
+                    read -rp "Sistema em modo Offline? [s/N]: " opt            
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
                         [[ "${opt,,}" == "s" ]] && declare -g "Offline"="s" 
                         echo "enviabackup=" >> .config
