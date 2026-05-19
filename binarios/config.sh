@@ -272,7 +272,7 @@ _configurar_diretorios() {
 _configurar_variaveis_sistema() {
     if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
         # Caminhos dos executaveis e dados para IsCOBOL
-        E_EXEC="${E_EXEC:-${RAIZ}/CLASS}"
+        E_EXEC="${E_EXEC:-${RAIZ}/classes}"
         T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"
         X_XML="${X_XML:-${RAIZ}/xml}"
         BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"
