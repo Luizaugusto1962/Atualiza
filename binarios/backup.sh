@@ -12,18 +12,14 @@ set -euo pipefail
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                           # Indicador de ambiente offline (s/n)
-#RAIZ="${RAIZ:-}"                                         # Caminho RAIZ do sistema.
-#CFG_EMPRESA="${CFG_EMPRESA:-}"                           # Nome da empresa (usado no nome do backup)
-#DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-}"               # IP do servidor para envio de backup
-#DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"     # Diretorio base de armazenamento de backups
+DEFAULT_TAR="${DEFAULT_TAR:-}"
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {
     _log "Backup interrompido. Limpando temporários..."
     # Remover arquivos parciais com blindagem contra variaveis nulas
     if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" && "${DEFAULT_BASEBACKUP_DIR}" != "/" && "${DEFAULT_BASEBACKUP_DIR}" != "//" ]]; then
-        rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
+        rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.tar*.tmp 2>/dev/null || true
     fi
 }
 
@@ -43,56 +39,49 @@ _validar_pre_backup() {
     local -n _base_ref="$1"   # nameref para definir base_trabalho no chamador
 
     # Validar comando de compactacao
-    if [[ -z "$DEFAULT_ZIP" ]]; then
+    if [[ -z "$DEFAULT_TAR" ]]; then
         _mensagec "${RED}" "Erro: Comando de compactacao nao configurado"
         _aguardar 3
         return 1
     fi
 
-    if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
-        _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel no sistema"
+    if ! command -v "$DEFAULT_TAR" &>/dev/null; then
+        _mensagec "${RED}" "Erro: Comando '$DEFAULT_TAR' nao disponivel no sistema"
         _aguardar 3
         return 1
     fi
     
-    # ========================================================================
-    # VALIDAÇÃO APRIMORADA: Detectar e REMOVER parâmetros de senha
-    # ========================================================================
-    local zip_cmd_original="$DEFAULT_ZIP"
+    local tar_cmd_original="$DEFAULT_TAR"
     
     # Padrões de detecção de senha:
-    # -P senha      (zip: Define senha)
-    # --password    (unzip: Especifica senha)
-    # -e            (zip: Habilita criptografia)
-    # --encrypt     (variantes)
+    # -P senha      (tar: Define senha - não aplicável, mas mantemos validação)
     
-    if [[ "$DEFAULT_ZIP" =~ (-P[[:space:]]*[^ ]+|-P$|--password[[:space:]]*=?[^ ]*|-e[[:space:]]*|-e$|--encrypt) ]]; then
-        _mensagec "${RED}" "⚠️  AVISO CRITICO!"
+    if [[ "$DEFAULT_TAR" =~ (-P[[:space:]]*[^ ]+|-P$) ]]; then
+        _mensagec "${RED}" "AVISO CRITICO!"
         _mensagec "${RED}" "Detectado: Comando de compactacao com parâmetros de SENHA"
-        _mensagec "${RED}" "Comando original: $zip_cmd_original"
+        _mensagec "${RED}" "Comando original: $tar_cmd_original"
         _linha
         
         # LIMPAR: Remover parâmetros de senha
-        # Substitui o comando original por um limpo
-        local zip_limpo
-        zip_limpo=$(echo "$DEFAULT_ZIP" | sed 's/-P[[:space:]]*[^ ]*//g; s/-P$//g; s/--password[[:space:]]*=?[^ ]*//g; s/--encrypt//g; s/-e[[:space:]]*$//g; s/  */ /g')
+        local tar_limpo
+        tar_limpo=$(echo "$DEFAULT_TAR" | sed 's/-P[[:space:]]*[^ ]*//g; s/-P$//g; s/  */ /g')
         
-        # Se ficar vazio, usar zip padrão
-        if [[ -z "$zip_limpo" ]] || [[ "$zip_limpo" == "-" ]]; then
-            zip_limpo="zip"
+        # Se ficar vazio, usar tar padrão
+        if [[ -z "$tar_limpo" ]] || [[ "$tar_limpo" == "-" ]]; then
+            tar_limpo="tar"
         fi
         
         _mensagec "${YELLOW}" "Removido parâmetro de senha automaticamente"
-        _mensagec "${YELLOW}" "Comando corrigido: $zip_limpo"
+        _mensagec "${YELLOW}" "Comando corrigido: $tar_limpo"
         _linha
         
         # Usar o comando limpo
-        export DEFAULT_ZIP="$zip_limpo"
+        export DEFAULT_TAR="$tar_limpo"
         
         # Log para auditoria
-        _log_bkp "[$(date '+%Y-%m-%d %H:%M:%S')] SEGURANÇA: Senha removida de DEFAULT_ZIP"
-        _log_bkp "  Original: $zip_cmd_original"
-        _log_bkp "  Corrigido: $DEFAULT_ZIP"
+        _log_bkp "[$(date '+%Y-%m-%d %H:%M:%S')] SEGURANÇA: Senha removida de DEFAULT_TAR"
+        _log_bkp "  Original: $tar_cmd_original"
+        _log_bkp "  Corrigido: $DEFAULT_TAR"
         
         _aguardar 3
     fi
@@ -100,8 +89,8 @@ _validar_pre_backup() {
     # ========================================================================
     # Validar se o comando de compactação foi corrigido
     # ========================================================================
-    if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
-        _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel apos limpeza"
+    if ! command -v "$DEFAULT_TAR" &>/dev/null; then
+        _mensagec "${RED}" "Erro: Comando '$DEFAULT_TAR' nao disponivel apos limpeza"
         _aguardar 3
         return 1
     fi
@@ -171,7 +160,7 @@ _executar_backup() {
 
     # Gerar nome do arquivo
     local nome_backup
-    nome_backup="${CFG_EMPRESA}_${tipo_backup}_$(date +%Y%m%d%H%M).zip"
+    nome_backup="${CFG_EMPRESA}_${tipo_backup}_$(date +%Y%m%d%H%M).tar.gz"
     local caminho_backup="${DEFAULT_BASEBACKUP_DIR}/$nome_backup"
 
     # Verificar backups recentes
@@ -355,8 +344,8 @@ _executar_backup_completo() {
     }
 
     find . -maxdepth 1 -type f \
-         ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-         -printf '%P\0' > "$arquivos_temp"
+         ! -name "*.zip" ! -name "*.tar" ! -name "*.tar.gz" ! -name "*.tar.bz2" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
+         -print0 > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
         _log_bkp "Nenhum arquivo no nivel superior para backup"
@@ -364,7 +353,7 @@ _executar_backup_completo() {
         return 1
     fi
 
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! tar czf "$arquivo_destino" -T "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao criar arquivo de backup"
         rm -f "$arquivos_temp"
         return 1
@@ -414,8 +403,8 @@ _executar_backup_incremental() {
 
     # Buscar arquivos modificados apenas no nivel superior
     find . -maxdepth 1 -type f -newermt "$data_referencia" \
-         ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -printf '%P\0' > "$arquivos_temp"
+         ! -name "*.zip" ! -name "*.tar" ! -name "*.tar.gz" ! -name "*.tar.bz2" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
+         -print0 > "$arquivos_temp"
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
     if [[ ! -s "$arquivos_temp" ]]; then
@@ -424,8 +413,9 @@ _executar_backup_incremental() {
         return 0
     fi
 
+
     # Executar compactacao
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! tar czf "$arquivo_destino" -T "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
         rm -f "$arquivos_temp"
         return 1
@@ -468,13 +458,13 @@ _diretorio_trabalho() {
 _selecionar_backup() {
     local arquivos_backup=()
 
-    # Carrega todos os .zip disponiveis
+    # Carrega todos os .tar.gz disponiveis
     shopt -s nullglob
-    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip)
+    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.tar.gz)
     shopt -u nullglob  # Restaurar imediatamente para nao afetar outros globos
 
     if ((${#arquivos_backup[@]} == 0)); then
-        _mensagec "${RED}" "Nenhum backup (${CFG_EMPRESA}_*.zip) encontrado"
+        _mensagec "${RED}" "Nenhum backup (${CFG_EMPRESA}_*.tar.gz) encontrado"
         _press
         return 1  # Sinaliza ausencia de backups para o chamador
     fi
@@ -558,7 +548,7 @@ _restaurar_backup_completo() {
     _mensagec "${YELLOW}" "Restaurando todos os arquivos..."
     _linha
     
-    if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+    if ! tar xzf "$arquivo_backup" -C "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
         _press
         return 0
@@ -609,7 +599,7 @@ _restaurar_arquivo_especifico() {
         _mensagec "${YELLOW}" "Restaurando ${nome_arquivo}..."
         _linha
        
-        if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+        if ! tar xzf "$arquivo_backup" -C "${base_trabalho}" --wildcards "${nome_arquivo}*.*" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
             _press
         else
@@ -779,11 +769,11 @@ _verificar_espaco_disco() {
 
 # Verifica backups recentes (ultimos 2 dias)
 _verificar_backups_recentes() {
-    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*zip" -print -quit | grep -q .; then
+    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*.tar.gz" -print -quit | grep -q .; then
         _linha
         _mensagec "$CYAN" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
-        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip 2>/dev/null
+        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.tar.gz 2>/dev/null
         _linha
         return 0
     fi
@@ -926,18 +916,32 @@ _executar_backup_multiplos_padroes() {
 
     # Gerar nome do arquivo
     local nome_backup
-    nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).zip"
+    nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).tar.gz"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
     _mensagec "${YELLOW}" "Criando backup com multiplos padroes..."
     _linha
 
-    # Executar compactação com os arquivos especificados
-    if ! "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
+    # Criar arquivo temporario com lista de arquivos
+    local arquivos_temp
+    arquivos_temp=$(mktemp) || {
+        _mensagec "${RED}" "Erro ao criar arquivo temporario"
+        _aguardar 3
+        return 1
+    }
+
+    # Escrever lista de arquivos no arquivo temporario
+    printf '%s\0' "${arquivos_encontrados[@]}" > "$arquivos_temp"
+
+    # Executar compactação com tar
+    if ! tar czf "$caminho_backup" -T "$arquivos_temp" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro ao criar backup"
-        [[ -f "$caminho_backup" ]] && rm -f "$caminho_backup"
+        rm -f "$caminho_backup"
+        rm -f "$arquivos_temp"
         _aguardar 3
         return 1
     fi
+
+    rm -f "$arquivos_temp"
 
     # Verificar se o backup foi criado
     if [[ ! -f "$caminho_backup" ]]; then
