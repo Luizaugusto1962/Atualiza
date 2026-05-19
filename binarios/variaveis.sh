@@ -148,7 +148,7 @@ exibir_tabular() {
     else
         printf "   %s Status: Nao encontrado (usando valores padrao) $CONFIG_FILE"
     fi
-    printf "\n"
+    printf "\n"9
 
     # Cabecalho da tabela
     printf "%s%-35s%s %s\n" "$GREEN" "VARIAVEL" "$NORM" "VALOR"
