@@ -55,13 +55,57 @@ _validar_pre_backup() {
         return 1
     fi
     
-    # Garantir que DEFAULT_ZIP nao contenha parametros de senha
-    if [[ "$DEFAULT_ZIP" =~ (-P|-p[^\ ]+|password|pw|senha) ]]; then
-        _mensagec "${RED}" "Erro: Comando de compactacao contem parametro de senha"
-        _mensagec "${RED}" "Remova a senha de DEFAULT_ZIP para gerar backups sem criptografia"
-        _aguardar 5
+    # ========================================================================
+    # VALIDAÇÃO APRIMORADA: Detectar e REMOVER parâmetros de senha
+    # ========================================================================
+    local zip_cmd_original="$DEFAULT_ZIP"
+    
+    # Padrões de detecção de senha:
+    # -P senha      (zip: Define senha)
+    # --password    (unzip: Especifica senha)
+    # -e            (zip: Habilita criptografia)
+    # --encrypt     (variantes)
+    
+    if [[ "$DEFAULT_ZIP" =~ (-P[[:space:]]*[^ ]+|-P$|--password[[:space:]]*=?[^ ]*|-e[[:space:]]*|-e$|--encrypt) ]]; then
+        _mensagec "${RED}" "⚠️  AVISO CRITICO!"
+        _mensagec "${RED}" "Detectado: Comando de compactacao com parâmetros de SENHA"
+        _mensagec "${RED}" "Comando original: $zip_cmd_original"
+        _linha
+        
+        # LIMPAR: Remover parâmetros de senha
+        # Substitui o comando original por um limpo
+        local zip_limpo
+        zip_limpo=$(echo "$DEFAULT_ZIP" | sed 's/-P[[:space:]]*[^ ]*//g; s/-P$//g; s/--password[[:space:]]*=?[^ ]*//g; s/--encrypt//g; s/-e[[:space:]]*$//g; s/  */ /g')
+        
+        # Se ficar vazio, usar zip padrão
+        if [[ -z "$zip_limpo" ]] || [[ "$zip_limpo" == "-" ]]; then
+            zip_limpo="zip"
+        fi
+        
+        _mensagec "${YELLOW}" "Removido parâmetro de senha automaticamente"
+        _mensagec "${YELLOW}" "Comando corrigido: $zip_limpo"
+        _linha
+        
+        # Usar o comando limpo
+        export DEFAULT_ZIP="$zip_limpo"
+        
+        # Log para auditoria
+        _log_bkp "[$(date '+%Y-%m-%d %H:%M:%S')] SEGURANÇA: Senha removida de DEFAULT_ZIP"
+        _log_bkp "  Original: $zip_cmd_original"
+        _log_bkp "  Corrigido: $DEFAULT_ZIP"
+        
+        _aguardar 3
+    fi
+    
+    # ========================================================================
+    # Validar se o comando de compactação foi corrigido
+    # ========================================================================
+    if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
+        _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel apos limpeza"
+        _aguardar 3
         return 1
     fi
+    
     # Escolher base se necessario
     if [[ -n "${CFG_BASE_DIR2}" ]]; then
         _menu_escolha_base || return 1
@@ -100,6 +144,7 @@ _validar_pre_backup() {
 
     return 0
 }
+
 
 # Executa backup do sistema
 _executar_backup() {
