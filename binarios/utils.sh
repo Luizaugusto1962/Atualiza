@@ -405,120 +405,100 @@ _confirmar() {
     esac
 }
 
-#---------- FUNCOES DE PROGRESSO ----------#
-# Exibe progresso do backup com barra de blocos e porcentagem
+# =============================================================================
+# FUNCOES DE PROGRESSO
+# =============================================================================
+# Exibe barra de progresso visual enquanto processo esta em andamento
 # Parametros:
-#   $1 = PID do processo de backup em background
-#   $2 = mensagem opcional (padrao: "Backup em andamento")
-# Retorna: codigo de saida do processo de backup
+#   $1 = PID do processo em background
+#   $2 = mensagem opcional (padrao: "Processando")
+# Retorna: codigo de saida do processo
+#---------- FUNCOES DE PROGRESSO ----------#
 _mostrar_progresso_backup() {
     local pid="${1:-}"
-    local msg="${2:-Backup em andamento}"
-    local delay=0.5
+    local msg="${2:-Processando}"
+    local elapsed=0
+    local barra=""
+    local blocos_total=40
+    local blocos_preenchidos=0
+    local percentual=0
     local status_proc=0
-    local colunas inicio
 
-    # Validações iniciais
-    if [[ -z "$pid" ]]; then
-        _mensagec "${YELLOW}" "Aviso: PID nao informado ou processo ja terminado"
+    if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+        _mensagec "${YELLOW:-}" "Aviso: PID nao informado ou processo ja terminado"
         return 0
     fi
 
-    # Se o processo ja terminou antes de chegarmos aqui, coletar status e sair
-    if ! kill -0 "$pid" 2>/dev/null; then
-        wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
-        return "${status_proc}"
-    fi
+    : "${GREEN:=}" "${RED:-}" "${CYAN:=}" "${NORM:=}"
 
-    # Usar comandos básicos compatíveis com sistemas antigos
-    colunas=$(stty size 2>/dev/null | cut -d' ' -f2 || echo 80)
-    inicio=$(date +%s 2>/dev/null || echo 0)
-    local barra_largura=30
-    local progresso=0
-    local delay=0.5
-    
-    # Tentar ocultar cursor (se suportado)
+    # Ocultar cursor se suportado
     printf "\033[?25l" 2>/dev/null || true
 
-    # Loop da barra de progresso
     while kill -0 "$pid" 2>/dev/null; do
-        local agora decorrido
-        agora=$(date +%s 2>/dev/null || echo 0)
-        
-        if [[ "$inicio" != "0" && "$agora" != "0" ]]; then
-            decorrido=$(( agora - inicio ))
-        else
-            # Fallback: usar contador simples se date não funcionar
-            decorrido=$(( progresso / 2 ))
-        fi
-        
-        # Calcular minutos e segundos
-        local min=$(( decorrido / 60 ))
-        local sec=$(( decorrido % 60 ))
-        
-        # Simular progresso baseado no tempo (ciclo de 60s para barra completa)
-        progresso=$(( (decorrido % 60) * barra_largura / 60 ))
-        
-        # Construir barra com caracteres ASCII
-        local barra=""
-        local i
-        for ((i=0; i<barra_largura; i++)); do
-            if (( i < progresso )); then
-                barra+="#"
-            else
-                barra+="-"
-            fi
-        done
-        
-        # Calcular porcentagem
-        local porcentagem=$(( progresso * 100 / barra_largura ))
+        elapsed=$((elapsed + 1))
 
-        printf "\r%s%s%s: [%s%s%s] %3d%% (%02d:%02d)     " \
-            "${GREEN}" "${msg}" "${NORM}" \
-            "${YELLOW}" "${barra}" "${NORM}" \
-            "${porcentagem}" "${min}" "${sec}"        
-    
-        # Sleep compatível com sistemas antigos
-        if command -v sleep >/dev/null 2>&1; then
-            sleep "${delay}" 2>/dev/null || sleep 1
-        else
-            read -rt "${delay}" <> /dev/null 2>/dev/null || true 
- 
-        fi
+        # Simular progresso crescente baseado no tempo (0..100)
+        # A barra avanca de forma gradual ate o processo terminar
+        percentual=$(( (elapsed * 100) / (elapsed + 5) ))
+        (( percentual > 95 )) && percentual=$(( 85 + (RANDOM % 11) ))  # Fica oscilando entre 85-95
+        (( percentual > 100 )) && percentual=100
+
+        blocos_preenchidos=$(( (percentual * blocos_total) / 100 ))
+
+        # Montar barra
+        barra=""
+        local i
+        for ((i = 0; i < blocos_preenchidos; i++)); do
+            barra+="#"
+        done
+        for ((i = blocos_preenchidos; i < blocos_total; i++)); do
+            barra+="."
+        done
+
+        # Formatar tempo decorrido
+        local min=$(( elapsed / 60 ))
+        local seg=$(( elapsed % 60 ))
+        local tempo_str=""
+        (( min > 0 )) && tempo_str="${min}m "
+        tempo_str+="${seg}s"
+
+        # Exibir barra
+        printf "\r%s[INFO]%s %s |%s| %3d%% (%s)" \
+            "${CYAN}" "${NORM}" "${msg}" "${GREEN}${barra}${NORM}" "${percentual}" "${tempo_str}"
+
+        sleep 1 2>/dev/null || sleep 1
     done
 
-    # Restaurar cursor (se suportado)
+    # Forcar barra 100% ao finalizar
+    barra=""
+    for ((i = 0; i < blocos_total; i++)); do
+        barra+="#"
+    done
+
+    # Restaurar cursor
     printf "\033[?25h" 2>/dev/null || true
 
-    # Coletar status de saida do processo filho
+    # Coletar status de saida
     wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
 
-    # Apagar linha de progresso
-    printf "\r"
-    local i
-    for ((i=0; i<colunas; i++)); do
-        printf " "
-    done
-    printf "\r"
+    # Apagar linha e mostrar resultado
+    local min=$(( elapsed / 60 ))
+    local seg=$(( elapsed % 60 ))
+    local tempo_str=""
+    (( min > 0 )) && tempo_str="${min}m "
+    tempo_str+="${seg}s"
 
-    # Mostrar resultado final
-    if [[ "${status_proc}" -eq 0 ]]; then
-        local agora_final decorrido_final min_final sec_final
-        agora_final=$(date +%s 2>/dev/null || echo 0)
-        if [[ "$inicio" != "0" && "$agora_final" != "0" ]]; then
-            decorrido_final=$(( agora_final - inicio ))
-            min_final=$(( decorrido_final / 60 ))
-            sec_final=$(( decorrido_final % 60 ))
-            printf "%s: [##############################] 100%% Concluido! (%02d:%02d)\n" \
-                "${msg}" "${min_final}" "${sec_final}"
-        else
-            printf "%s: [##############################] 100%% Concluido!\n" "${msg}"
-        fi
+    printf "\r\033[K"  # Limpar linha inteira
+
+    if [[ $status_proc -eq 0 ]]; then
+        printf "%s[ok]%s %s |%s| 100%% (%s) concluido%s\n" \
+            "${GREEN}" "${NORM}" "${msg}" "${GREEN}${barra}${NORM}" "${tempo_str}" "${NORM}"
     else
-        printf "%s: [##############################] Falhou (status=%d)\n" "${msg}" "${status_proc}"
+        printf "%s[ERRO]%s %s |%s| %d%% (%s) falhou%s\n" \
+            "${RED}" "${NORM}" "${msg}" "${RED}${barra}${NORM}" "${percentual}" "${tempo_str}" "${NORM}"
     fi
 
-    return "${status_proc}"
+    return $status_proc
 }
 
 #---------- FUNCOES DE LOG ----------#
