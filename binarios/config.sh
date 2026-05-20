@@ -306,63 +306,9 @@ fi
 # =============================================================================
 # Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
 # =============================================================================
-LIBS_DIR="${LIBS_DIR:-}"                                             # Caminho do diretorio de bibliotecas do programa.
-CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da base de dados.
-CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                                 # Caminho do diretorio da segunda base de dados.
-CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do diretorio da terceira base de dados.
-DEFAULT_BACKUP_DIR="${DEFAULT_BACKUP_DIR:-}"                       # Diretório de backup padrão
 DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretório de logs padrão
-DEFAULT_BIBLIOTECA_DIR="${DEFAULT_BIBLIOTECA_DIR:-}"               # Diretório de biblioteca padrão
-DEFAULT_BIBLIOTECA_ATUAL_DIR="${DEFAULT_BIBLIOTECA_ATUAL_DIR:-}"   # Diretório de backup biblioteca atual
-DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"               # Diretório de backup de base padrão
-DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-}"                           # Diretório de arquivos antigos padrão
-DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"                         # Diretório de programas padrão
-DEFAULT_ENVIA_DIR="${DEFAULT_ENVIA_DIR:-}"                         # Diretório de envio padrão
 DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                       # Diretório de recebimento padrão
-CFG_SISTEMA="${CFG_SISTEMA:-}"                                     # Tipo de sistema que esta sendo usado (iscobol ou isam).
-SAVATU="${SAVATU:-}"                                               # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU1="${SAVATU1:-}"                                             # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU2="${SAVATU2:-}"                                             # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU3="${SAVATU3:-}"                                             # Caminho do diretorio da biblioteca do servidor da SAV.
-SAVATU4="${SAVATU4:-}"                                             # Caminho do diretorio da biblioteca do servidor da SAV.
-CFG_VERCLASS="${CFG_VERCLASS:-}"                                   # Tipo de compilacao do Iscobol.
-CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"                             # Variavel que define o tipo de banco de dados usado pelo sistema.
-CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"                             # Variavel que define o caminho para onde sera enviado o backup.
-VERSAO="${VERSAO:-}"                                               # Variavel que define a versao do programa.
-INI="${INI:-}"                                                     # Variavel que define o caminho do arquivo de configuracao do sistema.
-CFG_OFFLINE="${CFG_OFFLINE:-}"                                     # Variavel que define se o sistema esta em modo offline (s/n).
-DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                       # Variavel que define o caminho do diretorio de recebimento offline.
-CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"                               # Variavel que define se o SSH esta habilitado (s/n).
-VERSAOANT="${VERSAOANT:-}"                                         # Variavel que define a versao do programa anterior.
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                                 # Comando para descompactar arquivos.
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                                     # Comando para compactar arquivos.
-DEFAULT_FIND="${DEFAULT_FIND:-}"                                   # Comando para buscar arquivos.
-DEFAULT_WHO="${DEFAULT_WHO:-}"                                     # Comando para saber quem esta logado no sistema.
-DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-}"                         # Variavel que define a porta a ser usada para SSH
-DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-}"                           # Variavel que define o usuario a ser usado para SSH
-DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"                       # Variavel que define o caminho do diretorio da biblioteca do servidor da SAV.
-RED="${RED:-}"                                                     # Cor vermelha
-GREEN="${GREEN:-}"                                                 # Cor verde
-YELLOW="${YELLOW:-}"                                               # Cor amarela
-BLUE="${BLUE:-}"                                                   # Cor azul
-PURPLE="${PURPLE:-}"                                               # Cor roxa
-CYAN="${CYAN:-}"                                                   # Cor ciano
-NORM="${NORM:-}"                                                   # Cor normal
-COLUMNS="${COLUMNS:-}"                                             # Numero de colunas do terminal
-LOG="${LOG:-}"                                                     # Variavel que define o caminho do arquivo de log.
-LOG_ATU="${LOG_ATU:-}"                                             # Variavel que define o caminho do arquivo de log de atualizacao.
-LOG_LIMPA="${LOG_LIMPA:-}"                                         # Variavel que define o caminho do arquivo de log de limpeza.
-LOG_TMP="${LOG_TMP:-}"                                             # Variavel que define o caminho do arquivo de log temporario.
-UMADATA="${UMADATA:-}"                                             # Variavel que define o caminho do arquivo de dados da UMA.
-ISCCLIENT="${ISCCLIENT:-}"                                         # Variavel que define o caminho do cliente ISC.
-base_trabalho="${base_trabalho:-}"                                 # Variavel que define o caminho do diretorio de trabalho.
 
-# =============================================================================
-# FUNÇÕES AUXILIARES
-# =============================================================================
-
-# Arquivo de backup padrao - CORRIGIDO: com aspas
-INI="${INI:-backup-${VERSAO}.zip}"
 
 # -----------------------------------------------------------------------------
 # Funcao para definir cores do terminal
@@ -490,8 +436,10 @@ _configurar_variaveis_sistema() {
     # Gerar sufixos de arquivos com base no tipo de compilacao.
     if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
         verclass_sufixo="${CFG_VERCLASS: -2}"
-        class="-class${verclass_sufixo}"
-        mclass="-mclass${verclass_sufixo}"
+#        class="-class${verclass_sufixo}"
+#        mclass="-mclass${verclass_sufixo}"
+        compilado="-class${verclass_sufixo}"
+        debugado="-mclass${verclass_sufixo}"
 #   Bibliotecas Iscobol
         local classA="IS${CFG_VERCLASS}_classA_"
         local classB="IS${CFG_VERCLASS}_classB_"
@@ -504,8 +452,10 @@ _configurar_variaveis_sistema() {
         SAVATU4="tempSAV_${classD}"
         SAVATU="tempSAV_${classX}"
     else
-        class="-${class:-6}"
-        mclass="-${mclass:-m6}"
+#        class="-${class:-6}"
+#        mclass="-${mclass:-m6}"
+        compilado="-${compilado:-6}"
+        debugado="-${debugado:-m6}"
 #   Bibliotecas Isam
         SAVATU1="tempSAVintA_"
         SAVATU2="tempSAVintB_"

@@ -13,9 +13,11 @@ CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
 CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
-class="${class:-}"                  # Sufixo para arquivos de classe
-mclass="${mclass:-}"                # Sufixo para arquivos de classe de depuracao
+#class="${class:-}"                  # Sufixo para arquivos de classe
+#mclass="${mclass:-}"                # Sufixo para arquivos de classe de depuracao
 
+compilado="${compilado:-class}"  # Sufixo para arquivos compilados
+debugado="${debugado:-mclass}"     # Sufixo para arquivos em depuração
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
 declare -g ARQUIVO_COMPILADO_ATUAL=""
@@ -186,7 +188,7 @@ _selecionar_programas_reversao() {
             seen[$token]=1
             local programa_selecionado="${programas[$((token-1))]}"
             PROGRAMAS_SELECIONADOS+=("${programa_selecionado}")
-            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${class}.zip")
+            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${compilado}.zip")
         done
 
         break
@@ -221,9 +223,9 @@ _resolver_arquivo_compilado() {
     printf "\n"
 
     if [ "$tipo_compilacao" = "1" ]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${class}.zip"
+        ARQUIVO_COMPILADO_ATUAL="${nome_item}${compilado}.zip"
     elif [ "$tipo_compilacao" = "2" ]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${mclass}.zip"
+        ARQUIVO_COMPILADO_ATUAL="${nome_item}${debugado}.zip"
     else
         return 1
     fi
@@ -258,7 +260,7 @@ _coletar_artefatos_atualizacao() {
                 for idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
                     local prog="${PROGRAMAS_SELECIONADOS[$idx]}"
                     local arq="${ARQUIVOS_PROGRAMA[$idx]}"
-                    if [[ "$arq" == *"${mclass}"* ]]; then
+                    if [[ "$arq" == *"${debugado}"* ]]; then
                         _mensagec "${GREEN}" "  -> ${prog} - Depuracao"
                     else
                         _mensagec "${GREEN}" "  -> ${prog} - Normal"
@@ -609,7 +611,7 @@ _processar_reversao_programas() {
                 return 1
             fi
 
-            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${class}.zip"; then
+            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${compilado}.zip"; then
                 _mensagec "${RED}" "ERRO: Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi

@@ -11,10 +11,12 @@ set -euo pipefail
 
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
+LIBS_DIR="${LIBS_DIR:-}"                        # Diretorio dos modulos de biblioteca.
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
-class="${class:-}"                              # Variavel da classe.
-mclass="${mclass:-}"                            # Variavel da mclass.
+#class="${class:-}"                              # Variavel da classe.
+#mclass="${mclass:-}"                            # Variavel da mclass.
+compilado="${compilado:-}"                      # Sufixo para arquivos compilados
+debugado="${debugado:-}"                        # Sufixo para arquivos em depuração
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Variavel do nome da base de dados principal.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Variavel do nome da segunda base de dados (opcional).
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Variavel do nome da terceira base de dados (opcional).
@@ -203,8 +205,8 @@ _mostrar_parametros() {
     printf "${GREEN}Diretorio do backup da biblioteca anterior: ${NORM}${DEFAULT_BIBLIOTECA_DIR}${NORM}%*s\n"
     printf "${GREEN}Versao da biblioteca atual: ${NORM}${VERSAOANT}${NORM}%*s\n"
     printf "${GREEN}Servidor OFF: ${NORM}${CFG_OFFLINE}${NORM}%*s\n"
-    printf "${GREEN}Variavel da classe: ${NORM}${class}${NORM}%*s\n"
-    printf "${GREEN}Variavel da mclass: ${NORM}${mclass}${NORM}%*s\n"
+    printf "${GREEN}Variavel do compilado: ${NORM}${compilado}${NORM}%*s\n"
+    printf "${GREEN}Variavel do debugado: ${NORM}${debugado}${NORM}%*s\n"
     printf "${GREEN}Porta de conexao: ${NORM}${DEFAULT_SSH_PORTA}${NORM}%*s\n"
     printf "${GREEN}Usuario de conexao: ${NORM}${DEFAULT_SSH_USER}${NORM}%*s\n"
     printf "${GREEN}Servidor IP: ${NORM}${DEFAULT_IP_SERVER}${NORM}%*s\n"

@@ -185,11 +185,19 @@ LOG_TMP="${LOG_TMP:-${DEFAULT_LOGS_DIR}/}"
 UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
 
 # =============================================================================
+# FUNÇÕES AUXILIARES
+# =============================================================================
+VERSAO="${VERSAO:-}"                                               # Variavel que define a versao do programa.
+# Arquivo de backup padrao - CORRIGIDO: com aspas
+INI="${INI:-backup-${VERSAO}.zip}"
+
+# =============================================================================
 # CONFIGURACAO DE TIPO DE COMPILACAO
 # =============================================================================
-class="${class:-}"          # Sufixo para arquivos de classe
-mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao                           
-
+#class="${class:-}"          # Sufixo para arquivos de classe
+#mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao                           
+compilado="${compilado:-class}"  # Sufixo para arquivos compilados
+debugado="{debugado:-mclass}"     # Sufixo para arquivos em depuração
 # =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
@@ -208,4 +216,4 @@ export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
 export SAVISC ISCCLIENT JUTIL REBUILD
 export ACESSO_OFF
-export LOG_ATU LOG_LIMPA LOG_TMP UMDATA class mclass
+export LOG_ATU LOG_LIMPA LOG_TMP UMDATA INI class mclass compilado debugado 
