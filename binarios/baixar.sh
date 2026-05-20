@@ -10,12 +10,12 @@ set -euo pipefail
 
 # Variaveis globais esperadas
 
-#CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-#LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
+CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
+LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
+CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
+CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
 
 # Executa atualizacao do script
 _executar_update() {
@@ -47,7 +47,7 @@ _atualizando() {
     local backup_erro=0
     cd "${LIBS_DIR}" || {
         _mensagec "${RED}" "Erro: Diretorio de atualizacao nao encontrado"
-        _aguardar 2
+        _read_sleep 2
         return 1
     }
     # Processar todos os arquivos .sh para backup
@@ -56,7 +56,7 @@ _atualizando() {
         [[ -f "$arquivo" ]] || continue
         if [[ ! -f "$arquivo" ]]; then
            _mensagec "${YELLOW}" "Aviso: Nenhum arquivo .sh encontrado para backup"
-           _aguardar 2
+           _read_sleep 2
            return 1
          fi
 
@@ -67,7 +67,7 @@ _atualizando() {
         else
             _mensagec "${RED}" "Erro ao fazer backup de $arquivo"
             ((backup_erro++)) || true
-            _aguardar 2
+            _read_sleep 2
         fi
     done
 
@@ -85,11 +85,11 @@ _atualizando() {
     # Verificar se houve erros no backup
     if [[ $backup_erro -gt 0 ]]; then
         _mensagec "${RED}" "Falha no backup de $backup_erro arquivo(s)"
-        _aguardar 2
+        _read_sleep 2
         return 1
     elif [[ $backup_sucesso -eq 0 ]]; then
         _mensagec "${YELLOW}" "Nenhum arquivo foi copiado para backup"
-        _aguardar 2
+        _read_sleep 2
         return 1
     else
         _mensagec "${GREEN}" "Backup de $backup_sucesso arquivo(s) realizado com sucesso"
@@ -109,7 +109,7 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     # Acessar diretorio de trabalho
     cd "${temp_dir}" || {
         _mensagec "${RED}" "Erro: Diretorio $temp_dir nao acessivel"
-        _aguardar 2
+        _read_sleep 2
         return 1
     }
 
@@ -117,7 +117,7 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     if ! "${DEFAULT_UNZIP}" -o -j "$zipfile" >>"$LOG_ATU" 2>&1; then
         _mensagec "${RED}" "Erro ao descompactar atualizacao"
         _mensagec "${YELLOW}" "Verifique se o atualiza.zip esta no diretorio $temp_dir e se o comando de descompactacao esta configurado corretamente"
-        _aguardar 2 
+        _read_sleep 2 
         return 1
     fi
     # Verificar e instalar arquivos
@@ -214,21 +214,21 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     # Verificar se o diretório RECEBE existe
     if [[ ! -d "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${RED}" "ERRO: Diretorio '${DEFAULT_RECEBE_DIR}' nao encontrado."
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
     
     # Mudar para o diretório RECEBE com verificação
     if ! cd "${DEFAULT_RECEBE_DIR}"; then
        _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${DEFAULT_RECEBE_DIR}'."
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
     
     # Confirmar que estamos no diretório correto antes de deletar
     if [[ "$PWD" != "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${RED}" "ERRO: Falha na verificacao de seguranca do diretorio."
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
     
@@ -249,8 +249,8 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     _mensagec "${GREEN}" "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
-
     exit 1
+#    return 0
 }
 
 _atualizar_online() {
@@ -263,21 +263,21 @@ _atualizar_online() {
 
 if ! cd "${DEFAULT_RECEBE_DIR}"; then
    _mensagec "${RED}" "ERRO: Nao foi possivel acessar o diretorio '${DEFAULT_RECEBE_DIR}'."
-    _aguardar 2
+    _read_sleep 2
     return 1
 fi
 
     # Criar e acessar diretorio temporario
     mkdir -p "$temp_dir" || {
         _mensagec "${RED}" "Erro: Nao foi possivel criar o diretorio temporario $temp_dir."
-        _aguardar 2
+        _read_sleep 2
         chmod "${PERM_DIR_SECURE}" "$temp_dir" 2>/dev/null || true
         return 1
     }
 
     cd "${temp_dir}" || {
         _mensagec "${RED}" "Erro: Diretorio de trabalho $temp_dir nao acessivel"
-        _aguardar 2
+        _read_sleep 2
         return 1
     }
 
@@ -285,7 +285,7 @@ fi
     if ! wget -q -c "$link" -O "$zipfile"; then
         _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao"
         _mensagec "${YELLOW}" "Verifique sua conexao com a internet e tente novamente"
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
        _atualizando
@@ -300,7 +300,7 @@ _atualizar_offline() {
     if [[ ! -f "${temp_dir}/${zipfile}" ]]; then
         _mensagec "${RED}" "Erro: $zipfile nao encontrado em $temp_dir"
         _mensagec "${YELLOW}" "Certifique-se de que o arquivo $zipfile esteja presente no diretorio $temp_dir"
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
 
@@ -311,14 +311,14 @@ _atualizar_offline() {
 
     mv "${temp_dir}/${zipfile}" "${temp_dir}" || {
         _mensagec "${RED}" "Erro: Nao foi possivel mover $zipfile para $temp_dir"
-        _aguardar 2
+        _read_sleep 2
         return 1
     }
 
         # Acessar diretorio offline
     cd "$temp_dir" || {
         _mensagec "${RED}" "Erro: Diretorio temporario, $temp_dir nao acessivel"
-        _aguardar 2
+        _read_sleep 2
         return 1
     }
     _atualizando

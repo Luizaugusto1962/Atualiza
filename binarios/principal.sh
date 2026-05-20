@@ -32,7 +32,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE                       # Diret
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="15/05/26-v.1"
+declare -rx UPDATE="13/05/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
@@ -42,7 +42,6 @@ if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
     # shellcheck source=constantes.sh
     "." "${LIBS_DIR}/constantes.sh"
 fi
-
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
@@ -186,25 +185,27 @@ _carregar_modulos() {
         "menus.sh"      # Modulos de Menu
     )
 
+    local modulo=""
     local erros=0
 	local modulos_com_erro=()
 
-    for modulo_def in "${modulos[@]}"; do
-        local modulo="${modulo_def%%|*}"
-        local descricao="${modulo_def#*|}"
+    for modulo in "${modulos[@]}"; do
         if ! _caminho_modulo "$modulo"; then
             ((erros++)) || true
-            modulos_com_erro+=("$modulo ($descricao)")
+            modulos_com_erro+=("$modulo")
         fi
     done
 
     if (( erros > 0 )); then
-        printf "ERRO: %d modulo(s) falharam ao carregar:\n" "$erros" >&2
-        printf "  - %s\n" "${modulos_com_erro[@]}" >&2
+        printf "ERRO: %d modulo(s) falharam ao carregar.\n" "$erros" >&2
+        for _m in "${modulos_com_erro[@]}"; do
+            printf "  - %s\n" "$_m" >&2
+        done
         return 1
     fi
     return 0
 }
+
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA
 # -----------------------------------------------------------------------------

@@ -11,12 +11,12 @@ set -euo pipefail
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
 # Variaveis globais esperadas
-#CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-s}"          # Acesso via SSH (s/n)
-#ARQUIVO_ENVIAR="${ARQUIVO_ENVIAR:-}"           # Arquivo a ser enviado (pode conter wildcard)
-#DIRETORIO_ORIGEM="${DIRETORIO_ORIGEM:-.}"      # Diretorio de origem para upload
-#CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"         # Destino remoto para upload (ex: /caminho/destino/)
-#DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"   # Diretorio de destino da biblioteca no servidor
-#DESTINO_SERVER="${DESTINO_SERVER:-}"           # Diretorio do servidor de atualizacao
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-s}"          # Acesso via SSH (s/n)
+ARQUIVO_ENVIAR="${ARQUIVO_ENVIAR:-}"           # Arquivo a ser enviado (pode conter wildcard)
+DIRETORIO_ORIGEM="${DIRETORIO_ORIGEM:-.}"      # Diretorio de origem para upload
+CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"         # Destino remoto para upload (ex: /caminho/destino/)
+DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"   # Diretorio de destino da biblioteca no servidor
+DESTINO_SERVER="${DESTINO_SERVER:-}"           # Diretorio do servidor de atualizacao
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
@@ -240,14 +240,14 @@ _baixar_programas_vaievem() {
             # Verificar se arquivo foi baixado
             if [[ ! -f "$arquivo" || ! -s "$arquivo" ]]; then
                 _mensagec "${RED}" "ERRO: Falha ao baixar verificar se existe no servidor: $arquivo"
-                _aguardar 0
+                _read_sleep 0
                 return 0 
             fi
 
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _mensagec "${RED}" "ERRO: Arquivo corrompido: $arquivo"
                 rm -f "$arquivo"
-                _aguardar 2
+                _read_sleep 2
                 return 0
             fi
 
@@ -263,13 +263,13 @@ _enviar_arquivo_multi() {
     # Validar variaveis globais necessarias
     if [[ -z "$ARQUIVO_ENVIAR" ]]; then
         _mensagec "${RED}" "Erro: Nenhum arquivo especificado para envio"
-        _aguardar 2
+        _read_sleep 2
         return 0
     fi
 
     if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
         _mensagec "${RED}" "Erro: Destino remoto nao especificado"
-        _aguardar 2
+        _read_sleep 2
         return 0
     fi
 
@@ -285,7 +285,7 @@ _enviar_arquivo_multi() {
         if (( falhas_envio == 0 )); then
             _mensagec "${YELLOW}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
             _linha
-            _aguardar 3
+            _read_sleep 3
         else
             _mensagec "${RED}" "Erro no envio de ${falhas_envio} arquivo(s)"
             _press
@@ -295,7 +295,7 @@ _enviar_arquivo_multi() {
         if _upload_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
             _mensagec "${YELLOW}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
             _linha
-            _aguardar 3
+            _read_sleep 3
         else
             _mensagec "${RED}" "Erro no envio do arquivo"
             _press

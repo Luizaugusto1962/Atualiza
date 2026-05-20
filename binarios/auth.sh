@@ -163,7 +163,7 @@ _login() {
             return 1
         fi
         
-        read -rp "${YELLOW}Deseja tentar novamente? [s/N]: ${NORM}" resposta
+        read -rp "${YELLOW}Deseja tentar novamente? (s/N): ${NORM}" resposta
         if [[ ! "$resposta" =~ ^[sS]$ ]]; then
             return 1
         fi

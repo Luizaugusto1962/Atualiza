@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/05/2026-02
+# Versao: 13/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -352,7 +352,7 @@ _editar_variavel() {
                 ;;
             "dbmaker"|"acessossh")
                 while true; do
-                    read -rp "Novo valor [s/N]: " opt
+                    read -rp "Novo valor (s/n): " opt
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
                         [[ "${opt,,}" == "s" ]] && declare -g "$nome"="s"
                         [[ "${opt,,}" == "n" ]] && declare -g "$nome"="n"
@@ -364,7 +364,7 @@ _editar_variavel() {
                 ;;
             "Offline")
                 while true; do
-                    read -rp "Sistema em modo Offline? [s/N]: " opt            
+                    read -rp "Sistema em modo Offline? (s/n): " opt            
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
                         [[ "${opt,,}" == "s" ]] && declare -g "Offline"="s" 
                         echo "enviabackup=" >> .config

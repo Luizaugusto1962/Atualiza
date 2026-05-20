@@ -5,16 +5,16 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/05/2026-00
+# Versao: 11/05/2026-00
 #
 
 # Variaveis globais esperadas
-#CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
-#DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
-#CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
-CLASS="${CLASS:-}"                  # Sufixo para arquivos de CLASSe
-MCLASS="${MCLASS:-}"                # Sufixo para arquivos de CLASSe de depuracao
+CFG_SISTEMA="${CFG_SISTEMA:-}"      # Nome do sistema (ex: iscobol, linux)
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"      # Comando de compactacao (zip)
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"  # Comando de descompactacao (unzip)
+CFG_OFFLINE="${CFG_OFFLINE:-}"      # Modo offline (s/n)
+class="${class:-}"                  # Sufixo para arquivos de classe
+mclass="${mclass:-}"                # Sufixo para arquivos de classe de depuracao
 
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
@@ -71,7 +71,7 @@ _atualizar_programa_offline() {
     _linha
     _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${WHITE}${DEFAULT_RECEBE_DIR}"
     _linha
-    _aguardar 0
+    _read_sleep 0
     
     # Mover arquivos do servidor offline se configurado
     _mover_arquivos_offline
@@ -186,7 +186,7 @@ _selecionar_programas_reversao() {
             seen[$token]=1
             local programa_selecionado="${programas[$((token-1))]}"
             PROGRAMAS_SELECIONADOS+=("${programa_selecionado}")
-            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${CLASS}.zip")
+            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${class}.zip")
         done
 
         break
@@ -221,9 +221,9 @@ _resolver_arquivo_compilado() {
     printf "\n"
 
     if [ "$tipo_compilacao" = "1" ]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${CLASS}.zip"
+        ARQUIVO_COMPILADO_ATUAL="${nome_item}${class}.zip"
     elif [ "$tipo_compilacao" = "2" ]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${MCLASS}.zip"
+        ARQUIVO_COMPILADO_ATUAL="${nome_item}${mclass}.zip"
     else
         return 1
     fi
@@ -258,7 +258,7 @@ _coletar_artefatos_atualizacao() {
                 for idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
                     local prog="${PROGRAMAS_SELECIONADOS[$idx]}"
                     local arq="${ARQUIVOS_PROGRAMA[$idx]}"
-                    if [[ "$arq" == *"${MCLASS}"* ]]; then
+                    if [[ "$arq" == *"${mclass}"* ]]; then
                         _mensagec "${GREEN}" "  -> ${prog} - Depuracao"
                     else
                         _mensagec "${GREEN}" "  -> ${prog} - Normal"
@@ -332,7 +332,7 @@ _baixar_pacotes_vaievem() {
 
     cd "${DEFAULT_RECEBE_DIR}" || {
         _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao encontrado"
-        _aguardar 2
+        _read_sleep 2
         return 1
     }
 
@@ -449,7 +449,7 @@ _processar_atualizacao_programas() {
     _linha
     _mensagec "${YELLOW}" "Backup dos programas efetuado"
     _linha
-    _aguardar 1
+    _read_sleep 1
 
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
@@ -521,13 +521,13 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo}" ]]; then
             _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
-            _aguardar 2
+            _read_sleep 2
             return 0
         fi
 
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
-            _aguardar 2
+            _read_sleep 2
             return 1
         fi
     done
@@ -609,7 +609,7 @@ _processar_reversao_programas() {
                 return 1
             fi
 
-            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${CLASS}.zip"; then
+            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${class}.zip"; then
                 _mensagec "${RED}" "ERRO: Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi

@@ -6,25 +6,25 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/05/2026-01
+# Versao: 13/05/2026-01
 #
 
 # Variaveis globais esperadas
-#CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-#LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
-CLASS="${CLASS:-}"                              # Variavel da CLASSe.
-MCLASS="${MCLASS:-}"                            # Variavel da MCLASS.
+CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
+LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
+class="${class:-}"                              # Variavel da classe.
+mclass="${mclass:-}"                            # Variavel da mclass.
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Variavel do nome da base de dados principal.
-#CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Variavel do nome da segunda base de dados (opcional).
-#CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Variavel do nome da terceira base de dados (opcional).
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
-#CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"          # Variavel do banco de dados em uso (ex: dbase, mysql).
-#RAIZ="${RAIZ:-}"                                # Variavel do diretorio RAIZ do sistema.
-#CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"          # Variavel do diretorio para envio de backup.
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
-#CFG_VERCLASS="${CFG_VERCLASS:-}"                # Variavel da versao da CLASSe.
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Variavel do nome da segunda base de dados (opcional).
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Variavel do nome da terceira base de dados (opcional).
+CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
+CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"          # Variavel do banco de dados em uso (ex: dbase, mysql).
+RAIZ="${RAIZ:-}"                                # Variavel do diretorio RAIZ do sistema.
+CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"          # Variavel do diretorio para envio de backup.
+CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
+CFG_VERCLASS="${CFG_VERCLASS:-}"                # Variavel da versao da classe.
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
 
 
 #---------- FUNCOES DE VERSAO ----------#
@@ -43,18 +43,18 @@ _mostrar_versao_iscobol() {
             _linha
             _mensagec "${RED}" "Erro: ${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
             _linha
-            _aguardar 2
+            _read_sleep 2
         fi
     elif [[ -z "${CFG_SISTEMA}" ]]; then
         _linha
         _mensagec "${RED}" "Erro: Variavel de sistema nao configurada"
         _linha
-        _aguardar 2
+        _read_sleep 2
     else
         _linha
         _mensagec "${YELLOW}" "Sistema nao e IsCOBOL"
         _linha
-        _aguardar 2
+        _read_sleep 2
     fi
     _press
 }
@@ -203,8 +203,8 @@ _mostrar_parametros() {
     printf "${GREEN}Diretorio do backup da biblioteca anterior: ${NORM}${DEFAULT_BIBLIOTECA_DIR}${NORM}%*s\n"
     printf "${GREEN}Versao da biblioteca atual: ${NORM}${VERSAOANT}${NORM}%*s\n"
     printf "${GREEN}Servidor OFF: ${NORM}${CFG_OFFLINE}${NORM}%*s\n"
-    printf "${GREEN}Variavel da CLASSe: ${NORM}${CLASS}${NORM}%*s\n"
-    printf "${GREEN}Variavel da MCLASS: ${NORM}${MCLASS}${NORM}%*s\n"
+    printf "${GREEN}Variavel da classe: ${NORM}${class}${NORM}%*s\n"
+    printf "${GREEN}Variavel da mclass: ${NORM}${mclass}${NORM}%*s\n"
     printf "${GREEN}Porta de conexao: ${NORM}${DEFAULT_SSH_PORTA}${NORM}%*s\n"
     printf "${GREEN}Usuario de conexao: ${NORM}${DEFAULT_SSH_USER}${NORM}%*s\n"
     printf "${GREEN}Servidor IP: ${NORM}${DEFAULT_IP_SERVER}${NORM}%*s\n"
@@ -220,7 +220,7 @@ _manutencao_setup() {
 
     if [[ ! -f "${atualiza}" ]]; then
         _mensagec "${RED}" "Erro: atualiza.sh nao encontrado em ${SCRIPT_DIR}"
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
 

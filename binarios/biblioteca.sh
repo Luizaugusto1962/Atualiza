@@ -5,18 +5,18 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/05/2026-00
+# Versao: 11/05/2026-00
 #
 
 # Variaveis globais esperadas
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                 # Tipo de sistema (iscobol/mf)
-#DEFAULT_ZIP="${DEFAULT_ZIP:-}"                 # Comando de compactacao (zip)
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"             # Comando de descompactacao (unzip)
-#DEFAULT_FIND="${DEFAULT_FIND:-}"               # Comando de busca (find)
-#CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"           # Acesso via SSH (s/n)
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                 # Modo offline (s/n)
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"   # Diretorio de download
-#CFG_DIR="${CFG_DIR:-}"                         # Diretorio de configuracao
+CFG_SISTEMA="${CFG_SISTEMA:-}"                 # Tipo de sistema (iscobol/mf)
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                 # Comando de compactacao (zip)
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"             # Comando de descompactacao (unzip)
+DEFAULT_FIND="${DEFAULT_FIND:-}"               # Comando de busca (find)
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"           # Acesso via SSH (s/n)
+CFG_OFFLINE="${CFG_OFFLINE:-}"                 # Modo offline (s/n)
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"   # Diretorio de download
+CFG_DIR="${CFG_DIR:-}"                         # Diretorio de configuracao
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
@@ -88,7 +88,7 @@ _atualizar_transpc() {
         # Verificar espaco em disco
         if ! _verificar_espaco_disco "$E_EXEC"; then
             _mensagec "$RED" "Espaco em disco insuficiente em $E_EXEC"
-            _aguardar 3
+            _read_sleep 3
             return 1
         fi
     fi    
@@ -171,7 +171,7 @@ _processar_biblioteca_offline() {
         fi
     done
     _salvar_atualizacao_biblioteca
-    _aguardar 2
+    _read_sleep 2
 }
 
 # Salva atualizacao da biblioteca
@@ -221,7 +221,7 @@ _processar_atualizacao_biblioteca() {
     _linha
     _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup..."
     _linha
-    _aguardar 1
+    _read_sleep 1
 
     # Compactacao em E_EXEC
     cd "$E_EXEC" || return 1
@@ -230,7 +230,7 @@ _processar_atualizacao_biblioteca() {
     } &
     local pid_zip_exec=$!
     pids+=("$pid_zip_exec")  # Registrar PID para trap
-    _mostrar_progresso "$pid_zip_exec" "Compactando $E_EXEC"
+    _mostrar_progresso_backup "$pid_zip_exec" "Compactando $E_EXEC"
     if wait "$pid_zip_exec"; then
         pids=("${pids[@]/$pid_zip_exec}")  # Remover PID apos concluido
         ((contador++)) || true
@@ -248,7 +248,7 @@ _processar_atualizacao_biblioteca() {
     } &
     local pid_zip_telas=$!
     pids+=("$pid_zip_telas")  # Registrar PID
-    _mostrar_progresso "$pid_zip_telas" "Compactando $T_TELAS"
+    _mostrar_progresso_backup "$pid_zip_telas" "Compactando $T_TELAS"
     if wait "$pid_zip_telas"; then
         ((contador++)) || true
         _mensagec "${GREEN}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
@@ -266,7 +266,7 @@ _processar_atualizacao_biblioteca() {
         } &
         local pid_zip_xml=$!
         pids+=("$pid_zip_xml")  # Registrar PID
-        _mostrar_progresso "$pid_zip_xml" "Compactando $X_XML"
+        _mostrar_progresso_backup "$pid_zip_xml" "Compactando $X_XML"
         if wait "$pid_zip_xml"; then
             ((contador++)) || true
             _mensagec "${GREEN}" "Compactacao de $X_XML concluida [Etapa ${contador}/${total_etapas}]"
@@ -281,14 +281,14 @@ _processar_atualizacao_biblioteca() {
     _linha
     _mensagec "${YELLOW}" "Backup Completo"
     _linha
-    _aguardar 1
+    _read_sleep 1
 
     # Verificar se backup foi criado
     if [[ ! -r "${caminho_backup}" ]]; then
         _linha
         _mensagec "${RED}" "Backup nao encontrado no diretorio ou dados nao informados"
         _linha
-        _aguardar 2
+        _read_sleep 2
         
         if _confirmar "Deseja continuar a atualizacao?" "S"; then
             _mensagec "${YELLOW}" "Continuando a atualizacao..."
@@ -338,17 +338,17 @@ _executar_atualizacao_biblioteca() {
             } &
             local pid_unzip=$!
             pids+=("$pid_unzip")  # Registrar PID para trap
-            _mostrar_progresso "$pid_unzip" "Descompactando ${arquivo}"
+            _mostrar_progresso_backup "$pid_unzip" "Descompactando ${arquivo}"
             if wait "$pid_unzip"; then
                 _mensagec "${GREEN}" "Descompactacao de ${arquivo} concluida com sucesso"
                 ((contador++)) || true
             else
                 _mensagec "${RED}" "Erro na descompactacao de ${arquivo} - Verifique o log ${LOG_ATU}"
-                _aguardar 2
+                _read_sleep 2
                 return 1
             fi
             _linha
-            _aguardar 1
+            _read_sleep 1
             _limpa_tela
         fi
     done
@@ -373,7 +373,7 @@ _executar_atualizacao_biblioteca() {
     if (( ${#arquivos[@]} )); then
         mv -- "${arquivos[@]}" "${DEFAULT_BIBLIOTECA_ATUAL_DIR}" || {
         _mensagec "${YELLOW}" "Erro ao mover arquivos de backup."
-        _aguardar 2
+        _read_sleep 2
         return 1
         }
     else
@@ -439,7 +439,7 @@ _reverter_programa_especifico_biblioteca() {
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
-        _aguardar 2
+        _read_sleep 2
         return 1
     fi
 
