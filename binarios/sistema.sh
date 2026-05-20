@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/05/2026-01
+# Versao: 20/05/2026-01
 #
 
 # Variaveis globais esperadas
@@ -43,18 +43,18 @@ _mostrar_versao_iscobol() {
             _linha
             _mensagec "${RED}" "Erro: ${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
             _linha
-            _read_sleep 2
+            _aguardar 2
         fi
     elif [[ -z "${CFG_SISTEMA}" ]]; then
         _linha
         _mensagec "${RED}" "Erro: Variavel de sistema nao configurada"
         _linha
-        _read_sleep 2
+        _aguardar 2
     else
         _linha
         _mensagec "${YELLOW}" "Sistema nao e IsCOBOL"
         _linha
-        _read_sleep 2
+        _aguardar 2
     fi
     _press
 }
@@ -220,7 +220,7 @@ _manutencao_setup() {
 
     if [[ ! -f "${atualiza}" ]]; then
         _mensagec "${RED}" "Erro: atualiza.sh nao encontrado em ${SCRIPT_DIR}"
-        _read_sleep 2
+        _aguardar 2
         return 1
     fi
 

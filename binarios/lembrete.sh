@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 11/05/2026-00
+# Versao: 20/05/2026-00
 # Autor: Luiz Augusto
 #
 #---------- FUNcoES DE LEMBRETES ----------#
@@ -39,10 +39,10 @@ _escrever_nova_nota() {
             _linha
             _mensagec "${YELLOW}" "Nenhum conteudo foi digitado."
         fi
-        _read_sleep 2
+        _aguardar 2
     else
         _mensagec "${RED}" "Erro ao gravar nota"
-        _read_sleep 2
+        _aguardar 2
     fi
 }
 
@@ -77,11 +77,11 @@ _gerar_aviso_entrada() {
             _linha
             _mensagec "${YELLOW}" "Nenhum conteudo foi digitado. Mensagem nao alterada."
         fi
-        _read_sleep 2
+        _aguardar 2
     else
         rm -f "$arquivo_tmp"
         _mensagec "${RED}" "Erro ao gravar mensagem"
-        _read_sleep 2
+        _aguardar 2
     fi
 }
 
@@ -93,11 +93,11 @@ _editar_aviso_existente() {
     if [[ -f "$arquivo_avisos" ]]; then
         if ! ${EDITOR:-nano} "$arquivo_avisos"; then
             _mensagec "${RED}" "Erro ao abrir editor!"
-            _read_sleep 2
+            _aguardar 2
         fi
     else
         _mensagec "${YELLOW}" "Nenhuma mensagem de aviso encontrada para editar!"
-        _read_sleep 2
+        _aguardar 2
     fi
 }
 
@@ -119,7 +119,7 @@ _mostrar_aviso() {
         if _confirmar "Excluir mensagem de entrada?" "N"; then
             rm -f "$arquivo_msg"
             _mensagec "${GREEN}" "Mensagem removida"
-            _read_sleep 1
+            _aguardar 1
         fi
     fi
 }
@@ -132,7 +132,7 @@ _apagar_arquivo_configuracoes() {
 
     if [[ ! -f "$arquivo" ]]; then
         _mensagec "${YELLOW}" "Nenhuma ${descricao} encontrada para excluir!"
-        _read_sleep 2
+        _aguardar 2
         return
     fi
 
@@ -142,7 +142,7 @@ _apagar_arquivo_configuracoes() {
         else
             _mensagec "${RED}" "Erro ao excluir ${descricao}"
         fi
-        _read_sleep 2
+        _aguardar 2
     fi
 }
 
@@ -208,10 +208,10 @@ _editar_nota_existente() {
     if [[ -f "$arquivo_notas" ]]; then
         if ! ${EDITOR:-nano} "$arquivo_notas"; then
             _mensagec "${RED}" "Erro ao abrir editor!"
-            _read_sleep 2
+            _aguardar 2
         fi
     else
         _mensagec "${YELLOW}" "Nenhuma nota encontrada para editar!"
-        _read_sleep 2
+        _aguardar 2
     fi
 }

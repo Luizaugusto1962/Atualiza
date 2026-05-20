@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # move_dir.sh - Move arquivos de pasta e renomeia diretorios
-# Versao: 11/05/2026-01
+# Versao: 20/05/2026-01
 # Autor: Luiz Augusto
 #
 

@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Exibe todas as constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/05/2026-01
+# Versao: 20/05/2026-01
 # Uso: ./variaveis.sh [filtro]
 #
 # =============================================================================

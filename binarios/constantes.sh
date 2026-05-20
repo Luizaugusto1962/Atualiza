@@ -5,9 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/05/2026-01
-#
-set -euo pipefail
+# Versao: 20/05/2026-01
 #
 
 # =============================================================================
@@ -19,26 +17,37 @@ base3=""                     # Diretório base terciário (vazio se não definid
 # =============================================================================
 # Definir diretorio de trabalho
 # =============================================================================
-RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /binarios)
-
 # Diretorio do script principal
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
+
+# Garantir SCRIPT_DIR com fallback seguro
+RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretório pai do script atual (assumindo que o script está em /binarios)
+
+# =============================================================================
+# VALIDAÇÃO DE VARIÁVEIS ESSENCIAIS
+# =============================================================================
+
+# CFG_DIR deve ter sido definido por principal.sh antes deste sourcing
+if [[ -z "${CFG_DIR:-}" ]]; then
+    echo "ERRO: CFG_DIR não está definido. Certifique-se de carregar principal.sh primeiro." >&2
+    if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
+        return 1
+    else
+        exit 1
+    fi
+fi
 
 # =============================================================================
 # CARREGAR CONFIGURAÇÕES DO ARQUIVO .config
 # =============================================================================
 CONFIG_FILE="${CFG_DIR}/.config"
 
-# Carregar variáveis do arquivo de configuração se existir
-if [[ -f "$CONFIG_FILE" ]]; then
-    # Carrega o arquivo .config e exporta as variáveis
-    set -a  # Automaticamente exporta variáveis criadas
-    "." "$CONFIG_FILE"
-    set +a  # Desativa exportação automática
-#    printf "Configurações carregadas do arquivo: %s\n" "$CONFIG_FILE"
-    
-else
-    echo "AVISO: Arquivo de configuração $CONFIG_FILE não encontrado."
+# =============================================================================
+# CARREGAR CONFIGURAÇÕES DO ARQUIVO .config
+# =============================================================================
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "AVISO: Arquivo de configuração $CONFIG_FILE não encontrado." >&2
+
     # Definir valores padrão caso o arquivo não exista
     sistema=""
     verclass=""
@@ -50,8 +59,21 @@ else
     base=""
     base2=""
     base3=""
-    
+
+elif [[ ! -r "$CONFIG_FILE" ]]; then
+    echo "ERRO: Arquivo $CONFIG_FILE sem permissão de leitura." >&2
+    if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
+        return 1
+    else
+        exit 1
+    fi
+else
+    set -a  # Exporta automaticamente variáveis criadas
+    # shellcheck disable=SC1090
+    . "$CONFIG_FILE"
+    set +a
 fi
+
 
 # =============================================================================
 # CONFIGURAÇÕES DIRETÓRIO DE BACKUP OFFLINE   
@@ -85,96 +107,93 @@ PERM_FILE_EXEC="0755"                                           # Arquivos execu
 # =============================================================================
 # CONFIGURAÇÕES DE REDE
 # =============================================================================
-DEFAULT_SSH_PORTA="41122"                                       # Porta SSH padrão
-DEFAULT_SSH_USER="atualiza"                                     # Usuário SSH padrão
-DEFAULT_IP_SERVER="179.94.20.40"                                # IP do servidor padrão
-SSH_TIMEOUT="15"                                                # Timeout de conexão SSH
+DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-41122}"
+DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-atualiza}"
+DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-179.94.20.40}"
+SSH_TIMEOUT="${SSH_TIMEOUT:-15}"
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
 # =============================================================================
-HASH_ALGORITHM="sha256sum"                                      # Algoritmo de hash para senhas
-MAX_LOGIN_ATTEMPTS="3"                                          # Máximo de tentativas de login
+HASH_ALGORITHM="${HASH_ALGORITHM:-sha256sum}"
+MAX_LOGIN_ATTEMPTS="${MAX_LOGIN_ATTEMPTS:-3}"
 
 # =============================================================================
 # CONFIGURAÇÕES DE TIMEOUT
 # =============================================================================
-DEFAULT_READ_TIMEOUT="30"                                       # Timeout padrão para leitura de entrada
-DEFAULT_PRESS_TIMEOUT="15"                                      # Timeout padrão para pressionar tecla
-SSH_ALIVE_INTERVAL="30"                                         # Intervalo SSH keep-alive
-SSH_ALIVE_COUNT="3"                                             # Máximo de tentativas SSH keep-alive
+DEFAULT_READ_TIMEOUT="${DEFAULT_READ_TIMEOUT:-60}"
+DEFAULT_PRESS_TIMEOUT="${DEFAULT_PRESS_TIMEOUT:-15}"
+SSH_ALIVE_INTERVAL="${SSH_ALIVE_INTERVAL:-30}"
+SSH_ALIVE_COUNT="${SSH_ALIVE_COUNT:-3}"
 
 # =============================================================================
 # CONFIGURAÇÕES DE TERMINAL
 # =============================================================================
-DEFAULT_COLUMNS="80"                                            # Largura padrão do terminl
-DEFAULT_LINES="24"                                              # Altura padrão do terminal
-# =============================================================================
-# EXTENSÕES DE ARQUIVO
-# =============================================================================
-DATA_EXTENSIONS=('*.ARQ.dat' '*.DAT.dat' '*.LOG.dat' '*.PAN.dat')
-BACKUP_EXTENSIONS=('*.zip' '*.tar' '*.tar.gz')
+DEFAULT_COLUMNS="${DEFAULT_COLUMNS:-80}"   # Largura padrão do terminal
+DEFAULT_LINES="${DEFAULT_LINES:-24}"       # Altura padrão do terminal
 
 # =============================================================================
 # DIRETÓRIOS PADRÃO
 # =============================================================================
-#DEFAULT_CONFIG_DIR="${CFG_DIR}"                                # Diretório de configuração padrão
-#DEFAULT_LIBS_DIR="${LIBS_DIR}"                                  # Diretório de bibliotecas padrão
-DEFAULT_CONFIG_DIR="${SCRIPT_DIR}/configuracoes"                # Diretório de configuração padrão  
-DEFAULT_LIBS_DIR="${SCRIPT_DIR}/binarios"                       # Diretório de bibliotecas padrão 
-DEFAULT_LOGS_DIR="${SCRIPT_DIR}/logs"                           # Diretório de logs padrão 
-DEFAULT_BACKUP_DIR="${SCRIPT_DIR}/backups/anterior"             # Diretório de backup padrão
-DEFAULT_BASEBACKUP_DIR="${SCRIPT_DIR}/backups/base"             # Diretório de backup de base padrão
-DEFAULT_BIBLIOTECA_ATUAL_DIR="${SCRIPT_DIR}/biblioteca/atual"   # Diretório de backup biblioteca atual
-DEFAULT_BIBLIOTECA_DIR="${SCRIPT_DIR}/biblioteca/anterior"      # Diretório de biblioteca padrão
-DEFAULT_PROGS_DIR="${SCRIPT_DIR}/programas/atual"               # Diretório de programas padrão
-DEFAULT_OLDS_DIR="${SCRIPT_DIR}/programas/anterior"             # Diretório de arquivos antigos padrão
-DEFAULT_ENVIA_DIR="${SCRIPT_DIR}/enviar"                        # Diretório de envio padrão
-DEFAULT_RECEBE_DIR="${SCRIPT_DIR}/receber"                      # Diretório de recebimento padrão
+DEFAULT_CONFIG_DIR="${DEFAULT_CONFIG_DIR:-${SCRIPT_DIR}/configuracoes}"
+DEFAULT_LIBS_DIR="${DEFAULT_LIBS_DIR:-${SCRIPT_DIR}/binarios}"
+DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"
+DEFAULT_BACKUP_DIR="${DEFAULT_BACKUP_DIR:-${SCRIPT_DIR}/backups/anterior}"
+DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-${SCRIPT_DIR}/backups/base}"
+DEFAULT_BIBLIOTECA_ATUAL_DIR="${DEFAULT_BIBLIOTECA_ATUAL_DIR:-${SCRIPT_DIR}/biblioteca/atual}"
+DEFAULT_BIBLIOTECA_DIR="${DEFAULT_BIBLIOTECA_DIR:-${SCRIPT_DIR}/biblioteca/anterior}"
+DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-${SCRIPT_DIR}/programas/atual}"
+DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-${SCRIPT_DIR}/programas/anterior}"
+DEFAULT_ENVIA_DIR="${DEFAULT_ENVIA_DIR:-${SCRIPT_DIR}/enviar}"
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-${SCRIPT_DIR}/receber}"
 
 # =============================================================================
-# Configurações padrão para comandos externos
-# Configuracoes padrao
+# COMANDOS EXTERNOS PADRÃO
 # =============================================================================
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"                         # Comando padrao para descompactar
-DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"                               # Comando padrao para compactar
-DEFAULT_FIND="${DEFAULT_FIND:-find}"                            # Comando padrao para buscar arquivos
-DEFAULT_WHO="${DEFAULT_WHO:-who}"                               # Comando padrao para verificar usuarios
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"
+DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"
+DEFAULT_FIND="${DEFAULT_FIND:-find}"
+DEFAULT_WHO="${DEFAULT_WHO:-who}"
+DEFAULT_TAR="${DEFAULT_TAR:-tar}"
+# =============================================================================
+# DIRETÓRIOS DE DESTINO
+# =============================================================================
+DESTINO_SERVER="${DESTINO_SERVER:-/u/varejo/man/}"
+DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-/u/varejo/trans_pc/}"
 
 # =============================================================================
-# Diretorios de destino para diferentes tipos de biblioteca
+# SAVISC - Diretório e utilitários do SAVISC
 # =============================================================================
-DESTINO_SERVER="/u/varejo/man/"                                 # Diretorio do servidor de atualizacao
-DESTINO_BIBLIOTECA="/u/varejo/trans_pc/"                        # Diretorio de transporte        PC
+SAVISC="${SAVISC:-${RAIZ}/savisc/iscobol/bin/}"
+ISCCLIENT="${ISCCLIENT:-iscclient}"
+JUTIL="${JUTIL:-jutil}"
+REBUILD="${SAVISC}${JUTIL}"
 
 # =============================================================================
-# Configuracao do diretorio e utilitarios do SAVISC.
-# =============================================================================    
-SAVISC="${RAIZ}/savisc/iscobol/bin/"                           # Caminho do diretório de instalação do SAVISC
+# ACESSO OFFLINE
+# =============================================================================
+ACESSO_OFF="${ACESSO_OFF:-${RAIZ}/portalsav/Atualiza}"
 
-# Utilitarios
-ISCCLIENT="iscclient"                                          # Utilitário de comunicação com o servidor ISC
-
-# Caminho completo do jutil
-JUTIL="${JUTIL:-jutil}"                                       # Se JUTIL não estiver definido, assume que está no PATH
-REBUILD="${SAVISC}${JUTIL}"                                   # Caminho completo do rebuild 
-  
-acessoff="${acessoff:-${RAIZ}/portalsav/Atualiza}"            # Caminho do portal de atualização (usado para verificar acesso offline) 
-
-#=============================================================================
-# Configurar logs
-#=============================================================================
+# =============================================================================
+# CONFIGURAÇÃO DE LOGS
+# =============================================================================
 LOG_ATU="${LOG_ATU:-${DEFAULT_LOGS_DIR}/atualiza.$(date +"%Y-%m-%d").log}"
 LOG_LIMPA="${LOG_LIMPA:-${DEFAULT_LOGS_DIR}/limpando.$(date +"%Y-%m-%d").log}"
 LOG_TMP="${LOG_TMP:-${DEFAULT_LOGS_DIR}/}"
 
-# Data atual formatada - CORRIGIDO: com aspas
+# Data atual formatada
 UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
+
+# =============================================================================
+# CONFIGURACAO DE TIPO DE COMPILACAO
+# =============================================================================
+class="${class:-}"          # Sufixo para arquivos de classe
+mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao                           
 
 # =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
-export SCRIPT_DIR LIBS_DIR CFG_DIR
+export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
 export CFG_SISTEMA CFG_VERCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE
@@ -183,8 +202,10 @@ export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER SSH_TIMEOUT
 export HASH_ALGORITHM MAX_LOGIN_ATTEMPTS
 export DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL SSH_ALIVE_COUNT
 export DEFAULT_COLUMNS DEFAULT_LINES
-export DATA_EXTENSIONS BACKUP_EXTENSIONS
-export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR
-export DEFAULT_BIBLIOTECA_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BASEBACKUP_DIR DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
+export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_TAR
+export DEFAULT_BIBLIOTECA_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BASEBACKUP_DIR
+export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
 export SAVISC ISCCLIENT JUTIL REBUILD
+export ACESSO_OFF
+export LOG_ATU LOG_LIMPA LOG_TMP UMDATA class mclass

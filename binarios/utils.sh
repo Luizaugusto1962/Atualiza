@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 20/05/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
@@ -128,6 +128,44 @@ _meio_da_tela() {
 }
 
 # Exibe mensagem centralizada com cor
+# Parametros: $1=cor $2=mensagem
+_mensageb() {
+#_exibir_bloco_centralizado() {
+    local cor="${1}"
+    local mensagem="${2}"
+    local largura_bloco="${3:-30}" # Largura do bloco (padrão 30)
+    local colunas
+    local margem_esquerda
+
+    # Garantir que NORM e cor estejam definidos (fallback seguro)
+    : "${NORM:=}"
+    : "${cor:=}"
+
+    # Obter largura do terminal
+    if ! colunas=$(tput cols 2>/dev/null); then
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
+    fi
+
+    # Calcular a margem para centralizar o BLOCO inteiro na tela
+    if [[ "$colunas" -le "$largura_bloco" ]]; then
+        margem_esquerda=0
+    else
+        margem_esquerda=$(( (colunas - largura_bloco) / 2 ))
+    fi
+
+    # O printf faz o seguinte:
+    # 1. %*s -> Imprime a margem esquerda (espaços vazios)
+    # 2. %s  -> Inicia a cor
+    # 3. %-*s -> Imprime a mensagem alinhada à esquerda dentro da largura do bloco
+    # 4. %s  -> Reseta a cor (NORM)
+    printf "%*s%s%-*s%s\n" \
+        "$margem_esquerda" "" \
+        "${cor}" \
+        "$largura_bloco" "${mensagem}" \
+        "${NORM}"
+}
+
+# Exibe mensagem centralizada com cor
 _exibir_mensagem_centralizada() {
     local cor="${1}"
     local mensagem="${2}"
@@ -219,16 +257,16 @@ _meia_linha() {
 
 # Pausa a execucao por tempo especificado
 # Parametros: $1=tempo_em_segundos
-_read_sleep() {
+_aguardar() {
     local tempo="${1:-}"
 
     if [[ -z "$tempo" ]]; then
-        printf "Erro: Nenhum argumento passado para _read_sleep.\n" >&2
+        printf "Erro: Nenhum argumento passado para _aguardar.\n" >&2
         return 1
     fi
 
     if ! [[ "$tempo" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-        printf "Erro: Argumento inválido para _read_sleep: %s\n" "$tempo" >&2
+        printf "Erro: Argumento inválido para _aguardar: %s\n" "$tempo" >&2
         return 1
     fi
 
@@ -289,7 +327,7 @@ _opinvalida() {
     # Loop para imprimir cada letra com efeito de digitacao
     for ((i=0; i<${#mensagem}; i++)); do
         printf "%s" "${RED}${mensagem:$i:1}${NORM}"
-        _read_sleep 0.05
+        _aguardar 0.05
     done
     printf "\n"
     _linha "-" "${YELLOW}"
@@ -382,7 +420,7 @@ _mostrar_progresso_backup() {
 
     # Validações iniciais
     if [[ -z "$pid" ]]; then
-        _mensagec "${YELLOW}" "Aviso: PID nao informado para _mostrar_progresso_backup"
+        _mensagec "${YELLOW}" "Aviso: PID nao informado ou processo ja terminado"
         return 0
     fi
 

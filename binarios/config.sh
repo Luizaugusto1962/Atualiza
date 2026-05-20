@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/05/2026-02
+# Versao: 20/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -419,8 +419,8 @@ _configurar_comandos() {
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         printf "Erro: Comandos nao encontrados: %s\n" "${missing[*]}" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi
@@ -617,16 +617,16 @@ _carregar_config_empresa() {
     if [[ ! -e "${CONFIG_FILE}" ]]; then
         printf "ERRO: Arquivo de configuracao nao existe no diretorio.\n" >&2
         printf "ATENCAO: Execute './atualiza.sh --setup' para criar as configuracoes.\n" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi
 
     if [[ ! -r "${CONFIG_FILE}" ]]; then
         printf "ERRO: Arquivo %s sem permissao de leitura.\n" "${CONFIG_FILE}" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi
@@ -635,8 +635,8 @@ _carregar_config_empresa() {
     if ! _validar_config_file "${CONFIG_FILE}"; then
         printf "ERRO: Arquivo de configuracao contem formato invalido ou comandos suspeitos.\n" >&2
         printf "AVISO: Carregamento do arquivo de configuracao bloqueado por seguranca.\n" >&2
-        if command -v _read_sleep >/dev/null 2>&1; then
-            _read_sleep 2 2>/dev/null || true
+        if command -v _aguardar >/dev/null 2>&1; then
+            _aguardar 2 2>/dev/null || true
         fi
         return 1
     fi

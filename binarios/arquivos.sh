@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 20/05/2026-01
 #
 
 # Variaveis globais esperadas
@@ -72,11 +72,11 @@ _executar_limpeza_temporarios() {
     local arquivo_lista="${CFG_DIR}/limpetmp"
     if [[ ! -f "${arquivo_lista}" ]]; then
         _mensagec "${RED}" "ERRO: Arquivo ${arquivo_lista} nao existe no diretorio"
-        _read_sleep 2
+        _aguardar 2
         return 1
     elif [[ ! -r "${arquivo_lista}" ]]; then
         _mensagec "${RED}" "ERRO: Arquivo ${arquivo_lista} sem permissao de leitura"
-        _read_sleep 2
+        _aguardar 2
         return 1
     fi
 
@@ -97,7 +97,7 @@ _executar_limpeza_temporarios() {
                 fi
             else
                 _mensagec "${YELLOW}" "Diretorio nao existe: ${caminho_base}"
-                _read_sleep 2
+                _aguardar 2
             fi
         fi
     done
@@ -130,7 +130,7 @@ _limpar_base_especifica() {
     mapfile -t arquivos_temp < "$arquivo_lista"
     
     _mensagec "${YELLOW}" "Limpando arquivos temporarios do diretorio: ${caminho_base}"
-    _read_sleep 1
+    _aguardar 1
     _linha
     
     local zip_temporarios
@@ -150,7 +150,7 @@ _limpar_base_especifica() {
         fi
 
         _mensagec "${GREEN}" "Processando padrao: ${YELLOW}${padrao_arquivo}${NORM} (${qtd_padrao} arquivo(s))"
-        _read_sleep 1
+        _aguardar 1
         
         # Compactar — $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
         if $DEFAULT_ZIP "${DEFAULT_BACKUP_DIR}/${zip_temporarios}" "${arquivos_zip[@]}" >>"${LOG_LIMPA}" 2>&1; then
@@ -164,7 +164,7 @@ _limpar_base_especifica() {
          else
             _log "ERRO ao compactar arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
             _mensagec "${RED}" "  >> ERRO ao compactar padrao: ${padrao_arquivo}"
-            _read_sleep 1
+            _aguardar 1
         fi
     done
     _linha
@@ -270,7 +270,7 @@ _recuperar_arquivo_especifico() {
             else
                 _mensagec "${CYAN}" "Operacao cancelada."
                 _linha
-                _read_sleep 2 
+                _aguardar 2 
                 return 0
             fi   
         else
@@ -388,7 +388,7 @@ _recuperar_arquivos_principais() {
         } > "${CFG_DIR}/indexar2"
         
         cd "${CFG_DIR}" || return 1
-        _read_sleep 1
+        _aguardar 1
         
         # Verificar arquivos de lista
         for lista in "indexar2" "indexar"; do
@@ -610,7 +610,7 @@ _receber_arquivo_avulso() {
     if _download_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
         _mensagec "${GREEN}" "Arquivo recebido com sucesso em \"${destino_local}\""
         _linha
-        _read_sleep 3
+        _aguardar 3
     else
         _mensagec "${RED}" "Erro no recebimento do arquivo"
         _press

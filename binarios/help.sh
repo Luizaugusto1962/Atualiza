@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-01
+# Versao: 20/05/2026-01
 #
 
 
@@ -280,7 +280,7 @@ _exportar_manual() {
         _mensagec "${GREEN}" "Manual exportado para: $destino"
     else
         _mensagec "${RED}" "Erro ao exportar manual"
-        _read_sleep 2
+        _aguardar 2
         return 0
     fi
     

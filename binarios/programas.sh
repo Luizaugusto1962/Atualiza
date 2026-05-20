@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-00
+# Versao: 20/05/2026-00
 #
 
 # Variaveis globais esperadas
@@ -71,7 +71,7 @@ _atualizar_programa_offline() {
     _linha
     _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${WHITE}${DEFAULT_RECEBE_DIR}"
     _linha
-    _read_sleep 0
+    _aguardar 0
     
     # Mover arquivos do servidor offline se configurado
     _mover_arquivos_offline
@@ -332,7 +332,7 @@ _baixar_pacotes_vaievem() {
 
     cd "${DEFAULT_RECEBE_DIR}" || {
         _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao encontrado"
-        _read_sleep 2
+        _aguardar 2
         return 1
     }
 
@@ -449,7 +449,7 @@ _processar_atualizacao_programas() {
     _linha
     _mensagec "${YELLOW}" "Backup dos programas efetuado"
     _linha
-    _read_sleep 1
+    _aguardar 1
 
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
@@ -521,13 +521,13 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo}" ]]; then
             _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
-            _read_sleep 2
+            _aguardar 2
             return 0
         fi
 
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
-            _read_sleep 2
+            _aguardar 2
             return 1
         fi
     done

@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/05/2026-00
+# Versao: 20/05/2026-00
 #
 
 # Variaveis globais esperadas
@@ -88,7 +88,7 @@ _atualizar_transpc() {
         # Verificar espaco em disco
         if ! _verificar_espaco_disco "$E_EXEC"; then
             _mensagec "$RED" "Espaco em disco insuficiente em $E_EXEC"
-            _read_sleep 3
+            _aguardar 3
             return 1
         fi
     fi    
@@ -171,7 +171,7 @@ _processar_biblioteca_offline() {
         fi
     done
     _salvar_atualizacao_biblioteca
-    _read_sleep 2
+    _aguardar 2
 }
 
 # Salva atualizacao da biblioteca
@@ -221,7 +221,7 @@ _processar_atualizacao_biblioteca() {
     _linha
     _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup..."
     _linha
-    _read_sleep 1
+    _aguardar 1
 
     # Compactacao em E_EXEC
     cd "$E_EXEC" || return 1
@@ -281,14 +281,14 @@ _processar_atualizacao_biblioteca() {
     _linha
     _mensagec "${YELLOW}" "Backup Completo"
     _linha
-    _read_sleep 1
+    _aguardar 1
 
     # Verificar se backup foi criado
     if [[ ! -r "${caminho_backup}" ]]; then
         _linha
         _mensagec "${RED}" "Backup nao encontrado no diretorio ou dados nao informados"
         _linha
-        _read_sleep 2
+        _aguardar 2
         
         if _confirmar "Deseja continuar a atualizacao?" "S"; then
             _mensagec "${YELLOW}" "Continuando a atualizacao..."
@@ -344,11 +344,11 @@ _executar_atualizacao_biblioteca() {
                 ((contador++)) || true
             else
                 _mensagec "${RED}" "Erro na descompactacao de ${arquivo} - Verifique o log ${LOG_ATU}"
-                _read_sleep 2
+                _aguardar 2
                 return 1
             fi
             _linha
-            _read_sleep 1
+            _aguardar 1
             _limpa_tela
         fi
     done
@@ -373,7 +373,7 @@ _executar_atualizacao_biblioteca() {
     if (( ${#arquivos[@]} )); then
         mv -- "${arquivos[@]}" "${DEFAULT_BIBLIOTECA_ATUAL_DIR}" || {
         _mensagec "${YELLOW}" "Erro ao mover arquivos de backup."
-        _read_sleep 2
+        _aguardar 2
         return 1
         }
     else
@@ -439,7 +439,7 @@ _reverter_programa_especifico_biblioteca() {
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
-        _read_sleep 2
+        _aguardar 2
         return 1
     fi
 

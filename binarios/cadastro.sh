@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/05/2026-02
+# Versao: 20/05/2026-02
 # Autor: Luiz Augusto
 #
 # Uso:
@@ -79,7 +79,7 @@ main() {
                 ;;
             *)
                 _opinvalida
-                _read_sleep 1
+                _aguardar 1
                 ;;
         esac
     done
