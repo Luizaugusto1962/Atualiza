@@ -416,6 +416,9 @@ _recreate_config_files() {
 #===================================================================
 # _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
 #===================================================================
+#===================================================================
+# _configure_ssh_access - Cria novo arquivo SSH config
+#===================================================================
 _configure_ssh_access() {
     local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
     local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
@@ -424,24 +427,25 @@ _configure_ssh_access() {
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
     local CONTROL_PATH_BASE="${SSH_DIR}/control"
 
-    # Validação das variáveis obrigatórias
+    # Validacao das variaveis obrigatorias
     if [[ -z "${DEFAULT_IP_SERVER}" ]]; then
-        echo "Erro: Variavel 'DEFAULT_IP_SERVER' nao foi definida."
+        echo "Erro: Variavel DEFAULT_IP_SERVER nao foi definida."
         return 1
     fi
 
-    # Cria os diretórios padrão com permissões corretas
-    
+    # Cria os diretorios padrao
     mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
     chmod "${PERM_DIR_SECURE}" "${SSH_DIR}" "${CONTROL_PATH_BASE}"
 
-    # ====================== CRIAÇÃO / ATUALIZAÇÃO DO ARQUIVO ~/.ssh/config ======================
-    if [[ ! -f "${SSH_CONFIG_FILE}" ]] || ! grep -q "^Host sav_servidor" "${SSH_CONFIG_FILE}"; then
-        cat >> "${SSH_CONFIG_FILE}" << EOF
+    # ====================== CRIA NOVO ARQUIVO ~/.ssh/config ======================
+    echo "Criando novo arquivo de configuracao SSH em ${SSH_CONFIG_FILE}..."
 
+    cat > "${SSH_CONFIG_FILE}" << EOF
 # ================================================
-# Configuração SAV - Gerada automaticamente
+# Configuracao SAV - Gerada automaticamente
+# Data: $(date '+%d/%m/%Y %H:%M:%S')
 # ================================================
+
 Host sav_servidor
     HostName ${DEFAULT_IP_SERVER}
     Port ${DEFAULT_SSH_PORTA}
@@ -453,23 +457,20 @@ Host sav_servidor
     ServerAliveCountMax ${SSH_ALIVE_COUNT}
     ConnectTimeout ${SSH_TIMEOUT}
 EOF
-        chmod "${PERM_FILE_PRIVATE}" "${SSH_CONFIG_FILE}"
-        echo "Configuracao SSH criada/adicionada em ~/.ssh/config"
-    else
-        echo " Configuracao SSH 'sav_servidor' ja existe em ~/.ssh/config"
-    fi
 
-    # ====================== TESTE DE CONEXÃO ======================
+    chmod "${PERM_FILE_PRIVATE}" "${SSH_CONFIG_FILE}"
+    echo "Novo arquivo ~/.ssh/config criado com sucesso!"
+
+    # ====================== TESTE DE CONEXAO ======================
     echo
     echo "Testando conexao com o servidor SAV (${DEFAULT_IP_SERVER})..."
 
-    # Teste silencioso primeiro
     if ssh -o BatchMode=yes sav_servidor exit 2>/dev/null; then
         echo "Conexao SSH estabelecida com sucesso!"
         return 0
     fi
 
-    # Primeira conexão - modo interativo
+    # Primeira conexao - modo interativo
     echo "Primeira conexao: confirme a identidade do servidor abaixo."
     echo "   (Digite 'yes' quando aparecer a mensagem de fingerprint)"
     echo
@@ -480,13 +481,12 @@ EOF
     else
         echo "Erro: nao foi possivel conectar ao servidor."
         echo "   Verifique:"
-        echo "     • Porta ${DEFAULT_SSH_PORTA} liberada"
-        echo "     • Usuario '${DEFAULT_SSH_USER}' existe no servidor remoto"
-        echo "     • Firewall permite a conexao"
+        echo "     - Porta ${DEFAULT_SSH_PORTA} liberada"
+        echo "     - Usuario '${DEFAULT_SSH_USER}' existe no servidor remoto"
+        echo "     - Firewall permite a conexao"
         return 1
     fi
 }
-
 
 #---------- PONTO DE ENTRADA PRINCIPAL ----------#
 
@@ -504,8 +504,6 @@ main() {
         fi
         unset _self_dir
     fi
-# Definição de variáveis globais
-#RAIZ="${SCRIPT_DIR%/*}"
 
 # Diretorios dos modulos e configuracoes
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
