@@ -1,4 +1,4 @@
-!/usr/bin/env bash
+#!/usr/bin/env bash
 #
 # programas.sh - Modulo de Gestao de Programas
 # Responsavel pela atualizacao, instalacao e reversao de programas
