@@ -22,9 +22,11 @@ verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 20
 # =============================================================================
 
 # Carregar constantes se disponivel
+_contantes() {
 if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
     "." "${LIBS_DIR}/constantes.sh"
 fi
+}
 
 # Variáveis globais
 declare -l sistema base base2 base3 dbmaker enviabackup
@@ -39,8 +41,8 @@ _limpa_tela() {
 # Configuracao inicial do sistema
 _initial_setup() {
     _limpa_tela
-
-    # Constantes
+    _contantes
+    
     local tracejada="#-------------------------------------------------------------------#"
     local traco="#####################################################################"
 
@@ -97,11 +99,7 @@ _initial_setup() {
 # Edicao de configuracoes existentes
 _edit_setup() {
     local tracejada="#-------------------------------------------------------------------#"
-# Carregar constantes se disponivel
-    if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
-        "." "${LIBS_DIR}/constantes.sh"
-    fi
-
+    _contantes
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
         echo "Erro: Diretorio 'configuracoes' nao encontrado."
