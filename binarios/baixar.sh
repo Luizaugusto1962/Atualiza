@@ -27,7 +27,7 @@ _executar_update() {
             _atualizar_offline
         fi
     fi    
-    _press
+    _aguardar_tecla
 }
 
 # Atualizacao online via GitHub

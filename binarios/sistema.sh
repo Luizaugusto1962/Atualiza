@@ -58,7 +58,7 @@ _mostrar_versao_iscobol() {
         _linha
         _aguardar 2
     fi
-    _press
+    _aguardar_tecla
 }
 
 # Mostra informacoes do Linux
@@ -119,7 +119,7 @@ _mostrar_versao_linux() {
     fi
 
     _linha
-    _press
+    _aguardar_tecla
     _limpa_tela
     _linha
 
@@ -157,7 +157,7 @@ _mostrar_versao_linux() {
     # Removendo temporarios arquivos
     rm -f "${LOG_TMP}osrelease" "${LOG_TMP}who" "${LOG_TMP}ramcache" "${LOG_TMP}diskusage"
     _linha
-    _press
+    _aguardar_tecla
 }
 
 #---------- FUNCOES DE PARAMETROS ----------#
@@ -195,7 +195,7 @@ _mostrar_parametros() {
     printf "${GREEN}Biblioteca 3: ${NORM}${SAVATU3}${NORM}%*s\n"
     printf "${GREEN}Biblioteca 4: ${NORM}${SAVATU4}${NORM}%*s\n"
     _linha "=" "${GREEN}"
-    _press
+    _aguardar_tecla
     _limpa_tela
     _linha "=" "${GREEN}"
     printf "${GREEN}Diretorio de configuracoes em OFF: ${NORM}${DEFAULT_RECEBE_DIR}${NORM}%*s\n"
@@ -211,7 +211,7 @@ _mostrar_parametros() {
     printf "${GREEN}Usuario de conexao: ${NORM}${DEFAULT_SSH_USER}${NORM}%*s\n"
     printf "${GREEN}Servidor IP: ${NORM}${DEFAULT_IP_SERVER}${NORM}%*s\n"
     _linha "=" "${GREEN}"
-    _press
+    _aguardar_tecla
 }
 
 

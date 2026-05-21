@@ -30,7 +30,7 @@ _atualizar_programa_online() {
             _linha
             _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
             _linha
-            _press
+            _aguardar_tecla
             return 0
         fi
     fi    
@@ -40,7 +40,7 @@ _atualizar_programa_online() {
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         _mensagec "${YELLOW}" "Nenhum programa selecionado"
         _linha
-        _press
+        _aguardar_tecla
         return 0
     fi
     
@@ -50,7 +50,7 @@ _atualizar_programa_online() {
     # Atualizar programas baixados
     _processar_atualizacao_programas
     _linha
-    _press
+    _aguardar_tecla
 }
 
 # Atualizacao de programas via arquivos offline
@@ -63,7 +63,7 @@ _atualizar_programa_offline() {
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         _mensagec "${YELLOW}" "Nenhum programa selecionado"
         _linha
-        _press
+        _aguardar_tecla
         return 0
     fi
     
@@ -78,7 +78,7 @@ _atualizar_programa_offline() {
     # Atualizar programas
     _processar_atualizacao_programas
     _linha
-    _press
+    _aguardar_tecla
 }
 
 # Atualizacao de programas em pacotes
@@ -95,7 +95,7 @@ _atualizar_programa_pacote() {
 
     _processar_atualizacao_pacotes
     _linha
-    _press
+    _aguardar_tecla
     return 0
 }
 
@@ -109,7 +109,7 @@ _selecionar_programas_reversao() {
 
     if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
         _mensagec "${RED}" "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -119,7 +119,7 @@ _selecionar_programas_reversao() {
 
     if (( ${#backups[@]} == 0 )); then
         _mensagec "${YELLOW}" "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -202,7 +202,7 @@ _reverter_programa() {
     else
         _mensagec "${RED}" "Nenhum programa foi selecionado para reversao"
         _linha
-        _press
+        _aguardar_tecla
     fi
 }
 
@@ -682,7 +682,7 @@ _mensagem_conclusao_reversao() {
     _linha
     _mensagec "${YELLOW}" "Volta do(s) Programa(s) Concluida(s)"
     _linha
-    _press
+    _aguardar_tecla
     _linha
     # Perguntar se deseja reverter mais programas
     printf "\n"

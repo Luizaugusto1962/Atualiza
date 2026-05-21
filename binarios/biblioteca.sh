@@ -54,7 +54,7 @@ _limpar_interrupcao() {
     fi
     
     _log "Cleanup concluido. Saida forcada."
-    _press  # Pausa para o usuario ver a mensagem
+    _aguardar_tecla  # Pausa para o usuario ver a mensagem
     return 1
 }
 
@@ -78,7 +78,7 @@ _atualizar_transpc() {
             _linha
             _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF ativo"
             _linha
-            _press
+            _aguardar_tecla
             return 0
         fi
         _linha
@@ -129,7 +129,7 @@ _reverter_biblioteca() {
     if [[ -z "${versao_reverter}" ]]; then
         _mensagec "${RED}" "Versao nao informada"
         _linha
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -138,7 +138,7 @@ _reverter_biblioteca() {
     if [[ ! -r "${arquivo_backup}" ]]; then
         _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${arquivo_backup}"
         _linha
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -194,7 +194,7 @@ _salvar_atualizacao_biblioteca() {
         if [[ ! -r "${arquivo}" ]]; then
             _mensagec "${RED}" "Atualizacao nao encontrada ou incompleta: ${arquivo}"
             _linha
-            _press
+            _aguardar_tecla
             return 1
         fi
     done
@@ -395,13 +395,13 @@ _executar_atualizacao_biblioteca() {
         # Adicionar nova linha
         if ! printf "VERSAOANT=%s\n" "${VERSAO}" >> "${CFG_DIR}/.versao"; then
             _mensagec "${RED}" "Erro ao gravar arquivo de versao atualizada"
-            _press
+            _aguardar_tecla
             return 1
         fi
     fi
 
     pids=()  # Limpar PIDs apos sucesso
-    _press
+    _aguardar_tecla
 
     # Restaurar trap original ao encerrar o processamento
     trap '_encerrar_programa 130' INT TERM
@@ -415,13 +415,13 @@ _reverter_biblioteca_completa() {
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
     if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${RAIZ}" >>"${LOG_ATU}"; then
         _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
-        _press
+        _aguardar_tecla
         return 1
     fi
     _ir_para_tools
@@ -429,7 +429,7 @@ _reverter_biblioteca_completa() {
     _linha
     _mensagec "${YELLOW}" "Volta de todos os Programas Concluida"
     _linha
-    _press
+    _aguardar_tecla
 }
 
 # Reverte programa especifico da biblioteca
@@ -447,7 +447,7 @@ _reverter_programa_especifico_biblioteca() {
 
     if [[ -z "${programa_reverter}" || ! "${programa_reverter}" =~ ^[A-Z0-9]+$ ]]; then
         _mensagec "${RED}" "Nome do programa invalido"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -458,12 +458,12 @@ _reverter_programa_especifico_biblioteca() {
     local padrao="*/"
     if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "/" >>"${LOG_ATU}"; then
         _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
     _mensagec "${YELLOW}" "Volta do Programa Concluida"
-    _press
+    _aguardar_tecla
 }
 
 #---------- FUNcoES AUXILIARES ----------#
@@ -481,7 +481,7 @@ _solicitar_versao_biblioteca() {
         _linha
         _mensagec "${RED}" "Versao a ser atualizada nao foi informada"
         _linha
-        _press
+        _aguardar_tecla
         return 0
     fi
     

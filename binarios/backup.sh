@@ -241,7 +241,7 @@ _enviar_backup_avulso() {
     # Validar que o nome do backup foi definido
     if [[ -z "${nome_backup:-}" ]]; then
         _mensagec "${RED}" "Erro: Nome do backup nao definido"
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -418,7 +418,7 @@ _selecionar_backup() {
 
     if ((${#arquivos_backup[@]} == 0)); then
         _mensagec "${RED}" "Nenhum backup (${CFG_EMPRESA}_*.zip) encontrado"
-        _press
+        _aguardar_tecla
         return 1  # Sinaliza ausencia de backups para o chamador
     fi
 
@@ -493,7 +493,7 @@ _restaurar_backup_completo() {
     
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
-        _press
+        _aguardar_tecla
         return 0
     fi
     
@@ -503,12 +503,12 @@ _restaurar_backup_completo() {
     
     if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
-        _press
+        _aguardar_tecla
         return 0
     fi
     
     _mensagec "${GREEN}" "Restauracao completa concluida"
-    _press
+    _aguardar_tecla
 }
 
 # Restaura(s) arquivo(s) especifico(s)
@@ -519,7 +519,7 @@ _restaurar_arquivo_especifico() {
    
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
-        _press
+        _aguardar_tecla
         return 0
     fi
    
@@ -528,7 +528,7 @@ _restaurar_arquivo_especifico() {
        
         if [[ -z "$nome_arquivo" ]]; then
             _mensagec "${RED}" "Nome nao informado"
-            _press
+            _aguardar_tecla
             _linha
             # Pergunta se deseja continuar mesmo após erro
             if ! _confirmar "Deseja restaurar mais arquivos?" "N"; then
@@ -539,7 +539,7 @@ _restaurar_arquivo_especifico() {
        
         if [[ ! "$nome_arquivo" =~ ^[A-Z0-9]+$ ]]; then
             _mensagec "${RED}" "Nome de arquivo invalido"
-            _press
+            _aguardar_tecla
             _linha
             # Pergunta se deseja continuar mesmo após erro
             if ! _confirmar "Deseja restaurar mais arquivos?" "N"; then
@@ -554,14 +554,14 @@ _restaurar_arquivo_especifico() {
        
         if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
-            _press
+            _aguardar_tecla
         else
             if ls "${base_trabalho}/${nome_arquivo}"*.* >/dev/null 2>&1; then
                 _mensagec "${GREEN}" "Arquivo ${nome_arquivo} restaurado com sucesso"
             else
                 _mensagec "${YELLOW}" "Arquivo ${nome_arquivo} nao encontrado apos restauracao"
             fi
-            _press
+            _aguardar_tecla
         fi
         _linha
         # Pergunta se deseja continuar (apenas após uma tentativa de restauracao)
@@ -635,7 +635,7 @@ _mover_backup_offline() {
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
-        _press
+        _aguardar_tecla
         return 0
     fi
     
@@ -645,7 +645,7 @@ _mover_backup_offline() {
     
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${RED}" "Diretorio offline nao configurado"
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -657,10 +657,10 @@ _mover_backup_offline() {
     
     if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$DEFAULT_RECEBE_DIR"; then
         _mensagec "${GREEN}" "Backup movido para: ${DEFAULT_RECEBE_DIR}"
-        _press
+        _aguardar_tecla
     else
         _mensagec "${RED}" "Erro ao mover backup"
-        _press
+        _aguardar_tecla
         return 0
     fi
 }
@@ -673,7 +673,7 @@ _enviar_backup_rede() {
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
-        _press
+        _aguardar_tecla
         return 0
     fi
     
@@ -698,7 +698,7 @@ _enviar_backup_rede() {
     else
         _linha
         _mensagec "${RED}" "Erro ao enviar backup via vaievem"
-        _press
+        _aguardar_tecla
         return 0
     fi
 }

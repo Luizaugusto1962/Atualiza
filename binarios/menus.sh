@@ -578,7 +578,7 @@ _menu_setups() {
                     _aguardar 2
                 fi
                 ;;
-            3) _validar_configuracao || true ; _press ;;
+            3) _validar_configuracao || true ; _aguardar_tecla ;;
             9) return ;;
             *)
                 _opinvalida
@@ -718,7 +718,7 @@ _menu_logs() {
 _menu_ajuda_principal() {
     # Verifica se manual existe ao entrar no menu
     if ! _verificar_manual; then
-        _press
+        _aguardar_tecla
         return
     fi
     

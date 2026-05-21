@@ -29,19 +29,19 @@ _selecionar_base_arquivos() {
     # Validar antes de prosseguir
     if [[ -z "${base_trabalho}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio de trabalho nao foi definido"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
     if [[ ! -d "${base_trabalho}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
     if [[ ! -r "${base_trabalho}" ]]; then
         _mensagec "${RED}" "Erro: Sem permissao de leitura em ${base_trabalho}"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -97,7 +97,7 @@ _executar_limpeza_temporarios() {
             fi
         fi
     done
-    _press
+    _aguardar_tecla
 }
 
 # Limpa arquivos da base especifica 
@@ -166,7 +166,7 @@ _limpar_base_especifica() {
     _linha
     _mensagex "${GREEN}" "Limpeza concluida"
     _linha 
-    
+
     return 0
 }
 
@@ -184,7 +184,7 @@ _adicionar_arquivo_lixo() {
 
     if [[ -z "$novo_arquivo" ]]; then
         _mensagec "${RED}" "Nome de arquivo nao informado"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -193,7 +193,7 @@ _adicionar_arquivo_lixo() {
     _mensagec "${CYAN}" "Arquivo '${novo_arquivo}' adicionado com sucesso ao 'limpetmp2'"
     _linha
     
-    _press
+    _aguardar_tecla
 }
 
 # Lista os arquivos no limpetmp e limpetmp2
@@ -221,7 +221,7 @@ _lista_arquivos_lixo() {
     fi
 
     _linha
-    _press
+    _aguardar_tecla
 }
 
 #---------- FUNCOES DE RECUPERACAO ----------#
@@ -236,7 +236,7 @@ _recuperar_arquivo_especifico() {
     _limpa_tela
     if [[ "${CFG_SISTEMA}" != "iscobol" ]]; then
         _mensagec "${RED}" "Recuperacao em desenvolvimento para este sistema. Disponivel apenas para IsCOBOL no momento."
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -402,7 +402,7 @@ _recuperar_arquivos_principais() {
     else
         _mensagec "${RED}" "Recuperacao nao disponivel para este sistema. Disponivel apenas para IsCOBOL no momento."
     fi
-    _press
+    _aguardar_tecla
 }
 
 # Processa lista de arquivos para recuperacao
@@ -468,7 +468,7 @@ _enviar_arquivo_avulso() {
         DIRETORIO_ORIGEM="${DEFAULT_ENVIA_DIR:-}"
         if [[ -z "$DIRETORIO_ORIGEM" || ! -d "$DIRETORIO_ORIGEM" ]]; then
             _mensagec "${RED}" "Diretorio de origem nao informado ou padrao nao definido"
-            _press
+            _aguardar_tecla
             return 1
         fi
         _linha
@@ -479,12 +479,12 @@ _enviar_arquivo_avulso() {
         shopt -u nullglob
         if (( ${#arquivos[@]} == 0 )); then
             _mensagec "${YELLOW}" "Nenhum arquivo encontrado no diretorio"
-            _press
+            _aguardar_tecla
             return 1
         fi
     elif [[ ! -d "$DIRETORIO_ORIGEM" ]]; then
         _mensagec "${RED}" "Diretorio nao encontrado: ${DIRETORIO_ORIGEM}"
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -497,7 +497,7 @@ _enviar_arquivo_avulso() {
     
     if [[ -z "$ARQUIVO_ENVIAR" ]]; then
         _mensagec "${RED}" "Nome do arquivo nao informado"
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -513,7 +513,7 @@ _enviar_arquivo_avulso() {
         
         if (( ${#arquivos_encontrados[@]} == 0 )); then
             _mensagec "${YELLOW}" "Nenhum arquivo encontrado com o padrao: ${ARQUIVO_ENVIAR}"
-            _press
+            _aguardar_tecla
             return 1
         fi
         
@@ -532,14 +532,14 @@ _enviar_arquivo_avulso() {
         
         if [[ "$confirmacao" != "S" ]]; then
             _mensagec "${YELLOW}" "Envio cancelado pelo usuario"
-            _press
+            _aguardar_tecla
             return 0
         fi
     else
         # Verificação para arquivo único (sem wildcard)
         if [[ ! -e "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" ]]; then
             _mensagec "${YELLOW}" "${ARQUIVO_ENVIAR} nao encontrado em ${DIRETORIO_ORIGEM}"
-            _press
+            _aguardar_tecla
             return 1
         fi
     fi
@@ -553,7 +553,7 @@ _enviar_arquivo_avulso() {
     
     if [[ -z "$DESTINO_REMOTO" ]]; then
         _mensagec "${RED}" "Destino nao informado"
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -582,7 +582,7 @@ _receber_arquivo_avulso() {
     
     if [[ -z "$arquivo_receber" ]]; then
         _mensagec "${RED}" "Nome do arquivo nao informado"
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -597,7 +597,7 @@ _receber_arquivo_avulso() {
     
     if [[ ! -d "$destino_local" ]]; then
         _mensagec "${RED}" "Diretorio de destino nao encontrado: ${destino_local}"
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -611,7 +611,7 @@ _receber_arquivo_avulso() {
         _aguardar 3
     else
         _mensagec "${RED}" "Erro no recebimento do arquivo"
-        _press
+        _aguardar_tecla
     fi
 }
 
@@ -674,7 +674,7 @@ _executar_expurgador() {
     
     printf "\n"
     _linha
-    _press
+    _aguardar_tecla
     _ir_para_tools
     
     # Retornar ao menu baseado na origem
@@ -695,7 +695,7 @@ _listar_logs_atualizacao() {
     local logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
     if [[ ! -e "${logs[0]}" ]]; then
         _mensagec "${RED}" "Nenhum log de atualizacao encontrado."
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -715,13 +715,13 @@ _listar_logs_atualizacao() {
     # Validar entrada
     if [[ -z "$opcao" ]]; then
         _mensagec "${RED}" "Nenhuma opcao selecionada."
-        _press
+        _aguardar_tecla
         return 0
     fi
 
     if ! [[ "$opcao" =~ ^[0-9]+$ ]] || (( opcao < 0 || opcao >= i )); then
         _mensagec "${RED}" "Opcao invalida."
-        _press
+        _aguardar_tecla
         return 0
     fi
 
@@ -770,7 +770,7 @@ _listar_logs_limpeza() {
     local logs=("${DEFAULT_LOGS_DIR}"/limpando.*)
     if [[ ! -e "${logs[0]}" ]]; then
         _mensagec "${RED}" "Nenhum log de limpeza encontrado."
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -790,13 +790,13 @@ _listar_logs_limpeza() {
     # Validar entrada
     if [[ -z "$opcao" ]]; then
         _mensagec "${RED}" "Nenhuma opcao selecionada."
-        _press
+        _aguardar_tecla
         return 0
     fi
 
     if ! [[ "$opcao" =~ ^[0-9]+$ ]] || (( opcao < 0 || opcao >= i )); then
         _mensagec "${RED}" "Opcao invalida."
-        _press
+        _aguardar_tecla
         return 0
     fi
 

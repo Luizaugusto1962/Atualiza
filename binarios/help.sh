@@ -131,7 +131,7 @@ _exibir_manual_completo() {
     if [[ ! -f "$MANUAL_FILE" ]]; then
         _mensagec "${RED}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
         _mensagec "${YELLOW}" "Crie o arquivo manual.txt no diretorio configuracoes/"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -236,7 +236,7 @@ _buscar_manual() {
     local termo=""
     
     if ! _verificar_manual; then
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -262,7 +262,7 @@ _buscar_manual() {
     fi
     
     printf "\n"
-    _press
+    _aguardar_tecla
 }
 
 #---------- EXPORTAR MANUAL ----------#
@@ -272,7 +272,7 @@ _exportar_manual() {
     local destino="${1:-$SCRIPT_DIR/manual_sav.txt}"
     
     if ! _verificar_manual; then
-        _press
+        _aguardar_tecla
         return 1
     fi
     
@@ -284,5 +284,5 @@ _exportar_manual() {
         return 0
     fi
     
-    _press
+    _aguardar_tecla
 }

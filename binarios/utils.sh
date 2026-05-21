@@ -33,82 +33,6 @@ _upper() {
     printf '%s' "${1^^}"
 }
 
-#---------- FUNCOES DE SISTEMA ----------#
-
-# Array global para arquivos temporarios (para limpeza)
-declare -ga TEMP_FILES=()
-declare -ga BACKGROUND_PIDS=()
-
-# Funcao de limpeza chamada na saida
-_cleanup_on_exit() {
-    local exit_code=$?
-    
-    # Matar processos em background
-    if [[ ${#BACKGROUND_PIDS[@]} -gt 0 ]]; then
-        for pid in "${BACKGROUND_PIDS[@]}"; do
-            if kill -0 "$pid" 2>/dev/null; then
-                kill "$pid" 2>/dev/null || true
-            fi
-        done
-    fi
-    
-    # Remover arquivos temporarios
-    if [[ ${#TEMP_FILES[@]} -gt 0 ]]; then
-        for temp_file in "${TEMP_FILES[@]}"; do
-            [[ -e "$temp_file" ]] && rm -f "$temp_file" 2>/dev/null || true
-        done
-    fi
-    
-    return $exit_code
-}
-
-# Funcao para tratar erros
-_handle_error() {
-    local exit_code=$?
-    local line_number="${1:-$LINENO}"
-    
-    printf "ERRO: Falha na linha %d (codigo: %d)\n" "$line_number" "$exit_code" >&2
-    
-    # Log do erro se possivel
-    if command -v _log_erro >/dev/null 2>&1; then
-        _log_erro "Falha na linha $line_number (codigo: $exit_code)"
-    fi
-    
-    _cleanup_on_exit
-    exit $exit_code
-}
-
-# Funcao para tratar interrupcoes
-_handle_interrupt() {
-    printf "\nInterrupcao detectada. Limpando recursos...\n" >&2
-    
-    if command -v _log >/dev/null 2>&1; then
-        _log "Interrupcao detectada pelo usuario"
-    fi
-    
-    _cleanup_on_exit
-    exit 130  # Codigo padrao para SIGINT
-}
-
-# Configurar traps (deve ser chamado pelos modulos principais)
-_setup_traps() {
-    trap '_cleanup_on_exit' EXIT
-    trap '_handle_error $LINENO' ERR
-    trap '_handle_interrupt' INT TERM
-}
-
-# Adicionar arquivo temporario para limpeza automatica
-_add_temp_file() {
-    local temp_file="${1:?Arquivo temporario obrigatorio}"
-    TEMP_FILES+=("$temp_file")
-}
-
-# Adicionar PID para limpeza automatica
-_add_background_pid() {
-    local pid="${1:?PID obrigatorio}"
-    BACKGROUND_PIDS+=("$pid")
-}
-
 # Funcao para limpar tela
 _clear_screen() {
     clear
@@ -327,7 +251,6 @@ _limpa_tela() { _clear_screen "$@"; }
 _mensagec() { _exibir_mensagem_centralizada "$@"; }
 _mensaged() { _exibir_mensagem_direita "$@"; }
 _mensagex() { _exibir_mensagem_corrida "$@"; }
-_press() { _aguardar_tecla "$@"; }
 
 _opinvalida() {
     local mensagem="Opcao Invalida"

@@ -171,7 +171,7 @@ _visualizar_notas_arquivo() {
 
     if [[ ! -f "$arquivo" || ! -r "$arquivo" ]]; then
         _mensagec "${RED}" "Arquivo de notas nao encontrado ou ilegivel: $arquivo"
-        _press
+        _aguardar_tecla
         return 1
     fi
 
@@ -197,7 +197,7 @@ _visualizar_notas_arquivo() {
 
     printf "\n"
     _linha
-    _press
+    _aguardar_tecla
 }
 
 # Edita nota existente

@@ -288,7 +288,7 @@ _enviar_arquivo_multi() {
             _aguardar 3
         else
             _mensagec "${RED}" "Erro no envio de ${falhas_envio} arquivo(s)"
-            _press
+            _aguardar_tecla
         fi
     else
         # Enviar arquivo unico usando _upload_rsync
@@ -298,7 +298,7 @@ _enviar_arquivo_multi() {
             _aguardar 3
         else
             _mensagec "${RED}" "Erro no envio do arquivo"
-            _press
+            _aguardar_tecla
         fi
     fi
 }
