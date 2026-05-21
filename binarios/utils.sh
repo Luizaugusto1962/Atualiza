@@ -207,6 +207,34 @@ _exibir_mensagem_direita() {
     printf "%s%*s%s${NORM}\n" "${cor}" "${posicao_inicio}" "" "$mensagem"
 }
 
+_exibir_mensagem_corrida() {
+    local cor="${1}"
+    local mensagem="${2}"
+    local largura_terminal largura_mensagem posicao_inicio
+
+    # Obter largura do terminal com fallback seguro
+    if ! largura_terminal=$(tput cols 2>/dev/null); then
+        largura_terminal="${COLUMNS:-${DEFAULT_COLUMNS}}"
+    fi
+
+    largura_mensagem=${#mensagem}
+    posicao_inicio=$(( (largura_terminal - largura_mensagem) / 2 ))
+
+    # Garante posição mínima não negativa
+    if [[ "$posicao_inicio" -lt 0 ]]; then
+        posicao_inicio=0
+    fi
+# Imprimir espaços iniciais para centralizar
+    printf "%${posicao_inicio}s" ""
+	
+	# Loop para imprimir cada letra com efeito de digitação
+    for ((i=0; i<${#mensagem}; i++)); do
+        printf "%s%s%s" "${cor}" "${mensagem:$i:1}" "${NORM}"
+        sleep 0.05
+    done
+    printf "\n"
+}
+
 # Cria linha horizontal com caractere especificado
 # Parametros: $1=caractere (opcional, padrao='-') $2=cor (opcional)
 _linha() {
@@ -298,6 +326,7 @@ _aguardar_tecla() {
 _limpa_tela() { _clear_screen "$@"; }
 _mensagec() { _exibir_mensagem_centralizada "$@"; }
 _mensaged() { _exibir_mensagem_direita "$@"; }
+_mensagex() { _exibir_mensagem_corrida "$@"; }
 _press() { _aguardar_tecla "$@"; }
 
 _opinvalida() {

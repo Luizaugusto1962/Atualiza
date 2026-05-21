@@ -164,7 +164,7 @@ _limpar_base_especifica() {
         fi
     done
     _linha
-    _mensagec "${GREEN}" "Limpeza concluida"
+    _mensagex "${GREEN}" "Limpeza concluida"
     return 0
 }
 
