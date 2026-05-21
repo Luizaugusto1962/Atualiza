@@ -9,7 +9,7 @@ set -euo pipefail
 #
 #---------- FUNcoES DE LEMBRETES ----------#
 # Variaveis globais esperadas
-CFG_DIR="${CFG_DIR:-}"          # Caminho do diretorio de configuracao do programa.
+#CFG_DIR="${CFG_DIR:-}"          # Caminho do diretorio de configuracao do programa.
 
 # Mostra menu de lembretes
 # Escreve nova nota

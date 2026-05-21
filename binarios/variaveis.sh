@@ -19,8 +19,8 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 # =============================================================================
 
 # Diretorios
-LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
+#LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
+#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 CONFIG_FILE="${CONFIG_FILE:-${CFG_DIR}/.config}"
 
 # Cores (definidas uma vez para evitar subshells repetidos)

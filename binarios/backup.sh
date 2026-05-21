@@ -12,13 +12,6 @@ set -euo pipefail
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                           # Indicador de ambiente offline (s/n)
-#RAIZ="${RAIZ:-}"                                         # Caminho RAIZ do sistema.
-#CFG_EMPRESA="${CFG_EMPRESA:-}"                           # Nome da empresa (usado no nome do backup)
-#DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-}"               # IP do servidor para envio de backup
-#DEFAULT_ZIP="${DEFAULT_ZIP:-}"                           # Comando para compactar arquivos.
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"                       # Comando para descompactar arquivos.
-#DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-}"     # Diretorio base de armazenamento de backups
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {

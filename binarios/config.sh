@@ -16,6 +16,7 @@ trap '_encerrar_programa' EXIT  # Limpar ao sair
 # =============================================================================
 # SISTEMA DE GERENCIAMENTO DE VARIÁVEIS
 # =============================================================================
+DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"
 
 # Desativar temporariamente set -u para evitar erros durante inicialização
 # Será reativado após configuração completa
