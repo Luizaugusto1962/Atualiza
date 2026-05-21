@@ -108,7 +108,7 @@ PERM_FILE_EXEC="0755"                                           # Arquivos execu
 # CONFIGURACOES DE REDE
 # =============================================================================
 DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-41122}"
-DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-ATUALIZA}"
+DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-atualiza}"
 DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-189.55.194.179}"
 SSH_TIMEOUT="${SSH_TIMEOUT:-15}"
 
