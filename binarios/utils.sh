@@ -386,6 +386,9 @@ _mostrar_progresso_backup() {
     # Ocultar cursor se suportado
     printf "\033[?25l" 2>/dev/null || true
 
+    # Forcar sync do output para evitar buffering
+    exec 3>&1  # Duplicar stdout para fd 3
+
     while kill -0 "$pid" 2>/dev/null; do
         elapsed=$((elapsed + 1))
 
@@ -414,9 +417,18 @@ _mostrar_progresso_backup() {
         (( min > 0 )) && tempo_str="${min}m "
         tempo_str+="${seg}s"
 
-        # Exibir barra
-        printf "\r%s[INFO]%s %s |%s| %3d%% (%s)" \
-            "${CYAN}" "${NORM}" "${msg}" "${GREEN}${barra}${NORM}" "${percentual}" "${tempo_str}"
+        # === CORRECAO PRINCIPAL: garantir tamanho fixo para evitar concatenacao ===
+        # Usar campos com tamanho fixo para que \r sobrescreva corretamente
+        # msg: 25 chars, tempo: 8 chars
+        local msg_format
+        printf -v msg_format "%-25s" "$msg"
+        local tempo_format
+        printf -v tempo_format "%8s" "$tempo_str"
+
+        printf "\r\033[K%s[INFO]%s %s |%s| %3d%% %s" \
+            "${CYAN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${percentual}" "${tempo_format}"
+        # Forcar escrita imediata para o terminal (evitar buffering)
+        printf "%s" "" >&3
 
         sleep 1 2>/dev/null || sleep 1
     done
@@ -427,28 +439,31 @@ _mostrar_progresso_backup() {
         barra+="#"
     done
 
-    # Restaurar cursor
-    printf "\033[?25h" 2>/dev/null || true
-
     # Coletar status de saida
     wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
 
-    # Apagar linha e mostrar resultado
+    # Formatar tempo para saida final
     local min=$(( elapsed / 60 ))
     local seg=$(( elapsed % 60 ))
     local tempo_str=""
     (( min > 0 )) && tempo_str="${min}m "
     tempo_str+="${seg}s"
 
-    printf "\r\033[K"  # Limpar linha inteira
+    # Restaurar cursor
+    printf "\033[?25h" 2>/dev/null || true
 
-    if [[ $status_proc -eq 0 ]]; then
-        printf "%s[ok]%s %s |%s| 100%% (%s) concluido%s\n" \
-            "${GREEN}" "${NORM}" "${msg}" "${GREEN}${barra}${NORM}" "${tempo_str}" "${NORM}"
-    else
-        printf "%s[ERRO]%s %s |%s| %d%% (%s) falhou%s\n" \
-            "${RED}" "${NORM}" "${msg}" "${RED}${barra}${NORM}" "${percentual}" "${tempo_str}" "${NORM}"
-    fi
+    # Formatar msg e tempo com tamanhos fixos para consistencia
+    local msg_format
+    printf -v msg_format "%-25s" "$msg"
+    local tempo_format
+    printf -v tempo_format "%8s" "$tempo_str"
+
+    # Limpar linha e mostrar resultado com mesmo formato do loop
+    printf "\r\033[K%s[ok]%s %s |%s| 100%% %s concluido\n" \
+        "${GREEN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${tempo_format}"
+
+    # Fechar fd 3
+    exec 3>&-
 
     return $status_proc
 }
