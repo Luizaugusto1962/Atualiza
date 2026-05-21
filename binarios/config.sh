@@ -437,8 +437,6 @@ _configurar_variaveis_sistema() {
     # Gerar sufixos de arquivos com base no tipo de compilacao.
     if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
         verclass_sufixo="${CFG_VERCLASS: -2}"
-#        class="-class${verclass_sufixo}"
-#        mclass="-mclass${verclass_sufixo}"
         compilado="-class${verclass_sufixo}"
         debugado="-mclass${verclass_sufixo}"
 #   Bibliotecas Iscobol
@@ -453,8 +451,6 @@ _configurar_variaveis_sistema() {
         SAVATU4="tempSAV_${classD}"
         SAVATU="tempSAV_${classX}"
     else
-#        class="-${class:-6}"
-#        mclass="-${mclass:-m6}"
         compilado="-${compilado:-6}"
         debugado="-${debugado:-m6}"
 #   Bibliotecas Isam
