@@ -97,6 +97,10 @@ _initial_setup() {
 # Edicao de configuracoes existentes
 _edit_setup() {
     local tracejada="#-------------------------------------------------------------------#"
+# Carregar constantes se disponivel
+    if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
+        "." "${LIBS_DIR}/constantes.sh"
+    fi
 
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
@@ -323,7 +327,9 @@ _setup_empresa() {
     echo ${tracejada}
     read -rp "Nome da Empresa (sem espacos): " empresa
     echo "empresa=${empresa}" >> .config
+    _configure_ssh_access
 }
+
 
 #---------- FUNCOES DE EDICAO ----------#
 
