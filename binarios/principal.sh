@@ -84,11 +84,11 @@ _criar_diretorio_seguro() {
             return 0
         else
             printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            return 0  # Nao falhar por permissao
+            exit 1  # Nao falhar por permissao
         fi
     else
         printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        return 1
+        exit 1
     fi
 }
 
@@ -118,6 +118,9 @@ for dir in "${AUX_DIRS[@]}"; do
     # Recursivo apenas quando necessario, e com permissao segura
     chmod 0755 "${dir}" 2>/dev/null || {
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
+        printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
+        printf "Execute como root ou sudo ...\n" >&2
+        exit 1
     }
 
     # Verificar se o diretório existe após criação
@@ -208,6 +211,15 @@ _carregar_modulos() {
     return 0
 }
 
+# Criar atalho global (requer permissao de root)
+_check_root(){
+    if [[ $EUID -ne 0 ]]; then
+        echo "AVISO: Sem permissao de root."
+        echo "Execute como root ou sudo"
+        exit 1
+    fi
+	}
+
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA
 # -----------------------------------------------------------------------------
@@ -264,6 +276,14 @@ _main() {
     trap '_resetando' EXIT
     trap '_encerrar_programa 130' INT TERM
     trap '_encerrar_programa 1' HUP
+
+    # Validar permissao de root
+
+    # Inicializar sistema
+    if ! _inicializar_sistema; then
+        printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
+        exit 1
+    fi
 
     # Inicializar sistema
     if ! _inicializar_sistema; then
