@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/05/2026-02
+# Versao: 22/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -159,20 +159,20 @@ _setup_iscobol() {
     echo "sistema=iscobol" >> .config
     echo "$tracejada"
     echo "Escolha a versao do Iscobol:"
-    echo "1) Versao 2018"
-    echo "2) Versao 2020"
-    echo "3) Versao 2023"
-    echo "4) Versao 2024"
-    echo "5) Versao 2025"
+    echo "1) Versao 2020"
+    echo "2) Versao 2023"
+    echo "3) Versao 2024"
+    echo "4) Versao 2025"
+    echo "5) Versao 2026"
     read -rp "Escolha a versao -> " -n1 VERSAO
     echo
 
     case "$VERSAO" in
-        1) _2018 ;;
-        2) _2020 ;;
-        3) _2023 ;;
-        4) _2024 ;;
-        5) _2025 ;;
+        1) _2020 ;;
+        2) _2023 ;;
+        3) _2024 ;;
+        4) _2025 ;;
+        5) _2026 ;;
         *)
             echo "Alternativa incorreta, saindo!"
             sleep 1
@@ -191,12 +191,6 @@ _setup_cobol() {
     } >> .config
 }
 # Funcoes de versao do IsCobol
-_2018() {
-    {
-        echo "verclass=2018"
-    } >> .config
-    verclass="2018"
-}
 _2020() {
     {
         echo "verclass=2020"
@@ -221,6 +215,12 @@ _2025() {
         echo "verclass=2025"
     } >> .config
     verclass="2025"
+}
+_2026() {
+    {
+        echo "verclass=2026"
+    } >> .config
+    verclass="2026"
 }
 # Configuracoes adicionais
 _setup_banco_de_dados() {
