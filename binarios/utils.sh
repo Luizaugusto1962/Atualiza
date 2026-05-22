@@ -464,6 +464,150 @@ _mostrar_progresso_backup() {
     return $status_proc
 }
 
+_mostrar_progresso_backup3() {
+    local pid="${1:-}"
+    local msg="${2:-Processando}"
+    local elapsed=0
+    local anim_pos=0
+    local texto_base="Aguarde..."
+    local texto_len=${#texto_base}
+    local barra=""
+    local barra_format=""
+    local percentual=0
+    local status_proc=0
+
+    if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+        _mensagec "${YELLOW:-}" "Aviso: PID nao informado ou processo ja terminado"
+        return 0
+    fi
+
+    : "${GREEN:=}" "${RED:-}" "${CYAN:=}" "${NORM:=}"
+
+    # Ocultar cursor
+    printf "\033[?25l" 2>/dev/null || true
+
+    # Forcar sync do output para evitar buffering
+    exec 3>&1  # Duplicar stdout para fd 3
+
+    while kill -0 "$pid" 2>/dev/null; do
+        elapsed=$((elapsed + 1))
+
+        # Progresso simulado
+        percentual=$(( (elapsed * 100) / (elapsed + 5) ))
+        (( percentual > 95 )) && percentual=$(( 85 + (RANDOM % 11) ))
+        (( percentual > 100 )) && percentual=100
+
+        # Animacao: mostrar letras do texto base progressivamente e preencher com pontos
+        # A cada tick, avanca uma letra, quando completa recomeca
+        anim_pos=$(( (elapsed - 1) % texto_len ))
+        barra="${texto_base:0:anim_pos + 1}"
+        # Preencher o resto com pontos ate completar texto_len
+        local dots_needed=$((texto_len - ${#barra}))
+        printf -v barra_format "%s%${dots_needed}s" "$barra" ""
+        barra="${barra_format// /.}"
+
+        # Tempo decorrido
+        local min=$(( elapsed / 60 ))
+        local seg=$(( elapsed % 60 ))
+        local tempo_str="${seg}s"
+        (( min > 0 )) && tempo_str="${min}m ${tempo_str}"
+
+        # Formatar msg e tempo com tamanhos fixos
+        local msg_format
+        printf -v msg_format "%-25s" "$msg"
+        local tempo_format
+        printf -v tempo_format "%8s" "$tempo_str"
+
+        # Limpar linha e exibir
+        printf "\r\033[K%s[INFO]%s %s |%s%s%s| %3d%% %s" \
+            "${CYAN}" "${NORM}" "${msg_format}" \
+            "${GREEN}" "${barra}" "${NORM}" \
+            "${percentual}" "${tempo_format}"
+        # Forcar escrita imediata
+        printf "%s" "" >&3
+
+        sleep 1
+    done
+
+    # ==================== FINALIZAÇÃO ====================
+    # Barra completa ao finalizar
+    barra="Aguarde..."
+
+    local min=$(( elapsed / 60 ))
+    local seg=$(( elapsed % 60 ))
+    local tempo_str="${seg}s"
+    (( min > 0 )) && tempo_str="${min}m ${tempo_str}"
+
+    # Restaurar cursor
+    printf "\033[?25h" 2>/dev/null || true
+
+    # Esperar o processo e pegar o status
+    wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
+
+    # Formatar msg e tempo com tamanhos fixos
+    local msg_format
+    printf -v msg_format "%-25s" "$msg"
+    local tempo_format
+    printf -v tempo_format "%8s" "$tempo_str"
+
+    # Limpar linha atual e mostrar resultado final
+    printf "\r\033[K%s[ok]%s %s |%s%s%s| 100%% %s concluido\n" \
+        "${GREEN}" "${NORM}" "${msg_format}" \
+        "${GREEN}" "${barra}" "${NORM}" \
+        "${tempo_format}"
+
+    # Fechar fd 3
+    exec 3>&-
+
+    return $status_proc
+}
+#---------- FUNCOES DE LOG ----------#
+
+# Registra mensagem no log com timestamp
+# Parametros: $1=mensagem $2=arquivo_log(opcional)
+_log() {
+    local mensagem="$1"
+    local arquivo_log="${2:-$LOG_ATU}"
+    local timestamp usuario_log
+
+    # Validação do arquivo de log
+    if [[ -z "$arquivo_log" ]]; then
+        arquivo_log="/var/log/sav.log"
+    fi
+
+    # Verifica se o diretório do log existe e é gravável
+    local log_dir
+    log_dir=$(dirname "$arquivo_log")
+    if [[ ! -d "$log_dir" ]]; then
+        printf "Erro: Diretorio de log nao existe: %s\n" "$log_dir" >&2
+        return 1
+    fi
+
+    if [[ ! -w "$log_dir" ]]; then
+        printf "Aviso: Sem permissao de escrita no diretorio de log: %s\n" "$log_dir" >&2
+        return 1
+    fi
+
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    usuario_log="${usuario:-SISTEMA}"
+
+    if printf "[%s] [%s] %s\n" "$timestamp" "$usuario_log" "$mensagem" >> "$arquivo_log"; then
+        return 0
+    else
+        printf "Erro: Falha ao escrever no log: %s\n" "$arquivo_log" >&2
+        return 1
+    fi
+}
+
+# Registra erro no log
+# Parametros: $1=mensagem_erro $2=arquivo_log(opcional)
+_log_erro() {
+    local erro="$1"
+    local arquivo_log="${2:-$LOG_ATU}"
+    
+    _log "ERRO: $erro" "$arquivo_log" || true
+}
+
 # Registra sucesso no log  
 # Parametros: $1=mensagem_sucesso $2=arquivo_log(opcional)
 _log_sucesso() {
