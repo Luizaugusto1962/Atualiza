@@ -276,8 +276,8 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     _mensagec "${GREEN}" "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
-    exit 1
-#    return 0
+    _finalizar_sistema
+
 }
 
 _atualizar_online() {

@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 20/05/2026-01
+# Versao: 24/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -175,8 +175,8 @@ _caminho_modulo() {
 _carregar_modulos() {
     local modulos=(
         "constantes.sh" # Constantes do Sistema SAV
-        "utils.sh"      # Utilitarios basicos primeiro
         "config.sh"     # Configuracoes
+        "utils.sh"      # Utilitarios basicos primeiro
         "auth.sh"       # Autenticacao
         "lembrete.sh"   # Sistema de lembretes
         "vaievem.sh"    # Operacoes de rede
