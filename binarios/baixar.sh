@@ -5,19 +5,39 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-03
+# Versao: 24/05/2026-03
 #
 
-# Variaveis globais esperadas
+# =============================================================================
+# FUNCOES AUXILIARES DE SEGURANCA
+# =============================================================================
+# Cleanup de emergencia para o processo de atualizacao
+_cleanup_update() {
+    local status=$?
+    if [[ -n "${STAGING_DIR:-}" && -d "${STAGING_DIR}" ]]; then
+        rm -rf "${STAGING_DIR}" 2>/dev/null || true
+    fi
+    # Não interceptar traps globais, apenas limpar temporarios locais
+    return $status
+}
 
-#CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-#LIBS_DIR="${LIBS_DIR:-}"                          # Diretorio dos modulos de biblioteca.
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
+# Verifica integridade do ZIP antes de extrair
+_verificar_integridade_zip() {
+    local arquivo="$1"
+    if [[ ! -f "$arquivo" ]]; then
+        _mensagec "${RED}" "Arquivo ZIP nao encontrado: $arquivo"
+        return 1
+    fi
+    # Verifica se o ZIP nao esta corrompido
+    if ! "${DEFAULT_UNZIP}" -t "$arquivo" >>"$LOG_ATU" 2>&1; then
+        _mensagec "${RED}" "ZIP corrompido ou invalido. Abortando atualizacao."
+        return 1
+    fi
+}
 
-# Executa atualizacao do script
+# =============================================================================
+# FUNCOES DE ATUALIZACAO
+# =============================================================================
 _executar_update() {
     #_configurar_acessos
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
@@ -33,12 +53,13 @@ _executar_update() {
 # Atualizacao online via GitHub
 _atualizando() {
     local zipfile="atualiza.zip"
-
+    umask 077  # Protege arquivos criados durante o processo
     _configurar_diretorios
-
 	local caminho="${CFG_DIR}"
+
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        trap '_cleanup_update' ERR INT TERM
         return 1
     }
 
@@ -112,6 +133,12 @@ local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
         _aguardar 2
         return 1
     }
+
+    # 4. Validar Integridade
+    if ! _verificar_integridade_zip "$zipfile"; then
+        _mensagec "${RED}" "Atualizacao bloqueada: arquivo comprometido ou corrompido"
+        return 1
+    fi
 
     # Descompactar
     if ! "${DEFAULT_UNZIP}" -o -j "$zipfile" >>"$LOG_ATU" 2>&1; then
