@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-01
+# Versao: 26/05/2026-01
 #
 
 # Variaveis globais esperadas
@@ -182,6 +182,19 @@ _adicionar_arquivo_lixo() {
     read -rp "${YELLOW}Qual o arquivo -> ${NORM}" novo_arquivo
     _linha
 
+    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._*-]+$ ]]; then
+        _mensagec "${RED}" "Nome de arquivo invalido. Use apenas letras, numeros, pontos, hifens ou '*'."
+        _aguardar_tecla
+        return 1
+    fi
+
+# Bloquear wildcards globais se não for intenção
+    if [[ "$novo_arquivo" == *"*"* || "$novo_arquivo" == *"?"* ]]; then
+        _mensagec "${RED}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
+        _aguardar_tecla
+        return 1
+    fi
+
     if [[ -z "$novo_arquivo" ]]; then
         _mensagec "${RED}" "Nome de arquivo nao informado"
         _aguardar_tecla
@@ -192,7 +205,6 @@ _adicionar_arquivo_lixo() {
     echo "$novo_arquivo" >> "${CFG_DIR}/limpetmp2"
     _mensagec "${CYAN}" "Arquivo '${novo_arquivo}' adicionado com sucesso ao 'limpetmp2'"
     _linha
-    
     _aguardar_tecla
 }
 

@@ -5,13 +5,12 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-02
+# Versao: 26/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
 # =============================================================================
 set -o pipefail  # Falhar se qualquer comando em pipe falhar
-trap '_encerrar_programa' EXIT  # Limpar ao sair
 
 # =============================================================================
 # SISTEMA DE GERENCIAMENTO DE VARIÁVEIS
@@ -204,15 +203,35 @@ _inicializar_variaveis_sistema() {
     REGISTRO_VARIAVEIS=()
     
     # CATEGORIA: CORES DO TERMINAL
-    _define_category_vars "CORES" \
+    #_define_category_vars "CORES" \
+        if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
+        RED=$(tput bold; tput setaf 1 2>/dev/null)          # Vermelho
+        GREEN=$(tput bold; tput setaf 2 2>/dev/null)        # Verde
+        YELLOW=$(tput bold; tput setaf 3 2>/dev/null)       # Amarelo
+        BLUE=$(tput bold; tput setaf 4 2>/dev/null)         # Azul
+        PURPLE=$(tput bold; tput setaf 5 2>/dev/null)       # Roxo
+        CYAN=$(tput bold; tput setaf 6 2>/dev/null)         # Ciano
+        WHITE=$(tput bold; tput setaf 7 2>/dev/null)        # Branco
+        NORM=$(tput sgr0 2>/dev/null)                       # Normal
+        COLUMNS=$(tput cols)                                # Numero de colunas do terminal
+
+        # Limpar tela inicial
+        tput clear 2>/dev/null || true
+        tput bold 2>/dev/null || true
+        tput setaf 7 2>/dev/null || true
+    else
+        # Terminal sem suporte a cores
         "RED=\033[31m" \
         "GREEN=\033[32m" \
         "YELLOW=\033[33m" \
         "BLUE=\033[34m" \
         "PURPLE=\033[35m" \
         "CYAN=\033[36m" \
-        "NORM=\033[0m"
-    
+        "NORM=\033[0m" \
+        "COLUMNS=${COLUMNS:-80}"
+    fi
+    export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
+
     # CATEGORIA: CONFIGURAÇÕES DE ATUALIZAÇÃO
     _define_category_vars "ATUALIZACAO" \
         "CFG_SISTEMA=${CFG_SISTEMA:-}" \
@@ -308,44 +327,6 @@ fi
 # Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
 # =============================================================================
 DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretório de logs padrão
-DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"                       # Diretório de recebimento padrão
-
-
-# -----------------------------------------------------------------------------
-# Funcao para definir cores do terminal
-# -----------------------------------------------------------------------------
-_definir_cores() {
-    # Verificar se o terminal suporta cores
-    if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        RED=$(tput bold; tput setaf 1 2>/dev/null)          # Vermelho
-        GREEN=$(tput bold; tput setaf 2 2>/dev/null)        # Verde
-        YELLOW=$(tput bold; tput setaf 3 2>/dev/null)       # Amarelo
-        BLUE=$(tput bold; tput setaf 4 2>/dev/null)         # Azul
-        PURPLE=$(tput bold; tput setaf 5 2>/dev/null)       # Roxo
-        CYAN=$(tput bold; tput setaf 6 2>/dev/null)         # Ciano
-        WHITE=$(tput bold; tput setaf 7 2>/dev/null)        # Branco
-        NORM=$(tput sgr0 2>/dev/null)                       # Normal
-        COLUMNS=$(tput cols)                                # Numero de colunas do terminal
-
-        # Limpar tela inicial
-        tput clear 2>/dev/null || true
-        tput bold 2>/dev/null || true
-        tput setaf 7 2>/dev/null || true
-    else
-        # Terminal sem suporte a cores
-        RED=""
-        GREEN=""
-        YELLOW=""
-        BLUE=""
-        PURPLE=""
-        CYAN=""
-        WHITE=""
-        NORM=""
-        COLUMNS=${DEFAULT_COLUMNS}
-    fi
-
-    export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
-}
 
 # -----------------------------------------------------------------------------
 # Configurar comandos do sistema
@@ -354,7 +335,7 @@ _definir_cores() {
 _configurar_comandos() {
 
     # Validar se os comandos existem
-    local cmds=("$DEFAULT_ZIP" "$DEFAULT_ZIP" "$DEFAULT_FIND" "$DEFAULT_WHO")
+    local cmds=("$DEFAULT_ZIP" "$DEFAULT_ZIP")
     local cmd=""
     local missing=()
 
@@ -598,56 +579,6 @@ _carregar_config_empresa() {
 }
 
 # -----------------------------------------------------------------------------
-# Carrega configuracao de forma segura sem sourcing direto
-# Parametros: $1 - arquivo de configuracao
-# Retorna: 0 se sucesso, 1 se erro
-# -----------------------------------------------------------------------------
-_carregar_config_seguro() {
-    local CONFIG_FILE="${1}"
-    local linha key value
-
-    while IFS= read -r linha || [[ -n "$linha" ]]; do
-        # Pular linhas vazias e comentarios
-        [[ -z "$linha" ]] && continue
-        [[ "$linha" =~ ^[[:space:]]*# ]] && continue
-
-        # Remover espacos iniciais
-        linha="${linha#"${linha%%[![:space:]]*}"}"
-        
-        # Ignorar linhas apos comentario inline
-        if [[ "$linha" == *'#'* ]]; then
-            linha="${linha%%#*}"
-        fi
-
-        # Ignorar se a linha ficou vazia apos remover comentario
-        [[ -z "$linha" ]] && continue
-
-        # Extrair chave e valor de forma segura
-        if [[ "$linha" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-            key="${BASH_REMATCH[1]}"
-            value="${BASH_REMATCH[2]}"
-            
-            # Remover aspas se presentes
-            if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
-                value="${BASH_REMATCH[1]}"
-            fi
-            
-            # Validar que o valor nao contem comandos perigosos
-            if [[ "$value" =~ [\$\`\;] ]]; then
-                printf "AVISO: Valor suspeito ignorado para %s: %s\n" "$key" "$value" >&2
-                continue
-            fi
-            
-            # Declarar variavel de forma segura
-            declare -g "$key=$value"
-        fi
-    done < "$CONFIG_FILE"
-
-    return 0
-}
-
-
-# -----------------------------------------------------------------------------
 # Funcao principal de carregamento de configuracoes
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
@@ -657,9 +588,6 @@ _carregar_configuracoes() {
         printf "Erro: Nao foi possivel acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
         return 1
     fi
-
-    # Definir cores
-    _definir_cores
 
     # Carregar arquivos de configuracao
     _carregar_config_empresa || return 1
@@ -1060,3 +988,6 @@ _debubglist_vars() {
     done
     printf 'Total: %d\n' "${#REGISTRO_VARIAVEIS[@]}"
 }
+
+trap '_encerrar_programa' EXIT INT TERM
+trap '_limpeza_emergencia' QUIT

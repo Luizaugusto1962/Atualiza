@@ -5,18 +5,8 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-00
+# Versao: 26/05/2026-00
 #
-
-# Variaveis globais esperadas
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                 # Tipo de sistema (iscobol/mf)
-#DEFAULT_ZIP="${DEFAULT_ZIP:-}"                 # Comando de compactacao (zip)
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"             # Comando de descompactacao (unzip)
-#DEFAULT_FIND="${DEFAULT_FIND:-}"               # Comando de busca (find)
-#CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-}"           # Acesso via SSH (s/n)
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                 # Modo offline (s/n)
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"   # Diretorio de download
-#CFG_DIR="${CFG_DIR:-}"                         # Diretorio de configuracao
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
@@ -59,8 +49,8 @@ _limpar_interrupcao() {
 }
 
 # Configurar traps (SIGINT=2 para Ctrl+C, SIGTERM=15 para kill)
-trap '_limpar_interrupcao INT' INT
-trap '_limpar_interrupcao TERM' TERM
+trap '_limpar_interrupcao' INT
+trap '_limpar_interrupcao' TERM
 
 #---------- FUNCOES PRINCIPAIS DE ATUALIZACAO ----------#
 
@@ -205,8 +195,8 @@ _salvar_atualizacao_biblioteca() {
 # Processa a atualizacao da biblioteca
 _processar_atualizacao_biblioteca() {
     # Registrar trap local apenas durante o processamento
-    trap '_limpar_interrupcao INT' INT
-    trap '_limpar_interrupcao TERM' TERM
+    trap '_limpar_interrupcao' INT
+    trap '_limpar_interrupcao' TERM
     local arquivo_backup="backup_biblioteca_antes_da_versao-${VERSAO}.zip"
     local caminho_backup="${DEFAULT_BIBLIOTECA_DIR}/${arquivo_backup}"
 
@@ -411,7 +401,12 @@ _executar_atualizacao_biblioteca() {
 # Reverte biblioteca completa
 _reverter_biblioteca_completa() {
     local arquivo_backup="$1"
-    local RAIZ="/"
+    if [[ ! -r "$arquivo_backup" ]]; then
+        _mensagec "${RED}" "Backup nao encontrado ou ilegivel"
+        return 1
+    fi
+
+    local temp_restore="/"
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
@@ -419,7 +414,7 @@ _reverter_biblioteca_completa() {
         return 1
     fi
 
-    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${RAIZ}" >>"${LOG_ATU}"; then
+    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${temp_restore}" >>"${LOG_ATU}"; then
         _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
         _aguardar_tecla
         return 1
@@ -436,7 +431,8 @@ _reverter_biblioteca_completa() {
 _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
-
+    local temp_restore="/"
+    
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
         _aguardar 2
@@ -456,7 +452,7 @@ _reverter_programa_especifico_biblioteca() {
     _linha
 
     local padrao="*/"
-    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "/" >>"${LOG_ATU}"; then
+    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "${temp_restore}" >>"${LOG_ATU}"; then
         _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
         _aguardar_tecla
         return 1

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-01
+# Versao: 26/05/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -501,7 +501,7 @@ _restaurar_backup_completo() {
     _mensagec "${YELLOW}" "Restaurando todos os arquivos..."
     _linha
     
-    if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+    if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
         _aguardar_tecla
         return 0
@@ -552,7 +552,7 @@ _restaurar_arquivo_especifico() {
         _mensagec "${YELLOW}" "Restaurando ${nome_arquivo}..."
         _linha
        
-        if ! "${cmd_DEFAULT_UNZIP:-DEFAULT_UNZIP}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+        if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else

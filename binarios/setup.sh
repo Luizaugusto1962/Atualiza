@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/05/2026-02
+# Versao: 26/05/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas

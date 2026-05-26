@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Exibe todas as constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-01
+# Versao: 26/05/2026-01
 # Uso: ./variaveis.sh [filtro]
 #
 # =============================================================================
@@ -19,8 +19,8 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 # =============================================================================
 
 # Diretorios
-#LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
-#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
+LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 CONFIG_FILE="${CONFIG_FILE:-${CFG_DIR}/.config}"
 
 # Cores (definidas uma vez para evitar subshells repetidos)
@@ -45,17 +45,10 @@ declare -A CATEGORIAS=(
     ["CONFIGURACOES DO SISTEMA"]="CFG_SISTEMA CFG_VERCLASS CFG_EMPRESA"
     ["BASES DE DADOS"]="CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3"
     ["FLAGS BOOLEANAS"]="CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE"
-#    ["PERMISSOES DE ARQUIVO E DIRETORIO"]="PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC"
     ["CONFIGURACOES DE REDE"]="DEFAULT_SSH_PORTA DEFAULT_IP_SERVER"
-#    ["CONFIGURACOES DE SEGURANCA"]="HASH_ALGORITHM MAX_LOGIN_ATTEMPTS"
-#    ["CONFIGURACOES DE TIMEOUT"]="DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL SSH_ALIVE_COUNT"
-#    ["CONFIGURACOES DE TERMINAL"]="DEFAULT_COLUMNS DEFAULT_LINES"
     ["DIRETORIOS PADRAO"]="DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_LOGS_DIR DEFAULT_BACKUP_DIR DEFAULT_BASEBACKUP_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BIBLIOTECA_DIR DEFAULT_PROGS_DIR DEFAULT_OLDS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR"
-#    ["COMANDOS EXTERNOS PADRAO"]="DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND DEFAULT_WHO"
-#    ["DIRETORIOS DE DESTINO"]="DESTINO_SERVER DESTINO_BIBLIOTECA"
     ["SAVISC - DIRETORIO E UTILITARIOS"]="SAVISC REBUILD"
     ["ACESSO OFFLINE"]="ACESSO_OFF CFG_BACKUP_PATH"
-#    ["CONFIGURACAO DE LOGS"]="LOG_ATU LOG_LIMPA LOG_TMP UMADATA"
 )
 
 # =============================================================================
@@ -63,21 +56,18 @@ declare -A CATEGORIAS=(
 # =============================================================================
 carregar_config() {
     local config_file="$1"
-
     if [[ -f "$config_file" ]] && [[ -r "$config_file" ]]; then
-        # Exporta automaticamente variaveis do arquivo
-        set -a
-        # shellcheck source=/dev/null
-        . "$config_file"
-        local status=$?
-        set +a
-
-        return $status
+        # Delegar ao parser seguro do config.sh
+        if command -v _carregar_config_seguro >/dev/null 2>&1; then
+            _carregar_config_seguro "$config_file"
+        else
+            # Fallback apenas se config.sh não estiver carregado (não recomendado em prod)
+            set -a; "." "$config_file"; set +a
+        fi
+        return $?
     fi
-
     return 1
 }
-
 # =============================================================================
 # FUNCAO: Carregar constantes do sistema
 # =============================================================================
@@ -85,8 +75,7 @@ carregar_constantes() {
     local constantes_file="${LIBS_DIR}/constantes.sh"
 
     if [[ -f "$constantes_file" ]] && [[ -r "$constantes_file" ]]; then
-        # shellcheck source=/dev/null
-        . "$constantes_file"
+        "." "$constantes_file"
         return $?
     fi
 

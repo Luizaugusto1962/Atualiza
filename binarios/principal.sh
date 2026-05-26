@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 24/05/2026-01
+# Versao: 26/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -15,6 +15,7 @@
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
 set -euo pipefail
+umask 077  # Garante que arquivos criados sejam legíveis apenas pelo dono
 
 # =============================================================================
 # DIRETÓRIOS DO SCRIPT
@@ -34,14 +35,13 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="20/05/26-v.1"
+declare -rx UPDATE="26/05/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
 # =============================================================================
 # Carregar constantes se disponivel
 if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
-    # shellcheck source=constantes.sh
     "." "${LIBS_DIR}/constantes.sh"
 fi
 
@@ -276,14 +276,6 @@ _main() {
     trap '_resetando' EXIT
     trap '_encerrar_programa 130' INT TERM
     trap '_encerrar_programa 1' HUP
-
-    # Validar permissao de root
-
-    # Inicializar sistema
-    if ! _inicializar_sistema; then
-        printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
-        exit 1
-    fi
 
     # Inicializar sistema
     if ! _inicializar_sistema; then

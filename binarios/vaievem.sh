@@ -6,19 +6,25 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-001
+# Versao: 26/05/2026-001
 #
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
 # Variaveis globais esperadas
-#CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-s}"          # Acesso via SSH (s/n)
-#ARQUIVO_ENVIAR="${ARQUIVO_ENVIAR:-}"           # Arquivo a ser enviado (pode conter wildcard)
-#DIRETORIO_ORIGEM="${DIRETORIO_ORIGEM:-.}"      # Diretorio de origem para upload
-#CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"         # Destino remoto para upload (ex: /caminho/destino/)
-#DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-}"   # Diretorio de destino da biblioteca no servidor
-#DESTINO_SERVER="${DESTINO_SERVER:-}"           # Diretorio do servidor de atualizacao
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
 
+# =============================================================================
+# VALIDACAO DE SEGURANCA (AGENTS.md: Validate and sanitize user input)
+# =============================================================================
+# Valida caminhos contra path traversal e injeção de caracteres especiais
+_validar_caminho_seguro() {
+    local caminho="$1"
+    # Rejeita se vazio, contiver ../ ou caracteres de injeção (;|&$`<>)
+    if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" =~ [\;\|\&\$\`\<\>] ]]; then
+        return 1
+    fi
+    return 0
+}
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
 # Download via SFTP com chave SSH configurada
@@ -37,7 +43,8 @@ _download_sftp_ssh() {
 
     # Captura stdout e stderr para inspecionar mensagens de erro do sftp
     local sftp_output
-    sftp_output=$(sftp sav_servidor <<EOF 2>&1
+    local host_ssh="${CFG_SSH_HOST:-sav_servidor}"
+    sftp_output=$(sftp "$host_ssh" <<EOF 2>&1
 get "${arquivo_remoto}" "${destino_local}"
 quit
 EOF
@@ -200,7 +207,7 @@ _baixar_biblioteca_sincroniza() {
 
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
-   	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
@@ -226,12 +233,12 @@ _baixar_programas_vaievem() {
 
                 if ! _download_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
-                    return 0
+                    return 1
                 fi
             else
                 if ! _download_scp "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
-                    return 0
+                    return 1
                 fi
             fi
 
@@ -241,7 +248,7 @@ _baixar_programas_vaievem() {
             if [[ ! -f "$arquivo" || ! -s "$arquivo" ]]; then
                 _mensagec "${RED}" "ERRO: Falha ao baixar verificar se existe no servidor: $arquivo"
                 _aguardar 0
-                return 0 
+                return 1 
             fi
 
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
@@ -264,13 +271,19 @@ _enviar_arquivo_multi() {
     if [[ -z "$ARQUIVO_ENVIAR" ]]; then
         _mensagec "${RED}" "Erro: Nenhum arquivo especificado para envio"
         _aguardar 2
-        return 0
+        return 1
     fi
 
     if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
         _mensagec "${RED}" "Erro: Destino remoto nao especificado"
         _aguardar 2
-        return 0
+        return 1
+    fi
+    # SEGURANCA: Validar caminhos contra traversal e injeção
+    if ! _validar_caminho_seguro "${DIRETORIO_ORIGEM:-.}" || ! _validar_caminho_seguro "${CFG_BACKUP_PATH:-}"; then
+        _mensagec "${RED}" "Erro: Caminhos contem caracteres invalidos ou tentativas de traversal."
+        _aguardar 2
+        return 1
     fi
 
     # Verificar se esta enviando multiplos arquivos ou apenas um

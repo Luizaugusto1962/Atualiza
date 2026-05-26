@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/05/2026-01
+# Versao: 26/05/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
@@ -257,7 +257,8 @@ _opinvalida() {
     local largura
     local tamanho_msg
     local espacos
-
+    local RED="${RED:-\033[31m}" YELLOW="${YELLOW:-\033[33m}" NORM="${NORM:-\033[0m}"
+    
     # Obter largura do terminal com fallback seguro
     if ! largura=$(tput cols 2>/dev/null); then
         largura="${COLUMNS:-${DEFAULT_COLUMNS}}"
@@ -319,7 +320,8 @@ _confirmar() {
     local resposta
     local tentativas=0
     local max_tentativas=3
-
+    local timeout="${DEFAULT_READ_TIMEOUT:-60}"
+    
     case "$padrao" in
         [Ss]) opcoes="[S/n]" ;;
         [Nn]) opcoes="[N/s]" ;;
@@ -327,7 +329,7 @@ _confirmar() {
     esac
 
     while (( tentativas < max_tentativas )); do
-        if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW}${mensagem} ${opcoes}: ${NORM}" resposta; then
+        if ! read -r -t "${timeout}" -p "${YELLOW}${mensagem} ${opcoes}: ${NORM}" resposta; then
             # Timeout ou erro de leitura — usar padrao
             _mensagec "${YELLOW}" "Entrada expirada. Usando padrao: ${padrao}"
             resposta="$padrao"

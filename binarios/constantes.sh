@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-01
+# Versao: 26/05/2026-01
 #
 
 # =============================================================================
@@ -21,7 +21,59 @@ base3=""                     # Diretorio base terciario (vazio se nao definido)
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 
 # Garantir SCRIPT_DIR com fallback seguro
-RAIZ="${SCRIPT_DIR%/*}"     # Define RAIZ como o diretorio pai do script atual (assumindo que o script esta em /binarios)
+# RAIZ é o diretório pai de SCRIPT_DIR
+# Fallback: se SCRIPT_DIR for a raiz, RAIZ recebe o próprio SCRIPT_DIR
+RAIZ="${SCRIPT_DIR%/*}"
+[[ -z "$RAIZ" || "$RAIZ" == "$SCRIPT_DIR" ]] && RAIZ="${SCRIPT_DIR}"
+
+# -----------------------------------------------------------------------------
+# Carrega configuracao de forma segura sem sourcing direto
+# Parametros: $1 - arquivo de configuracao
+# Retorna: 0 se sucesso, 1 se erro
+# -----------------------------------------------------------------------------
+_carregar_config_seguro() {
+    local CONFIG_FILE="${1}"
+    local linha key value
+
+    while IFS= read -r linha || [[ -n "$linha" ]]; do
+        # Pular linhas vazias e comentarios
+        [[ -z "$linha" ]] && continue
+        [[ "$linha" =~ ^[[:space:]]*# ]] && continue
+
+        # Remover espacos iniciais
+        linha="${linha#"${linha%%[![:space:]]*}"}"
+        
+        # Ignorar linhas apos comentario inline
+        if [[ "$linha" == *'#'* ]]; then
+            linha="${linha%%#*}"
+        fi
+
+        # Ignorar se a linha ficou vazia apos remover comentario
+        [[ -z "$linha" ]] && continue
+
+        # Extrair chave e valor de forma segura
+        if [[ "$linha" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            
+            # Remover aspas se presentes
+            if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+                value="${BASH_REMATCH[1]}"
+            fi
+            
+            # Validar que o valor nao contem comandos perigosos
+            if [[ "$value" =~ [\$\`\;] ]]; then
+                printf "AVISO: Valor suspeito ignorado para %s: %s\n" "$key" "$value" >&2
+                continue
+            fi
+            
+            # Declarar variavel de forma segura
+            declare -g "$key=$value"
+        fi
+    done < "$CONFIG_FILE"
+
+    return 0
+}
 
 # =============================================================================
 # VALIDACAO DE VARIAVEIS ESSENCIAIS
@@ -68,10 +120,12 @@ elif [[ ! -r "$CONFIG_FILE" ]]; then
         exit 1
     fi
 else
-    set -a  # Exporta automaticamente variaveis criadas
-    # shellcheck disable=SC1090
-    . "$CONFIG_FILE"
-    set +a
+    if command -v _carregar_config_seguro >/dev/null 2>&1; then
+        _carregar_config_seguro "$CONFIG_FILE"
+    else
+        echo "ERRO: Parser seguro de configuracao nao disponivel. Carregamento bloqueado." >&2
+        [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]] && return 1 || exit 1
+    fi
 fi
 
 
@@ -154,7 +208,7 @@ DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"
 DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"
 DEFAULT_FIND="${DEFAULT_FIND:-find}"
 DEFAULT_WHO="${DEFAULT_WHO:-who}"
-DEFAULT_TAR="${DEFAULT_TAR:-tar}"
+
 # =============================================================================
 # DIRETORIOS DE DESTINO
 # =============================================================================
@@ -193,11 +247,10 @@ INI="${INI:-backup-${VERSAO}.zip}"
 
 # =============================================================================
 # CONFIGURACAO DE TIPO DE COMPILACAO
-# =============================================================================
-#class="${class:-}"          # Sufixo para arquivos de classe
-#mclass="${mclass:-}"        # Sufixo para arquivos de classe de depuracao                           
+# =============================================================================    
 compilado="${compilado:-class}"  # Sufixo para arquivos compilados
 debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
+
 # =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
@@ -210,7 +263,7 @@ export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER SSH_TIMEOUT
 export HASH_ALGORITHM MAX_LOGIN_ATTEMPTS
 export DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL SSH_ALIVE_COUNT
 export DEFAULT_COLUMNS DEFAULT_LINES
-export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_TAR
+export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR
 export DEFAULT_BIBLIOTECA_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BASEBACKUP_DIR
 export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA

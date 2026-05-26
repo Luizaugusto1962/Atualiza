@@ -6,28 +6,13 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/05/2026-01
+# Versao: 26/05/2026-01
 #
 
 # Variaveis globais esperadas
-#CFG_DIR="${CFG_DIR:-}"                          # Caminho do diretorio de configuracao do programa.
-#LIBS_DIR="${LIBS_DIR:-}"                        # Diretorio dos modulos de biblioteca.
-#DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (unzip).
-#class="${class:-}"                              # Variavel da classe.
-#mclass="${mclass:-}"                            # Variavel da mclass.
 compilado="${compilado:-}"                      # Sufixo para arquivos compilados
 debugado="${debugado:-}"                        # Sufixo para arquivos em depuração
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Variavel do nome da base de dados principal.
-#CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Variavel do nome da segunda base de dados (opcional).
-#CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Variavel do nome da terceira base de dados (opcional).
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                  # Variavel do sistema em uso (ex: iscobol, linux).
-#CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"          # Variavel do banco de dados em uso (ex: dbase, mysql).
-#RAIZ="${RAIZ:-}"                                # Variavel do diretorio RAIZ do sistema.
-#CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-}"          # Variavel do diretorio para envio de backup.
-#CFG_OFFLINE="${CFG_OFFLINE:-}"                  # Variavel do status de conexao (s/n).
-#CFG_VERCLASS="${CFG_VERCLASS:-}"                # Variavel da versao da classe.
-#DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Variavel do diretorio de download para atualizacao offline.
-
 
 #---------- FUNCOES DE VERSAO ----------#
 # Mostra versao do IsCOBOL
