@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-00
+# Versao: 26/05/2026-02
 #
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
@@ -57,6 +57,7 @@ trap '_limpar_interrupcao' TERM
 # Atualizacao do Transpc
 _atualizar_transpc() {
     _limpa_tela
+    _download_sftp_ssh
     _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then

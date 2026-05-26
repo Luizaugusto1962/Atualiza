@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-001
+# Versao: 26/05/2026-02
 #
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
@@ -30,7 +30,7 @@ _validar_caminho_seguro() {
 # Download via SFTP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
 _download_sftp_ssh() {
-    local arquivo_remoto="$1"
+    local arquivo_remoto="${1:-}"
     local destino_local="${2:-.}"
     local nome_arquivo="${arquivo_remoto##*/}"
 

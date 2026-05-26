@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-00
+# Versao: 26/05/2026-02
 #
 
 # Variaveis globais esperadas
@@ -33,6 +33,7 @@ _atualizar_programa_online() {
         fi
     fi    
     # Solicitar programas a serem atualizados
+    _download_sftp_ssh
     _solicitar_programas_atualizacao
     
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
