@@ -89,10 +89,15 @@ _atualizar_transpc() {
 
 # Atualizacao offline da biblioteca
 _atualizar_biblioteca_offline() {
+    # Traz arquivos da pasta /portalsav/Atualiza para receber.    
+
     _limpa_tela
-       _linha
+    _enviabackup_para_receber
+
+#    _linha
     _mensagec "${YELLOW}" "Diretorio de download: ${WHITE}${DEFAULT_RECEBE_DIR}"
-     _solicitar_versao_biblioteca
+
+    _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then
         return 0
@@ -144,7 +149,7 @@ _reverter_biblioteca() {
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
-    _validar_diretorio_receber
+    
     #_configurar_acessos
     cd "$DEFAULT_RECEBE_DIR" || return 1
 

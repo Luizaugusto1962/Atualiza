@@ -654,3 +654,66 @@ _check_instalado() {
         return 1
     fi
 }
+
+_enviabackup_para_receber() {
+    local source_dir="${CFG_PORTALSAV}"
+    local dest_dir="${DEFAULT_RECEBE_DIR}"
+    local arquivo
+    local arquivos_copiados=0
+    local arquivos_erro=0
+
+    # Validar diretórios de origem e destino
+    if [[ ! -d "${source_dir}" ]]; then
+        _mensagec "${YELLOW}" "Diretorio de origem nao existe: ${source_dir}"
+        return 1
+    fi
+
+    if [[ ! -d "${dest_dir}" ]]; then
+        _mensagec "${RED}" "Diretorio de destino nao existe: ${dest_dir}"
+        return 2
+    fi
+
+    if [[ ! -w "${dest_dir}" ]]; then
+        _mensagec "${RED}" "Sem permissao de escrita em: ${dest_dir}"
+        return 3
+    fi
+
+    _linha
+    _mensagec "${YELLOW}" "Processando arquivos de backup: ${source_dir} → ${dest_dir}"
+    _linha
+
+    # Iterar sobre arquivos .zip com tratamento seguro
+    while IFS= read -r -d '' arquivo; do
+        local nome_arquivo
+        nome_arquivo="$(basename "${arquivo}")"
+
+        # Verificar se o arquivo já existe no destino
+        if [[ -e "${dest_dir}/${nome_arquivo}" ]]; then
+            _mensagec "${YELLOW}" "Arquivo ja existe (sobrescrevendo): ${nome_arquivo}"
+        fi
+
+        # Tentar mover o arquivo
+        if mv -f "${arquivo}" "${dest_dir}/" >> "${LOG_ATU}" 2>&1; then
+            _mensagec "${GREEN}" "✓ Arquivo movido: ${nome_arquivo}"
+            ((arquivos_copiados++))
+        else
+            _mensagec "${RED}" "✗ Erro ao mover: ${nome_arquivo}"
+            ((arquivos_erro++))
+        fi
+    done < <(find "${source_dir}" -maxdepth 1 -type f -name "*.zip" -print0)
+
+    # Resumo da operação
+    _linha
+    if (( arquivos_copiados == 0 && arquivos_erro == 0 )); then
+        _mensagec "${YELLOW}" "Nenhum arquivo .zip encontrado em ${source_dir}"
+    else
+        _mensagec "${GREEN}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
+        if (( arquivos_erro > 0 )); then
+            _mensagec "${RED}" "Atencao: ${arquivos_erro} arquivo(s) com erro"
+        fi
+    fi
+    _linha
+
+    # Retornar código apropriado
+    return $((arquivos_erro > 0 ? 1 : 0))
+}

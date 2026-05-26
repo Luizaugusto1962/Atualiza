@@ -31,9 +31,12 @@ _atualizar_programa_online() {
             _aguardar_tecla
             return 0
         fi
-    fi    
-    # Solicitar programas a serem atualizados
+    fi
+
+    # Verifica acesso ssh/sftp e configura se necessario
     _download_sftp_ssh
+    
+    # Solicitar programas a serem atualizados
     _solicitar_programas_atualizacao
     
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
@@ -55,6 +58,9 @@ _atualizar_programa_online() {
 # Atualizacao de programas via arquivos offline
 _atualizar_programa_offline() {
 
+    # Traz arquivos da pasta /portalsav/Atualiza para receber.    
+    _enviabackup_para_receber
+
     # Solicitar programas a serem atualizados
     _solicitar_programas_atualizacao
     
@@ -71,6 +77,7 @@ _atualizar_programa_offline() {
     _linha
     _aguardar 0
     
+
     # Mover arquivos do servidor offline se configurado
     _mover_arquivos_offline
     
@@ -82,6 +89,7 @@ _atualizar_programa_offline() {
 
 # Atualizacao de programas em pacotes
 _atualizar_programa_pacote() {
+
     _solicitar_pacotes_atualizacao
 
     if [[ "${CFG_OFFLINE}" == "s" ]]; then

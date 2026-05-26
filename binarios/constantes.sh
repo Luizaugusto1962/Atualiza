@@ -132,8 +132,8 @@ fi
 # =============================================================================
 # CONFIGURACOES DIRETORIO DE BACKUP OFFLINE   
 # =============================================================================
-enviabackup="${enviabackup:-${RAIZ}/portalsav/Atualiza}"
 
+CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/Atualiza}"  # Diretorio do portal de atualizacao offline
 
 # =============================================================================
 # CONFIGURACOES DO SISTEMA (variaveis do .config)   
