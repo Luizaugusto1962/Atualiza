@@ -90,6 +90,9 @@ _atualizar_programa_offline() {
 # Atualizacao de programas em pacotes
 _atualizar_programa_pacote() {
 
+    # Traz arquivos da pasta /portalsav/Atualiza para receber.    
+    _enviabackup_para_receber
+
     _solicitar_pacotes_atualizacao
 
     if [[ "${CFG_OFFLINE}" == "s" ]]; then
