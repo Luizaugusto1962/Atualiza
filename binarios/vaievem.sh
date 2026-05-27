@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-02
+# Versao: 27/05/2026-02
 #
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
@@ -31,13 +31,13 @@ _validar_caminho_seguro() {
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
 _download_sftp_ssh() {
     local arquivo_remoto="${1:-}"
-    local destino_local="${2:-.}"
-    local nome_arquivo="${arquivo_remoto##*/}"
 
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Erro: Arquivo remoto nao especificado para SFTP SSH"
         return 1
     fi
+    local destino_local="${2:-.}"
+    local nome_arquivo="${arquivo_remoto##*/}"
 
     _log "Iniciando download SFTP com chave SSH: ${arquivo_remoto}"
 
@@ -92,15 +92,16 @@ EOF
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional) $3=servidor $4=porta $5=usuario
 _download_scp() {
     local arquivo_remoto="$1"
-    local destino_local="${2:-.}"
-    local servidor="${3:-$DEFAULT_IP_SERVER}"
-    local porta="${4:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${5:-$DEFAULT_SSH_USER}"
 
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Erro: Arquivo remoto nao especificado para SCP"
         return 1
     fi
+
+    local destino_local="${2:-.}"
+    local servidor="${3:-$DEFAULT_IP_SERVER}"
+    local porta="${4:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${5:-$DEFAULT_SSH_USER}"
 
     if [[ ! -d "$destino_local" ]]; then
         _log_erro "Erro: Diretorio de destino nao existe: ${destino_local}"
@@ -131,10 +132,6 @@ _download_scp() {
 # Parametros: $1=arquivo_local $2=CFG_BACKUP_PATH $3=servidor $4=porta $5=usuario
 _upload_rsync() {
     local arquivo_local="$1"
-    local CFG_BACKUP_PATH="$2"
-    local servidor="${3:-$DEFAULT_IP_SERVER}"
-    local porta="${4:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${5:-$DEFAULT_SSH_USER}"
 
     if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
         _log_erro "Erro: Parametros obrigatorios nao informados para upload RSYNC"
@@ -146,6 +143,11 @@ _upload_rsync() {
         return 1
     fi
 
+    local CFG_BACKUP_PATH="$2"
+    local servidor="${3:-$DEFAULT_IP_SERVER}"
+    local porta="${4:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${5:-$DEFAULT_SSH_USER}"
+    
     _log "Iniciando upload RSYNC: ${arquivo_local}"
 
     local destino_completo="${rem_user}@${servidor}:${CFG_BACKUP_PATH}"

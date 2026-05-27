@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-02
+# Versao: 27/05/2026-02
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -221,13 +221,13 @@ _inicializar_variaveis_sistema() {
         tput setaf 7 2>/dev/null || true
     else
         # Terminal sem suporte a cores
-        "RED=\033[31m" \
-        "GREEN=\033[32m" \
-        "YELLOW=\033[33m" \
-        "BLUE=\033[34m" \
-        "PURPLE=\033[35m" \
-        "CYAN=\033[36m" \
-        "NORM=\033[0m" \
+        RED="\033[0;31m" \
+        GREEN="\033[0;32m" \
+        YELLOW="\033[0;33m" \
+        BLUE="\033[0;34m" \
+        PURPLE="\033[0;35m" \
+        CYAN="\033[0;36m" \
+        NORM="\033[0m" \
         "COLUMNS=${COLUMNS:-80}"
     fi
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS

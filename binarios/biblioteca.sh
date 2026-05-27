@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-02
+# Versao: 27/05/2026-00
 #
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
@@ -28,7 +28,7 @@ _limpar_interrupcao() {
     # Limpeza de temporarios (ex: zips parciais ou descompactados incompletos)
     _ir_para_tools
 
-    for temp_file in *"${VERSAO}".zip; do
+    for temp_file in *"${VERSAO}".zip *"${VERSAO}".tar *"${VERSAO}".tar.gz; do
         if [[ -f "$temp_file" ]]; then
             rm -f "$temp_file" 
             _log "Arquivo temporario removido: $temp_file"
@@ -37,7 +37,7 @@ _limpar_interrupcao() {
         
     # Verificar se backup parcial existe e sugerir rollback
     shopt -s nullglob
-    local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.zip)
+    local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.zip "${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.tar.gz)
     shopt -u nullglob
     if (( ${#backups_parciais[@]} > 0 )); then
         _mensagec "${YELLOW}" "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
@@ -57,7 +57,6 @@ trap '_limpar_interrupcao' TERM
 # Atualizacao do Transpc
 _atualizar_transpc() {
     _limpa_tela
-    _download_sftp_ssh
     _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then
@@ -89,15 +88,10 @@ _atualizar_transpc() {
 
 # Atualizacao offline da biblioteca
 _atualizar_biblioteca_offline() {
-    # Traz arquivos da pasta /portalsav/Atualiza para receber.    
-
     _limpa_tela
-    _enviabackup_para_receber
-
-#    _linha
+       _linha
     _mensagec "${YELLOW}" "Diretorio de download: ${WHITE}${DEFAULT_RECEBE_DIR}"
-
-    _solicitar_versao_biblioteca
+     _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then
         return 0
@@ -129,10 +123,15 @@ _reverter_biblioteca() {
         return 0
     fi
 
-    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
+    # Tentar encontrar o backup tanto em .tar.gz quanto em .zip (para retrocompatibilidade)
+    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
+    
+    if [[ ! -r "${arquivo_backup}" ]]; then
+        arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
+    fi
 
     if [[ ! -r "${arquivo_backup}" ]]; then
-        _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${arquivo_backup}"
+        _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
         _linha
         _aguardar_tecla
         return 0
@@ -149,7 +148,7 @@ _reverter_biblioteca() {
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
-    
+    _validar_diretorio_receber
     #_configurar_acessos
     cd "$DEFAULT_RECEBE_DIR" || return 1
 
@@ -203,8 +202,9 @@ _processar_atualizacao_biblioteca() {
     # Registrar trap local apenas durante o processamento
     trap '_limpar_interrupcao' INT
     trap '_limpar_interrupcao' TERM
-    local arquivo_backup="backup_biblioteca_antes_da_versao-${VERSAO}.zip"
-    local caminho_backup="${DEFAULT_BIBLIOTECA_DIR}/${arquivo_backup}"
+    
+    local arquivo_backup_tar="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${VERSAO}.tar"
+    local caminho_backup_final="${arquivo_backup_tar}.gz"
 
     # Inicializar contadores para progresso geral (opcional, para log final)
     local contador=0
@@ -215,20 +215,22 @@ _processar_atualizacao_biblioteca() {
 
     # Exibir mensagem inicial
     _linha
-    _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup..."
+    _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup (TAR)..."
     _linha
     _aguardar 1
 
+    # Remover backup temporario se existir
+    rm -f "${arquivo_backup_tar}" "${caminho_backup_final}"
+
     # Compactacao em E_EXEC
-    cd "$E_EXEC" || return 1
     {
-        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec tar -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
     } &
-    local pid_zip_exec=$!
-    pids+=("$pid_zip_exec")  # Registrar PID para trap
-    _mostrar_progresso_backup "$pid_zip_exec" "Compactando $E_EXEC"
-    if wait "$pid_zip_exec"; then
-        pids=("${pids[@]/$pid_zip_exec}")  # Remover PID apos concluido
+    local pid_tar_exec=$!
+    pids+=("$pid_tar_exec")  # Registrar PID para trap
+    _mostrar_progresso_backup "$pid_tar_exec" "Compactando $E_EXEC"
+    if wait "$pid_tar_exec"; then
+        pids=("${pids[@]/$pid_tar_exec}")  # Remover PID apos concluido
         ((contador++)) || true
         _mensagec "${GREEN}" "Compactacao de $E_EXEC concluida [Etapa ${contador}/${total_etapas}]"
         _linha
@@ -238,14 +240,13 @@ _processar_atualizacao_biblioteca() {
     fi
 
     # Compactacao em T_TELAS
-    cd "$T_TELAS" || return 1
     {
-        "$DEFAULT_FIND" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec tar -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
     } &
-    local pid_zip_telas=$!
-    pids+=("$pid_zip_telas")  # Registrar PID
-    _mostrar_progresso_backup "$pid_zip_telas" "Compactando $T_TELAS"
-    if wait "$pid_zip_telas"; then
+    local pid_tar_telas=$!
+    pids+=("$pid_tar_telas")  # Registrar PID
+    _mostrar_progresso_backup "$pid_tar_telas" "Compactando $T_TELAS"
+    if wait "$pid_tar_telas"; then
         ((contador++)) || true
         _mensagec "${GREEN}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
         _linha
@@ -256,14 +257,13 @@ _processar_atualizacao_biblioteca() {
 
     # Compactacao em X_XML (apenas para IsCOBOL)
     if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
-        cd "$X_XML" || return 1
         {
-            "$DEFAULT_FIND" "$X_XML"/ -type f \( -iname "*.xml" \) -exec "$DEFAULT_ZIP" -r -q "${caminho_backup}" {} + >>"${LOG_ATU}" 2>&1
+            "$DEFAULT_FIND" "$X_XML"/ -type f \( -iname "*.xml" \) -exec tar -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
         } &
-        local pid_zip_xml=$!
-        pids+=("$pid_zip_xml")  # Registrar PID
-        _mostrar_progresso_backup "$pid_zip_xml" "Compactando $X_XML"
-        if wait "$pid_zip_xml"; then
+        local pid_tar_xml=$!
+        pids+=("$pid_tar_xml")  # Registrar PID
+        _mostrar_progresso_backup "$pid_tar_xml" "Compactando $X_XML"
+        if wait "$pid_tar_xml"; then
             ((contador++)) || true
             _mensagec "${GREEN}" "Compactacao de $X_XML concluida [Etapa ${contador}/${total_etapas}]"
             _linha
@@ -272,15 +272,22 @@ _processar_atualizacao_biblioteca() {
             return 1
         fi
     fi
+
+    # Comprimir o arquivo tar final
+    if [[ -f "${arquivo_backup_tar}" ]]; then
+        _mensagec "${YELLOW}" "Comprimindo backup..."
+        gzip -f "${arquivo_backup_tar}" >>"${LOG_ATU}" 2>&1
+    fi
+
     _ir_para_tools
     _limpa_tela
     _linha
-    _mensagec "${YELLOW}" "Backup Completo"
+    _mensagec "${YELLOW}" "Backup Completo (Formato TAR.GZ)"
     _linha
     _aguardar 1
 
     # Verificar se backup foi criado
-    if [[ ! -r "${caminho_backup}" ]]; then
+    if [[ ! -r "${caminho_backup_final}" ]]; then
         _linha
         _mensagec "${RED}" "Backup nao encontrado no diretorio ou dados nao informados"
         _linha
@@ -329,6 +336,8 @@ _executar_atualizacao_biblioteca() {
             _mensagec "${GREEN}" "Iniciando descompactacao..."
 
             # Descompactar arquivo em background
+            # Nota: Mantemos unzip aqui pois os arquivos de atualizacao recebidos ainda podem ser .zip
+            # A alteracao para tar foi solicitada especificamente para as rotinas de backup/reversao
             {
             "${DEFAULT_UNZIP}" -o "${arquivo}" -d "${principal_local}" >>"${LOG_ATU}" 2>&1
             } &
@@ -420,14 +429,25 @@ _reverter_biblioteca_completa() {
         return 1
     fi
 
-    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${temp_restore}" >>"${LOG_ATU}"; then
-        _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
-        _aguardar_tecla
-        return 1
-    fi
-    _ir_para_tools
-    _mensagec "${YELLOW}" "Voltando backup anterior..."
+    _mensagec "${YELLOW}" "Voltando backup anterior (TAR)..."
     _linha
+
+    # Verificar se o arquivo e tar.gz ou zip
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" >>"${LOG_ATU}"; then
+            _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
+            _aguardar_tecla
+            return 1
+        fi
+    else
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${temp_restore}" >>"${LOG_ATU}"; then
+            _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
+            _aguardar_tecla
+            return 1
+        fi
+    fi
+
+    _ir_para_tools
     _mensagec "${YELLOW}" "Volta de todos os Programas Concluida"
     _linha
     _aguardar_tecla
@@ -454,21 +474,31 @@ _reverter_programa_especifico_biblioteca() {
     fi
 
     _linha
-    _mensagec "${YELLOW}" "Voltando versao anterior do programa ${programa_reverter}"
+    _mensagec "${YELLOW}" "Voltando versao anterior do programa ${programa_reverter} (TAR)..."
     _linha
 
-    local padrao="*/"
-    if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "${temp_restore}" >>"${LOG_ATU}"; then
-        _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
-        _aguardar_tecla
-        return 1
+    # Verificar se o arquivo e tar.gz ou zip
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        # No tar, usamos wildcards para encontrar o programa
+        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" --wildcards "*${programa_reverter}*" >>"${LOG_ATU}"; then
+            _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
+            _aguardar_tecla
+            return 1
+        fi
+    else
+        local padrao="*/"
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "${temp_restore}" >>"${LOG_ATU}"; then
+            _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
+            _aguardar_tecla
+            return 1
+        fi
     fi
 
     _mensagec "${YELLOW}" "Volta do Programa Concluida"
     _aguardar_tecla
 }
 
-#---------- FUNcoES AUXILIARES ----------#
+#---------- FUNCOES AUXILIARES ----------#
 
 # Solicita versao da biblioteca
 _solicitar_versao_biblioteca() {
@@ -505,4 +535,3 @@ _obter_arquivos_atualizacao() {
         echo "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" 
     fi
 }
-

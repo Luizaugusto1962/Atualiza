@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 27/05/2026-01
 #
 
 # =============================================================================
@@ -206,6 +206,7 @@ DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-${SCRIPT_DIR}/receber}"
 # =============================================================================
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"
 DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"
+DEFAULT_TAR="${DEFAULT_TAR:-tar}"
 DEFAULT_FIND="${DEFAULT_FIND:-find}"
 DEFAULT_WHO="${DEFAULT_WHO:-who}"
 
