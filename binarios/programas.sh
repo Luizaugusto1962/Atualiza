@@ -318,7 +318,7 @@ _coletar_artefatos_atualizacao() {
 _solicitar_programas_atualizacao() {
     _coletar_artefatos_atualizacao \
         "programa" \
-        "Informe o nome do programa a ser atualizado:" \
+        "Informe o nome do programa a ser atualizado da versao do sistema ${CFG_VERCLASS}" \
         "Finalizando selecao de programas..." \
         "Programas selecionados:"
 }
@@ -327,7 +327,7 @@ _solicitar_programas_atualizacao() {
 _solicitar_pacotes_atualizacao() {
     _coletar_artefatos_atualizacao \
         "pacote" \
-        "Informe o nome do pacote:" \
+        "Informe o nome do pacote da versao do sistema ${CFG_VERCLASS}" \
         "Finalizando selecao de pacotes..." \
         "Pacotes selecionados:"
 }
