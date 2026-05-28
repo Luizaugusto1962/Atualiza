@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/05/2026-02
+# Versao: 28/05/2026-01
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -830,7 +830,7 @@ _limpar_categoria() {
     done
     
     # Remover categoria do registro
-    eval "unset 'REGISTRO_CATEGORIAS'['$category']" 2>/dev/null || true
+    unset "REGISTRO_CATEGORIAS[$category]"
 }
 
 # Função para limpeza de emergência (sem dependências)
