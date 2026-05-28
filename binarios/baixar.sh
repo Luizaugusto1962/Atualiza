@@ -184,7 +184,12 @@ _atualizando() {
     _mensagec "${GREEN}" "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
-    _finalizar_sistema
+
+        # Finalizar sistema de variáveis (limpeza explícita)
+    if command -v _finalizar_sistema >/dev/null 2>&1; then
+        _finalizar_sistema
+    fi
+    exit 1
 }
 
 _atualizar_online() {
@@ -210,8 +215,5 @@ _atualizar_offline() {
         _mensagec "${RED}" "Erro: $zipfile nao encontrado em $temp_dir"
         return 1
     fi
-    
-    # CORRIGIDO: Removido o 'mv' redundante que causava erro ou não fazia nada
-    # O arquivo será localizado e limpo corretamente pela nova rotina em _atualizando
     _atualizando
 }
