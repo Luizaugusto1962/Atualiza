@@ -275,7 +275,7 @@ _processar_atualizacao_biblioteca() {
 
  # Comprimir o arquivo tar final com barra de progresso
     if [[ -f "${arquivo_backup_tar}" ]]; then
-        _mensagec "${YELLOW}" "Comprimindo backup (esta pode ser a etapa mais longa)..."
+        _mensagec "${YELLOW}" "Comprimindo os pacotes de backup..."
         {
             gzip -f "${arquivo_backup_tar}" >>"${LOG_ATU}" 2>&1
         } &
