@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/05/2026-00
+# Versao: 28/05/2026-01
 #
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
@@ -209,13 +209,13 @@ _processar_atualizacao_biblioteca() {
     # Inicializar contadores para progresso geral (opcional, para log final)
     local contador=0
     local total_etapas=2 # Para sistemas nao-iscobol
-    if [[ "$CFG_SISTEMA" = "iscobol" ]]; then
+    if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
         total_etapas=3 # Para iscobol inclui XML
     fi
 
     # Exibir mensagem inicial
     _linha
-    _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup (TAR)..."
+    _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup..."
     _linha
     _aguardar 1
 
@@ -224,7 +224,7 @@ _processar_atualizacao_biblioteca() {
 
     # Compactacao em E_EXEC
     {
-        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec tar -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$E_EXEC"/ -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
     } &
     local pid_tar_exec=$!
     pids+=("$pid_tar_exec")  # Registrar PID para trap
@@ -241,7 +241,7 @@ _processar_atualizacao_biblioteca() {
 
     # Compactacao em T_TELAS
     {
-        "$DEFAULT_FIND" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec tar -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
+        "$DEFAULT_FIND" "$T_TELAS"/ -type f \( -iname "*.TEL" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
     } &
     local pid_tar_telas=$!
     pids+=("$pid_tar_telas")  # Registrar PID
@@ -258,7 +258,7 @@ _processar_atualizacao_biblioteca() {
     # Compactacao em X_XML (apenas para IsCOBOL)
     if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
         {
-            "$DEFAULT_FIND" "$X_XML"/ -type f \( -iname "*.xml" \) -exec tar -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
+            "$DEFAULT_FIND" "$X_XML"/ -type f \( -iname "*.xml" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
         } &
         local pid_tar_xml=$!
         pids+=("$pid_tar_xml")  # Registrar PID
@@ -273,10 +273,21 @@ _processar_atualizacao_biblioteca() {
         fi
     fi
 
-    # Comprimir o arquivo tar final
+ # Comprimir o arquivo tar final com barra de progresso
     if [[ -f "${arquivo_backup_tar}" ]]; then
-        _mensagec "${YELLOW}" "Comprimindo backup..."
-        gzip -f "${arquivo_backup_tar}" >>"${LOG_ATU}" 2>&1
+        _mensagec "${YELLOW}" "Comprimindo backup (esta pode ser a etapa mais longa)..."
+        {
+            gzip -f "${arquivo_backup_tar}" >>"${LOG_ATU}" 2>&1
+        } &
+        local pid_gzip=$!
+        pids+=("$pid_gzip")
+        _mostrar_progresso_backup "$pid_gzip" "Comprimindo os diretorios"
+        pids=("${pids[@]/$pid_gzip}")  # Remover PID apos concluido
+        
+        if [[ ! -f "${caminho_backup_final}" ]]; then
+            _mensagec "${RED}" "Falha na compressao do arquivo de backup"
+            return 1
+        fi
     fi
 
     _ir_para_tools
