@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 29/05/2026-01
 #
 
 # Variaveis globais esperadas
@@ -53,7 +53,6 @@ _selecionar_base_arquivos() {
 _executar_limpeza_temporarios() {
 
     # Excluir arquivos de lista antigos para evitar confusao
-    for lista in "atualizal" "atualizaj" "atualizaj2" "atualizat" "atualizat2" ".atualizac" ".atualizac.bkp" ".atualizac.bak"; do
         local caminho_lista="${CFG_DIR}/${lista}"
         if [[ -f "${caminho_lista}" ]]; then
             if rm -f "${caminho_lista}"; then
@@ -62,7 +61,6 @@ _executar_limpeza_temporarios() {
                 _log "AVISO: Falha ao remover lista temporaria: ${lista}"
             fi
         fi
-    done
 
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
@@ -137,7 +135,7 @@ _limpar_base_especifica() {
 
         # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
         local arquivos_zip=()
-        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo")
+        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo" -mtime +1)
         local qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
