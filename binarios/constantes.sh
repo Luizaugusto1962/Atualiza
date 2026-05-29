@@ -155,7 +155,7 @@ CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                        # Modo offline (
 # PERMISSOES DE ARQUIVO E DIRETORIO
 # =============================================================================
 PERM_DIR_SECURE="0755"                                          # Diretorios seguros (rwxr-xr-x)
-PERM_FILE_PRIVATE="0600"                                        # Arquivos privados (rw-------)
+PERM_FILE_PRIVATE="0666"                                        # Arquivos privados 666 (rw-rw-rw-)
 PERM_FILE_EXEC="0755"                                           # Arquivos executaveis (rwxr-xr-x)
 
 # =============================================================================
