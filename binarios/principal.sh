@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 26/05/2026-01
+# Versao: 29/05/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -15,7 +15,7 @@
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
 set -euo pipefail
-umask 077  # Garante que arquivos criados sejam legíveis apenas pelo dono
+umask 000  # Garante que arquivos criados sejam legíveis 
 
 # =============================================================================
 # DIRETÓRIOS DO SCRIPT
