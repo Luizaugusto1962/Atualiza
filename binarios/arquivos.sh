@@ -51,17 +51,6 @@ _selecionar_base_arquivos() {
 
 # Executa limpeza de arquivos temporarios
 _executar_limpeza_temporarios() {
-
-    # Excluir arquivos de lista antigos para evitar confusao
-        local caminho_lista="${CFG_DIR}/${lista}"
-        if [[ -f "${caminho_lista}" ]]; then
-            if rm -f "${caminho_lista}"; then
-                _log "Lista temporaria removida: ${lista}"
-            else
-                _log "AVISO: Falha ao remover lista temporaria: ${lista}"
-            fi
-        fi
-
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
     if [[ ! -f "${arquivo_lista}" ]]; then
