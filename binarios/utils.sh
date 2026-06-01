@@ -6,12 +6,12 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 01/06/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
-
+NORM=$(tput sgr0)
 #---------- FUNCOES DE STRING ----------#
 
 # Remove espacos em branco do inicio e fim de uma string

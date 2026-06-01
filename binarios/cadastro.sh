@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-02
+# Versao: 01/06/2026-01
 # Autor: Luiz Augusto
 #
 # Uso:
@@ -32,9 +32,10 @@ fi
 
 # Diretorios dos modulos e configuracoes
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
+#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar modulos necessarios
+"." "${LIBS_DIR}/config.sh" 2>/dev/null || { echo "Erro: config.sh nao encontrado."; exit 1; }
 "." "${LIBS_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }
 "." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
 
@@ -54,7 +55,7 @@ main() {
         printf "\n"
         _mensagec "${YELLOW}" "1. Cadastrar novo usuario"
         _mensagec "${YELLOW}" "2. Alterar senha de usuario"
-        _mensagec "${YELLOW}" "0. Voltar"
+        _mensagec "${YELLOW}" "9. Sair"
         _linha "=" "${GREEN}"
         _mensagec "${GREEN}" "Digite o numero da opcao desejada e pressione ENTER." 
         read -rp "Escolha uma opcao: " opcao
@@ -72,7 +73,7 @@ main() {
                 printf "\n"
                 read -rp "Pressione ENTER para continuar..." -t 5
                 ;;
-            0)
+            9)
                 _limpa_tela
                 tput sgr0
                 exit 0
