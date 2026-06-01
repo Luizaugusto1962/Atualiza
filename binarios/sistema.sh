@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 01/06/2026-01
 #
 
 # Variaveis globais esperadas
@@ -58,38 +58,38 @@ _mostrar_versao_linux() {
 
     # Checando se conecta com a internet ou nao
     if ping -c 1 -W 3 google.com &>/dev/null; then
-        printf "${GREEN}Internet: ${NORM}Conectada${NORM}%*s\n"
+        printf "%sInternet: %sConectada%s\n" "${GREEN}" "${NORM}" "${NORM}"
     else
-        printf "${GREEN}Internet: ${NORM}Desconectada${NORM}%*s\n"
+        printf "%sInternet: %sDesconectada%s\n" "${GREEN}" "${NORM}" "${NORM}"
     fi
 
     # Checando tipo de OS
     local os
     os=$(uname -o)
-    printf "${GREEN}Sistema Operacional :${NORM}${os}${NORM}%*s\n"
+    printf "%sSistema Operacional :%s%s%s\n" "${GREEN}" "${NORM}" "${os}" "${NORM}"
 
     # Checando OS Versao e nome
     if [[ -f /etc/os-release ]]; then
         grep 'NAME\|VERSION' /etc/os-release | grep -v 'VERSION_ID\|PRETTY_NAME' >"${LOG_TMP}osrelease"
-        printf "${GREEN}OS Nome :${NORM}%*s\n"
+        printf "%sOS Nome :%s\n" "${GREEN}" "${NORM}"
         grep -v "VERSION" "${LOG_TMP}osrelease" | cut -f2 -d\"
-        printf "${GREEN}OS Versao: ${NORM}%*s\n"
+        printf "%sOS Versao: %s\n" "${GREEN}" "${NORM}"
         grep -v "NAME" "${LOG_TMP}osrelease" | cut -f2 -d\"
     else
-        printf "${RED}""Arquivo /etc/os-release nao encontrado.${NORM}%*s\n"
+        printf "%sArquivo /etc/os-release nao encontrado.%s\n" "${RED}" "${NORM}"
     fi
     printf "\n"
 
     # Checando hostname
     local nameservers
     nameservers=$(hostname)
-    printf "${GREEN}Nome do Servidor: ${NORM}${nameservers}${NORM}%*s\n"
+    printf "%sNome do Servidor: %s%s%s\n" "${GREEN}" "${NORM}" "${nameservers}" "${NORM}"
     printf "\n"
 
     # Checando Interno IP
     local internalip
     internalip=$(ip route get 1 | awk '{print $7;exit}')
-    printf "${GREEN}IP Interno: ${NORM}${internalip}${NORM}%*s\n"
+    printf "%sIP Interno: %s%s%s\n" "${GREEN}" "${NORM}" "${internalip}" "${NORM}"
     printf "\n"
 
     # Checando Externo IP
@@ -100,7 +100,7 @@ _mostrar_versao_linux() {
         else
             externalip="curl nao instalado"
         fi
-        printf "${GREEN}IP Externo: ${NORM}${externalip}${NORM}%*s\n"
+        printf "%sIP Externo: %s%s%s\n" "${GREEN}" "${NORM}" "${externalip}" "${NORM}"
     fi
 
     _linha
@@ -113,28 +113,29 @@ _mostrar_versao_linux() {
         who >"${LOG_TMP}who"
     }
     _run_who
-    printf "${GREEN}Usuario Logado: ${NORM}%*s\n"
+    printf "%sUsuario Logado: %s\n" "${GREEN}" "${NORM}"
     cat "${LOG_TMP}who"
     printf "\n"
 
     # Checando uso de memoria RAM e SWAP
     free | grep -v + >"${LOG_TMP}ramcache"
-    printf "${GREEN}Uso de Memoria Ram: ${NORM}%*s\n"
+    printf "%sUso de Memoria Ram: %s\n" "${GREEN}" "${NORM}"
     grep -v "Swap" "${LOG_TMP}ramcache"
-    printf "${GREEN}Uso de Swap: ${NORM}%*s\n"
+    printf "%sUso de Swap: %s\n" "${GREEN}" "${NORM}"
     grep -v "Mem" "${LOG_TMP}ramcache"
     printf "\n"
 
     # Checando uso de disco
     df -h | grep 'Filesystem\|/dev/sda*' >"${LOG_TMP}diskusage"
-    printf "${GREEN}Espaco em Disco: ${NORM}%*s\n"
+    printf "%sEspaco em Disco: %s\n" "${GREEN}" "${NORM}"
     cat "${LOG_TMP}diskusage"
     printf "\n"
 
     # Checando o Sistema Uptime
     local tecuptime
     tecuptime=$(uptime -p | cut -d " " -f2-)
-    printf "${GREEN}Sistema em uso Dias/(HH:MM): ${NORM}""${tecuptime}${NORM}%*s\n"
+    # CORRECAO: substituidos todos os %*s sem argumento de largura por \n simples
+    printf "%sSistema em uso Dias/(HH:MM): %s%s%s\n" "${GREEN}" "${NORM}" "${tecuptime}" "${NORM}"
 
     # Unset Variables
     # as vars sao locais, entao unset nao e estritamente necessario, mas mantem a intencao de limpeza
@@ -150,51 +151,53 @@ _mostrar_versao_linux() {
 # Mostra parametros do sistema
 _mostrar_parametros() {
     # Carregar versao antes de exibir
+    # CORRECAO: source sem || true com set -e ativo pode encerrar o shell se .versao retornar != 0
     if [[ -f "${CFG_DIR}/.versao" ]]; then
-        "." "${CFG_DIR}/.versao"
+        "." "${CFG_DIR}/.versao" || true
     fi
     _limpa_tela
     _linha "=" "${GREEN}"
-    printf "${GREEN}Sistema e banco de dados: ${NORM}${CFG_USA_DBMAKER}${NORM}%*s\n"
-    printf "${GREEN}Diretorio RAIZ: ${NORM}${RAIZ}${NORM}%*s\n"
-    printf "${GREEN}Diretorio do atualiza.sh: ${NORM}${SCRIPT_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio da base principal: ${NORM}${RAIZ}${CFG_BASE_DIR}${NORM}%*s\n"
-    [[ -n "${CFG_BASE_DIR2}" ]] && printf "${GREEN}Diretorio da segunda base: ${NORM}${RAIZ}${CFG_BASE_DIR2}${NORM}%*s\n"
-    [[ -n "${CFG_BASE_DIR3}" ]] && printf "${GREEN}Diretorio da terceira base: ${NORM}${RAIZ}${CFG_BASE_DIR3}${NORM}%*s\n"
-    printf "${GREEN}Diretorio dos executaveis: ${NORM}${E_EXEC}${NORM}%*s\n"
-    printf "${GREEN}Diretorio das telas: ${NORM}${T_TELAS}${NORM}%*s\n"
+    printf "%sSistema e banco de dados: %s%s%s\n" "${GREEN}" "${NORM}" "${CFG_USA_DBMAKER}" "${NORM}"
+    printf "%sDiretorio RAIZ: %s%s%s\n" "${GREEN}" "${NORM}" "${RAIZ}" "${NORM}"
+    printf "%sDiretorio do atualiza.sh: %s%s%s\n" "${GREEN}" "${NORM}" "${SCRIPT_DIR}" "${NORM}"
+    printf "%sDiretorio da base principal: %s%s%s%s\n" "${GREEN}" "${NORM}" "${RAIZ}" "${CFG_BASE_DIR}" "${NORM}"
+    [[ -n "${CFG_BASE_DIR2}" ]] && printf "%sDiretorio da segunda base: %s%s%s%s\n" "${GREEN}" "${NORM}" "${RAIZ}" "${CFG_BASE_DIR2}" "${NORM}"
+    [[ -n "${CFG_BASE_DIR3}" ]] && printf "%sDiretorio da terceira base: %s%s%s%s\n" "${GREEN}" "${NORM}" "${RAIZ}" "${CFG_BASE_DIR3}" "${NORM}"
+    printf "%sDiretorio dos executaveis: %s%s%s\n" "${GREEN}" "${NORM}" "${E_EXEC}" "${NORM}"
+    printf "%sDiretorio das telas: %s%s%s\n" "${GREEN}" "${NORM}" "${T_TELAS}" "${NORM}"
     if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
-        printf "${GREEN}Diretorio dos xmls: ${NORM}${X_XML}${NORM}%*s\n"
+        printf "%sDiretorio dos xmls: %s%s%s\n" "${GREEN}" "${NORM}" "${X_XML}" "${NORM}"
     fi
-    printf "${GREEN}Diretorio dos logs: ${NORM}${DEFAULT_LOGS_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio dos olds: ${NORM}${DEFAULT_OLDS_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio dos progs: ${NORM}${DEFAULT_PROGS_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio do backup: ${NORM}${DEFAULT_BACKUP_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio de configuracoes: ${NORM}${CFG_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio de receber: ${NORM}${DEFAULT_RECEBE_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio de enviar: ${NORM}${DEFAULT_ENVIA_DIR}${NORM}%*s\n"    
-    printf "${GREEN}Sistema em uso: ${NORM}${CFG_SISTEMA}${NORM}%*s\n"
-    printf "${GREEN}Versao do ${CFG_SISTEMA} em uso: ${NORM}${CFG_VERCLASS}${NORM}%*s\n"
-    printf "${GREEN}Biblioteca 1: ${NORM}${SAVATU1}${NORM}%*s\n"
-    printf "${GREEN}Biblioteca 2: ${NORM}${SAVATU2}${NORM}%*s\n"
-    printf "${GREEN}Biblioteca 3: ${NORM}${SAVATU3}${NORM}%*s\n"
-    printf "${GREEN}Biblioteca 4: ${NORM}${SAVATU4}${NORM}%*s\n"
+    printf "%sDiretorio dos logs: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_LOGS_DIR}" "${NORM}"
+    printf "%sDiretorio dos olds: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_OLDS_DIR}" "${NORM}"
+    printf "%sDiretorio dos progs: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_PROGS_DIR}" "${NORM}"
+    printf "%sDiretorio do backup: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_BACKUP_DIR}" "${NORM}"
+    printf "%sDiretorio de configuracoes: %s%s%s\n" "${GREEN}" "${NORM}" "${CFG_DIR}" "${NORM}"
+    printf "%sDiretorio de receber: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_RECEBE_DIR}" "${NORM}"
+    printf "%sDiretorio de enviar: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_ENVIA_DIR}" "${NORM}"
+    printf "%sSistema em uso: %s%s%s\n" "${GREEN}" "${NORM}" "${CFG_SISTEMA}" "${NORM}"
+    printf "%sVersao do %s em uso: %s%s%s\n" "${GREEN}" "${CFG_SISTEMA}" "${NORM}" "${CFG_VERCLASS}" "${NORM}"
+    printf "%sBiblioteca 1: %s%s%s\n" "${GREEN}" "${NORM}" "${SAVATU1}" "${NORM}"
+    printf "%sBiblioteca 2: %s%s%s\n" "${GREEN}" "${NORM}" "${SAVATU2}" "${NORM}"
+    printf "%sBiblioteca 3: %s%s%s\n" "${GREEN}" "${NORM}" "${SAVATU3}" "${NORM}"
+    printf "%sBiblioteca 4: %s%s%s\n" "${GREEN}" "${NORM}" "${SAVATU4}" "${NORM}"
     _linha "=" "${GREEN}"
     _aguardar_tecla
     _limpa_tela
     _linha "=" "${GREEN}"
-    printf "${GREEN}Diretorio de configuracoes em OFF: ${NORM}${DEFAULT_RECEBE_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio para envio de backup: ${NORM}${CFG_BACKUP_PATH}${NORM}%*s\n"
-    printf "${GREEN}Diretorio do backup de base: ${NORM}${DEFAULT_BASEBACKUP_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio do backup da biblioteca: ${NORM}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORM}%*s\n"
-    printf "${GREEN}Diretorio do backup da biblioteca anterior: ${NORM}${DEFAULT_BIBLIOTECA_DIR}${NORM}%*s\n"
-    printf "${GREEN}Versao da biblioteca atual: ${NORM}${VERSAOANT}${NORM}%*s\n"
-    printf "${GREEN}Servidor OFF: ${NORM}${CFG_OFFLINE}${NORM}%*s\n"
-    printf "${GREEN}Variavel do compilado: ${NORM}${compilado}${NORM}%*s\n"
-    printf "${GREEN}Variavel do debugado: ${NORM}${debugado}${NORM}%*s\n"
-    printf "${GREEN}Porta de conexao: ${NORM}${DEFAULT_SSH_PORTA}${NORM}%*s\n"
-    printf "${GREEN}Usuario de conexao: ${NORM}${DEFAULT_SSH_USER}${NORM}%*s\n"
-    printf "${GREEN}Servidor IP: ${NORM}${DEFAULT_IP_SERVER}${NORM}%*s\n"
+    # CORRECAO: substituidos todos os printf "${VAR}texto${NORM}%*s\n" por formato seguro "%s texto %s\n"
+    printf "%sDiretorio de configuracoes em OFF: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_RECEBE_DIR}" "${NORM}"
+    printf "%sDiretorio para envio de backup: %s%s%s\n" "${GREEN}" "${NORM}" "${CFG_BACKUP_PATH}" "${NORM}"
+    printf "%sDiretorio do backup de base: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_BASEBACKUP_DIR}" "${NORM}"
+    printf "%sDiretorio do backup da biblioteca: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_BIBLIOTECA_ATUAL_DIR}" "${NORM}"
+    printf "%sDiretorio do backup da biblioteca anterior: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_BIBLIOTECA_DIR}" "${NORM}"
+    printf "%sVersao da biblioteca atual: %s%s%s\n" "${GREEN}" "${NORM}" "${VERSAOANT}" "${NORM}"
+    printf "%sServidor OFF: %s%s%s\n" "${GREEN}" "${NORM}" "${CFG_OFFLINE}" "${NORM}"
+    printf "%sVariavel do compilado: %s%s%s\n" "${GREEN}" "${NORM}" "${compilado}" "${NORM}"
+    printf "%sVariavel do debugado: %s%s%s\n" "${GREEN}" "${NORM}" "${debugado}" "${NORM}"
+    printf "%sPorta de conexao: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_SSH_PORTA}" "${NORM}"
+    printf "%sUsuario de conexao: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_SSH_USER}" "${NORM}"
+    printf "%sServidor IP: %s%s%s\n" "${GREEN}" "${NORM}" "${DEFAULT_IP_SERVER}" "${NORM}"
     _linha "=" "${GREEN}"
     _aguardar_tecla
 }

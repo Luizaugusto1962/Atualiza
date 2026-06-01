@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 29/05/2026-01
+# Versao: 01/06/2026-01
 #
 
 # Variaveis globais esperadas
@@ -295,7 +295,9 @@ _recuperar_arquivo_especifico() {
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
     local base_trabalho="$1"
-    local -a extensoes=("${DATA_EXTENSIONS[@]}")
+    # DATA_EXTENSIONS: extensoes de arquivos de dados suportados pelo jutil
+    # CORRECAO: array nao estava definido em nenhum modulo — definido aqui localmente
+    local -a extensoes=("*.ARQ.dat" "*.DAT.dat" "*.LOG.dat" "*.PAN.dat")
     _mensagec "${RED}" "Recuperando todos os arquivos principais..."
     _linha "-" "${YELLOW}"
     

@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 29/05/2026-01
+# Versao: 01/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -84,11 +84,13 @@ _criar_diretorio_seguro() {
             return 0
         else
             printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            exit 1  # Nao falhar por permissao
+            # CORRECAO: era exit 1 dentro de funcao sourced — trocado para return 1
+            return 1
         fi
     else
         printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        exit 1
+        # CORRECAO: era exit 1 dentro de funcao sourced — trocado para return 1
+        return 1
     fi
 }
 
@@ -174,7 +176,8 @@ _caminho_modulo() {
 # Retorna: 0 se todos carregados, 1 se algum falhou
 _carregar_modulos() {
     local modulos=(
-        "constantes.sh" # Constantes do Sistema SAV
+        # NOTA: constantes.sh ja foi carregado no topo de principal.sh (antes dos modulos).
+        # Nao e listado aqui para evitar duplo carregamento e redefinicao de variaveis.
         "config.sh"     # Configuracoes
         "utils.sh"      # Utilitarios basicos primeiro
         "auth.sh"       # Autenticacao
@@ -235,8 +238,9 @@ _inicializar_sistema() {
     fi
 
     # Inicializar sistema de gerenciamento de variáveis
-    if command -v _inicializar_sistema_variaveis >/dev/null 2>&1; then
-        _inicializar_sistema_variaveis
+    # CORRECAO: nome correto da funcao e _inicializar_variaveis_sistema (definida em config.sh)
+    if command -v _inicializar_variaveis_sistema >/dev/null 2>&1; then
+        _inicializar_variaveis_sistema
     fi
 
     # Carregar e validar configuracoes

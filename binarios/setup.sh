@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-02
+# Versao: 01/06/2026-01
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -155,6 +155,8 @@ _edit_setup() {
 
 # Configuracao para IsCobol
 _setup_iscobol() {
+    # CORRECAO: tracejada era usada sem estar definida no escopo desta funcao
+    local tracejada="#-------------------------------------------------------------------#"
     sistema="iscobol"
     echo "sistema=iscobol" >> .config
     echo "$tracejada"

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 01/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -16,11 +16,10 @@ set -euo pipefail
 #CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao atual do sistema
 #UPDATE="${UPDATE:-}"                                     # Aviso de update disponivel
 
-caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao 
-_criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-    printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-    return 1
-}
+# CORRECAO: criacao de diretorio removida do nivel global (efeito colateral ao source).
+# A garantia do diretorio de configuracao e responsabilidade de principal.sh/_carregar_configuracoes.
+# Mantida apenas a declaracao da variavel para uso nos menus.
+caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao
 
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
@@ -48,7 +47,8 @@ _ler_opcao_menu() {
         fi
         
         # Sanitizar entrada
-        opcao=$(_sanitizar_entrada "$opcao" 2>/dev/null || printf '%s' "$opcao")
+        # NOTA: _sanitizar_entrada nao esta definida no projeto — o fallback garante seguranca
+        # A funcao _trim (utils.sh) e suficiente para remover espacos extras
         opcao=$(_trim "$opcao" 2>/dev/null || printf '%s' "$opcao")
         
         # Verificar comandos de ajuda
@@ -572,8 +572,9 @@ _menu_setups() {
             2) 
                _manutencao_setup || true
                 # Apos a manutencao, recarregar as configuracoes
+                # CORRECAO: source de .config sem || true com set -e ativo pode encerrar o shell
                 if [[ -f "${CFG_DIR}/.config" ]]; then
-                    "." "${CFG_DIR}/.config"
+                    "." "${CFG_DIR}/.config" || true
                     _mensagec "${GREEN}" "Configuracoes recarregadas com sucesso!"
                     _aguardar 2
                 fi

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 01/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -649,9 +649,10 @@ _mover_backup_offline() {
         return 0
     fi
 
-	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+    # CORRECAO: era local caminho="${1:-...}" mas $1 aqui e nome_backup, nao um caminho.
+    # O diretorio de destino correto e sempre DEFAULT_RECEBE_DIR.
+    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de destino %s\n" "${DEFAULT_RECEBE_DIR}" >&2
         return 1
     }
     

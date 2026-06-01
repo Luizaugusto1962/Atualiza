@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Exibe todas as constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026-01
+# Versao: 01/06/2026-01
 # Uso: ./variaveis.sh [filtro]
 #
 # =============================================================================
@@ -133,11 +133,11 @@ exibir_tabular() {
     # Exibir informacoes sobre o arquivo de configuracao
     printf "%s%s Fonte de Configuracao:%s\n" "$GREEN" "$BOLD" "$NORM"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
-        printf "   %s Status: Carregado com sucesso $CONFIG_FILE"
+        printf "   %s Status: Carregado com sucesso %s\n" "" "$CONFIG_FILE"
     else
-        printf "   %s Status: Nao encontrado (usando valores padrao) $CONFIG_FILE"
+        printf "   %s Status: Nao encontrado (usando valores padrao) %s\n" "" "$CONFIG_FILE"
     fi
-    printf "\n"9
+    printf "\n"
 
     # Cabecalho da tabela
     printf "%s%-35s%s %s\n" "$GREEN" "VARIAVEL" "$NORM" "VALOR"

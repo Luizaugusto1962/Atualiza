@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/05/2026-01
+# Versao: 01/06/2026-01
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -335,7 +335,8 @@ DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretório 
 _configurar_comandos() {
 
     # Validar se os comandos existem
-    local cmds=("$DEFAULT_ZIP" "$DEFAULT_ZIP")
+    # CORRECAO: era ("$DEFAULT_ZIP" "$DEFAULT_ZIP") — duplicado; corrigido para incluir DEFAULT_UNZIP
+    local cmds=("$DEFAULT_ZIP" "$DEFAULT_UNZIP")
     local cmd=""
     local missing=()
 
@@ -989,5 +990,8 @@ _debubglist_vars() {
     printf 'Total: %d\n' "${#REGISTRO_VARIAVEIS[@]}"
 }
 
+# NOTA: Os traps abaixo sao registrados aqui pois config.sh e sourced antes de principal.sh
+# definir seus proprios traps em _main(). Os traps de _main() sobrescrevem estes ao ser chamados.
+# Isso garante limpeza mesmo se o carregamento falhar antes de _main() ser executada.
 trap '_encerrar_programa' EXIT INT TERM
 trap '_limpeza_emergencia' QUIT
