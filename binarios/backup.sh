@@ -340,7 +340,7 @@ _executar_backup_completo() {
     # Usar DEFAULT_FIND para consistência com o restante do projeto
     "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f \
          ! -name "*.zip" ! -name "*.tar.gz" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-         -printf '%P\0' > "$arquivos_temp"
+         -print > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
         _log_bkp "Nenhum arquivo no nivel superior para backup"
@@ -348,9 +348,11 @@ _executar_backup_completo() {
         return 1
     fi
 
-    if ! xargs -0 "${DEFAULT_TAR}" -czf "$arquivo_destino" -- < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    # -T le a lista de arquivos; --verbatim-files-from preserva nomes com espacos/caracteres especiais
+    if ! "${DEFAULT_TAR}" -czf "$arquivo_destino" \
+            --verbatim-files-from -T "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao criar arquivo de backup"
-        rm -f "$arquivos_temp"
+        rm -f "$arquivos_temp" "$arquivo_destino"
         return 1
     fi
 
@@ -399,7 +401,7 @@ _executar_backup_incremental() {
     # Usar DEFAULT_FIND para consistência com o restante do projeto
     "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f -newermt "$data_referencia" \
          ! -name "*.zip" ! -name "*.tar.gz" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -printf '%P\0' > "$arquivos_temp"
+         -print > "$arquivos_temp"
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
     if [[ ! -s "$arquivos_temp" ]]; then
@@ -409,9 +411,11 @@ _executar_backup_incremental() {
     fi
 
     # Executar compactacao
-    if ! xargs -0 "${DEFAULT_TAR}" -czf "$arquivo_destino" -- < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    # -T le a lista de arquivos; --verbatim-files-from preserva nomes com espacos/caracteres especiais
+    if ! "${DEFAULT_TAR}" -czf "$arquivo_destino" \
+            --verbatim-files-from -T "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
-        rm -f "$arquivos_temp"
+        rm -f "$arquivos_temp" "$arquivo_destino"
         return 1
     fi
 
