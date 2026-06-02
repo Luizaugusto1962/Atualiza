@@ -333,7 +333,10 @@ _executar_backup_completo() {
     fi
 
     # Coletar lista de arquivos em array (exclui compactados, logs e temporarios)
-    mapfile -d '' arquivos < <(
+    # Usa while + read -d '' para compatibilidade com bash < 4.4 (sem mapfile -d)
+    while IFS= read -r -d '' arquivo; do
+        arquivos+=("$arquivo")
+    done < <(
         "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f \
             ! -name "*.zip"    ! -name "*.tar.gz" ! -name "*.tar" \
             ! -name "*.gz"     ! -name "*.log"    ! -name "*.tmp" \
@@ -388,7 +391,10 @@ _executar_backup_incremental() {
     fi
 
     # Coletar arquivos modificados desde a data de referência
-    mapfile -d '' arquivos < <(
+    # Usa while + read -d '' para compatibilidade com bash < 4.4 (sem mapfile -d)
+    while IFS= read -r -d '' arquivo; do
+        arquivos+=("$arquivo")
+    done < <(
         "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f -newermt "$data_referencia" \
             ! -name "*.zip"    ! -name "*.tar.gz" ! -name "*.tar" \
             ! -name "*.log"    ! -name "*.tmp"    ! -name "*.gz" \
