@@ -23,7 +23,7 @@ _limpar_backup() {
     _log "Backup interrompido. Limpando temporários..."
     # Remover arquivos parciais com blindagem contra variaveis nulas
     if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" && "${DEFAULT_BASEBACKUP_DIR}" != "/" && "${DEFAULT_BASEBACKUP_DIR}" != "//" ]]; then
-        rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
+        rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.tar.gz.tmp 2>/dev/null || true
     fi
 }
 
@@ -43,14 +43,14 @@ _validar_pre_backup() {
     local -n _base_ref="$1"   # nameref para definir base_trabalho no chamador
 
     # Validar comando de compactacao
-    if [[ -z "$DEFAULT_ZIP" ]]; then
+    if [[ -z "$DEFAULT_TAR" ]]; then
         _mensagec "${RED}" "Erro: Comando de compactacao nao configurado"
         _aguardar 3
         return 1
     fi
 
-    if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
-        _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel no sistema"
+    if ! command -v "$DEFAULT_TAR" &>/dev/null; then
+        _mensagec "${RED}" "Erro: Comando '$DEFAULT_TAR' nao disponivel no sistema"
         _aguardar 3
         return 1
     fi
@@ -124,7 +124,7 @@ _executar_backup() {
 
     # Gerar nome do arquivo
     local nome_backup
-    nome_backup="${CFG_EMPRESA}_${tipo_backup}_$(date +%Y%m%d%H%M).zip"
+    nome_backup="${CFG_EMPRESA}_${tipo_backup}_$(date +%Y%m%d%H%M).tar.gz"
     local caminho_backup="${DEFAULT_BASEBACKUP_DIR}/$nome_backup"
 
     # Verificar backups recentes
@@ -289,6 +289,32 @@ _validar_backup_criado() {
     return 0
 }
 
+# Valida integridade de um arquivo tar.gz de backup
+# Usa DEFAULT_TAR para manter consistencia com a compactacao
+_validar_integridade_backup_tar() {
+    local arquivo_backup="$1"
+
+    if [[ ! -f "${arquivo_backup}" ]]; then
+        _mensagec "${RED}" "ERRO: Arquivo de backup nao encontrado: ${arquivo_backup}"
+        return 1
+    fi
+
+    local tamanho
+    tamanho=$(stat -c%s "${arquivo_backup}" 2>/dev/null || echo 0)
+    if (( tamanho < 20 )); then
+        _mensagec "${RED}" "ERRO: Arquivo de backup corrompido (tamanho: ${tamanho} bytes): ${arquivo_backup}"
+        return 1
+    fi
+
+    # Testar integridade: listar conteudo sem extrair
+    if ! "${DEFAULT_TAR}" -tzf "${arquivo_backup}" >/dev/null 2>&1; then
+        _mensagec "${RED}" "ERRO: Arquivo de backup invalido ou corrompido: ${arquivo_backup}"
+        return 1
+    fi
+
+    return 0
+}
+
 # Executa backup completo
 _executar_backup_completo() {
     local arquivo_destino="$1"
@@ -313,7 +339,7 @@ _executar_backup_completo() {
 
     # Usar DEFAULT_FIND para consistência com o restante do projeto
     "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f \
-         ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
+         ! -name "*.zip" ! -name "*.tar.gz" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
          -printf '%P\0' > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
@@ -322,7 +348,7 @@ _executar_backup_completo() {
         return 1
     fi
 
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! xargs -0 "${DEFAULT_TAR}" -czf "$arquivo_destino" -- < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao criar arquivo de backup"
         rm -f "$arquivos_temp"
         return 1
@@ -372,7 +398,7 @@ _executar_backup_incremental() {
 
     # Usar DEFAULT_FIND para consistência com o restante do projeto
     "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f -newermt "$data_referencia" \
-         ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
+         ! -name "*.zip" ! -name "*.tar.gz" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
          -printf '%P\0' > "$arquivos_temp"
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
@@ -383,7 +409,7 @@ _executar_backup_incremental() {
     fi
 
     # Executar compactacao
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! xargs -0 "${DEFAULT_TAR}" -czf "$arquivo_destino" -- < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
         rm -f "$arquivos_temp"
         return 1
@@ -426,13 +452,13 @@ _diretorio_trabalho() {
 _selecionar_backup() {
     local arquivos_backup=()
 
-    # Carrega todos os .zip disponiveis
+    # Carrega todos os .tar.gz disponiveis
     shopt -s nullglob
-    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip)
+    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.tar.gz)
     shopt -u nullglob  # Restaurar imediatamente para nao afetar outros globos
 
     if ((${#arquivos_backup[@]} == 0)); then
-        _mensagec "${RED}" "Nenhum backup (${CFG_EMPRESA}_*.zip) encontrado"
+        _mensagec "${RED}" "Nenhum backup (${CFG_EMPRESA}_*.tar.gz) encontrado"
         _aguardar_tecla
         return 1  # Sinaliza ausencia de backups para o chamador
     fi
@@ -516,7 +542,7 @@ _restaurar_backup_completo() {
     _mensagec "${YELLOW}" "Restaurando todos os arquivos..."
     _linha
     
-    if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+    if ! "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
         _aguardar_tecla
         return 1
@@ -568,7 +594,8 @@ _restaurar_arquivo_especifico() {
         _mensagec "${YELLOW}" "Restaurando ${nome_arquivo}..."
         _linha
        
-        if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+        if ! "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "${base_trabalho}" \
+                --wildcards "${nome_arquivo}*.*" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else
@@ -744,12 +771,12 @@ _verificar_espaco_disco() {
 
 # Verifica backups recentes (ultimos 2 dias)
 _verificar_backups_recentes() {
-    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*zip" -print -quit | grep -q .; then
+    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*.tar.gz" -print -quit | grep -q .; then
         _linha
         _mensagec "$CYAN" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
         # CORRECAO: ls substituido por find — ls com glob e inseguro com set -e
-        find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -name "${CFG_EMPRESA}_*.zip" \
+        find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -name "${CFG_EMPRESA}_*.tar.gz" \
             -printf "%f  %s bytes  %Td/%Tm/%TY %TH:%TM\n" 2>/dev/null \
             | sort -r \
             || true
@@ -896,13 +923,13 @@ _executar_backup_multiplos_padroes() {
     # Gerar nome do arquivo
     local nome_backup
     local caminho_backup
-    nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).zip"
+    nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).tar.gz"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
     _mensagec "${YELLOW}" "Criando backup com multiplos padroes..."
     _linha
 
     # Executar compactação com os arquivos especificados
-    if ! "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
+    if ! "${DEFAULT_TAR}" -czf "$caminho_backup" -- "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro ao criar backup"
         [[ -f "$caminho_backup" ]] && rm -f "$caminho_backup"
         _aguardar 3
@@ -917,7 +944,7 @@ _executar_backup_multiplos_padroes() {
     fi
 
     # Validar integridade
-    if ! _validar_integridade_backup "$caminho_backup"; then
+    if ! _validar_integridade_backup_tar "$caminho_backup"; then
         _mensagec "${RED}" "ERRO CRITICO: Backup criado mas invalido (corrompido)"
         rm -f "$caminho_backup"
         _aguardar 3
