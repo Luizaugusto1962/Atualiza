@@ -6,12 +6,17 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 01/06/2026-02
 # Autor: Luiz Augusto
 #
 
 # Variaveis globais esperadas
-CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da base de dados principal.
+
+# Variaveis de estado da selecao de backup (escopo de modulo, nao exportadas)
+# Definidas aqui para deixar explícito que são globais ao modulo
+backup_selecionado=""   # Caminho completo do backup selecionado em _selecionar_backup
+nome_backup=""          # Nome do arquivo do backup selecionado (sem caminho)
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {
@@ -103,12 +108,17 @@ _executar_backup() {
         return 1
     fi
 
-    # Exportar para uso em subfuncoes
+    # Exportar BASE_TRABALHO para uso em _diretorio_trabalho (chamado em subshell background)
+    # Limpar ao final da funcao para nao vazar para chamadas subsequentes
     export BASE_TRABALHO="$base_trabalho"
 
     # Escolher tipo de backup
+    # tipo_backup e definida/exportada por _menu_tipo_backup (menus.sh)
+    # Inicializar para evitar uso de valor residual de chamada anterior
+    tipo_backup=""
     _menu_tipo_backup
-    if [[ -z "$tipo_backup" ]]; then
+    if [[ -z "${tipo_backup:-}" ]]; then
+        trap '_encerrar_programa 130' INT TERM
         return 0
     fi
 
@@ -132,7 +142,7 @@ _executar_backup() {
     if ! _diretorio_trabalho; then
         _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
         _aguardar 3
-        return 0
+        return 1
     fi
 
     _linha
@@ -199,12 +209,16 @@ _executar_backup() {
     local resultado=0
     _mostrar_progresso_backup "$backup_pid" "Backup em andamento" || resultado=$?
 
+    # Restaurar trap ANTES de avaliar resultado — garante limpeza correta em qualquer caminho
+    trap '_encerrar_programa 130' INT TERM
+
     if [[ $resultado -eq 0 ]] && [[ -f "$caminho_backup" ]]; then
         _finalizar_backup_sucesso "$nome_backup"
     else
         _mensagec "$RED" "Erro ao criar backup"
+        unset BASE_TRABALHO
         _aguardar 3
-        return 0
+        return 1
     fi
 
     # Perguntar sobre envio
@@ -212,8 +226,8 @@ _executar_backup() {
         _enviar_backup_servidor "$nome_backup"
     fi
 
-    # Restaurar trap original ao encerrar o backup
-    trap '_encerrar_programa 130' INT TERM
+    # Limpar BASE_TRABALHO exportada para nao vazar para proximas chamadas
+    unset BASE_TRABALHO
 }
 
 # Restaura backup do sistema
@@ -242,7 +256,7 @@ _enviar_backup_avulso() {
     if [[ -z "${nome_backup:-}" ]]; then
         _mensagec "${RED}" "Erro: Nome do backup nao definido"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
@@ -297,7 +311,8 @@ _executar_backup_completo() {
         return 1
     }
 
-    find . -maxdepth 1 -type f \
+    # Usar DEFAULT_FIND para consistência com o restante do projeto
+    "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
          -printf '%P\0' > "$arquivos_temp"
 
@@ -355,8 +370,8 @@ _executar_backup_incremental() {
         return 1
     }
 
-    # Buscar arquivos modificados apenas no nivel superior
-    find . -maxdepth 1 -type f -newermt "$data_referencia" \
+    # Usar DEFAULT_FIND para consistência com o restante do projeto
+    "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f -newermt "$data_referencia" \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
          -printf '%P\0' > "$arquivos_temp"
 
@@ -494,7 +509,7 @@ _restaurar_backup_completo() {
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     _linha
@@ -504,11 +519,12 @@ _restaurar_backup_completo() {
     if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     _mensagec "${GREEN}" "Restauracao completa concluida"
     _aguardar_tecla
+    return 0
 }
 
 # Restaura(s) arquivo(s) especifico(s)
@@ -520,7 +536,7 @@ _restaurar_arquivo_especifico() {
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
    
     while true; do
@@ -556,7 +572,11 @@ _restaurar_arquivo_especifico() {
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else
-            if ls "${base_trabalho}/${nome_arquivo}"*.* >/dev/null 2>&1; then
+            # Verificar se ao menos um arquivo foi restaurado (shopt evita glob literal)
+            shopt -s nullglob
+            local restaurados=("${base_trabalho}/${nome_arquivo}"*.*)
+            shopt -u nullglob
+            if (( ${#restaurados[@]} > 0 )); then
                 _mensagec "${GREEN}" "Arquivo ${nome_arquivo} restaurado com sucesso"
             else
                 _mensagec "${YELLOW}" "Arquivo ${nome_arquivo} nao encontrado apos restauracao"
@@ -584,7 +604,7 @@ _enviar_backup_servidor() {
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar 3
-        return 0
+        return 1
     fi
 
     # Determinar destino
@@ -624,7 +644,7 @@ _enviar_backup_servidor() {
         _linha
         _mensagec "${RED}" "Erro ao enviar backup"
         _aguardar 3
-        return 0
+        return 1
     fi
 }
 
@@ -636,7 +656,7 @@ _mover_backup_offline() {
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     _linha
@@ -646,7 +666,7 @@ _mover_backup_offline() {
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${RED}" "Diretorio offline nao configurado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     # CORRECAO: era local caminho="${1:-...}" mas $1 aqui e nome_backup, nao um caminho.
@@ -662,7 +682,7 @@ _mover_backup_offline() {
     else
         _mensagec "${RED}" "Erro ao mover backup"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 }
 
@@ -672,10 +692,11 @@ _enviar_backup_rede() {
     local DESTINO_REMOTO
     
     # Validar se arquivo existe
+    # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     if [[ -n "${CFG_BACKUP_PATH}" ]]; then
@@ -700,7 +721,7 @@ _enviar_backup_rede() {
         _linha
         _mensagec "${RED}" "Erro ao enviar backup via vaievem"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 }
 
@@ -727,7 +748,11 @@ _verificar_backups_recentes() {
         _linha
         _mensagec "$CYAN" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
-        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip 2>/dev/null
+        # CORRECAO: ls substituido por find — ls com glob e inseguro com set -e
+        find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -name "${CFG_EMPRESA}_*.zip" \
+            -printf "%f  %s bytes  %Td/%Tm/%TY %TH:%TM\n" 2>/dev/null \
+            | sort -r \
+            || true
         _linha
         return 0
     fi
@@ -870,6 +895,7 @@ _executar_backup_multiplos_padroes() {
 
     # Gerar nome do arquivo
     local nome_backup
+    local caminho_backup
     nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).zip"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
     _mensagec "${YELLOW}" "Criando backup com multiplos padroes..."
@@ -901,11 +927,13 @@ _executar_backup_multiplos_padroes() {
     # Finalizar com sucesso
     _finalizar_backup_sucesso "$nome_backup"
 
-
     # Perguntar sobre envio
     if _confirmar "Deseja enviar backup para servidor?" "N"; then
         _enviar_backup_servidor "$nome_backup"
     fi
+
+    # Limpar BASE_TRABALHO exportada para nao vazar para proximas chamadas
+    unset BASE_TRABALHO
 }
 
 # Finaliza backup com sucesso

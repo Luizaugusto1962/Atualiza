@@ -32,7 +32,6 @@ fi
 
 # Diretorios dos modulos e configuracoes
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
-#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar modulos necessarios
 "." "${LIBS_DIR}/config.sh" 2>/dev/null || { echo "Erro: config.sh nao encontrado."; exit 1; }

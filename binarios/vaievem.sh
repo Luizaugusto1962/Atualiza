@@ -129,9 +129,13 @@ _download_scp() {
 }
 
 # Upload via RSYNC
-# Parametros: $1=arquivo_local $2=CFG_BACKUP_PATH $3=servidor $4=porta $5=usuario
+# Parametros: $1=arquivo_local $2=destino_remoto(caminho) $3=servidor $4=porta $5=usuario
+# NOTA: $2 sobrescreve CFG_BACKUP_PATH para uso nesta chamada. Se omitido, usa CFG_BACKUP_PATH global.
 _upload_rsync() {
     local arquivo_local="$1"
+    # CORRECAO: local CFG_BACKUP_PATH deve ser declarado ANTES da validacao para evitar
+    # que a validacao passe usando a global enquanto o rsync usaria o local vazio.
+    local CFG_BACKUP_PATH="${2:-${CFG_BACKUP_PATH:-}}"
 
     if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
         _log_erro "Erro: Parametros obrigatorios nao informados para upload RSYNC"
@@ -143,7 +147,6 @@ _upload_rsync() {
         return 1
     fi
 
-    local CFG_BACKUP_PATH="$2"
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
@@ -167,7 +170,6 @@ _upload_rsync() {
 _baixar_biblioteca_sincroniza() {
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
 
-    # Usar subshell para nao alterar o diretorio do chamador
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
 
@@ -221,7 +223,6 @@ _baixar_programas_vaievem() {
     _linha
     _mensagec "${YELLOW}" "Realizando sincronizacao dos arquivos..."
 
-    # Usar subshell para nao alterar o diretorio do chamador
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
 

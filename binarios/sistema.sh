@@ -150,8 +150,6 @@ _mostrar_versao_linux() {
 
 # Mostra parametros do sistema
 _mostrar_parametros() {
-    # Carregar versao antes de exibir
-    # CORRECAO: source sem || true com set -e ativo pode encerrar o shell se .versao retornar != 0
     if [[ -f "${CFG_DIR}/.versao" ]]; then
         "." "${CFG_DIR}/.versao" || true
     fi
