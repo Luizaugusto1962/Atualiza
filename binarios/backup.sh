@@ -318,7 +318,7 @@ _validar_integridade_backup_tar() {
 # Executa backup completo
 _executar_backup_completo() {
     local arquivo_destino="$1"
-    local arquivos_temp
+    local arquivos=()
 
     # Validar parâmetro
     if [[ -z "$arquivo_destino" ]]; then
@@ -326,37 +326,33 @@ _executar_backup_completo() {
         return 1
     fi
 
-    # Validar diretório de trabalho
+    # Validar diretório de trabalho (muda para o dir da base)
     if ! _diretorio_trabalho; then
         _log_bkp "ERRO: Falha ao acessar diretorio de trabalho"
         return 1
     fi
 
-    arquivos_temp=$(mktemp) || {
-        _log_bkp "ERRO: Falha ao criar arquivo temporario"
-        return 1
-    }
+    # Coletar lista de arquivos em array (exclui compactados, logs e temporarios)
+    mapfile -d '' arquivos < <(
+        "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f \
+            ! -name "*.zip"    ! -name "*.tar.gz" ! -name "*.tar" \
+            ! -name "*.gz"     ! -name "*.log"    ! -name "*.tmp" \
+            ! -name "*.old" \
+            -print0
+    )
 
-    # Usar DEFAULT_FIND para consistência com o restante do projeto
-    "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f \
-         ! -name "*.zip" ! -name "*.tar.gz" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-         -print > "$arquivos_temp"
-
-    if [[ ! -s "$arquivos_temp" ]]; then
+    if (( ${#arquivos[@]} == 0 )); then
         _log_bkp "Nenhum arquivo no nivel superior para backup"
-        rm -f "$arquivos_temp"
         return 1
     fi
 
-    # -T le a lista de arquivos; --verbatim-files-from preserva nomes com espacos/caracteres especiais
-    if ! "${DEFAULT_TAR}" -czf "$arquivo_destino" \
-            --verbatim-files-from -T "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    # Executar compactacao com os arquivos coletados
+    # Os nomes vêm do find com ./ prefixo; tar os empacota relativos ao diretorio atual
+    if ! "${DEFAULT_TAR}" -czf "$arquivo_destino" "${arquivos[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao criar arquivo de backup"
-        rm -f "$arquivos_temp" "$arquivo_destino"
+        rm -f "$arquivo_destino"
         return 1
     fi
-
-    rm -f "$arquivos_temp"
 
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
@@ -371,8 +367,7 @@ _executar_backup_completo() {
 _executar_backup_incremental() {
     local arquivo_destino="$1"
     local data_referencia="$2"
-    local arquivos_temp
-    local resultado
+    local arquivos=()
 
     # Validar parâmetros
     if [[ -z "$arquivo_destino" || -z "$data_referencia" ]]; then
@@ -386,47 +381,38 @@ _executar_backup_incremental() {
         return 1
     fi
 
-    # Validar diretório de trabalho
+    # Validar diretório de trabalho (muda para o dir da base)
     if ! _diretorio_trabalho; then
         _log_bkp "ERRO: Falha ao acessar diretorio de trabalho"
         return 1
     fi
 
-    # Criar arquivo temporario para lista de arquivos
-    arquivos_temp=$(mktemp) || {
-        _log_bkp "ERRO: Falha ao criar arquivo temporario"
-        return 1
-    }
+    # Coletar arquivos modificados desde a data de referência
+    mapfile -d '' arquivos < <(
+        "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f -newermt "$data_referencia" \
+            ! -name "*.zip"    ! -name "*.tar.gz" ! -name "*.tar" \
+            ! -name "*.log"    ! -name "*.tmp"    ! -name "*.gz" \
+            ! -name "*.old" \
+            -print0
+    )
 
-    # Usar DEFAULT_FIND para consistência com o restante do projeto
-    "${DEFAULT_FIND:-find}" . -maxdepth 1 -type f -newermt "$data_referencia" \
-         ! -name "*.zip" ! -name "*.tar.gz" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -print > "$arquivos_temp"
-
-    # Validar se encontrou arquivos (sem erro, apenas informativo)
-    if [[ ! -s "$arquivos_temp" ]]; then
+    # Nenhum arquivo modificado não é erro — apenas informativo
+    if (( ${#arquivos[@]} == 0 )); then
         _log_bkp "Nenhum arquivo modificado desde $data_referencia"
-        rm -f "$arquivos_temp"
         return 0
     fi
 
     # Executar compactacao
-    # -T le a lista de arquivos; --verbatim-files-from preserva nomes com espacos/caracteres especiais
-    if ! "${DEFAULT_TAR}" -czf "$arquivo_destino" \
-            --verbatim-files-from -T "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! "${DEFAULT_TAR}" -czf "$arquivo_destino" "${arquivos[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
-        rm -f "$arquivos_temp" "$arquivo_destino"
+        rm -f "$arquivo_destino"
         return 1
     fi
 
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
-        rm -f "$arquivos_temp"
         return 1
     fi
-
-    # Limpar arquivo temporario
-    rm -f "$arquivos_temp"
 
     _log_bkp "SUCESSO: Backup incremental criado: $arquivo_destino"
     return 0
