@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 03/06/2026-01
 #
 
 # =============================================================================
@@ -270,7 +270,4 @@ export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
 export SAVISC ISCCLIENT JUTIL REBUILD
 export ACESSO_OFF
-# CORRECAO: era UMDATA (typo) — corrigido para UMADATA
-# CORRECAO: 'class' e 'mclass' removidos do export — nao sao variaveis definidas neste arquivo.
-# Os sufixos de compilacao sao 'compilado' e 'debugado', definidos acima.
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA INI compilado debugado
