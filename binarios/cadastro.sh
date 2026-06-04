@@ -12,11 +12,6 @@
 #   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
 #   ./cadastro.sh             - Chamada direta
 #
-
-# Variaveis globais esperadas
-CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
-LIBS_DIR="${LIBS_DIR:-}"                 # Diretorio de modulos de biblioteca
-
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
 # Quando chamado diretamente de /binarios, sobe um nivel para o diretorio do atualiza.sh
 if [[ -z "${SCRIPT_DIR}" ]]; then
@@ -75,7 +70,7 @@ main() {
             9)
                 _limpa_tela
                 tput sgr0
-                return 0
+                exit 0
                 ;;
             *)
                 _opinvalida

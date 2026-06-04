@@ -84,12 +84,10 @@ _criar_diretorio_seguro() {
             return 0
         else
             printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            # CORRECAO: era exit 1 dentro de funcao sourced — trocado para return 1
             return 1
         fi
     else
         printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        # CORRECAO: era exit 1 dentro de funcao sourced — trocado para return 1
         return 1
     fi
 }

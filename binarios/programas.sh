@@ -556,7 +556,7 @@ _processar_atualizacao_pacotes() {
         if [[ -f "${arquivo}" ]]; then
             local backup_file="${arquivo%.zip}.bkp"
             if ! mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}"; then
-                _mensagec "${RED}" "ERRO: Falha ao arquivar pacote ${arquivo}"
+                _mensagec "${RED}" "ERRO: Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_DIR}"
                 return 1
             fi
         fi
