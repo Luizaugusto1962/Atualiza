@@ -186,10 +186,11 @@ _atualizando() {
     _linha
 
         # Finalizar sistema de variáveis (limpeza explícita)
-    if command -v _finalizar_sistema >/dev/null 2>&1; then
-        _finalizar_sistema
+
+    if command -v _encerrar_programa >/dev/null 2>&1; then
+        _encerrar_programa
     fi
-    return 0
+#    return 0
 }
 
 _atualizar_online() {
