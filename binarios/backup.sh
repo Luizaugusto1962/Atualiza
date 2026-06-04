@@ -610,21 +610,28 @@ _restaurar_arquivo_especifico() {
         _linha
         _mensagec "${YELLOW}" "Restaurando ${nome_arquivo}..."
         _linha
-       
-        if ! "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "${base_trabalho}" \
-                --wildcards "${nome_arquivo}*.*" >>"${LOG_ATU}" 2>&1; then
+
+        # NOTA: arquivos no backup foram compactados com prefixo "./" (via find .)
+        # O padrao passado ao --wildcards deve usar "./" para bater com as entradas do tar.
+        # Sem o "./" o tar nao encontra nenhum arquivo e nao extrai nada (saida silenciosa).
+        local padrao_tar="./${nome_arquivo}*"
+
+        # Listar arquivos que serao extraidos antes de extrair (para verificacao posterior)
+        local lista_extraidos
+        lista_extraidos=$("${DEFAULT_TAR}" -tzf "$arquivo_backup" \
+            --wildcards "$padrao_tar" 2>/dev/null | grep -v '/$' || true)
+
+        if [[ -z "$lista_extraidos" ]]; then
+            _mensagec "${YELLOW}" "Arquivo '${nome_arquivo}' nao encontrado dentro do backup"
+            _aguardar_tecla
+        elif ! "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "${base_trabalho}" \
+                --wildcards "$padrao_tar" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else
-            # Verificar se ao menos um arquivo foi restaurado (shopt evita glob literal)
-            shopt -s nullglob
-            local restaurados=("${base_trabalho}/${nome_arquivo}"*.*)
-            shopt -u nullglob
-            if (( ${#restaurados[@]} > 0 )); then
-                _mensagec "${GREEN}" "Arquivo ${nome_arquivo} restaurado com sucesso"
-            else
-                _mensagec "${YELLOW}" "Arquivo ${nome_arquivo} nao encontrado apos restauracao"
-            fi
+            local qtd
+            qtd=$(printf '%s\n' "$lista_extraidos" | wc -l)
+            _mensagec "${GREEN}" "Arquivo ${nome_arquivo} restaurado com sucesso (${qtd} arquivo(s))"
             _aguardar_tecla
         fi
         _linha
