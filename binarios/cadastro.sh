@@ -75,7 +75,7 @@ main() {
             9)
                 _limpa_tela
                 tput sgr0
-                exit 0
+                return 0
                 ;;
             *)
                 _opinvalida

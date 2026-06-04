@@ -84,12 +84,10 @@ _criar_diretorio_seguro() {
             return 0
         else
             printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            # CORRECAO: era exit 1 dentro de funcao sourced — trocado para return 1
             return 1
         fi
     else
         printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        # CORRECAO: era exit 1 dentro de funcao sourced — trocado para return 1
         return 1
     fi
 }
@@ -105,14 +103,14 @@ for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
     if [[ -z "${dir}" ]]; then
         printf "ERRO: Variavel de diretorio nao definida.\n" >&2
-        exit 1
+        return 1
     fi
 
     # Criar diretório caso não exista com permissões seguras
     if [[ ! -d "${dir}" ]]; then
         if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
                 printf "ERRO: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
-            exit 1
+            return 1
         fi
     fi
 
@@ -122,14 +120,14 @@ for dir in "${AUX_DIRS[@]}"; do
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
         printf "Execute como root ou sudo ...\n" >&2
-        exit 1
+        return 1
     }
 
     # Verificar se o diretório existe após criação
     [[ -d "${dir}" ]] || {
         printf "ERRO: O diretorio '%s' nao foi encontrado.\n" "${dir}" >&2
         printf "Certifique-se de que os arquivos/modulos correspondentes estao instalados corretamente.\n" >&2
-        exit 1
+        return 1
     }
 done
 
@@ -219,7 +217,7 @@ _check_root(){
     if [[ $EUID -ne 0 ]]; then
         echo "AVISO: Sem permissao de root."
         echo "Execute como root ou sudo"
-        exit 1
+        return 1
     fi
 	}
 
@@ -284,13 +282,13 @@ _main() {
     # Inicializar sistema
     if ! _inicializar_sistema; then
         printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
-        exit 1
+        return 1
     fi
 
     # Autenticacao
     if ! _login; then
         printf "ERRO: Autenticacao falhou. Saindo...\n" >&2
-        exit 1
+        return 1
     fi
 
     # Mostrar mensagem de entrada (se existe) e opcao para excluir
@@ -308,7 +306,7 @@ _main() {
         _principal
     else
         printf "ERRO: Menu principal nao encontrado.\n" >&2
-        exit 1
+        return 1
     fi
     
     # Finalizar sistema de variáveis (limpeza explícita)

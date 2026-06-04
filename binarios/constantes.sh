@@ -85,7 +85,7 @@ if [[ -z "${CFG_DIR:-}" ]]; then
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
-    exit 1
+    return 1
 fi
 
 # =============================================================================
@@ -116,7 +116,7 @@ elif [[ ! -r "$CONFIG_FILE" ]]; then
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
-    exit 1
+    return 1
 else
     if command -v _carregar_config_seguro >/dev/null 2>&1; then
         _carregar_config_seguro "$CONFIG_FILE"
@@ -125,7 +125,7 @@ else
         if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
             return 1
         fi
-        exit 1
+        return 1
     fi
 fi
 

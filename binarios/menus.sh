@@ -59,7 +59,7 @@ _ler_opcao_menu() {
                 ;;
             "q"|"quit"|"sair"|"exit")
                 printf '%s' "${GREEN}Saindo do sistema...${NORM}\n"
-                exit 0
+                _encerrar_programa 0
                 ;;
         esac
 
