@@ -217,7 +217,7 @@ _check_root(){
     if [[ $EUID -ne 0 ]]; then
         echo "AVISO: Sem permissao de root."
         echo "Execute como root ou sudo"
-        exit 1
+        return 1
     fi
 	}
 
@@ -282,13 +282,13 @@ _main() {
     # Inicializar sistema
     if ! _inicializar_sistema; then
         printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
-        exit 1
+        return 1
     fi
 
     # Autenticacao
     if ! _login; then
         printf "ERRO: Autenticacao falhou. Saindo...\n" >&2
-        exit 1
+        return 1
     fi
 
     # Mostrar mensagem de entrada (se existe) e opcao para excluir
@@ -306,7 +306,7 @@ _main() {
         _principal
     else
         printf "ERRO: Menu principal nao encontrado.\n" >&2
-        exit 1
+        return 1
     fi
     
     # Finalizar sistema de variáveis (limpeza explícita)

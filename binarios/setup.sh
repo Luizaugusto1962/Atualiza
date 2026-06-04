@@ -514,7 +514,7 @@ main() {
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
-cd "${SCRIPT_DIR}" || exit 1
+cd "${SCRIPT_DIR}" || return 1
 
 # Verifica se o diretorio processos existe
     if [[ ! -d "${LIBS_DIR}" ]]; then
