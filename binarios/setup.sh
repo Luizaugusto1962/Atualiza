@@ -70,7 +70,7 @@ _initial_setup() {
         *)
             echo "Alternativa incorreta, saindo!"
             sleep 1
-            exit 1
+            return 1
             ;;
     esac
 
@@ -84,8 +84,11 @@ _initial_setup() {
 
     # Criar atalho global (requer permissao de root)
     if [[ $EUID -eq 0 ]]; then
-        echo "cd ${SCRIPT_DIR:-SCRIPT_DIR}" > /usr/local/bin/atualiza
-        echo "./atualiza.sh" >> /usr/local/bin/atualiza
+        cat > /usr/local/bin/atualiza <<'EOF'
+cd "${SCRIPT_DIR:-SCRIPT_DIR}"
+./atualiza.sh
+EOF
+
         chmod +x /usr/local/bin/atualiza
         echo "Atalho /usr/local/bin/atualiza criado com sucesso."
     else
@@ -103,13 +106,13 @@ _edit_setup() {
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
         echo "Erro: Diretorio 'configuracoes' nao encontrado."
-        exit 1
+        return 1
     }
 
     # Verificar se os arquivos de configuracao existem
     if [[ ! -f "${CFG_DIR}/.config" ]]; then
         echo "Arquivos de configuracao nao encontrados. Execute o setup inicial primeiro."
-        exit 1
+        return 1
     fi
     clear 
     echo "=================================================="
@@ -148,7 +151,8 @@ _edit_setup() {
 
     echo "$tracejada"
     read -rp "Pressione Enter para sair..."
-    exit 0
+    _limpa_tela
+    return 0
 }
 
 #---------- FUNcoES DE SETUP INICIAL ----------#
@@ -178,7 +182,8 @@ _setup_iscobol() {
         *)
             echo "Alternativa incorreta, saindo!"
             sleep 1
-            exit 1
+            _limpa_tela
+            return 1
             ;;
     esac
 
@@ -514,13 +519,13 @@ cd "${SCRIPT_DIR}" || exit 1
 # Verifica se o diretorio processos existe
     if [[ ! -d "${LIBS_DIR}" ]]; then
         echo "ERRO: Diretorio ${LIBS_DIR} nao encontrado."
-        exit 1
+        return 1
     fi
 
 # Verifica se o diretorio configuracoes existe
     if [[ ! -d "${CFG_DIR}" ]]; then
         echo "ERRO: Diretorio ${CFG_DIR} nao encontrado."
-        exit 1
+        return 1
     fi
 
     # Verificar modo de operacao
@@ -529,7 +534,7 @@ cd "${SCRIPT_DIR}" || exit 1
     else
         # Verificar se os arquivos de configuracao ja existem
 
-        if [[ -f "${CFG_DIR}/.config" ]]; then  
+        if [[ -f "${CFG_DIR}/.config" ]]; then
             _limpa_tela
             echo "Arquivos de configuracao ja existem."
             while true; do
@@ -541,18 +546,22 @@ cd "${SCRIPT_DIR}" || exit 1
                 fi
             done
             if [[ "${choice,,}" == "s" ]]; then
-                cd configuracoes || exit 1
+			    (
+                cd "${CFG_DIR}" || return 1
                 _initial_setup
+				)
             else
                 echo "Operacao cancelada. Use './atualiza.sh --setup --edit' para modificar."
-                exit 0
             fi
         else
-            mkdir -p configuracoes
-            cd configuracoes || exit 1
+            mkdir -p "${CFG_DIR}"
+			(
+            cd "${CFG_DIR}" || return 1
             _initial_setup
+			)
         fi
     fi
+    return 0
 }
 
 # Executar a funcao principal

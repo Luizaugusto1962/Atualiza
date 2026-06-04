@@ -189,7 +189,7 @@ _atualizando() {
     if command -v _finalizar_sistema >/dev/null 2>&1; then
         _finalizar_sistema
     fi
-    exit 1
+    return 0
 }
 
 _atualizar_online() {

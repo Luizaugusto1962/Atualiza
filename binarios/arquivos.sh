@@ -169,18 +169,18 @@ _adicionar_arquivo_lixo() {
     read -rp "${YELLOW}Qual o arquivo -> ${NORM}" novo_arquivo
     _linha
 
-    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._*-]+$ ]]; then
+    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._-]+$ ]]; then
         _mensagec "${RED}" "Nome de arquivo invalido. Use apenas letras, numeros, pontos, hifens ou '*'."
         _aguardar_tecla
         return 1
     fi
 
 # Bloquear wildcards globais se não for intenção
-    if [[ "$novo_arquivo" == *"*"* || "$novo_arquivo" == *"?"* ]]; then
-        _mensagec "${RED}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
-        _aguardar_tecla
-        return 1
-    fi
+#    if [[ "$novo_arquivo" == *"*"* || "$novo_arquivo" == *"?"* ]]; then
+#        _mensagec "${RED}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
+#        _aguardar_tecla
+#        return 1
+#    fi
 
     if [[ -z "$novo_arquivo" ]]; then
         _mensagec "${RED}" "Nome de arquivo nao informado"
@@ -287,7 +287,7 @@ _recuperar_arquivo_especifico() {
         # Se vazio, assumir "N"
         [[ -z "$continuar" ]] && continuar="N"
     
-    _limpa_tela
+        _limpa_tela
     done
     _ir_para_tools
 }
@@ -296,15 +296,15 @@ _recuperar_arquivo_especifico() {
 _recuperar_todos_arquivos() {
     local base_trabalho="$1"
     # DATA_EXTENSIONS: extensoes de arquivos de dados suportados pelo jutil
-    # CORRECAO: array nao estava definido em nenhum modulo — definido aqui localmente
     local -a extensoes=("*.ARQ.dat" "*.DAT.dat" "*.LOG.dat" "*.PAN.dat")
+ 
     _mensagec "${RED}" "Recuperando todos os arquivos principais..."
     _linha "-" "${YELLOW}"
     
     if [[ -d "$base_trabalho" ]]; then
         shopt -s nullglob
         for extensao in "${extensoes[@]}"; do
-            for arquivo in ${base_trabalho}/${extensao}; do
+            for arquivo in "${base_trabalho}"/${extensao}; do
                 if [[ -f "$arquivo" && -s "$arquivo" ]]; then
                     _executar_jutil "$arquivo"
                 else
@@ -345,7 +345,7 @@ _recuperar_arquivo_individual() {
     local arquivos_encontrados=0
     
     shopt -s nullglob
-    for arquivo in ${base_trabalho}/${padrao_arquivo}; do
+    for arquivo in "${base_trabalho}"/${padrao_arquivo}; do
         if [[ -f "$arquivo" ]]; then
             _executar_jutil "$arquivo"
             ((arquivos_encontrados++)) || true
@@ -359,8 +359,53 @@ _recuperar_arquivo_individual() {
     fi
 }
 
-# Recupera arquivos principais baseado na lista
 _recuperar_arquivos_principais() {
+    if ! _selecionar_base_arquivos; then
+        return 1
+    fi
+    
+    if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
+        # Usar valor padrão se base_trabalho estiver vazia
+        local dir_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
+        
+        if [[ ! -d "$dir_trabalho" ]]; then
+            _mensagec "${RED}" "Erro: Diretorio ${dir_trabalho} nao encontrado"
+            return 1
+        fi
+        
+        # Gerar lista de arquivos atuais de forma SEGURA (sem usar 'ls')
+        local var_ano var_ano4
+        var_ano=$(date +%y)
+        var_ano4=$(date +%Y)
+        
+        shopt -s nullglob
+        local arquivos_ate=("${dir_trabalho}"/ATE"${var_ano}"*.dat)
+        local arquivos_nfe=("${dir_trabalho}"/NFE?"${var_ano4}".*.dat)
+        shopt -u nullglob
+        
+        # Escrever no arquivo temporario, filtrando linhas vazias caso os arrays estejam vazios
+        printf "%s\n" "${arquivos_ate[@]}" "${arquivos_nfe[@]}" | grep -v '^$' > "${CFG_DIR}/indexar2" || true
+        
+        _aguardar 1
+        
+        # Verificar arquivos de lista
+        for lista in "indexar2" "indexar"; do
+            if [[ -f "${CFG_DIR}/${lista}" && -r "${CFG_DIR}/${lista}" ]]; then
+                _processar_lista_arquivos "${CFG_DIR}/${lista}" "$dir_trabalho"
+            fi
+        done
+        
+        # Limpar arquivo temporario
+        [[ -f "${CFG_DIR}/indexar2" ]] && rm -f "${CFG_DIR}/indexar2"
+        _mensagec "${YELLOW}" "Arquivos principais recuperados"
+    else
+        _mensagec "${RED}" "Recuperacao nao disponivel para este sistema. Disponivel apenas para IsCOBOL no momento."
+    fi
+    _aguardar_tecla
+}
+
+# Recupera arquivos principais baseado na lista
+_recuperar_arquivos_principais2() {
     cd "${CFG_DIR}" || return 1
     
     if ! _selecionar_base_arquivos; then
@@ -413,7 +458,11 @@ _processar_lista_arquivos() {
     
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
-        local caminho_arquivo="${base_trabalho}/${listando}"
+        local nome_limpo="${listando##*/}"
+        [[ -z "$nome_limpo" ]] && continue
+        
+        local caminho_arquivo="${base_trabalho}/${nome_limpo}"
+#        local caminho_arquivo="${base_trabalho}/${listando}"
         _executar_jutil "$caminho_arquivo"
     done < "$arquivo_lista"
 }
@@ -449,7 +498,7 @@ _executar_jutil() {
     else
         _mensagec "${RED}" "Erro: jutil nao encontrado em ${REBUILD}"
         return 1
-    fi    
+    fi
 }
 
 #---------- FUNCOES DE TRANSFERENCIA ----------#
@@ -464,7 +513,14 @@ _enviar_arquivo_avulso() {
     _mensagec "${YELLOW}" "1- Origem: Informe o diretorio onde esta o arquivo:"
     read -rp "${YELLOW} -> ${NORM}" DIRETORIO_ORIGEM
     _linha
-    
+
+        # SEGURANCA: Validar entrada do usuario contra path traversal
+    if [[ "$DIRETORIO_ORIGEM" == *".."* ]]; then
+        _mensagec "${RED}" "Erro: Caminho de origem invalido (contem '..')."
+        _aguardar_tecla
+        return 1
+    fi
+
     if [[ -z "$DIRETORIO_ORIGEM" ]]; then
         DIRETORIO_ORIGEM="${DEFAULT_ENVIA_DIR:-}"
         if [[ -z "$DIRETORIO_ORIGEM" || ! -d "$DIRETORIO_ORIGEM" ]]; then
@@ -474,6 +530,7 @@ _enviar_arquivo_avulso() {
         fi
         _linha
         _mensagec "${YELLOW}" "Usando diretorio padrao: ${DIRETORIO_ORIGEM}"
+
         # Verificar se há arquivos no diretório
         shopt -s nullglob
         local arquivos=("${DIRETORIO_ORIGEM}"/*)
@@ -506,7 +563,7 @@ _enviar_arquivo_avulso() {
     if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
         # Listar arquivos que correspondem ao padrão
         shopt -s nullglob
-        local arquivos_encontrados=()
+        arquivos_encontrados=()
         while IFS= read -r -d '' arquivo; do
             arquivos_encontrados+=("$arquivo")
         done < <(find "${DIRETORIO_ORIGEM}" -maxdepth 1 -type f -name "${ARQUIVO_ENVIAR}" -print0)
@@ -552,6 +609,13 @@ _enviar_arquivo_avulso() {
     read -rp "${YELLOW} -> ${NORM}" DESTINO_REMOTO
     _linha
     
+    # SEGURANCA: Validar entrada do usuario contra path traversal
+    if [[ "$DESTINO_REMOTO" == *".."* ]]; then
+        _mensagec "${RED}" "Erro: Caminho de destino invalido (contem '..')."
+        _aguardar_tecla
+        return 1
+    fi
+    
     if [[ -z "$DESTINO_REMOTO" ]]; then
         _mensagec "${RED}" "Destino nao informado"
         _aguardar_tecla
@@ -563,7 +627,7 @@ _enviar_arquivo_avulso() {
     _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
     _linha
     _enviar_arquivo_multi
- }
+}
 
 # Recebe arquivo avulso
 _receber_arquivo_avulso() {
@@ -575,7 +639,14 @@ _receber_arquivo_avulso() {
     _mensagec "${YELLOW}" "1- Origem: Diretorio remoto do arquivo:"
     read -rp "${YELLOW} -> ${NORM}" origem_remota
     _linha
-    
+
+    # SEGURANCA: Validar entrada
+    if [[ "$origem_remota" == *".."* ]]; then
+        _mensagec "${RED}" "Erro: Caminho de origem remota invalido (contem '..')."
+        _aguardar_tecla
+        return 1
+    fi
+        
     # Solicitar nome do arquivo
     _mensagec "${RED}" "Informe o arquivo que deseja RECEBER"
     _linha
@@ -586,7 +657,14 @@ _receber_arquivo_avulso() {
         _aguardar_tecla
         return 1
     fi
-    
+  
+    # SEGURANCA: Validar nome do arquivo (sem path traversal)
+    if [[ "$arquivo_receber" == *".."* || "$arquivo_receber" == *"/"* ]]; then
+        _mensagec "${RED}" "Erro: Nome do arquivo nao pode conter caminhos ou '..'."
+        _aguardar_tecla
+        return 1
+    fi
+      
     # Solicitar destino local
     _linha
     _mensagec "${YELLOW}" "3- Destino: Diretorio local para receber:"
@@ -595,7 +673,14 @@ _receber_arquivo_avulso() {
     if [[ -z "$destino_local" ]]; then
         destino_local="${DEFAULT_RECEBE_DIR:-}"
     fi
-    
+
+    # SEGURANCA: Validar nome do arquivo (sem path traversal)
+    if [[ "$arquivo_receber" == *".."* || "$arquivo_receber" == *"/"* ]]; then
+        _mensagec "${RED}" "Erro: Nome do arquivo nao pode conter caminhos ou '..'."
+        _aguardar_tecla
+        return 1
+    fi
+      
     if [[ ! -d "$destino_local" ]]; then
         _mensagec "${RED}" "Diretorio de destino nao encontrado: ${destino_local}"
         _aguardar_tecla
@@ -634,7 +719,7 @@ _executar_expurgador() {
         "${DEFAULT_BACKUP_DIR}/"
         "${DEFAULT_BIBLIOTECA_DIR}/"
         "${DEFAULT_BIBLIOTECA_ATUAL_DIR}/"
-        "${DEFAULT_PROGS_DIR}/"        
+        "${DEFAULT_PROGS_DIR}/"   
         "${DEFAULT_ENVIA_DIR}/"
         "${DEFAULT_RECEBE_DIR}/"
         "${DEFAULT_BASEBACKUP_DIR}/"
@@ -648,12 +733,12 @@ _executar_expurgador() {
    
     # Limpar arquivos antigos nos diretorios padrao
     for diretorio in "${diretorios_limpeza[@]}"; do
-        if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
+        if [[ -n "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local arquivos_removidos
             arquivos_removidos=$(find "$diretorio" -mtime +30 -type f -delete -print 2>/dev/null | wc -l)
             _mensagec "${GREEN}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
         else
-            _mensagec "${YELLOW}" "Diretorio nao encontrado: ${diretorio}"
+            _mensagec "${YELLOW}" "Diretorio nao encontrado ou invalido : ${diretorio}"
         fi
     done
 
@@ -664,12 +749,12 @@ _executar_expurgador() {
 
     # Limpar arquivos ZIP antigos especificos
     for diretorio in "${diretorios_zip[@]}"; do
-        if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
+        if [[ -n "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local zips_removidos
             zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -delete -print 2>/dev/null | wc -l)
             _mensagec "${GREEN}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
-            _mensagec "${YELLOW}" "Diretorio nao encontrado: ${diretorio}"
+            _mensagec "${YELLOW}" "Diretorio nao encontrado ou invalido: ${diretorio}"
         fi
     done
     

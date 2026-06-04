@@ -84,9 +84,8 @@ if [[ -z "${CFG_DIR:-}" ]]; then
     echo "ERRO: CFG_DIR nao esta definido. Certifique-se de carregar principal.sh primeiro." >&2
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
-    else
-        exit 1
     fi
+    exit 1
 fi
 
 # =============================================================================
@@ -116,15 +115,17 @@ elif [[ ! -r "$CONFIG_FILE" ]]; then
     echo "ERRO: Arquivo $CONFIG_FILE sem permissao de leitura." >&2
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
-    else
-        exit 1
     fi
+    exit 1
 else
     if command -v _carregar_config_seguro >/dev/null 2>&1; then
         _carregar_config_seguro "$CONFIG_FILE"
     else
         echo "ERRO: Parser seguro de configuracao nao disponivel. Carregamento bloqueado." >&2
-        [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]] && return 1 || exit 1
+        if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
+            return 1
+        fi
+        exit 1
     fi
 fi
 

@@ -105,6 +105,7 @@ _executar_backup() {
 
     # Validar pre-requisitos e definir base_trabalho
     if ! _validar_pre_backup base_trabalho; then
+        trap '_encerrar_programa 130' INT TERM
         return 1
     fi
 
@@ -119,6 +120,7 @@ _executar_backup() {
     _menu_tipo_backup
     if [[ -z "${tipo_backup:-}" ]]; then
         trap '_encerrar_programa 130' INT TERM
+        unset BASE_TRABALHO
         return 0
     fi
 
@@ -131,6 +133,8 @@ _executar_backup() {
     if _verificar_backups_recentes; then
         if ! _confirmar "Ja existe backup recente. Deseja continuar?" "N"; then
             _mensagec "$RED" "Operacao cancelada"
+            trap '_encerrar_programa 130' INT TERM
+            unset BASE_TRABALHO
             _aguardar 3
             return 0
         fi
@@ -138,17 +142,10 @@ _executar_backup() {
         _mensagec "$YELLOW" "Sera criado backup adicional"
     fi
 
-    # Mudar para diretorio base
-    if ! _diretorio_trabalho; then
-        _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
-        _aguardar 3
-        return 1
-    fi
-
     _linha
     _mensagec "$YELLOW" "Criando Backup da pasta: ${base_trabalho}..."
     _linha
-    
+
     # Variavel para armazenar PID do processo em background
     local backup_pid
 
@@ -168,6 +165,8 @@ _executar_backup() {
         # Validar entrada
         if ! [[ "$mes" =~ ^(0[1-9]|1[0-2])$ ]] || ! [[ "$ano" =~ ^[0-9]{4}$ ]]; then
             _mensagec "$RED" "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
+            trap '_encerrar_programa 130' INT TERM
+            unset BASE_TRABALHO
             _aguardar 2
             return 0
         fi
@@ -175,6 +174,8 @@ _executar_backup() {
         # Validar ano nao seja muito antigo ou futuro
         if (( ano < 1990 || ano > ano_agora )); then
             _mensagec "$RED" "Ano fora do intervalo valido (1990-$ano_agora)"
+            trap '_encerrar_programa 130' INT TERM
+            unset BASE_TRABALHO
             _aguardar 2
             return 0
         fi
@@ -185,12 +186,16 @@ _executar_backup() {
         local data_input
         data_input=$(date -d "$data_referencia" +%Y%m%d 2>/dev/null) || {
             _mensagec "$RED" "Data invalida."
+            trap '_encerrar_programa 130' INT TERM
+            unset BASE_TRABALHO
             _aguardar 2
             return 0
         }
 
         if [[ "$data_input" -gt "$data_atual" ]]; then
             _mensagec "$RED" "A data nao pode ser futura."
+            trap '_encerrar_programa 130' INT TERM
+            unset BASE_TRABALHO
             _aguardar 2
             return 0
         fi
@@ -526,10 +531,18 @@ _selecionar_backup() {
 # Restaura backup completo
 _restaurar_backup_completo() {
     local arquivo_backup="$1"
-    local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
-    
+    # Respeitar base selecionada pelo usuario (BASE_TRABALHO tem precedencia)
+    local base_trabalho="${BASE_TRABALHO:-${RAIZ}${CFG_BASE_DIR}}"
+
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # Garantir que o diretorio de destino existe antes de restaurar
+    if [[ ! -d "$base_trabalho" ]]; then
+        _mensagec "${RED}" "Erro: Diretorio de destino nao existe: ${base_trabalho}"
         _aguardar_tecla
         return 1
     fi
@@ -553,10 +566,18 @@ _restaurar_backup_completo() {
 _restaurar_arquivo_especifico() {
     local arquivo_backup="$1"
     local nome_arquivo
-    local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
-   
+    # Respeitar base selecionada pelo usuario (BASE_TRABALHO tem precedencia)
+    local base_trabalho="${BASE_TRABALHO:-${RAIZ}${CFG_BASE_DIR}}"
+
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # Garantir que o diretorio de destino existe antes de restaurar
+    if [[ ! -d "$base_trabalho" ]]; then
+        _mensagec "${RED}" "Erro: Diretorio de destino nao existe: ${base_trabalho}"
         _aguardar_tecla
         return 1
     fi
@@ -694,7 +715,8 @@ _mover_backup_offline() {
 
     # CORRECAO: era local caminho="${1:-...}" mas $1 aqui e nome_backup, nao um caminho.
     # O diretorio de destino correto e sempre DEFAULT_RECEBE_DIR.
-    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+    local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de destino %s\n" "${DEFAULT_RECEBE_DIR}" >&2
         return 1
     }
@@ -713,8 +735,7 @@ _mover_backup_offline() {
 _enviar_backup_rede() {
     local nome_backup="$1"
     local DESTINO_REMOTO
-    
-    # Validar se arquivo existe
+
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
@@ -822,7 +843,7 @@ _executar_backup_multiplos_padroes() {
             if (( contador == 1 )); then
                 _mensagec "${RED}" "Nenhum arquivo foi informado!"
                 _aguardar 2
-                return 0
+                return 1
             fi
             break
         fi
@@ -874,9 +895,11 @@ _executar_backup_multiplos_padroes() {
 
     for padrao in "${padroes[@]}"; do
         local qtd_encontrados=0
-        # Buscar arquivos usando shopt para expansão
+        # Buscar arquivos usando shopt para expansão segura de glob
         shopt -s nullglob
-        for arquivo in $padrao; do
+        for arquivo in ${padrao}; do
+            # Com nullglob, se o glob nao expandir, o loop nao executa
+            # Verificar se e um arquivo real (cobre tanto glob expandido quanto nome literal)
             if [[ -f "$arquivo" ]]; then
                 arquivos_encontrados+=("$arquivo")
                 qtd_encontrados=$((qtd_encontrados + 1))

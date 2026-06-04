@@ -120,7 +120,7 @@ _selecionar_programas_reversao() {
     if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
         _mensagec "${RED}" "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     shopt -s nullglob
@@ -130,7 +130,7 @@ _selecionar_programas_reversao() {
     if (( ${#backups[@]} == 0 )); then
         _mensagec "${YELLOW}" "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     local programas=()
@@ -195,7 +195,8 @@ _selecionar_programas_reversao() {
             seen[$token]=1
             local programa_selecionado="${programas[$((token-1))]}"
             PROGRAMAS_SELECIONADOS+=("${programa_selecionado}")
-            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${compilado}.zip")
+            # O arquivo de backup para reversao e sempre o -anterior.zip
+            ARQUIVOS_PROGRAMA+=("${DEFAULT_OLDS_DIR}/${programa_selecionado}-anterior.zip")
         done
 
         break
@@ -395,7 +396,7 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo}" ]]; then
             _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
-            return 0
+            return 1
         fi
     done
 
@@ -462,40 +463,38 @@ _processar_atualizacao_programas() {
 
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}"; then
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
-            continue
+            return 1
         fi
     done
 
 # Mover arquivos para diretorios corretos
     for extensao in ".class" ".int" ".TEL"; do
-#        if ls -- *"${extensao}" 1>/dev/null 2>&1; then
-#       if compgen -G "*${extensao}" >/dev/null; then
         shopt -s nullglob
         local arquivos_encontrados=(*"${extensao}")
         shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} > 0 )); then
             for arquivo in "${arquivos_encontrados[@]}"; do
-#            for arquivo in *"${extensao}"; do
                 if [[ "${extensao}" == ".TEL" ]]; then
-                    mv -f "${arquivo}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
+                    if ! mv -f "${arquivo}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
+                        _log_erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
+                        _mensagec "${RED}" "ERRO: Falha ao mover ${arquivo} para ${T_TELAS}/"
+                        return 1
+                    fi
                     _mensagec "${GREEN}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
                 else
-                    mv -f "${arquivo}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1
-                    # Verificar se o arquivo foi movido com sucesso
-                    if [[ ! -f "${E_EXEC}/${arquivo}" ]]; then
+                    if ! mv -f "${arquivo}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
                         _log_erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
-                        echo "ERRO: Arquivo ${arquivo} nao encontrado no diretorio de destino" >&2
-                        _mensagec "${RED}" "ERRO: Arquivo ${arquivo} nao encontrado no diretorio de destino"
+                        _mensagec "${RED}" "ERRO: Arquivo ${arquivo} nao foi movido para ${E_EXEC}/"
                         _mensagec "${YELLOW}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
                         _mensagec "${YELLOW}" "Use a opcao 4 de reversao para restaurar o programa anterior."
-                    else
-                        _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
-                        _mensagec "${GREEN}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
-                        _obter_data_arquivo "${arquivo}"
+                        return 1
                     fi
+                    _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
+                    _mensagec "${GREEN}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
+                    _obter_data_arquivo "${arquivo}"
                 fi
             done
         fi
@@ -504,11 +503,14 @@ _processar_atualizacao_programas() {
     _mensagec "${GREEN}" "Atualizando o(s) programa(s)..."
     _linha
 
-    # Mover arquivos .zip para .bkp
+    # Mover arquivos .zip para .bkp (com verificacao de erro)
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ -f "${arquivo}" ]]; then
             local backup_file="${arquivo%.zip}.bkp"
-            mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}"
+            if ! mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}"; then
+                _mensagec "${RED}" "ERRO: Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_DIR}"
+                return 1
+            fi
         fi
     done
 
@@ -539,7 +541,7 @@ _processar_atualizacao_pacotes() {
         if [[ ! -f "${arquivo}" ]]; then
             _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
             _aguardar 2
-            return 0
+            return 1
         fi
 
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
@@ -560,11 +562,8 @@ _processar_atualizacao_pacotes() {
         fi
     done
 
-    # Processar arquivos .class encontrados (usando redirection para evitar subshell do pipe)
-#    while read -r classfile; do
-#        local progname="${classfile##*/}" # Extrair nome do arquivo
-#        progname="${progname%%.class}"    # Remover extensao
-    # CORREÇÃO: Loop seguro com -print0 e caminhos completos para mv
+    # Processar arquivos .class encontrados
+    # Loop seguro com -print0 e caminhos completos para mv
     while IFS= read -r -d '' classfile; do
         local progname
         progname="$(basename "$classfile" .class)"
@@ -587,8 +586,6 @@ _processar_atualizacao_pacotes() {
 
         # Backup de arquivos .TEL se existirem
         if [[ -d "${T_TELAS}" ]] && find "${T_TELAS}" -maxdepth 1 -name "${progname}*.TEL" -print -quit | grep -q .; then
- 
-#        if [[ -f "${progname}.TEL" ]]; then
             if ! find "${T_TELAS}" -name "${progname}*.TEL" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
                 _log_erro "Falha ao fazer backup de ${progname}*.TEL"
                 return 1
@@ -602,12 +599,9 @@ _processar_atualizacao_pacotes() {
             fi
         fi
 
-        # Mover novos arquivos
-                # Move usando caminho completo retornado pelo find
+        # Mover novos arquivos — usa caminho completo retornado pelo find
         if ! mv -f "${classfile}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
             _log_erro "Falha ao mover ${classfile} para ${E_EXEC}"
-#        if ! mv -f "${progname}"*.class "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-#            _log_erro "Falha ao mover ${progname}*.class para ${E_EXEC}"
             return 1
         fi
 
@@ -617,22 +611,20 @@ _processar_atualizacao_pacotes() {
             local tels=("${dir_path}/${progname}"*.TEL)
             shopt -u nullglob
             for tel in "${tels[@]}"; do
-                mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
-#        if [[ -f "${progname}.TEL" ]]; then
-#            if ! mv -f "${progname}"*.TEL "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
-#                _log_erro "Falha ao mover ${progname}*.TEL para ${T_TELAS}"
-#                return 1
-#            fi
-             done
+                if ! mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
+                    _log_erro "Falha ao mover ${tel} para ${T_TELAS}"
+                    return 1
+                fi
+            done
         fi
-#    done < <(find . -type f -name "*.class")
     done < <(find . -type f -name "*.class" -print0)
 }
 
 # Processa reversao de programas
 _processar_reversao_programas() {
-    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+    local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
 
@@ -666,7 +658,7 @@ _processar_reversao_programas() {
 
 # Valida e cria diretorio de backups se nao existir
 _validar_diretorio_backups() {
-        local caminho="${1:-${DEFAULT_OLDS_DIR}}"
+    local caminho="${1:-${DEFAULT_OLDS_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1

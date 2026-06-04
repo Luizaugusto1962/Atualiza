@@ -20,6 +20,11 @@ set -euo pipefail
 # A garantia do diretorio de configuracao e responsabilidade de principal.sh/_carregar_configuracoes.
 # Mantida apenas a declaracao da variavel para uso nos menus.
 caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao
+_criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+    printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+    return 1
+}
+
 
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
@@ -43,7 +48,7 @@ _ler_opcao_menu() {
          if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
             printf '%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
             _resetando
-            exit 0
+            return 1
         fi
         
         # Sanitizar entrada
