@@ -8,7 +8,6 @@
 #
 
 # Variaveis globais esperadas
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                                     # Tipo de sistema (ex: iscobol, outros).
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do diretorio da terceira base de dados.
 
