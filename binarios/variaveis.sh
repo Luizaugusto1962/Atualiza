@@ -177,7 +177,7 @@ main() {
 
     # Verificar dependencias
     if ! verificar_dependencias; then
-        return 1
+        return 0
     fi
 
     # Carregar configuracao

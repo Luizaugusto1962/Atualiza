@@ -9,28 +9,19 @@ set -euo pipefail
 # Versao: 01/06/2026-01
 # Autor: Luiz Augusto
 #
+#
 
-# Variaveis globais esperadas
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                            # Nome do sistema (iscobol, savatu, transpc).
-#CFG_DIR="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"                # Diretorio de configuracoes
-#CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao atual do sistema
-#UPDATE="${UPDATE:-}"                                     # Aviso de update disponivel
-
-# CORRECAO: criacao de diretorio removida do nivel global (efeito colateral ao source).
-# A garantia do diretorio de configuracao e responsabilidade de principal.sh/_carregar_configuracoes.
-# Mantida apenas a declaracao da variavel para uso nos menus.
 caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao
+
+# Cria o diretorio de configuracao com seguranca    
 _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
     return 1
 }
 
-
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                        # Caminho do diretorio da terceira base de dados.
-#CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-}"                    # Caminho do diretorio da base de dados do CFG_USA_DBMAKER.
-#CFG_EMPRESA="${CFG_EMPRESA:-}"                            # Nome da empresa (usado para exibir no menu)
 
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 
