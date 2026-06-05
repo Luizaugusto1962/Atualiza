@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 05/06/2026-01
 # Autor: Luiz Augusto
 #
 #
@@ -37,9 +37,8 @@ _ler_opcao_menu() {
     _linha "=" "${GREEN}"
     
          if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
-            printf '%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
-            _resetando
-            return 1
+            printf '\n%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
+            _encerrar_programa 0
         fi
         
         # Sanitizar entrada
