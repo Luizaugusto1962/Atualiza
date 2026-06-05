@@ -983,16 +983,6 @@ _encerrar_programa() {
     exit "$status"
 }
 
-# Função auxiliar para debug - listar variáveis registradas
-_debubglist_vars() {
-    printf '=== Variaveis Registradas ===\n'
-    local var
-    for var in "${REGISTRO_VARIAVEIS[@]:-}"; do
-        printf '  %s=%s\n' "$var" "${!var:-<nao definida>}"
-    done
-    printf 'Total: %d\n' "${#REGISTRO_VARIAVEIS[@]}"
-}
-
 # NOTA: Os traps abaixo sao registrados aqui pois config.sh e sourced antes de principal.sh
 # definir seus proprios traps em _main(). Os traps de _main() sobrescrevem estes ao ser chamados.
 # Isso garante limpeza mesmo se o carregamento falhar antes de _main() ser executada.

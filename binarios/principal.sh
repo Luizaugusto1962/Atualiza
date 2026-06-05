@@ -174,8 +174,6 @@ _caminho_modulo() {
 # Retorna: 0 se todos carregados, 1 se algum falhou
 _carregar_modulos() {
     local modulos=(
-        # NOTA: constantes.sh ja foi carregado no topo de principal.sh (antes dos modulos).
-        # Nao e listado aqui para evitar duplo carregamento e redefinicao de variaveis.
         "config.sh"     # Configuracoes
         "utils.sh"      # Utilitarios basicos primeiro
         "auth.sh"       # Autenticacao
@@ -217,6 +215,7 @@ _check_root(){
     if [[ $EUID -ne 0 ]]; then
         echo "AVISO: Sem permissao de root."
         echo "Execute como root ou sudo"
+        echo ""
         return 1
     fi
 	}
