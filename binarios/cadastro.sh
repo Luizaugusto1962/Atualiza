@@ -33,11 +33,15 @@ LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 "." "${LIBS_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }
 "." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
 
-# Cores para o menu
-        RED=$(tput bold)$(tput setaf 1)          # Vermelho
-        GREEN=$(tput bold)$(tput setaf 2)        # Verde
-        YELLOW=$(tput bold)$(tput setaf 3)       # Amarelo
-
+# Cores (definidas uma vez para evitar subshells repetidos)
+if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
+    BOLD="$(tput bold)"
+    GREEN="${BOLD}$(tput setaf 2)"
+    YELLOW="${BOLD}$(tput setaf 3)"
+    RED="${BOLD}$(tput setaf 1)"
+else
+    BOLD="" GREEN="" YELLOW="" RED="" 
+fi
 # Funcao principal
 main() {
     while true; do

@@ -205,14 +205,15 @@ _inicializar_variaveis_sistema() {
     # CATEGORIA: CORES DO TERMINAL
     #_define_category_vars "CORES" \
         if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        RED=$(tput bold; tput setaf 1 2>/dev/null)          # Vermelho
-        GREEN=$(tput bold; tput setaf 2 2>/dev/null)        # Verde
-        YELLOW=$(tput bold; tput setaf 3 2>/dev/null)       # Amarelo
-        BLUE=$(tput bold; tput setaf 4 2>/dev/null)         # Azul
-        PURPLE=$(tput bold; tput setaf 5 2>/dev/null)       # Roxo
-        CYAN=$(tput bold; tput setaf 6 2>/dev/null)         # Ciano
-        WHITE=$(tput bold; tput setaf 7 2>/dev/null)        # Branco
-        NORM=$(tput sgr0 2>/dev/null)                       # Normal
+        BOLD="$(tput bold)"
+        RED="${BOLD}$(tput setaf 1)"    # Vermelho
+        GREEN="${BOLD}$(tput setaf 2)"  # Verde
+        YELLOW="${BOLD}$(tput setaf 3)" # Amarelo
+        BLUE="${BOLD}$(tput setaf 4)"   # Azul
+        PURPLE="${BOLD}$(tput setaf 5)" # Roxo
+        CYAN="${BOLD}$(tput setaf 6)"   # Ciano
+        WHITE="${BOLD}$(tput setaf 7)"  # Branco
+        NORM="$(tput sgr0)"             # Normal (reset)
         COLUMNS=$(tput cols)                                # Numero de colunas do terminal
 
         # Limpar tela inicial
@@ -221,14 +222,15 @@ _inicializar_variaveis_sistema() {
         tput setaf 7 2>/dev/null || true
     else
         # Terminal sem suporte a cores
-        RED="\033[0;31m" \
-        GREEN="\033[0;32m" \
-        YELLOW="\033[0;33m" \
-        BLUE="\033[0;34m" \
-        PURPLE="\033[0;35m" \
-        CYAN="\033[0;36m" \
-        NORM="\033[0m" \
-        "COLUMNS=${COLUMNS:-80}"
+        RED="\033[0;31m"
+        GREEN="\033[0;32m"
+        YELLOW="\033[0;33m"
+        BLUE="\033[0;34m"
+        PURPLE="\033[0;35m"
+        CYAN="\033[0;36m"
+        NORM="\033[0m"
+        # Colunas do terminal
+        COLUMNS="${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}"
     fi
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
 

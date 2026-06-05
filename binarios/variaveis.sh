@@ -157,7 +157,6 @@ exibir_tabular() {
 
         printf "\n%s%s[%s]%s\n" "$YELLOW" "$BOLD" "$categoria" "$NORM"
 
-        # shellcheck disable=SC2086
         for variavel in ${CATEGORIAS[$categoria]}; do
             local valor
             valor=$(obter_valor "$variavel")
