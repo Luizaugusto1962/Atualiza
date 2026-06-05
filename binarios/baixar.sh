@@ -45,7 +45,7 @@ _atualizando() {
     shopt -u nullglob
 
     for arquivo in "${arquivos_sh[@]}"; do
-        if cp -f "$arquivo" "${DEFAULT_BACKUP_DIR}/$(basename "$arquivo").bkp" 2>/dev/null; then
+        if mv -f "$arquivo" "${DEFAULT_BACKUP_DIR}/$(basename "$arquivo").bkp" 2>/dev/null; then
             _mensagec "${GREEN}" "Backup do arquivo $(basename "$arquivo") feito com sucesso"
             ((backup_sucesso++)) || true
         else
@@ -56,7 +56,7 @@ _atualizando() {
     done
 
     if [[ -n "${SCRIPT_DIR}" && -f "${SCRIPT_DIR}/atualiza.sh" ]]; then
-        if cp -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
+        if mv -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
             _mensagec "${GREEN}" "Backup do arquivo atualiza.sh feito com sucesso"
             ((backup_sucesso++)) || true
         else
