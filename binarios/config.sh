@@ -228,9 +228,9 @@ _inicializar_variaveis_sistema() {
         BLUE="\033[0;34m"
         PURPLE="\033[0;35m"
         CYAN="\033[0;36m"
+        WHITE="\033[0;37m"
         NORM="\033[0m"
-        # Colunas do terminal
-        COLUMNS="${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}"
+        COLUMNS=${COLUMNS:-80}
     fi
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
 
@@ -782,57 +782,73 @@ _var_existe() {
 _limpar_estado_variaveis() {
     local var_count=0
     local var
-    
-    # Verificar se o array existe antes de usar
-    if [[ -z "${REGISTRO_VARIAVEIS[*]+x}" ]]; then
+
+    # Verificar se o array REGISTRO_VARIAVEIS realmente existe (seguro com set -u)
+    # Usar declare -p é a forma confiável: ${array[*]+x} pode falhar se o array
+    # nunca foi declarado como array indexado no contexto atual.
+    if ! declare -p REGISTRO_VARIAVEIS &>/dev/null; then
+        # Array não existe, apenas resetar terminal e sair
+        tput sgr0 2>/dev/null || true
         return 0
     fi
-    
-    # Iterar sobre cópia do array para evitar problemas com modificação durante iteração
-    local vars_copy=("${REGISTRO_VARIAVEIS[@]:-}")
-    
-    for var in "${vars_copy[@]}"; do
-        # Verificar se a variável ainda existe e não está vazia
+
+    # Fazer cópia segura do array para evitar problemas durante iteração
+    local vars_copy=()
+    if [[ ${#REGISTRO_VARIAVEIS[@]} -gt 0 ]]; then
+        vars_copy=("${REGISTRO_VARIAVEIS[@]}")
+    fi
+
+    for var in "${vars_copy[@]:-}"; do
+        # Ignorar entradas vazias
+        [[ -z "$var" ]] && continue
+        # Verificar se a variável ainda existe
         if [[ -n "${!var+x}" ]]; then
             unset -v "$var" 2>/dev/null || true
             ((var_count++)) || true
         fi
     done
-    
+
     # Limpar array de registro
     REGISTRO_VARIAVEIS=()
-    
-    # Limpar arrays de categorias
-    if [[ -n "${REGISTRO_CATEGORIAS[*]+x}" ]]; then
+
+    # Limpar arrays de categorias (verificação segura com declare -p)
+    if declare -p REGISTRO_CATEGORIAS &>/dev/null; then
         unset REGISTRO_CATEGORIAS 2>/dev/null || true
         declare -A REGISTRO_CATEGORIAS=()
     fi
-    
+
     # Limpar contador
     unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
-    
+
     # Resetar terminal
     tput sgr0 2>/dev/null || true
-    
+
     return 0
 }
 
 # Função para limpar variáveis de uma categoria específica
 _limpar_categoria() {
     local category="$1"
-    local vars="${REGISTRO_CATEGORIAS[$category]:-}"
+    local vars=""
     local var
-    
+
+    # Verificar existência de REGISTRO_CATEGORIAS de forma segura (set -u compatível)
+    if ! declare -p REGISTRO_CATEGORIAS &>/dev/null; then
+        return 0
+    fi
+
+    vars="${REGISTRO_CATEGORIAS[$category]:-}"
+
     if [[ -z "$vars" ]]; then
         return 0
     fi
-    
+
     for var in $vars; do
         if [[ -n "${!var+x}" ]]; then
             unset -v "$var" 2>/dev/null || true
         fi
     done
-    
+
     # Remover categoria do registro
     unset "REGISTRO_CATEGORIAS[$category]"
 }
