@@ -419,16 +419,28 @@ _recreate_config_files() {
 #---------- FUNCOES AUXILIARES ----------#
 # Configura acesso SSH facilitado
 #===================================================================
-# _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
-#===================================================================
-#===================================================================
-# _configure_ssh_access - Cria novo arquivo SSH config
-#===================================================================
+
 _configure_ssh_access() {
     local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
     local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
     local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
     local SSH_DIR="${HOME}/.ssh"
+    local SSH_USER="${sshuser:-$(logname 2>/dev/null || whoami)}"
+
+if ! id "${SSH_USER}" >/dev/null 2>&1; then
+    echo "Erro: usuario ${SSH_USER} nao existe."
+    return 1
+fi
+
+local USER_HOME
+USER_HOME="$(getent passwd "${SSH_USER}" | cut -d: -f6)"
+
+if [[ -z "${USER_HOME}" ]]; then
+    echo "Erro: nao foi possivel localizar HOME do usuario ${SSH_USER}"
+    return 1
+fi
+
+    local SSH_DIR="${USER_HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
     local CONTROL_PATH_BASE="${SSH_DIR}/control"
 
@@ -440,6 +452,12 @@ _configure_ssh_access() {
 
     # Cria os diretorios padrao
     mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
+#        if [[ "$(stat -c %U "${SSH_DIR}" 2>/dev/null)" != "$(whoami)" ]]; then
+        echo "Ajustando proprietario de ${SSH_DIR}..."
+        sudo chown -R "$(whoami):$(id -gn)" "${SSH_DIR}"
+        sudo chown -R "${SSH_USER}:${SSH_USER}" 
+#        fi
+        
     chmod "${PERM_DIR_SECURE}" "${SSH_DIR}" "${CONTROL_PATH_BASE}"
 
     # ====================== CRIA NOVO ARQUIVO ~/.ssh/config ======================
@@ -465,6 +483,29 @@ EOF
 
     chmod "${PERM_FILE_PRIVATE}" "${SSH_CONFIG_FILE}"
     echo "Novo arquivo ~/.ssh/config criado com sucesso!"
+
+# ============================================
+if [[ ! -f "${SSH_DIR}/id_ed25519" ]]; then
+    echo "Criando chave SSH para ${SSH_USER}..."
+
+    sudo -u "${SSH_USER}" ssh-keygen \
+        -t ed25519 \
+        -f "${SSH_DIR}/id_ed25519" \
+        -N "" \
+        -C "${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}"
+
+    chmod 600 "${SSH_DIR}/id_ed25519"
+    chmod 644 "${SSH_DIR}/id_ed25519.pub"
+
+    echo "Chave criada com sucesso."
+fi
+
+touch "${SSH_DIR}/authorized_keys"
+
+chown "${SSH_USER}:${SSH_USER}" \
+    "${SSH_DIR}/authorized_keys"
+
+chmod 600 "${SSH_DIR}/authorized_keys"
 
     # ====================== TESTE DE CONEXAO ======================
     echo
