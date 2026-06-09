@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/05/2026-02 (Atualizado com reforços de segurança)
+# Versao: 09/06/2026-01 (Atualizado com reforços de segurança)
 #
 #---------- CONFIGURACOES DE CONEXAO ----------#
 #
@@ -138,7 +138,7 @@ _download_scp() {
     _log "Iniciando download SCP: ${arquivo_remoto}"
     
     # SEGURANCA: Usar '--' para prevenir injeção de opções (ex: arquivos começando com '-')
-    if scp -P "$porta" "${rem_user}@${servidor}:${arquivo_remoto}" -- "$destino_local"; then
+    if scp -P "$porta" "${rem_user}@${servidor}:${arquivo_remoto}" "$destino_local"; then
         # Verificar se arquivo realmente existe e nao esta vazio
         local nome_arquivo="${arquivo_remoto##*/}"
         local arquivo_destino="${destino_local%/}/${nome_arquivo}"
@@ -239,7 +239,7 @@ _baixar_biblioteca_sincroniza() {
                 
                 local src="${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}:${DESTINO_BIBLIOTECA}${arquivo}"
                 # SEGURANCA: Usar '--' para o destino local
-                if scp -P "$DEFAULT_SSH_PORTA" "${src}" -- "."; then
+                if scp -P "$DEFAULT_SSH_PORTA" "${src}" "."; then
                     _log_sucesso "Download concluido: ${arquivo}"
                 else
                     _log_erro "Falha no download: ${arquivo}"

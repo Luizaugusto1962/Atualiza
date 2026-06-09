@@ -447,6 +447,22 @@ _configurar_variaveis_sistema() {
     export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU
 }
 
+    # Validar acesso SSH se configurado
+    _validar_acesso_ssh() {
+    if [[ "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
+        if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
+            _mensagec "${GREEN}" "OK: Acesso SSH habilitado"
+        # Recriando acesso.
+        _configure_ssh_access
+        else
+            _mensagec "${YELLOW}" "Alerta: Acesso SSH desabilitado"
+            ((warnings++)) || true
+        fi
+    else
+        _mensagec "${YELLOW}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
+        ((warnings++)) || true
+    fi
+    }    
 # -----------------------------------------------------------------------------
 # Valida o conteudo de um arquivo de configuracao de forma RIGOROSA
 # Verifica se o arquivo contem apenas atribuicoes de variaveis simples
@@ -603,7 +619,7 @@ _carregar_configuracoes() {
     _configurar_diretorios || return 1
 
     # Configurar variaveis do sistema
-    _configurar_variaveis_sistema
+    _configurar_variaveis_sistema || return 1
 
 }
 
