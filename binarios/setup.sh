@@ -474,7 +474,7 @@ Host sav_servidor
     Port ${DEFAULT_SSH_PORTA}
     User ${DEFAULT_SSH_USER}
     ControlMaster auto
-    ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
+    ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p.sock 
     ControlPersist 10m
     ServerAliveInterval ${SSH_ALIVE_INTERVAL}
     ServerAliveCountMax ${SSH_ALIVE_COUNT}
