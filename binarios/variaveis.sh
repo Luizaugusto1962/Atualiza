@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Exibe todas as constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 10/06/2026-01
 # Uso: ./variaveis.sh [filtro]
 #
 # =============================================================================
@@ -48,7 +48,7 @@ declare -A CATEGORIAS=(
     ["CONFIGURACOES DE REDE"]="DEFAULT_SSH_PORTA DEFAULT_IP_SERVER"
     ["DIRETORIOS PADRAO"]="DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_LOGS_DIR DEFAULT_BACKUP_DIR DEFAULT_BASEBACKUP_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BIBLIOTECA_DIR DEFAULT_PROGS_DIR DEFAULT_OLDS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR"
     ["SAVISC - DIRETORIO E UTILITARIOS"]="SAVISC REBUILD"
-    ["ACESSO OFFLINE"]="ACESSO_OFF CFG_BACKUP_PATH"
+    ["ACESSO OFFLINE"]="ACESSO_OFF CFG_BACKUP_PATH DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB"
 )
 
 # =============================================================================

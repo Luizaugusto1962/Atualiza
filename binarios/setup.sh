@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 10/06/2026-01
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -332,6 +332,7 @@ _setup_empresa() {
     echo ${tracejada}
     read -rp "Nome da Empresa (sem espacos): " empresa
     echo "empresa=${empresa}" >> .config
+    _configure_ssh_access
 }
 
 
@@ -415,6 +416,83 @@ _recreate_config_files() {
     echo "$tracejada"
 }
 
+#---------- FUNCOES AUXILIARES ----------#
+# Configura acesso SSH facilitado
+#===================================================================
+# _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
+#===================================================================
+#===================================================================
+# _configure_ssh_access - Cria novo arquivo SSH config
+#===================================================================
+_configure_ssh_access() {
+    local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
+    local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
+    local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
+    local SSH_DIR="${HOME}/.ssh"
+    local SSH_CONFIG_FILE="${SSH_DIR}/config"
+    local CONTROL_PATH_BASE="${SSH_DIR}/control"
+
+    # Validacao das variaveis obrigatorias
+    if [[ -z "${DEFAULT_IP_SERVER}" ]]; then
+        echo "Erro: Variavel DEFAULT_IP_SERVER nao foi definida."
+        return 1
+    fi
+
+    # Cria os diretorios padrao
+    mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
+    chmod "${PERM_DIR_SECURE}" "${SSH_DIR}" "${CONTROL_PATH_BASE}"
+
+    # ====================== CRIA NOVO ARQUIVO ~/.ssh/config ======================
+    echo "Criando novo arquivo de configuracao SSH em ${SSH_CONFIG_FILE}..."
+
+    cat > "${SSH_CONFIG_FILE}" << EOF
+# ================================================
+# Configuracao SAV - Gerada automaticamente
+# Data: $(date '+%d/%m/%Y %H:%M:%S')
+# ================================================
+
+Host sav_servidor
+    HostName ${DEFAULT_IP_SERVER}
+    Port ${DEFAULT_SSH_PORTA}
+    User ${DEFAULT_SSH_USER}
+    ControlMaster auto
+    ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
+    ControlPersist 10m
+    ServerAliveInterval ${SSH_ALIVE_INTERVAL}
+    ServerAliveCountMax ${SSH_ALIVE_COUNT}
+    ConnectTimeout ${SSH_TIMEOUT}
+EOF
+
+    chmod "${PERM_FILE_PRIVATE}" "${SSH_CONFIG_FILE}"
+    echo "Novo arquivo ~/.ssh/config criado com sucesso!"
+
+    # ====================== TESTE DE CONEXAO ======================
+    echo
+    echo "Testando conexao com o servidor SAV (${DEFAULT_IP_SERVER})..."
+
+    if ssh -o BatchMode=yes sav_servidor exit 2>/dev/null; then
+        echo "Conexao SSH estabelecida com sucesso!"
+        return 0
+    fi
+
+    # Primeira conexao - modo interativo
+    echo "Primeira conexao: confirme a identidade do servidor abaixo."
+    echo "   (Digite 'yes' quando aparecer a mensagem de fingerprint)"
+    echo
+
+    if ssh sav_servidor exit; then
+        echo "Servidor autenticado e fingerprint adicionado ao known_hosts."
+        return 0
+    else
+        echo "Erro: nao foi possivel conectar ao servidor."
+        echo "   Verifique:"
+        echo "     - Porta ${DEFAULT_SSH_PORTA} liberada"
+        echo "     - Usuario '${DEFAULT_SSH_USER}' existe no servidor remoto"
+        echo "     - Firewall permite a conexao"
+        return 1
+    fi
+}
+
 #---------- PONTO DE ENTRADA PRINCIPAL ----------#
 
 # Funcao principal que direciona para o modo correto
@@ -436,7 +514,7 @@ main() {
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
-cd "${SCRIPT_DIR}" || return 1
+cd "${SCRIPT_DIR}" || exit 1
 
 # Verifica se o diretorio processos existe
     if [[ ! -d "${LIBS_DIR}" ]]; then

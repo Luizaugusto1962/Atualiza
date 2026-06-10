@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 05/06/2026-01
+# Versao: 10/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -264,9 +264,6 @@ _inicializar_sistema() {
     # Executar limpeza automatica diaria
     _executar_expurgador_diario
 
-    # Configura acesso SSH se necessario
-    _validar_acesso_ssh 
-
     return 0
 }
 
@@ -284,13 +281,13 @@ _main() {
     # Inicializar sistema
     if ! _inicializar_sistema; then
         printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
-        return 1
+        exit 1
     fi
 
     # Autenticacao
     if ! _login; then
         printf "ERRO: Autenticacao falhou. Saindo...\n" >&2
-        return 1
+        exit 1
     fi
 
     # Mostrar mensagem de entrada (se existe) e opcao para excluir
@@ -308,7 +305,7 @@ _main() {
         _principal
     else
         printf "ERRO: Menu principal nao encontrado.\n" >&2
-        return 1
+        exit 1
     fi
     
     # Finalizar sistema de variáveis (limpeza explícita)
