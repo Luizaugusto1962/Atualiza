@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/06/2026-01
+# Versao: 12/06/2026-01
 # Autor: Luiz Augusto
 #
 #
@@ -552,6 +552,8 @@ _menu_setups() {
         printf "\n"
         _mensageb "${GREEN}" "3${NORM} -|: Validar configuracao "
         printf "\n"
+        _mensageb "${GREEN}" "4${NORM} -|: Configurar Acesso SSH "
+        printf "\n"
         _meia_linha "-" "${YELLOW}"
         _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
         printf "\n"
@@ -575,6 +577,7 @@ _menu_setups() {
                 fi
                 ;;
             3) _validar_configuracao || true ; _aguardar_tecla ;;
+            4) _menu_configurar_ssh || true ;;
             9) return ;;
             *)
                 _opinvalida
@@ -941,3 +944,49 @@ _definir_base_trabalho() {
     return 0
 }
 
+#---------- MENU DE CONFIGURACAO DE SSH ----------#
+# Menu para configurar acesso SSH sem senha com chaves SSH
+_menu_configurar_ssh() {
+    while true; do
+        _limpa_tela
+        _linha "=" "${GREEN}"
+        _mensagec "${RED}" "Configuracao de Acesso SSH sem Senha"
+        _linha
+        _mensagec "${GREEN}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
+        _linha
+        printf "\n"           
+
+    _checar_dependencias
+    _preparar_diretorio_ssh
+    _verificar_ou_criar_chave
+
+    # Pergunta se deseja enviar a chave agora
+        local ENVIAR
+        read -rp "${YELLOW} Deseja enviar a chave publica para o servidor principal agora? [s/N]  ${NORM}" ENVIAR
+
+    case "$ENVIAR" in
+        [sS]|[sS][iI][mM])
+            _enviar_chave_para_servidor
+            ;;
+        *)
+            _linha
+            _mensagec "${YELLOW}" "Envio cancelado. Para enviar manualmente, execute:"
+            _mensagec "${YELLOW}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA}@${DEFAULT_IP_SERVER}"
+            ;;
+    esac
+
+    # Pergunta se deseja testar a conexao
+        local TESTAR
+        read -rp "${YELLOW} Deseja testar a conexao agora? [s/N]  ${NORM}" TESTAR
+
+    case "$TESTAR" in
+        [sS]|[sS][iI][mM])
+            _testar_conexao
+            ;;
+    esac
+
+    _mensagec "${GREEN}" "Configuracao concluida."
+    _aguardar 2
+    return 0 
+    done
+}    

@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 10/06/2026-01
+# Versao: 12/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -35,7 +35,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="06/06/26-v.1"
+declare -rx UPDATE="12/06/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
@@ -162,8 +162,7 @@ _caminho_modulo() {
     fi
 
     # Carregar o módulo
-    # shellcheck disable=SC1090
-    if ! . "${caminho}"; then
+    if ! "." "${caminho}"; then
         printf "ERRO: Falha ao carregar modulo '%s'\n" "${modulo}" >&2
         return 1
     fi
@@ -210,15 +209,6 @@ _carregar_modulos() {
     return 0
 }
 
-# Criar atalho global (requer permissao de root)
-_check_root(){
-    if [[ $EUID -ne 0 ]]; then
-        echo "AVISO: Sem permissao de root."
-        echo "Execute como root ou sudo"
-        echo ""
-        return 1
-    fi
-	}
 
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA
@@ -235,9 +225,8 @@ _inicializar_sistema() {
     fi
 
     # Inicializar sistema de gerenciamento de variáveis
-    # CORRECAO: nome correto da funcao e _inicializar_variaveis_sistema (definida em config.sh)
-    if command -v _inicializar_variaveis_sistema >/dev/null 2>&1; then
-        _inicializar_variaveis_sistema
+    if command -v _inicializar_sistema_variaveis >/dev/null 2>&1; then
+        _inicializar_sistema_variaveis
     fi
 
     # Carregar e validar configuracoes

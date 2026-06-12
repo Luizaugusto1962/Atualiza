@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-02
+# Versao: 12/06/2026-02
 # Autor: Luiz Augusto
 #
 
@@ -673,7 +673,7 @@ _enviar_backup_servidor() {
     _mensagec "${YELLOW}" "Enviando backup via vaievem..."
     _linha
     
-    if _upload_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
+    if _enviar_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
         _mensagec "${GREEN}" "Backup enviado com sucesso para \"${DESTINO_REMOTO}\""
         _linha
@@ -764,7 +764,7 @@ _enviar_backup_rede() {
     _mensagec "${YELLOW}" "Enviando backup via vaievem..."
     _linha
     
-    if _upload_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
+    if _enviar_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
         _mensagec "${GREEN}" "Backup enviado para \"${DESTINO_REMOTO}\" no servidor ${DEFAULT_IP_SERVER}"
         _aguardar 3

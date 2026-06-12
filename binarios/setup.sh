@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/06/2026-01
+# Versao: 12/06/2026-01
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -417,17 +417,19 @@ _recreate_config_files() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
+#---------- FUNCOES AUXILIARES ----------#
 # Configura acesso SSH facilitado
-#===================================================================
-# _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
-#===================================================================
 #===================================================================
 # _configure_ssh_access - Cria novo arquivo SSH config
 #===================================================================
 _configure_ssh_access() {
+    
+    # Variaveis de configuracao com fallback para variaveis globais
     local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
     local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
     local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
+
+    # Variaveis de configuracao SSH
     local SSH_DIR="${HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
     local CONTROL_PATH_BASE="${SSH_DIR}/control"
@@ -493,7 +495,6 @@ EOF
     fi
 }
 
-#---------- PONTO DE ENTRADA PRINCIPAL ----------#
 
 # Funcao principal que direciona para o modo correto
 main() {

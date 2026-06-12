@@ -6,14 +6,20 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/06/2026-01
+# Versao: 12/06/2026-01
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 NORM=$(tput sgr0)
 #---------- FUNCOES DE STRING ----------#
-
+# Cores (desativadas se terminal não suportar)
+if [ -t 1 ]; then
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+    CYAN='\033[0;36m'
+else
+    RED=''; GREEN=''; YELLOW=''; CYAN='' 
+fi
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
 # Retorna: string sem espacos nas extremidades
@@ -301,14 +307,6 @@ _validar_nome_programa() {
     [[ "$programa" =~ ^[A-Z0-9]+$ ]]
 }
 
-# Valida se diretorio existe e e acessivel
-# Parametros: $1=caminho_diretorio
-# Retorna: 0=valido 1=invalido
-_validar_diretorio() {
-    local dir="$1"
-
-   [[ -n "$dir" && -d "$dir" && -r "$dir" ]]
-}
 
 # Solicita confirmacao S/N
 # Parametros: $1=mensagem $2=padrao(S/N)
@@ -717,3 +715,124 @@ _enviabackup_para_receber() {
     # Retornar código apropriado
     return $((arquivos_erro > 0 ? 1 : 0))
 }
+
+
+
+#---------- FUNCOES DE CHAVES SSH ----------#
+#===================================================================
+# _configure_ssh_com_chaves - Gerencia criacao e envio de chaves SSH
+# Complementa _configure_ssh_access adicionando autenticacao por chave
+#===================================================================
+
+    # Variaveis de configuracao com fallback para variaveis globais
+    SERVIDOR="${DEFAULT_IP_SERVER:-}"
+    PORTA="${DEFAULT_SSH_PORTA:-22}"
+    USUARIO="${DEFAULT_SSH_USER:-}"
+    CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
+    CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
+
+    # Validacao das variaveis obrigatorias
+    if [[ -z "${SERVIDOR}" ]]; then
+        echo "Erro: Variavel DEFAULT_IP_SERVER nao foi definida."
+        return 1
+    fi
+    msg()   { printf "${CYAN}[INFO]${NORM}  %s\n" "$1"; }
+    ok()    { printf "${GREEN}[OK]${NORM}    %s\n" "$1"; }
+    warn()  { printf "${YELLOW}[AVISO]${NORM} %s\n" "$1"; }
+    erro()  { printf "${RED}[ERRO]${NORM}  %s\n" "$1"; }
+    # -------------------------------------------------------------------------
+    # Verifica dependencias
+    # -------------------------------------------------------------------------
+    _checar_dependencias() {
+        for cmd in ssh ssh-keygen ssh-copy-id; do
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+                erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."
+                exit 1
+            fi
+        done
+        ok "Dependencias verificadas."
+        warn "Verificando configuracao de chaves SSH..."
+    }
+
+    # -------------------------------------------------------------------------
+    # Garante que ~/.ssh existe com as permissoes corretas
+    # -------------------------------------------------------------------------
+    _preparar_diretorio_ssh() {
+        if [ ! -d "$HOME/.ssh" ]; then
+            mkdir -p "$HOME/.ssh"
+            chmod 700 "$HOME/.ssh"
+            ok "Diretorio ~/.ssh criado."
+        fi
+    }
+
+    # -------------------------------------------------------------------------
+    # Verifica se a chave ja existe; pergunta se quer criar caso nao exista
+    # -------------------------------------------------------------------------
+    _verificar_ou_criar_chave() {
+        if [ -f "$CHAVE" ] && [ -f "$CHAVE_PUB" ]; then
+            ok "Chave SSH encontrada: $CHAVE"
+            return 0
+        fi
+
+        warn "Chave SSH nao encontrada em $CHAVE"
+        printf "\nDeseja criar uma nova chave SSH agora? [s/N] "
+        read -r RESPOSTA
+
+        case "$RESPOSTA" in
+            [sS]|[sS][iI][mM])
+                msg "Gerando par de chaves RSA 4096 bits..."
+                if ssh-keygen -t rsa -b 4096 -f "$CHAVE" -C "${USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
+                    ok "Chave criada com sucesso: $CHAVE"
+                else
+                    erro "Falha ao criar a chave SSH."
+                fi
+                ;;
+            *)
+                warn "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
+                ;;
+        esac
+    }
+
+    # -------------------------------------------------------------------------
+    # Envia a chave publica ao servidor principal
+    # -------------------------------------------------------------------------
+    _enviar_chave_para_servidor() {
+        msg "Enviando chave publica para ${USUARIO}@${SERVIDOR}:${PORTA}..."
+        warn "Sera solicitada a senha do usuario '${USUARIO}' no servidor (ultima vez)."
+
+        if ssh-copy-id -i "$CHAVE_PUB" -p "$PORTA" "${USUARIO}@${SERVIDOR}"; then
+            ok "Chave enviada com sucesso!"
+            ok "A partir de agora a conexao sera feita sem senha."
+        else
+            erro "Falha ao enviar a chave. Verifique:"
+            erro "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
+            erro "  - Se o usuario '${USUARIO}' existe no servidor"
+            erro "  - Se a senha informada esta correta"
+            warn "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
+        fi
+    }
+
+    # -------------------------------------------------------------------------
+    # Testa a conexao sem senha
+    # -------------------------------------------------------------------------
+    _testar_conexao() {
+        msg "Testando conexao sem senha..."
+        if ssh -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o StrictHostKeyChecking=accept-new \
+            -i "$CHAVE" \
+            -p "$PORTA" \
+            "${USUARIO}@${SERVIDOR}" \
+            "echo 'Conexao OK em: \$(hostname) - \$(date)'"; then
+            ok "Conexao sem senha funcionando perfeitamente!"
+        else
+            erro "Conexao sem senha falhou. Verifique as permissoes no servidor:"
+            erro "  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+        fi
+    }
+
+    # -------------------------------------------------------------------------
+    # Execucao principal
+    # -------------------------------------------------------------------------
+    _checar_dependencias
+    return 0

@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 12/06/2026-01
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -134,24 +134,6 @@ _register_var() {
     return 0
 }
 
-# Função para registrar múltiplas variáveis de uma só vez
-_register_vars_batch() {
-    local var_category="${1:-OUTROS}"
-    shift
-    local var_def var_name var_value
-    
-    for var_def in "$@"; do
-        var_name="${var_def%%=*}"
-        var_value="${var_def#*=}"
-        _register_var "$var_name" "$var_value" "$var_category"
-    done
-}
-
-# Função para obter todas as variáveis de uma categoria
-_get_vars_by_category() {
-    local category="$1"
-    echo "${REGISTRO_CATEGORIAS[$category]:-}"
-}
 
 # Função para verificar se uma variável é readonly
 _is_var_readonly() {
@@ -447,22 +429,6 @@ _configurar_variaveis_sistema() {
     export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU
 }
 
-    # Validar acesso SSH se configurado
-    _validar_acesso_ssh() {
-    if [[ "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
-            _mensagec "${GREEN}" "OK: Acesso SSH habilitado"
-        # Recriando acesso.
-        _configure_ssh_access
-        else
-            _mensagec "${YELLOW}" "Alerta: Acesso SSH desabilitado"
-            ((warnings++)) || true
-        fi
-    else
-        _mensagec "${YELLOW}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
-        ((warnings++)) || true
-    fi
-    }    
 # -----------------------------------------------------------------------------
 # Valida o conteudo de um arquivo de configuracao de forma RIGOROSA
 # Verifica se o arquivo contem apenas atribuicoes de variaveis simples
@@ -788,11 +754,6 @@ _ir_para_tools() {
 # SISTEMA DE LIMPEZA DE VARIÁVEIS
 # =============================================================================
 
-# Função para verificar se uma variável existe
-_var_existe() {
-    local var_name="$1"
-    [[ -n "${!var_name+x}" ]]
-}
 
 # Função melhorada para limpar variáveis registradas
 _limpar_estado_variaveis() {
@@ -842,32 +803,6 @@ _limpar_estado_variaveis() {
     return 0
 }
 
-# Função para limpar variáveis de uma categoria específica
-_limpar_categoria() {
-    local category="$1"
-    local vars=""
-    local var
-
-    # Verificar existência de REGISTRO_CATEGORIAS de forma segura (set -u compatível)
-    if ! declare -p REGISTRO_CATEGORIAS &>/dev/null; then
-        return 0
-    fi
-
-    vars="${REGISTRO_CATEGORIAS[$category]:-}"
-
-    if [[ -z "$vars" ]]; then
-        return 0
-    fi
-
-    for var in $vars; do
-        if [[ -n "${!var+x}" ]]; then
-            unset -v "$var" 2>/dev/null || true
-        fi
-    done
-
-    # Remover categoria do registro
-    unset "REGISTRO_CATEGORIAS[$category]"
-}
 
 # Função para limpeza de emergência (sem dependências)
 _limpeza_emergencia() {
@@ -918,25 +853,6 @@ _inicializar_sistema_variaveis() {
     _register_var "SISTEMA_VARIAVEIS_INICIALIZADO" "true" "SISTEMA"
 }
 
-# Função para obter estatísticas do registro de variáveis
-_status_registro_variaveis() {
-    local categoria="${1:-}"
-    
-    if [[ -n "$categoria" ]]; then
-        local vars="${REGISTRO_CATEGORIAS[$categoria]:-}"
-        local count=0
-        for _ in $vars; do ((count++)); done
-        printf '%s: %d variaveis\n' "$categoria" "$count"
-    else
-        printf 'Total de variaveis registradas: %d\n' "${VAR_CONTADOR_REGISTRO:-0}"
-        printf 'Total de categorias: %d\n' "${#REGISTRO_CATEGORIAS[@]}"
-        printf '\nCategorias registradas:\n'
-        local cat
-        for cat in "${!REGISTRO_CATEGORIAS[@]}"; do
-            printf '  - %s\n' "$cat"
-        done
-    fi
-}
 
 # -----------------------------------------------------------------------------
 # Funcao para resetar variaveis (cleanup) - VERSÃO LEGADA (mantida para compatibilidade)

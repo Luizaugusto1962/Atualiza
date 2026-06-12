@@ -6,9 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/06/2026-01 (Atualizado com reforços de segurança)
-#
-#---------- CONFIGURACOES DE CONEXAO ----------#
+# Versao: 12/06/2026-01 (Atualizado com reforços de segurança)
 #
 # Variaveis globais esperadas
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
@@ -19,8 +17,6 @@ arquivos_encontrados=()                        # Array para armazenar arquivos e
 # Valida caminhos contra path traversal e injeção de caracteres especiais
 _validar_caminho_seguro() {
     local caminho="$1"
-    # Rejeita se vazio, contiver ../ ou caracteres de injeção (;|&$`<>"')
-    # Usando $'...' para permitir escape limpo de aspas simples e backticks
     local regex_perigoso=$'[;|&$`<>"\']'
     
     if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" =~ $regex_perigoso ]]; then
@@ -29,11 +25,55 @@ _validar_caminho_seguro() {
     return 0
 }
 
+# Verifica integridade do arquivo via SHA256 (remoto x local)
+_verificar_integridade() {
+    local arquivo_local="$1"
+    local arquivo_remoto="$2"  # caminho completo remoto
+    local servidor="${3:-$DEFAULT_IP_SERVER}"
+    local porta="${4:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${5:-$DEFAULT_SSH_USER}"
+    
+    if [[ ! -f "$arquivo_local" || ! -s "$arquivo_local" ]]; then
+        _log_erro "Arquivo local ausente ou vazio para verificação: $arquivo_local"
+        return 1
+    fi
+
+    _log "Verificando integridade (SHA256)..."
+
+    # Calcula hash local
+    local hash_local
+    hash_local=$(sha256sum "$arquivo_local" | awk '{print $1}')
+
+    # Calcula hash remoto via SSH
+    local hash_remoto
+    if [ -f "$CHAVE" ]; then
+        hash_remoto=$(ssh -p "$porta" -i "$CHAVE" -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+                     "${rem_user}@${servidor}" "sha256sum '${arquivo_remoto}' 2>/dev/null | awk '{print \$1}'" || echo "ERRO")
+    else
+        hash_remoto=$(ssh -p "$porta" "${rem_user}@${servidor}" \
+                     "sha256sum '${arquivo_remoto}' 2>/dev/null | awk '{print \$1}'" || echo "ERRO")
+    fi
+
+    if [[ "$hash_remoto" == "ERRO" || -z "$hash_remoto" ]]; then
+        _log_erro "Nao foi possível obter hash remoto do arquivo"
+        return 1
+    fi
+
+    if [[ "$hash_local" == "$hash_remoto" ]]; then
+        _log_sucesso "Integridade verificada com sucesso (SHA256 OK)"
+        return 0
+    else
+        _log_erro "Integridade comprometida! Hash local e remoto diferem."
+        _log_erro "Local : $hash_local"
+        _log_erro "Remoto: $hash_remoto"
+        return 1
+    fi
+}
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
 # Download via SFTP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
-_download_sftp_ssh() {
+_receber_sftp_ssh() {
     local arquivo_remoto="${1:-}"
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Erro: Arquivo remoto nao especificado para SFTP SSH"
@@ -68,7 +108,13 @@ _download_sftp_ssh() {
     # Construir destino de forma segura
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
 
-    sftp_output=$(sftp -P "$porta_ssh" "${user_ssh}@${host_ssh}" <<EOF 2>&1
+    # Construir opções SFTP com controle de acesso por chave
+    local sftp_opts=("-P" "$porta_ssh" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
+    if [ -f "$CHAVE" ]; then
+        sftp_opts+=("-i" "$CHAVE")
+    fi
+
+    sftp_output=$(sftp "${sftp_opts[@]}" "${user_ssh}@${host_ssh}" <<EOF 2>&1
 get "${arquivo_remoto}" "${destino_seguro}"
 quit
 EOF
@@ -112,7 +158,9 @@ EOF
 
 # Download via SCP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional) $3=servidor $4=porta $5=usuario
-_download_scp() {
+# Download via SCP com chave SSH configurada
+# Parametros: $1=arquivo_remoto $2=destino_local(opcional) $3=servidor $4=porta $5=usuario
+_receber_scp() {
     local arquivo_remoto="$1"
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Erro: Arquivo remoto nao especificado para SCP"
@@ -136,17 +184,35 @@ _download_scp() {
     fi
     
     _log "Iniciando download SCP: ${arquivo_remoto}"
+
+    # ==================== CONSTRUÇÃO DO COMANDO SCP ====================
+    local scp_cmd=("scp" "-P" "$porta")
+    local scp_opts=()
+
+    if [ -f "$CHAVE" ]; then
+        scp_opts+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=accept-new" "-o" "BatchMode=yes")
+    fi
+
+    # Monta comando completo
+    local src="${rem_user}@${servidor}:${arquivo_remoto}"
     
-    # SEGURANCA: Usar '--' para prevenir injeção de opções (ex: arquivos começando com '-')
-    if scp -P "$porta" "${rem_user}@${servidor}:${arquivo_remoto}" "$destino_local"; then
-        # Verificar se arquivo realmente existe e nao esta vazio
+    # Executa o download
+    if "${scp_cmd[@]}" "${scp_opts[@]}" "$src" "$destino_local"; then
+        # Verificação pós-download (única)
         local nome_arquivo="${arquivo_remoto##*/}"
         local arquivo_destino="${destino_local%/}/${nome_arquivo}"
-        if [[ -f "$arquivo_destino" && -s "$arquivo_destino" ]]; then
-            _log_sucesso "Download SCP concluido: ${arquivo_remoto}"
-            return 0
+        
+if [[ -f "$arquivo_destino" && -s "$arquivo_destino" ]]; then
+            # === NOVA VERIFICAÇÃO DE INTEGRIDADE ===
+            if _verificar_integridade "$arquivo_destino" "$arquivo_remoto" "$servidor" "$porta" "$rem_user"; then
+                _log_sucesso "Download SCP concluido: ${arquivo_remoto}"
+                return 0
+            else
+                rm -f -- "$arquivo_destino"
+                return 1
+            fi
         else
-            _log_erro "SCP retornou sucesso mas arquivo ausente ou vazio: ${arquivo_destino}"
+            _log_erro "SCP retornou sucesso mas arquivo ausente ou vazio"
             return 1
         fi
     else
@@ -158,10 +224,8 @@ _download_scp() {
 # Upload via RSYNC
 # Parametros: $1=arquivo_local $2=destino_remoto(caminho) $3=servidor $4=porta $5=usuario
 # NOTA: $2 sobrescreve CFG_BACKUP_PATH para uso nesta chamada. Se omitido, usa CFG_BACKUP_PATH global.
-_upload_rsync() {
+_enviar_rsync() {
     local arquivo_local="$1"
-    # CORRECAO: local CFG_BACKUP_PATH deve ser declarado ANTES da validacao para evitar
-    # que a validacao passe usando a global enquanto o rsync usaria o local vazio.
     local CFG_BACKUP_PATH="${2:-${CFG_BACKUP_PATH:-}}"
     
     if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
@@ -180,28 +244,49 @@ _upload_rsync() {
     
     _log "Iniciando upload RSYNC: ${arquivo_local}"
     local destino_completo="${rem_user}@${servidor}:${CFG_BACKUP_PATH}"
-    
-    # SEGURANCA: Usar '--' para prevenir injeção de opções no rsync
-    if rsync -avzP -e "ssh -p ${porta}" -- "$arquivo_local" "$destino_completo"; then
-        _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
-        return 0
+
+    # SEGURANCA: Construir opções de forma segura usando arrays
+    local rsync_base=("rsync" "-avzP")
+    local ssh_opts=("ssh" "-p" "$porta")
+
+    if [ -f "$CHAVE" ]; then
+        ssh_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
+    fi
+
+    # Executa o upload (única chamada)
+if "${rsync_base[@]}" -e "${ssh_opts[*]}" "$arquivo_local" "$destino_completo"; then
+        # === VERIFICAÇÃO DE INTEGRIDADE APÓS UPLOAD ===
+        local nome_arquivo="${arquivo_local##*/}"
+        local caminho_remoto="${CFG_BACKUP_PATH%/}/${nome_arquivo}"
+        
+        if _verificar_integridade "$arquivo_local" "$caminho_remoto" "$servidor" "$porta" "$rem_user"; then
+            _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
+            return 0
+        else
+            return 1
+        fi
     else
         _log_erro "Falha no upload RSYNC: ${arquivo_local}"
         return 1
     fi
 }
 
+
 #---------- FUNCOES DE DOWNLOAD (ALTO NIVEL) ----------#
 
 # Download da biblioteca via SFTP/SCP (funcao principal)
 _baixar_biblioteca_sincroniza() {
+
+    local servidor="${3:-$DEFAULT_IP_SERVER}"
+    local porta="${4:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${5:-$DEFAULT_SSH_USER}"
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
         
         # SEGURANCA: Validar diretorio de recebimento
         if ! _validar_caminho_seguro "${DEFAULT_RECEBE_DIR:-}"; then
-            _log_erro "Erro: Diretorio de recebimento invalido ou malicioso."
+            _log_erro "Erro: Diretorio de recebimento invalido."
             return 1
         fi
 
@@ -210,12 +295,16 @@ _baixar_biblioteca_sincroniza() {
             
             # SEGURANCA: Validar caminho construído
             if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
-                _log_erro "Erro: Caminho da biblioteca invalido ou malicioso."
+                _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
             
-            local src="${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}:${arquivo_biblioteca}"
-            if sftp -P "$DEFAULT_SSH_PORTA" "${src}" .; then
+            local src="${rem_user}@${servidor}:${arquivo_biblioteca}"
+            local sftp_lib_opts=("-P" "$porta" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
+            if [ -f "$CHAVE" ]; then
+                sftp_lib_opts+=("-i" "$CHAVE")
+            fi
+            if sftp "${sftp_lib_opts[@]}" "${src}" .; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
             else
@@ -237,13 +326,23 @@ _baixar_biblioteca_sincroniza() {
                     return 1
                 fi
                 
-                local src="${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}:${DESTINO_BIBLIOTECA}${arquivo}"
-                # SEGURANCA: Usar '--' para o destino local
-                if scp -P "$DEFAULT_SSH_PORTA" "${src}" "."; then
-                    _log_sucesso "Download concluido: ${arquivo}"
+                local src="${rem_user}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
+                if [ ! -f "$CHAVE" ]; then
+                    # Sem chave SSH (usa senha)
+                     if scp -P "$porta" "${src}" "."; then
+                        _log_sucesso "Download concluido: ${arquivo}"
+                    else
+                        _log_erro "Falha no download: ${arquivo}"
+                        return 1
+                    fi
                 else
-                    _log_erro "Falha no download: ${arquivo}"
-                    return 1
+                    # Com chave SSH (usa autenticação por chave)
+                     if scp -P "$porta" -i "$CHAVE" -o StrictHostKeyChecking=accept-new -o BatchMode=yes "${src}" "."; then
+                        _log_sucesso "Download concluido: ${arquivo}"
+                    else
+                        _log_erro "Falha no download: ${arquivo}"
+                        return 1
+                    fi    
                 fi
             done
             return 0
@@ -273,13 +372,12 @@ _baixar_programas_vaievem() {
             _linha
             
             if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
-                _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
-                if ! _download_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
+                if ! _receber_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
                     return 1
                 fi
             else
-                if ! _download_scp "${DESTINO_SERVER}${arquivo}" "."; then
+                if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
                     return 1
                 fi
@@ -332,10 +430,10 @@ _enviar_arquivo_multi() {
     
     # Verificar se esta enviando multiplos arquivos ou apenas um
     if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
-        # Enviar multiplos arquivos usando _upload_rsync
+        # Enviar multiplos arquivos usando _enviar_rsync
         local falhas_envio=0
         for arquivo_item in "${arquivos_encontrados[@]}"; do
-            if ! _upload_rsync "$arquivo_item" "${CFG_BACKUP_PATH}"; then
+            if ! _enviar_rsync "$arquivo_item" "${CFG_BACKUP_PATH}"; then
                 ((falhas_envio++)) || true
             fi
         done
@@ -349,8 +447,8 @@ _enviar_arquivo_multi() {
             _aguardar_tecla
         fi
     else
-        # Enviar arquivo unico usando _upload_rsync
-        if _upload_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
+        # Enviar arquivo unico usando _enviar_rsync
+        if _enviar_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
             _mensagec "${YELLOW}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
             _linha
             _aguardar 3

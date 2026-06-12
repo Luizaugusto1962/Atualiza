@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 12/06/2026-01
 #
 
 # Variaveis globais esperadas
@@ -403,52 +403,6 @@ _recuperar_arquivos_principais() {
     _aguardar_tecla
 }
 
-# Recupera arquivos principais baseado na lista
-_recuperar_arquivos_principais2() {
-    cd "${CFG_DIR}" || return 1
-    
-    if ! _selecionar_base_arquivos; then
-        return 1
-    fi
-    
-    if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
-        # Usar valor padrão se base_trabalho estiver vazia
-        base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
-        cd "$base_trabalho" || {
-            _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
-            return 1
-        }
-        
-        # Gerar lista de arquivos atuais
-        local var_ano var_ano4
-        var_ano=$(date +%y)
-        var_ano4=$(date +%Y)
-        
-        # Criar lista temporaria
-        {
-            ls ATE"${var_ano}"*.dat 2>/dev/null || true
-            ls NFE?"${var_ano4}".*.dat 2>/dev/null || true
-        } > "${CFG_DIR}/indexar2"
-        
-        cd "${CFG_DIR}" || return 1
-        _aguardar 1
-        
-        # Verificar arquivos de lista
-        for lista in "indexar2" "indexar"; do
-            if [[ -f "$lista" && -r "$lista" ]]; then
-                _processar_lista_arquivos "$lista" "$base_trabalho"
-            fi
-        done
-        
-        # Limpar arquivo temporario
-        [[ -f "indexar2" ]] && rm -f "indexar2"
-        
-        _mensagec "${YELLOW}" "Arquivos principais recuperados"
-    else
-        _mensagec "${RED}" "Recuperacao nao disponivel para este sistema. Disponivel apenas para IsCOBOL no momento."
-    fi
-    _aguardar_tecla
-}
 
 # Processa lista de arquivos para recuperacao
 _processar_lista_arquivos() {
@@ -690,7 +644,7 @@ _receber_arquivo_avulso() {
     _linha
     _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
     _linha
-    if _download_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
+    if _receber_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
         _mensagec "${GREEN}" "Arquivo recebido com sucesso em \"${destino_local}\""
         _linha
         _aguardar 3

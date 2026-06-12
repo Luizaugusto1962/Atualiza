@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 12/06/2026-01
 # Autor: Luiz Augusto
 #
 # Uso:
@@ -27,6 +27,12 @@ fi
 
 # Diretorios dos modulos e configuracoes
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
+CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
+
+# Carregar constantes do sistema
+if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
+    "." "${LIBS_DIR}/constantes.sh"
+fi
 
 # Carregar modulos necessarios
 "." "${LIBS_DIR}/config.sh" 2>/dev/null || { echo "Erro: config.sh nao encontrado."; exit 1; }
