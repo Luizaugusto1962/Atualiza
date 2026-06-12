@@ -22,7 +22,7 @@ _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                        # Caminho do diretorio da terceira base de dados.
-
+CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao do Iscobol em uso, se aplicavel.
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 
 # Funcao auxiliar para leitura de opcao com suporte a ajuda contextual
