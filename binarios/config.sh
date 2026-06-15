@@ -691,6 +691,25 @@ _validar_configuracao() {
         _mensagec "${GREEN}" "OK: Configuracao de banco de dados definida"
     fi
    
+        if [[ -z "${CFG_ACESSO_SSH}" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Variavel 'CFG_ACESSO_SSH' nao definida"
+        ((warnings++)) || true
+    else
+        _mensagec "${GREEN}" "OK: Configuracao de acesso SSH definida"
+    fi
+        if [[ -z "${CFG_OFFLINE}" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Variavel 'CFG_OFFLINE' nao definida"
+        ((warnings++)) || true
+    else
+        _mensagec "${GREEN}" "OK: Configuracao de modo offline definida"
+    fi
+
+        if [[ -z "${CFG_CHAVE_SSH}" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Variavel 'CFG_CHAVE_SSH' nao definida"
+        ((warnings++)) || true
+    else
+        _mensagec "${GREEN}" "OK: Configuracao de chave SSH definida"
+    fi
     
     # Verificar diretorios essenciais
     local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS" "BASE1")

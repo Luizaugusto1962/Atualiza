@@ -151,8 +151,8 @@ CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-${enviabackup}}"            # Path para envi
 # Flags booleanas do sistema
 CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-${dbmaker}}"                # Usa DBMaker (s/n)
 CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-${acessossh}}"                # Acesso SSH habilitado (s/n)
+CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                   # Caminho da chave SSH privada
 CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                        # Modo offline (s/n)
-CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                  # Caminho da chave SSH privada
 
 # =============================================================================
 # PERMISSOES DE ARQUIVO E DIRETORIO
@@ -263,7 +263,8 @@ debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
 export CFG_SISTEMA CFG_VERCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
-export CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE
+export CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
+export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT
 export PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC
 export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER SSH_TIMEOUT
 export HASH_ALGORITHM MAX_LOGIN_ATTEMPTS
