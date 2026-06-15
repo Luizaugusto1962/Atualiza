@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 12/06/2026-01
+# Versao: 16/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -15,7 +15,7 @@
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
 set -euo pipefail
-umask 000  # Garante que arquivos criados sejam legíveis 
+umask 077  # Garante que arquivos criados sejam legíveis apenas pelo dono
 
 # =============================================================================
 # DIRETÓRIOS DO SCRIPT
@@ -35,7 +35,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="12/06/26-v.1"
+declare -rx UPDATE="16/06/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
@@ -84,11 +84,11 @@ _criar_diretorio_seguro() {
             return 0
         else
             printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            return 1
+            exit 1  # Nao falhar por permissao
         fi
     else
         printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        return 1
+        exit 1
     fi
 }
 
@@ -162,7 +162,8 @@ _caminho_modulo() {
     fi
 
     # Carregar o módulo
-    if ! "." "${caminho}"; then
+    # shellcheck disable=SC1090
+    if ! . "${caminho}"; then
         printf "ERRO: Falha ao carregar modulo '%s'\n" "${modulo}" >&2
         return 1
     fi
@@ -173,6 +174,7 @@ _caminho_modulo() {
 # Retorna: 0 se todos carregados, 1 se algum falhou
 _carregar_modulos() {
     local modulos=(
+        "constantes.sh" # Constantes do Sistema SAV
         "config.sh"     # Configuracoes
         "utils.sh"      # Utilitarios basicos primeiro
         "auth.sh"       # Autenticacao
@@ -208,7 +210,6 @@ _carregar_modulos() {
     fi
     return 0
 }
-
 
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA

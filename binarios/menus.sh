@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/06/2026-01
+# Versao: 16/06/2026-01
 # Autor: Luiz Augusto
 #
 #
@@ -23,8 +23,8 @@ CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                        # Caminho do diretorio da terceira base de dados.
 CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao do Iscobol em uso, se aplicavel.
-#---------- FUNCAO AUXILIAR DE LEITURA ----------#
 
+#---------- FUNCAO AUXILIAR DE LEITURA ----------#
 # Funcao auxiliar para leitura de opcao com suporte a ajuda contextual
 # Uso: _ler_opcao_menu "contexto" min_opcao max_opcao
 # Retorna: 0 se opcao normal, 1 se comando de ajuda processado

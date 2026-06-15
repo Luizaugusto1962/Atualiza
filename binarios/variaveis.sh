@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Exibe todas as constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/06/2026-01
+# Versao: 16/06/2026-01
 # Uso: ./variaveis.sh [filtro]
 #
 # =============================================================================
@@ -48,7 +48,7 @@ declare -A CATEGORIAS=(
     ["CONFIGURACOES DE REDE"]="DEFAULT_SSH_PORTA DEFAULT_IP_SERVER"
     ["DIRETORIOS PADRAO"]="DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_LOGS_DIR DEFAULT_BACKUP_DIR DEFAULT_BASEBACKUP_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BIBLIOTECA_DIR DEFAULT_PROGS_DIR DEFAULT_OLDS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR"
     ["SAVISC - DIRETORIO E UTILITARIOS"]="SAVISC REBUILD"
-    ["ACESSO OFFLINE"]="ACESSO_OFF CFG_BACKUP_PATH DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB"
+    ["ACESSO OFFLINE"]="ACESSO_OFF CFG_BACKUP_PATH"
 )
 
 # =============================================================================
@@ -133,11 +133,11 @@ exibir_tabular() {
     # Exibir informacoes sobre o arquivo de configuracao
     printf "%s%s Fonte de Configuracao:%s\n" "$GREEN" "$BOLD" "$NORM"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
-        printf "   %s Status: Carregado com sucesso %s\n" "" "$CONFIG_FILE"
+        printf "   %s Status: Carregado com sucesso $CONFIG_FILE"
     else
-        printf "   %s Status: Nao encontrado (usando valores padrao) %s\n" "" "$CONFIG_FILE"
+        printf "   %s Status: Nao encontrado (usando valores padrao) $CONFIG_FILE"
     fi
-    printf "\n"
+    printf "\n"9
 
     # Cabecalho da tabela
     printf "%s%-35s%s %s\n" "$GREEN" "VARIAVEL" "$NORM" "VALOR"
@@ -157,6 +157,7 @@ exibir_tabular() {
 
         printf "\n%s%s[%s]%s\n" "$YELLOW" "$BOLD" "$categoria" "$NORM"
 
+        # shellcheck disable=SC2086
         for variavel in ${CATEGORIAS[$categoria]}; do
             local valor
             valor=$(obter_valor "$variavel")
@@ -176,7 +177,7 @@ main() {
 
     # Verificar dependencias
     if ! verificar_dependencias; then
-        return 0
+        exit 1
     fi
 
     # Carregar configuracao

@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/06/2026-01
+# Versao: 16/06/2026-01
 #
 
 # =============================================================================
@@ -104,6 +104,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     verclass=""
     dbmaker=""
     acessossh=""
+    chavessh=""
     Offline=""
     enviabackup=""
     empresa=""
@@ -151,6 +152,7 @@ CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-${enviabackup}}"            # Path para envi
 CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-${dbmaker}}"                # Usa DBMaker (s/n)
 CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-${acessossh}}"                # Acesso SSH habilitado (s/n)
 CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                        # Modo offline (s/n)
+CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                  # Caminho da chave SSH privada
 
 # =============================================================================
 # PERMISSOES DE ARQUIVO E DIRETORIO

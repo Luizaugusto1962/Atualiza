@@ -5,13 +5,18 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/06/2026-01
+# Versao: 16/06/2026-02
 # Autor: Luiz Augusto
 #
 # Uso:
 #   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
 #   ./cadastro.sh             - Chamada direta
 #
+
+# Variaveis globais esperadas
+CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
+LIBS_DIR="${LIBS_DIR:-}"                 # Diretorio de modulos de biblioteca
+
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
 # Quando chamado diretamente de /binarios, sobe um nivel para o diretorio do atualiza.sh
 if [[ -z "${SCRIPT_DIR}" ]]; then
@@ -29,25 +34,15 @@ fi
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
-# Carregar constantes do sistema
-if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
-    "." "${LIBS_DIR}/constantes.sh"
-fi
-
 # Carregar modulos necessarios
-"." "${LIBS_DIR}/config.sh" 2>/dev/null || { echo "Erro: config.sh nao encontrado."; exit 1; }
 "." "${LIBS_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }
 "." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
 
-# Cores (definidas uma vez para evitar subshells repetidos)
-if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-    BOLD="$(tput bold)"
-    GREEN="${BOLD}$(tput setaf 2)"
-    YELLOW="${BOLD}$(tput setaf 3)"
-    RED="${BOLD}$(tput setaf 1)"
-else
-    BOLD="" GREEN="" YELLOW="" RED="" 
-fi
+# Cores para o menu
+        RED=$(tput bold)$(tput setaf 1)          # Vermelho
+        GREEN=$(tput bold)$(tput setaf 2)        # Verde
+        YELLOW=$(tput bold)$(tput setaf 3)       # Amarelo
+
 # Funcao principal
 main() {
     while true; do
@@ -59,7 +54,7 @@ main() {
         printf "\n"
         _mensagec "${YELLOW}" "1. Cadastrar novo usuario"
         _mensagec "${YELLOW}" "2. Alterar senha de usuario"
-        _mensagec "${YELLOW}" "9. Sair"
+        _mensagec "${YELLOW}" "0. Voltar"
         _linha "=" "${GREEN}"
         _mensagec "${GREEN}" "Digite o numero da opcao desejada e pressione ENTER." 
         read -rp "Escolha uma opcao: " opcao
@@ -77,7 +72,7 @@ main() {
                 printf "\n"
                 read -rp "Pressione ENTER para continuar..." -t 5
                 ;;
-            9)
+            0)
                 _limpa_tela
                 tput sgr0
                 exit 0

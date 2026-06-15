@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/06/2026-01
+# Versao: 16/06/2026-01
 #
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
@@ -48,8 +48,9 @@ _limpar_interrupcao() {
     return 1
 }
 
-# CORRECAO: trap removido do nivel global — sobrescrevia os traps definidos em principal.sh
-# O trap e registrado localmente dentro de _processar_atualizacao_biblioteca() e restaurado ao final.
+# Configurar traps (SIGINT=2 para Ctrl+C, SIGTERM=15 para kill)
+trap '_limpar_interrupcao' INT
+trap '_limpar_interrupcao' TERM
 
 #---------- FUNCOES PRINCIPAIS DE ATUALIZACAO ----------#
 

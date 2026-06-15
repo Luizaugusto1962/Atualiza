@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/06/2026-01
+# Versao: 16/06/2026-02
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -70,7 +70,7 @@ _initial_setup() {
         *)
             echo "Alternativa incorreta, saindo!"
             sleep 1
-            return 1
+            exit 1
             ;;
     esac
 
@@ -78,17 +78,15 @@ _initial_setup() {
     _setup_banco_de_dados
     _setup_diretorios
     _setup_acesso_remoto
+    _setup_chave_acesso
     _setup_offline
     _setup_backup
     _setup_empresa
 
     # Criar atalho global (requer permissao de root)
     if [[ $EUID -eq 0 ]]; then
-        cat > /usr/local/bin/atualiza <<'EOF'
-cd "${SCRIPT_DIR:-SCRIPT_DIR}"
-./atualiza.sh
-EOF
-
+        echo "cd ${SCRIPT_DIR:-SCRIPT_DIR}" > /usr/local/bin/atualiza
+        echo "./atualiza.sh" >> /usr/local/bin/atualiza
         chmod +x /usr/local/bin/atualiza
         echo "Atalho /usr/local/bin/atualiza criado com sucesso."
     else
@@ -106,13 +104,13 @@ _edit_setup() {
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
         echo "Erro: Diretorio 'configuracoes' nao encontrado."
-        return 1
+        exit 1
     }
 
     # Verificar se os arquivos de configuracao existem
     if [[ ! -f "${CFG_DIR}/.config" ]]; then
         echo "Arquivos de configuracao nao encontrados. Execute o setup inicial primeiro."
-        return 1
+        exit 1
     fi
     clear 
     echo "=================================================="
@@ -130,6 +128,7 @@ _edit_setup() {
     _editar_variavel verclass
     _editar_variavel dbmaker
     _editar_variavel acessossh
+    _editar_variavel chavessh
     _editar_variavel Offline
     if [[ "${Offline}" == "n" ]]; then
         _editar_variavel enviabackup
@@ -151,16 +150,13 @@ _edit_setup() {
 
     echo "$tracejada"
     read -rp "Pressione Enter para sair..."
-    _limpa_tela
-    return 0
+    exit 0
 }
 
 #---------- FUNcoES DE SETUP INICIAL ----------#
 
 # Configuracao para IsCobol
 _setup_iscobol() {
-    # CORRECAO: tracejada era usada sem estar definida no escopo desta funcao
-    local tracejada="#-------------------------------------------------------------------#"
     sistema="iscobol"
     echo "sistema=iscobol" >> .config
     echo "$tracejada"
@@ -182,8 +178,7 @@ _setup_iscobol() {
         *)
             echo "Alternativa incorreta, saindo!"
             sleep 1
-            _limpa_tela
-            return 1
+            exit 1
             ;;
     esac
 
@@ -278,7 +273,26 @@ _setup_acesso_remoto() {
         echo "acessossh=n" >> .config
     fi
     echo ${tracejada}
-}    
+} 
+_setup_chave_acesso() {
+    echo "###      ( FACILITADOR DE CHAVE DE ACESSO REMOTO )         ###"
+    while true; do
+        read -rp "Permiti chaves de acesso [S/N]: " -n1 chavessh
+        echo
+        if [[ "${chavessh,,}" =~ ^[sn]$ ]]; then
+            break
+        else
+            echo "Entrada invalida. Digite S ou N."
+        fi
+    done
+    if [[ "${chavessh,,}" == "s" ]]; then
+        echo "chavessh=s" >> .config
+    else
+        echo "chavessh=n" >> .config
+    fi
+    echo "${tracejada}"
+}
+
 _setup_offline() {    
     echo "###      ( Tipo de acesso        )         ###"
     while true; do
@@ -361,7 +375,7 @@ _editar_variavel() {
                 [[ "$opt" == "1" ]] && sistema="iscobol"
                 [[ "$opt" == "2" ]] && sistema="cobol"
                 ;;
-            "dbmaker"|"acessossh")
+            "dbmaker"|"acessossh"|"chavessh"|"Offline")
                 while true; do
                     read -rp "Novo valor [s/n]: " opt
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
@@ -373,20 +387,6 @@ _editar_variavel() {
                     fi
                 done
                 ;;
-            "Offline")
-                while true; do
-                    read -rp "Sistema em modo Offline? [s/n]: " opt            
-                    if [[ "${opt,,}" =~ ^[sn]$ ]]; then
-                        [[ "${opt,,}" == "s" ]] && declare -g "Offline"="s" 
-                        echo "enviabackup=" >> .config
-                        [[ "${opt,,}" == "n" ]] && declare -g "Offline"="n"
-                        break
-                    else
-                        echo "Entrada inválida. Digite s ou n."
-                    fi
-                done
-                ;;
-
             *)
                 read -rp "Novo valor para ${nome}: " novo_valor
                 declare -g "$nome"="$novo_valor"
@@ -406,6 +406,7 @@ _recreate_config_files() {
         [[ -n "$verclass" ]] && echo "verclass=${verclass}"
         echo "dbmaker=${dbmaker}"
         echo "acessossh=${acessossh}"
+        echo "chavessh=${chavessh}"
         echo "Offline=${Offline}"
         echo "enviabackup=${enviabackup}"
         echo "empresa=${empresa}"
@@ -417,19 +418,17 @@ _recreate_config_files() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
-#---------- FUNCOES AUXILIARES ----------#
 # Configura acesso SSH facilitado
+#===================================================================
+# _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
+#===================================================================
 #===================================================================
 # _configure_ssh_access - Cria novo arquivo SSH config
 #===================================================================
 _configure_ssh_access() {
-    
-    # Variaveis de configuracao com fallback para variaveis globais
     local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
     local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
     local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
-
-    # Variaveis de configuracao SSH
     local SSH_DIR="${HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
     local CONTROL_PATH_BASE="${SSH_DIR}/control"
@@ -495,6 +494,7 @@ EOF
     fi
 }
 
+#---------- PONTO DE ENTRADA PRINCIPAL ----------#
 
 # Funcao principal que direciona para o modo correto
 main() {
@@ -520,13 +520,13 @@ cd "${SCRIPT_DIR}" || exit 1
 # Verifica se o diretorio processos existe
     if [[ ! -d "${LIBS_DIR}" ]]; then
         echo "ERRO: Diretorio ${LIBS_DIR} nao encontrado."
-        return 1
+        exit 1
     fi
 
 # Verifica se o diretorio configuracoes existe
     if [[ ! -d "${CFG_DIR}" ]]; then
         echo "ERRO: Diretorio ${CFG_DIR} nao encontrado."
-        return 1
+        exit 1
     fi
 
     # Verificar modo de operacao
@@ -535,7 +535,7 @@ cd "${SCRIPT_DIR}" || exit 1
     else
         # Verificar se os arquivos de configuracao ja existem
 
-        if [[ -f "${CFG_DIR}/.config" ]]; then
+        if [[ -f "${CFG_DIR}/.config" ]]; then  
             _limpa_tela
             echo "Arquivos de configuracao ja existem."
             while true; do
@@ -547,22 +547,18 @@ cd "${SCRIPT_DIR}" || exit 1
                 fi
             done
             if [[ "${choice,,}" == "s" ]]; then
-			    (
-                cd "${CFG_DIR}" || return 1
+                cd configuracoes || exit 1
                 _initial_setup
-				)
             else
                 echo "Operacao cancelada. Use './atualiza.sh --setup --edit' para modificar."
+                exit 0
             fi
         else
-            mkdir -p "${CFG_DIR}"
-			(
-            cd "${CFG_DIR}" || return 1
+            mkdir -p configuracoes
+            cd configuracoes || exit 1
             _initial_setup
-			)
         fi
     fi
-    return 0
 }
 
 # Executar a funcao principal

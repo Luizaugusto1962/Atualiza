@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/06/2026-01 (Atualizado com reforços de segurança)
+# Versao: 16/06/2026-01 (Atualizado com reforços de segurança)
 #
 # Variaveis globais esperadas
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
@@ -32,7 +32,9 @@ _verificar_integridade() {
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
-    
+    local CHAVE="${CHAVE:-}"
+    local acessochave="${CFG_CHAVE_SSH:-}"
+
     if [[ ! -f "$arquivo_local" || ! -s "$arquivo_local" ]]; then
         _log_erro "Arquivo local ausente ou vazio para verificação: $arquivo_local"
         return 1
@@ -46,7 +48,8 @@ _verificar_integridade() {
 
     # Calcula hash remoto via SSH
     local hash_remoto
-    if [ -f "$CHAVE" ]; then
+
+    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
         hash_remoto=$(ssh -p "$porta" -i "$CHAVE" -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
                      "${rem_user}@${servidor}" "sha256sum '${arquivo_remoto}' 2>/dev/null | awk '{print \$1}'" || echo "ERRO")
     else
@@ -107,11 +110,12 @@ _receber_sftp_ssh() {
     
     # Construir destino de forma segura
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
+    local acessochave="${CFG_CHAVE_SSH:-}"
 
     # Construir opções SFTP com controle de acesso por chave
-    local sftp_opts=("-P" "$porta_ssh" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
-    if [ -f "$CHAVE" ]; then
-        sftp_opts+=("-i" "$CHAVE")
+    local sftp_opts=("-P" "$porta_ssh")
+    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
+        sftp_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
     fi
 
     sftp_output=$(sftp "${sftp_opts[@]}" "${user_ssh}@${host_ssh}" <<EOF 2>&1
@@ -177,6 +181,7 @@ _receber_scp() {
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
+    local acessochave="${CFG_CHAVE_SSH:-}"
     
     if [[ ! -d "$destino_local" ]]; then
         _log_erro "Erro: Diretorio de destino nao existe: ${destino_local}"
@@ -189,7 +194,7 @@ _receber_scp() {
     local scp_cmd=("scp" "-P" "$porta")
     local scp_opts=()
 
-    if [ -f "$CHAVE" ]; then
+    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
         scp_opts+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=accept-new" "-o" "BatchMode=yes")
     fi
 
@@ -227,7 +232,8 @@ if [[ -f "$arquivo_destino" && -s "$arquivo_destino" ]]; then
 _enviar_rsync() {
     local arquivo_local="$1"
     local CFG_BACKUP_PATH="${2:-${CFG_BACKUP_PATH:-}}"
-    
+    local acessochave="${CFG_CHAVE_SSH:-}"
+
     if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
         _log_erro "Erro: Parametros obrigatorios nao informados para upload RSYNC"
         return 1
@@ -241,15 +247,16 @@ _enviar_rsync() {
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
-    
+    local acessochave="${CFG_CHAVE_SSH:-}"
     _log "Iniciando upload RSYNC: ${arquivo_local}"
     local destino_completo="${rem_user}@${servidor}:${CFG_BACKUP_PATH}"
+    local acessochave="${CFG_ACESSO_SSH:-}"
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     local rsync_base=("rsync" "-avzP")
     local ssh_opts=("ssh" "-p" "$porta")
 
-    if [ -f "$CHAVE" ]; then
+    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
         ssh_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
     fi
 
@@ -280,6 +287,7 @@ _baixar_biblioteca_sincroniza() {
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
+    local acessochave="${CFG_CHAVE_SSH:-}"
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
@@ -290,7 +298,7 @@ _baixar_biblioteca_sincroniza() {
             return 1
         fi
 
-        if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
+        if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
             local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
             
             # SEGURANCA: Validar caminho construído
@@ -298,12 +306,12 @@ _baixar_biblioteca_sincroniza() {
                 _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
-            
+            local sftp_lib_opts=("-P" "$porta") 
             local src="${rem_user}@${servidor}:${arquivo_biblioteca}"
-            local sftp_lib_opts=("-P" "$porta" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
-            if [ -f "$CHAVE" ]; then
-                sftp_lib_opts+=("-i" "$CHAVE")
+            if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
+                sftp_lib_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
             fi
+
             if sftp "${sftp_lib_opts[@]}" "${src}" .; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
@@ -327,22 +335,18 @@ _baixar_biblioteca_sincroniza() {
                 fi
                 
                 local src="${rem_user}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
-                if [ ! -f "$CHAVE" ]; then
+                local scp_cmd=("scp" "-P" "$porta")
+                local scp_opts=()
+
+                if [[ "${acessochave,,}" == "s" ]] || [ ! -f "$CHAVE" ]; then
+                    scp_opts+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=accept-new" "-o" "BatchMode=yes")
                     # Sem chave SSH (usa senha)
-                     if scp -P "$porta" "${src}" "."; then
+                    if "${scp_cmd[@]}" "${scp_opts[@]}" "$src" "."; then
                         _log_sucesso "Download concluido: ${arquivo}"
                     else
                         _log_erro "Falha no download: ${arquivo}"
                         return 1
                     fi
-                else
-                    # Com chave SSH (usa autenticação por chave)
-                     if scp -P "$porta" -i "$CHAVE" -o StrictHostKeyChecking=accept-new -o BatchMode=yes "${src}" "."; then
-                        _log_sucesso "Download concluido: ${arquivo}"
-                    else
-                        _log_erro "Falha no download: ${arquivo}"
-                        return 1
-                    fi    
                 fi
             done
             return 0
@@ -353,6 +357,7 @@ _baixar_biblioteca_sincroniza() {
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
     local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    local acessochave="${CFG_CHAVE_SSH:-}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
@@ -371,7 +376,7 @@ _baixar_programas_vaievem() {
             _mensagec "${GREEN}" "Transferindo: $arquivo"
             _linha
             
-            if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
+            if [[ "${acessochave,,}" == "s" ]]; then
                 if ! _receber_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
                     return 1
@@ -394,7 +399,7 @@ _baixar_programas_vaievem() {
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _mensagec "${RED}" "ERRO: Arquivo corrompido: $arquivo"
                 # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
-                rm -f -- "$arquivo"
+                rm -f "$arquivo"
                 _aguardar 2
                 return 0
             fi

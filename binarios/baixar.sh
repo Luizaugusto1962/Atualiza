@@ -5,7 +5,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/05/2026
+# Versao: 16/06/2026
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -45,7 +45,7 @@ _atualizando() {
     shopt -u nullglob
 
     for arquivo in "${arquivos_sh[@]}"; do
-        if mv -f "$arquivo" "${DEFAULT_BACKUP_DIR}/$(basename "$arquivo").bkp" 2>/dev/null; then
+        if cp -f "$arquivo" "${DEFAULT_BACKUP_DIR}/$(basename "$arquivo").bkp" 2>/dev/null; then
             _mensagec "${GREEN}" "Backup do arquivo $(basename "$arquivo") feito com sucesso"
             ((backup_sucesso++)) || true
         else
@@ -56,7 +56,7 @@ _atualizando() {
     done
 
     if [[ -n "${SCRIPT_DIR}" && -f "${SCRIPT_DIR}/atualiza.sh" ]]; then
-        if mv -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
+        if cp -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
             _mensagec "${GREEN}" "Backup do arquivo atualiza.sh feito com sucesso"
             ((backup_sucesso++)) || true
         else
@@ -186,11 +186,10 @@ _atualizando() {
     _linha
 
         # Finalizar sistema de variáveis (limpeza explícita)
-
-    if command -v _encerrar_programa >/dev/null 2>&1; then
-        _encerrar_programa 0
+    if command -v _finalizar_sistema >/dev/null 2>&1; then
+        _finalizar_sistema
     fi
-
+    exit 1
 }
 
 _atualizar_online() {

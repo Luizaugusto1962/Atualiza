@@ -6,11 +6,24 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/06/2026-01
+# Versao: 16/06/2026-01
+
+RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
+#---------- FUNCOES DE CHAVES SSH ----------#
+#===================================================================
+# _configure_ssh_com_chaves - Gerencia criacao e envio de chaves SSH
+# Complementa _configure_ssh_access adicionando autenticacao por chave
+#===================================================================
+# Variaveis de configuracao com fallback para variaveis globais
+
+    SERVIDOR="${DEFAULT_IP_SERVER:-}"
+    PORTA="${DEFAULT_SSH_PORTA:-}"
+    USUARIO="${DEFAULT_SSH_USER:-}"
+    CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
+    CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
-RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 NORM=$(tput sgr0)
 #---------- FUNCOES DE STRING ----------#
 # Cores (desativadas se terminal não suportar)
@@ -20,6 +33,7 @@ if [ -t 1 ]; then
 else
     RED=''; GREEN=''; YELLOW=''; CYAN='' 
 fi
+
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
 # Retorna: string sem espacos nas extremidades
@@ -83,11 +97,6 @@ _mensageb() {
         margem_esquerda=$(( (colunas - largura_bloco) / 2 ))
     fi
 
-    # O printf faz o seguinte:
-    # 1. %*s -> Imprime a margem esquerda (espaços vazios)
-    # 2. %s  -> Inicia a cor
-    # 3. %-*s -> Imprime a mensagem alinhada à esquerda dentro da largura do bloco
-    # 4. %s  -> Reseta a cor (NORM)
     printf "%*s%s%-*s%s\n" \
         "$margem_esquerda" "" \
         "${cor}" \
@@ -375,7 +384,6 @@ _mostrar_progresso_backup() {
     local texto_len=${#texto_base}
     local barra=""
     local barra_format=""
-    local percentual=0
     local status_proc=0
 
     if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
@@ -393,12 +401,6 @@ _mostrar_progresso_backup() {
 
     while kill -0 "$pid" 2>/dev/null; do
         elapsed=$((elapsed + 1))
-
-        # Simular progresso crescente baseado no tempo (0..100)
-        # A barra avanca de forma gradual ate o processo terminar
-        percentual=$(( (elapsed * 100) / (elapsed + 5) ))
-        (( percentual > 95 )) && percentual=$(( 85 + (RANDOM % 11) ))  # Fica oscilando entre 85-95
-        (( percentual > 100 )) && percentual=100
 
         # Animacao: mostrar letras do texto base progressivamente e preencher com pontos
         # A cada tick, avanca uma letra, quando completa recomeca
@@ -424,8 +426,8 @@ _mostrar_progresso_backup() {
         local tempo_format
         printf -v tempo_format "%8s" "$tempo_str"
 
-        printf "\r\033[K%s[INFO]%s %s |%s| %3d%% %s" \
-            "${CYAN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${percentual}" "${tempo_format}"
+        printf "\r\033[K%s[INFO]%s %s |%s| %s" \
+            "${CYAN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${YELLOW}${tempo_format}"
         # Forcar escrita imediata para o terminal (evitar buffering)
         printf "%s" "" >&3
 
@@ -455,8 +457,8 @@ _mostrar_progresso_backup() {
     printf -v tempo_format "%8s" "$tempo_str"
 
     # Limpar linha e mostrar resultado com mesmo formato do loop
-    printf "\r\033[K%s[ok]%s %s |%s| 100%% %s concluido\n" \
-        "${GREEN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${tempo_format}"
+    printf "\r\033[K%s[ok]%s %s |%s| %s concluido\n" \
+        "${GREEN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${YELLOW}${tempo_format}"
 
     # Fechar fd 3
     exec 3>&-
@@ -717,19 +719,11 @@ _enviabackup_para_receber() {
 }
 
 
-
 #---------- FUNCOES DE CHAVES SSH ----------#
 #===================================================================
 # _configure_ssh_com_chaves - Gerencia criacao e envio de chaves SSH
 # Complementa _configure_ssh_access adicionando autenticacao por chave
 #===================================================================
-
-    # Variaveis de configuracao com fallback para variaveis globais
-    SERVIDOR="${DEFAULT_IP_SERVER:-}"
-    PORTA="${DEFAULT_SSH_PORTA:-22}"
-    USUARIO="${DEFAULT_SSH_USER:-}"
-    CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
-    CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
 
     # Validacao das variaveis obrigatorias
     if [[ -z "${SERVIDOR}" ]]; then

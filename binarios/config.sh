@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/06/2026-01
+# Versao: 16/06/2026-01
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -187,15 +187,14 @@ _inicializar_variaveis_sistema() {
     # CATEGORIA: CORES DO TERMINAL
     #_define_category_vars "CORES" \
         if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        BOLD="$(tput bold)"
-        RED="${BOLD}$(tput setaf 1)"    # Vermelho
-        GREEN="${BOLD}$(tput setaf 2)"  # Verde
-        YELLOW="${BOLD}$(tput setaf 3)" # Amarelo
-        BLUE="${BOLD}$(tput setaf 4)"   # Azul
-        PURPLE="${BOLD}$(tput setaf 5)" # Roxo
-        CYAN="${BOLD}$(tput setaf 6)"   # Ciano
-        WHITE="${BOLD}$(tput setaf 7)"  # Branco
-        NORM="$(tput sgr0)"             # Normal (reset)
+        RED=$(tput bold; tput setaf 1 2>/dev/null)          # Vermelho
+        GREEN=$(tput bold; tput setaf 2 2>/dev/null)        # Verde
+        YELLOW=$(tput bold; tput setaf 3 2>/dev/null)       # Amarelo
+        BLUE=$(tput bold; tput setaf 4 2>/dev/null)         # Azul
+        PURPLE=$(tput bold; tput setaf 5 2>/dev/null)       # Roxo
+        CYAN=$(tput bold; tput setaf 6 2>/dev/null)         # Ciano
+        WHITE=$(tput bold; tput setaf 7 2>/dev/null)        # Branco
+        NORM=$(tput sgr0 2>/dev/null)                       # Normal
         COLUMNS=$(tput cols)                                # Numero de colunas do terminal
 
         # Limpar tela inicial
@@ -204,15 +203,14 @@ _inicializar_variaveis_sistema() {
         tput setaf 7 2>/dev/null || true
     else
         # Terminal sem suporte a cores
-        RED="\033[0;31m"
-        GREEN="\033[0;32m"
-        YELLOW="\033[0;33m"
-        BLUE="\033[0;34m"
-        PURPLE="\033[0;35m"
-        CYAN="\033[0;36m"
-        WHITE="\033[0;37m"
-        NORM="\033[0m"
-        COLUMNS=${COLUMNS:-80}
+        RED="\033[0;31m" \
+        GREEN="\033[0;32m" \
+        YELLOW="\033[0;33m" \
+        BLUE="\033[0;34m" \
+        PURPLE="\033[0;35m" \
+        CYAN="\033[0;36m" \
+        NORM="\033[0m" \
+        "COLUMNS=${COLUMNS:-80}"
     fi
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
 
@@ -319,8 +317,7 @@ DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretório 
 _configurar_comandos() {
 
     # Validar se os comandos existem
-    # CORRECAO: era ("$DEFAULT_ZIP" "$DEFAULT_ZIP") — duplicado; corrigido para incluir DEFAULT_UNZIP
-    local cmds=("$DEFAULT_ZIP" "$DEFAULT_UNZIP")
+    local cmds=("$DEFAULT_ZIP" "$DEFAULT_ZIP")
     local cmd=""
     local missing=()
 
@@ -358,9 +355,8 @@ _configurar_diretorios() {
     fi
 
     # Criar diretorio de configuracao se nao existir - usando funcao centralizada
-    local caminho="${CFG_DIR}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+    _criar_diretorio_seguro "${CFG_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio de configuracao %s\n" "${CFG_DIR}" >&2
         return 1
     }
 
@@ -585,7 +581,7 @@ _carregar_configuracoes() {
     _configurar_diretorios || return 1
 
     # Configurar variaveis do sistema
-    _configurar_variaveis_sistema || return 1
+    _configurar_variaveis_sistema
 
 }
 
@@ -753,53 +749,42 @@ _ir_para_tools() {
 # =============================================================================
 # SISTEMA DE LIMPEZA DE VARIÁVEIS
 # =============================================================================
-
-
 # Função melhorada para limpar variáveis registradas
 _limpar_estado_variaveis() {
     local var_count=0
     local var
-
-    # Verificar se o array REGISTRO_VARIAVEIS realmente existe (seguro com set -u)
-    # Usar declare -p é a forma confiável: ${array[*]+x} pode falhar se o array
-    # nunca foi declarado como array indexado no contexto atual.
-    if ! declare -p REGISTRO_VARIAVEIS &>/dev/null; then
-        # Array não existe, apenas resetar terminal e sair
-        tput sgr0 2>/dev/null || true
+    
+    # Verificar se o array existe antes de usar
+    if [[ -z "${REGISTRO_VARIAVEIS[*]+x}" ]]; then
         return 0
     fi
-
-    # Fazer cópia segura do array para evitar problemas durante iteração
-    local vars_copy=()
-    if [[ ${#REGISTRO_VARIAVEIS[@]} -gt 0 ]]; then
-        vars_copy=("${REGISTRO_VARIAVEIS[@]}")
-    fi
-
-    for var in "${vars_copy[@]:-}"; do
-        # Ignorar entradas vazias
-        [[ -z "$var" ]] && continue
-        # Verificar se a variável ainda existe
+    
+    # Iterar sobre cópia do array para evitar problemas com modificação durante iteração
+    local vars_copy=("${REGISTRO_VARIAVEIS[@]:-}")
+    
+    for var in "${vars_copy[@]}"; do
+        # Verificar se a variável ainda existe e não está vazia
         if [[ -n "${!var+x}" ]]; then
             unset -v "$var" 2>/dev/null || true
             ((var_count++)) || true
         fi
     done
-
+    
     # Limpar array de registro
     REGISTRO_VARIAVEIS=()
-
-    # Limpar arrays de categorias (verificação segura com declare -p)
-    if declare -p REGISTRO_CATEGORIAS &>/dev/null; then
+    
+    # Limpar arrays de categorias
+    if [[ -n "${REGISTRO_CATEGORIAS[*]+x}" ]]; then
         unset REGISTRO_CATEGORIAS 2>/dev/null || true
         declare -A REGISTRO_CATEGORIAS=()
     fi
-
+    
     # Limpar contador
     unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
-
+    
     # Resetar terminal
     tput sgr0 2>/dev/null || true
-
+    
     return 0
 }
 
@@ -852,7 +837,6 @@ _inicializar_sistema_variaveis() {
     # Marcar sistema como inicializado
     _register_var "SISTEMA_VARIAVEIS_INICIALIZADO" "true" "SISTEMA"
 }
-
 
 # -----------------------------------------------------------------------------
 # Funcao para resetar variaveis (cleanup) - VERSÃO LEGADA (mantida para compatibilidade)
@@ -931,8 +915,5 @@ _encerrar_programa() {
     exit "$status"
 }
 
-# NOTA: Os traps abaixo sao registrados aqui pois config.sh e sourced antes de principal.sh
-# definir seus proprios traps em _main(). Os traps de _main() sobrescrevem estes ao ser chamados.
-# Isso garante limpeza mesmo se o carregamento falhar antes de _main() ser executada.
 trap '_encerrar_programa' EXIT INT TERM
 trap '_limpeza_emergencia' QUIT
