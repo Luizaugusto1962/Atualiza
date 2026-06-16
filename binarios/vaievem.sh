@@ -25,53 +25,6 @@ _validar_caminho_seguro() {
     return 0
 }
 
-# Verifica integridade do arquivo via SHA256 (remoto x local)
-_verificar_integridade() {
-    local arquivo_local="$1"
-    local arquivo_remoto="$2"  # caminho completo remoto
-    local servidor="${3:-$DEFAULT_IP_SERVER}"
-    local porta="${4:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${5:-$DEFAULT_SSH_USER}"
-    local CHAVE="${CHAVE:-}"
-    local acessochave="${CFG_CHAVE_SSH:-}"
-
-    if [[ ! -f "$arquivo_local" || ! -s "$arquivo_local" ]]; then
-        _log_erro "Arquivo local ausente ou vazio para verificação: $arquivo_local"
-        return 1
-    fi
-
-    _log "Verificando integridade (SHA256)..."
-
-    # Calcula hash local
-    local hash_local
-    hash_local=$(sha256sum "$arquivo_local" | awk '{print $1}')
-
-    # Calcula hash remoto via SSH
-    local hash_remoto
-
-    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
-        hash_remoto=$(ssh -p "$porta" -i "$CHAVE" -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
-                     "${rem_user}@${servidor}" "sha256sum '${arquivo_remoto}' 2>/dev/null | awk '{print \$1}'" || echo "ERRO")
-    else
-        hash_remoto=$(ssh -p "$porta" "${rem_user}@${servidor}" \
-                     "sha256sum '${arquivo_remoto}' 2>/dev/null | awk '{print \$1}'" || echo "ERRO")
-    fi
-
-    if [[ "$hash_remoto" == "ERRO" || -z "$hash_remoto" ]]; then
-        _log_erro "Nao foi possível obter hash remoto do arquivo"
-        return 1
-    fi
-
-    if [[ "$hash_local" == "$hash_remoto" ]]; then
-        _log_sucesso "Integridade verificada com sucesso (SHA256 OK)"
-        return 0
-    else
-        _log_erro "Integridade comprometida! Hash local e remoto diferem."
-        _log_erro "Local : $hash_local"
-        _log_erro "Remoto: $hash_remoto"
-        return 1
-    fi
-}
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
 # Download via SFTP com chave SSH configurada
@@ -162,75 +115,85 @@ EOF
 
 # Download via SCP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional) $3=servidor $4=porta $5=usuario
-# Download via SCP com chave SSH configurada
-# Parametros: $1=arquivo_remoto $2=destino_local(opcional) $3=servidor $4=porta $5=usuario
 _receber_scp() {
-    local arquivo_remoto="$1"
-    if [[ -z "$arquivo_remoto" ]]; then
-        _log_erro "Erro: Arquivo remoto nao especificado para SCP"
-        return 1
-    fi
-    
-    # SEGURANCA: Validar caminho remoto
-    if ! _validar_caminho_seguro "$arquivo_remoto"; then
-        _log_erro "Erro: Caminho remoto invalido ou malicioso: ${arquivo_remoto}"
-        return 1
-    fi
-
+    local arquivo_remoto="${1:-}"
     local destino_local="${2:-.}"
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
+
     local acessochave="${CFG_CHAVE_SSH:-}"
-    
+    local CHAVE="${CHAVE:-}"
+
+    [[ -z "$arquivo_remoto" ]] && {
+        _log_erro "Arquivo remoto nao especificado para SCP"
+        return 1
+    }
+
+    if ! _validar_caminho_seguro "$arquivo_remoto"; then
+        _log_erro "Caminho remoto invalido: $arquivo_remoto"
+        return 1
+    fi
+
+    if ! _validar_caminho_seguro "$destino_local"; then
+        _log_erro "Destino local invalido: $destino_local"
+        return 1
+    fi
+
     if [[ ! -d "$destino_local" ]]; then
-        _log_erro "Erro: Diretorio de destino nao existe: ${destino_local}"
+        _log_erro "Diretorio de destino nao existe: $destino_local"
         return 1
     fi
-    
-    _log "Iniciando download SCP: ${arquivo_remoto}"
 
-    # ==================== CONSTRUÇÃO DO COMANDO SCP ====================
-    local scp_cmd=("scp" "-P" "$porta")
-    local scp_opts=()
+    _log "Iniciando download SCP: $arquivo_remoto"
 
-    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
-        scp_opts+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=accept-new" "-o" "BatchMode=yes")
+    local -a scp_cmd=(
+        scp
+        -P "$porta"
+        -o ConnectTimeout=30
+        -o ServerAliveInterval=15
+        -o ServerAliveCountMax=3
+    )
+
+    if [[ "${acessochave,,}" == "s" && -n "$CHAVE" && -f "$CHAVE" ]]; then
+        scp_cmd+=(
+            -i "$CHAVE"
+            -o BatchMode=yes
+            -o StrictHostKeyChecking=accept-new
+        )
     fi
 
-    # Monta comando completo
     local src="${rem_user}@${servidor}:${arquivo_remoto}"
-    
-    # Executa o download
-    if "${scp_cmd[@]}" "${scp_opts[@]}" "$src" "$destino_local"; then
-        # Verificação pós-download (única)
-        local nome_arquivo="${arquivo_remoto##*/}"
-        local arquivo_destino="${destino_local%/}/${nome_arquivo}"
-        
-if [[ -f "$arquivo_destino" && -s "$arquivo_destino" ]]; then
-            # === NOVA VERIFICAÇÃO DE INTEGRIDADE ===
-            if _verificar_integridade "$arquivo_destino" "$arquivo_remoto" "$servidor" "$porta" "$rem_user"; then
-                _log_sucesso "Download SCP concluido: ${arquivo_remoto}"
-                return 0
-            else
-                rm -f -- "$arquivo_destino"
-                return 1
-            fi
-        else
-            _log_erro "SCP retornou sucesso mas arquivo ausente ou vazio"
-            return 1
-        fi
-    else
-        _log_erro "Falha no download SCP: ${arquivo_remoto}"
+
+    if ! "${scp_cmd[@]}" "$src" "$destino_local"; then
+        _log_erro "Falha no download SCP: $arquivo_remoto"
         return 1
     fi
+
+    local nome_arquivo="${arquivo_remoto##*/}"
+    local arquivo_destino="${destino_local%/}/${nome_arquivo}"
+
+    if [[ ! -f "$arquivo_destino" ]]; then
+        _log_erro "Arquivo nao encontrado apos SCP: $arquivo_destino"
+        return 1
+    fi
+
+    if [[ ! -s "$arquivo_destino" ]]; then
+        _log_erro "Arquivo recebido vazio: $arquivo_destino"
+        rm -f -- "$arquivo_destino"
+        return 1
+    fi
+
+    _log_sucesso "Download SCP concluido: $arquivo_remoto"
+    return 0
 }
+
 
 # Upload via RSYNC
 # Parametros: $1=arquivo_local $2=destino_remoto(caminho) $3=servidor $4=porta $5=usuario
 # NOTA: $2 sobrescreve CFG_BACKUP_PATH para uso nesta chamada. Se omitido, usa CFG_BACKUP_PATH global.
 _enviar_rsync() {
-    local arquivo_local="$1"
+    local arquivo_local="${1:-}"
     local CFG_BACKUP_PATH="${2:-${CFG_BACKUP_PATH:-}}"
     local acessochave="${CFG_CHAVE_SSH:-}"
 
@@ -261,17 +224,9 @@ _enviar_rsync() {
     fi
 
     # Executa o upload (única chamada)
-if "${rsync_base[@]}" -e "${ssh_opts[*]}" "$arquivo_local" "$destino_completo"; then
-        # === VERIFICAÇÃO DE INTEGRIDADE APÓS UPLOAD ===
-        local nome_arquivo="${arquivo_local##*/}"
-        local caminho_remoto="${CFG_BACKUP_PATH%/}/${nome_arquivo}"
-        
-        if _verificar_integridade "$arquivo_local" "$caminho_remoto" "$servidor" "$porta" "$rem_user"; then
-            _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
-            return 0
-        else
-            return 1
-        fi
+    if "${rsync_base[@]}" -e "${ssh_opts[*]}" "$arquivo_local" "$destino_completo"; then
+        _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
+         return 0
     else
         _log_erro "Falha no upload RSYNC: ${arquivo_local}"
         return 1
@@ -284,9 +239,9 @@ if "${rsync_base[@]}" -e "${ssh_opts[*]}" "$arquivo_local" "$destino_completo"; 
 # Download da biblioteca via SFTP/SCP (funcao principal)
 _baixar_biblioteca_sincroniza() {
 
-    local servidor="${3:-$DEFAULT_IP_SERVER}"
-    local porta="${4:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${5:-$DEFAULT_SSH_USER}"
+    local servidor="${1:-$DEFAULT_IP_SERVER}"
+    local porta="${2:-$DEFAULT_SSH_PORTA}"
+    local rem_user="${3:-$DEFAULT_SSH_USER}"
     local acessochave="${CFG_CHAVE_SSH:-}"
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
