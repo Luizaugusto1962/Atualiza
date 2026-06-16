@@ -302,10 +302,10 @@ _executar_backup_completo() {
 
     find . -maxdepth 1 -type f \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-         -printf '%P\0' > "$arquivos_temp"
+         -print0 > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
-        _log_bkp "Nenhum arquivo no nivel superior para backup"
+        _log_bkp "Nenhum arquivo modificado desde $data_referencia"
         rm -f "$arquivos_temp"
         return 1
     fi
@@ -358,10 +358,10 @@ _executar_backup_incremental() {
         return 1
     }
 
-    # Buscar arquivos modificados apenas no nivel superior
-    find . -maxdepth 1 -type f -newermt "$data_referencia" \
+    # Buscar arquivos modificados
+    find . -type f -newermt "$data_referencia" \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -printf '%P\0' > "$arquivos_temp"
+         -print0 > "$arquivos_temp"
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
     if [[ ! -s "$arquivos_temp" ]]; then

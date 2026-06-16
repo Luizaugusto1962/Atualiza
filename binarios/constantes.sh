@@ -209,11 +209,11 @@ DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-${SCRIPT_DIR}/receber}"
 # =============================================================================
 # COMANDOS EXTERNOS PADRAO
 # =============================================================================
-DEFAULT_UNZIP="${DEFAULT_UNZIP:-unzip}"
-DEFAULT_ZIP="${DEFAULT_ZIP:-zip}"
-DEFAULT_TAR="${DEFAULT_TAR:-tar}"
-DEFAULT_FIND="${DEFAULT_FIND:-find}"
-DEFAULT_WHO="${DEFAULT_WHO:-who}"
+DEFAULT_UNZIP="${DEFAULT_UNZIP:-/usr/bin/unzip}"
+DEFAULT_ZIP="${DEFAULT_ZIP:-/usr/bin/zip}"
+DEFAULT_TAR="${DEFAULT_TAR:-/usr/bin/tar}"
+DEFAULT_FIND="${DEFAULT_FIND:-/usr/bin/find}"
+DEFAULT_WHO="${DEFAULT_WHO:-/usr/bin/who}"
 
 # =============================================================================
 # DIRETORIOS DE DESTINO
