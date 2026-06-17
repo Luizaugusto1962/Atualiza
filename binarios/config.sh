@@ -440,12 +440,9 @@ _configurar_variaveis_sistema() {
             fi
         else
             _mensagec "${YELLOW}" "Alerta: Acesso SSH desabilitado"
-            ((warnings++)) || true
         fi
     else
         _mensagec "${YELLOW}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
-        ((warnings++)) || true
-        
     fi
     } 
 # -----------------------------------------------------------------------------
