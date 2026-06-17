@@ -254,6 +254,9 @@ _inicializar_sistema() {
     # Executar limpeza automatica diaria
     _executar_expurgador_diario
 
+    # Configura acesso SSH se necessario
+    _validar_ssh 
+
     return 0
 }
 
