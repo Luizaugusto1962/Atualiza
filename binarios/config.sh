@@ -376,11 +376,9 @@ _configurar_diretorios() {
 # Configurar variaveis do sistema
 # -----------------------------------------------------------------------------
 _configurar_variaveis_sistema() {
-#    CFG_OFFLINE="${CFG_OFFLINE:-${RAIZ}/portalsav/Atualiza}"                                 # Diretorio do servidor offline
-
     if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
 
-        # Caminhos dos executaveis e dados
+        # Caminhos dos executaveis e dados do iscobol
         E_EXEC="${E_EXEC:-${RAIZ}/classes}"      # Diretorio de executaveis para Iscobol
         T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"    # Diretorio de telas para Iscobol
         X_XML="${X_XML:-${RAIZ}/xml}"            # Diretorio de xmls para Iscobol
@@ -389,6 +387,7 @@ _configurar_variaveis_sistema() {
         BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"        # Terceira base de dados
         export E_EXEC T_TELAS X_XML BASE1 BASE2 BASE3 CFG_OFFLINE
     else
+        # Caminhos dos executaveis e dados do cobol isam 
         E_EXEC="${E_EXEC:-${RAIZ}/int}"
         T_TELAS="${T_TELAS:-${RAIZ}/tel}"
         BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"
