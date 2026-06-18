@@ -182,7 +182,7 @@ _define_category_vars() {
 # Função para inicializar todas as variáveis do sistema
 _inicializar_variaveis_sistema() {
     # Limpar registros anteriores
-    REGISTRO_VARIAVEIS=()
+
     
     # CATEGORIA: CORES DO TERMINAL
     #_define_category_vars "CORES" \
@@ -214,6 +214,7 @@ _inicializar_variaveis_sistema() {
     fi
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
 
+    REGISTRO_VARIAVEIS=()
     # CATEGORIA: CONFIGURAÇÕES DE ATUALIZAÇÃO
     _define_category_vars "ATUALIZACAO" \
         "CFG_SISTEMA=${CFG_SISTEMA:-}" \
@@ -602,50 +603,6 @@ _carregar_configuracoes() {
     # Configurar variaveis do sistema
     _configurar_variaveis_sistema
 
-}
-
-# -----------------------------------------------------------------------------
-# Funcao para validar diretorios essenciais
-# Retorna: 0 se todos validos, 1 se algum invalido
-# -----------------------------------------------------------------------------
-_validar_diretorios() {
-    local erros=0
-
-    # Funcao auxiliar para verificar diretorio
-    _verifica_diretorio() {
-        local caminho="$1"
-
-        if [[ -z "${caminho}" ]] || [[ ! -d "${caminho}" ]]; then
-            if command -v _mensagec >/dev/null 2>&1; then
-                _mensagec "${CYAN}" "Diretorio nao encontrado: ${caminho}"
-            else
-                printf "Erro: Diretorio nao encontrado: %s\n" "${caminho}" >&2
-            fi
-            return 1
-        fi
-        return 0
-    }
-
-    # Verificar diretorios essenciais
-    _verifica_diretorio "${E_EXEC}" || ((erros++))
-    _verifica_diretorio "${T_TELAS}" || ((erros++))
-    _verifica_diretorio "${BASE1}" || ((erros++))
-
-    # Verificar XML apenas se for IsCOBOL
-    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-        _verifica_diretorio "${X_XML}" || ((erros++))
-    fi
-
-    # Verificar bases adicionais se configuradas
-    if [[ -n "${BASE2}" ]]; then
-        _verifica_diretorio "${BASE2}" || ((erros++))
-    fi
-
-    if [[ -n "${BASE3}" ]]; then
-        _verifica_diretorio "${BASE3}" || ((erros++))
-    fi
-
-    return $erros
 }
 
 # -----------------------------------------------------------------------------

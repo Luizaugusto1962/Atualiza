@@ -36,6 +36,7 @@ programas, arquivos, backups e bibliotecas do sistema **IsCOBOL / ISAM**.
 | `lembrete.sh`    | Bloco de notas / lembretes internos                   |
 | `setup.sh`       | Configuração inicial interativa                       |
 | `help.sh`        | Sistema de ajuda e manual interativo                  |
+| `variaveis.sh`   | Consulta de variáveis e constantes do sistema         |
 | `cadastro.sh`    | Cadastro standalone de usuários                       |
 
 ---

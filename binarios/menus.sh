@@ -513,6 +513,8 @@ _menu_configs() {
         printf "\n"
         _mensageb "${GREEN}" "3${NORM} -|: Versao do Linux         "
         printf "\n"
+        _mensageb "${GREEN}" "4${NORM} -|: Consultar Variaveis   "
+        printf "\n"
         _meia_linha "-" "${YELLOW}"
         _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
         printf "\n"
@@ -527,6 +529,7 @@ _menu_configs() {
             1) _menu_setups || true ;;
             2) _mostrar_versao_iscobol || true ;;
             3) _mostrar_versao_linux || true ;;
+            4) _consultar_variaveis || true ;;
             9) return ;;
             *)
                 _opinvalida

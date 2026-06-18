@@ -187,6 +187,7 @@ _carregar_modulos() {
         "programas.sh"  # Gestao de programas
         "biblioteca.sh" # Gestao de biblioteca
         "help.sh"       # Sistema de ajuda
+        "variaveis.sh"  # Consulta de variaveis/constantes
         "menus.sh"      # Modulos de Menu
     )
 
@@ -239,12 +240,6 @@ _inicializar_sistema() {
     # Verificar dependências (agora retorna erro ao inves de sair)
     if ! _check_instalado; then
         printf "ERRO: Dependencias nao atendidas.\n" >&2
-        return 1
-    fi
-
-    # Validar diretorios
-    if ! _validar_diretorios; then
-        printf "ERRO: Falha na validacao de diretorios.\n" >&2
         return 1
     fi
 
