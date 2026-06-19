@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 19/06/2026-01
 
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 #---------- FUNCOES DE CHAVES SSH ----------#
@@ -725,11 +725,6 @@ _enviabackup_para_receber() {
 # Complementa _configure_ssh_access adicionando autenticacao por chave
 #===================================================================
 
-    # Validacao das variaveis obrigatorias
-    if [[ -z "${SERVIDOR}" ]]; then
-        echo "Erro: Variavel DEFAULT_IP_SERVER nao foi definida."
-        return 1
-    fi
     msg()   { printf "${CYAN}[INFO]${NORM}  %s\n" "$1"; }
     ok()    { printf "${GREEN}[OK]${NORM}    %s\n" "$1"; }
     warn()  { printf "${YELLOW}[AVISO]${NORM} %s\n" "$1"; }
@@ -738,6 +733,11 @@ _enviabackup_para_receber() {
     # Verifica dependencias
     # -------------------------------------------------------------------------
     _checar_dependencias() {
+        # Validacao das variaveis obrigatorias
+        if [[ -z "${SERVIDOR}" ]]; then
+            erro "Variavel DEFAULT_IP_SERVER nao foi definida."
+            return 1
+        fi
         for cmd in ssh ssh-keygen ssh-copy-id; do
             if ! command -v "$cmd" >/dev/null 2>&1; then
                 erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01 (Atualizado com reforços de segurança)
+# Versao: 19/06/2026-01 (Atualizado com reforços de segurança)
 #
 # Variaveis globais esperadas
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
@@ -210,10 +210,8 @@ _enviar_rsync() {
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
-    local acessochave="${CFG_CHAVE_SSH:-}"
     _log "Iniciando upload RSYNC: ${arquivo_local}"
     local destino_completo="${rem_user}@${servidor}:${CFG_BACKUP_PATH}"
-    local acessochave="${CFG_ACESSO_SSH:-}"
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     local rsync_base=("rsync" "-avzP")

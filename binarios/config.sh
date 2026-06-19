@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/06/2026-01
+# Versao: 19/06/2026-01
 
 # =============================================================================
 # CONFIGURAÇÕES DE SEGURANÇA
@@ -185,8 +185,7 @@ _inicializar_variaveis_sistema() {
 
     
     # CATEGORIA: CORES DO TERMINAL
-    #_define_category_vars "CORES" \
-        if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
+    if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
         RED=$(tput bold; tput setaf 1 2>/dev/null)          # Vermelho
         GREEN=$(tput bold; tput setaf 2 2>/dev/null)        # Verde
         YELLOW=$(tput bold; tput setaf 3 2>/dev/null)       # Amarelo
@@ -203,14 +202,14 @@ _inicializar_variaveis_sistema() {
         tput setaf 7 2>/dev/null || true
     else
         # Terminal sem suporte a cores
-        RED="\033[0;31m" \
-        GREEN="\033[0;32m" \
-        YELLOW="\033[0;33m" \
-        BLUE="\033[0;34m" \
-        PURPLE="\033[0;35m" \
-        CYAN="\033[0;36m" \
-        NORM="\033[0m" \
-        "COLUMNS=${COLUMNS:-80}"
+        RED="\033[0;31m"
+        GREEN="\033[0;32m"
+        YELLOW="\033[0;33m"
+        BLUE="\033[0;34m"
+        PURPLE="\033[0;35m"
+        CYAN="\033[0;36m"
+        NORM="\033[0m"
+        COLUMNS="${COLUMNS:-80}"
     fi
     export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
 
@@ -318,7 +317,7 @@ DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"                           # Diretório 
 _configurar_comandos() {
 
     # Validar se os comandos existem
-    local cmds=("$DEFAULT_ZIP" "$DEFAULT_ZIP")
+    local cmds=("$DEFAULT_ZIP" "$DEFAULT_UNZIP")
     local cmd=""
     local missing=()
 
@@ -506,7 +505,7 @@ _validar_config_file() {
 
         # Verificar se ha comandos potencialmente perigosos
         # Lista expandida de caracteres perigosos
-        if printf '%s\n' "$linha" | grep -qE '[\$\`\;|\&<>(){}]'; then
+        if printf '%s\n' "$linha" | grep -qE '[\`\;|\&<>(){}]'; then
             printf "ERRO: Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
             return 1

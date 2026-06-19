@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 19/06/2026-01
 #
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
@@ -148,7 +148,10 @@ _reverter_biblioteca() {
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
-    _validar_diretorio_receber
+    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        printf "Erro ao criar diretorio %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+        return 1
+    }
     #_configurar_acessos
     cd "$DEFAULT_RECEBE_DIR" || return 1
 

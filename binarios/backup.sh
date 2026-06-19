@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 19/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -305,7 +305,7 @@ _executar_backup_completo() {
          -print0 > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
-        _log_bkp "Nenhum arquivo modificado desde $data_referencia"
+        _log_bkp "Nenhum arquivo encontrado para backup completo"
         rm -f "$arquivos_temp"
         return 1
     fi
