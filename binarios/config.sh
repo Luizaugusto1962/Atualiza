@@ -8,18 +8,18 @@
 # Versao: 19/06/2026-01
 
 # =============================================================================
-# CONFIGURAÇÕES DE SEGURANÇA
+# CONFIGURACOES DE SEGURANCA
 # =============================================================================
 set -o pipefail  # Falhar se qualquer comando em pipe falhar
+set +u           # Desativar tratamento rigoroso de variaveis nao definidas
 
 # =============================================================================
-# SISTEMA DE GERENCIAMENTO DE VARIÁVEIS
+# VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
 # =============================================================================
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"
-
-# Desativar temporariamente set -u para evitar erros durante inicialização
-# Será reativado após configuração completa
-set +u
+RAIZ="${RAIZ:-}"                                  # Caminho do diretorio RAIZ do programa.
+CFG_DIR="${CFG_DIR:-}"                            # Caminho do diretorio de configuracao do programa.
+REBUILD="${REBUILD:-}"                            # Caminho do utilitario jutil.
 
 # Array para registrar todas as variáveis definidas (para limpeza automática)
 declare -a REGISTRO_VARIAVEIS=()
