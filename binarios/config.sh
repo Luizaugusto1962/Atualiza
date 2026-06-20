@@ -282,14 +282,11 @@ _inicializar_variaveis_sistema() {
         "LOG_TMP=${LOG_TMP:-}"
 }
 
-#-Variaveis de configuracao do sistema ---------------------------------------------------------#
-# Variaveis de configuracao do sistema que podem ser definidas pelo usuario.
-# As variaveis com o prefixo "destino" sao usadas para definir o caminho
-# dos diretorios que serao usados pelo programa.
-
-RAIZ="${RAIZ:-}"                                 # Caminho do diretorio RAIZ do programa.
-CFG_DIR="${CFG_DIR:-}"                           # Caminho do diretorio de configuracao do programa.
-REBUILD="${REBUILD:-}"                           # Caminho do utilitario jutil.
+# =============================================================================
+# VARIAVEIS GLOBAIS PRIMITIVAS (já definidas no topo do arquivo)
+# =============================================================================
+# As variaveis RAIZ, CFG_DIR e REBUILD ja sao definidas no topo do arquivo
+# para evitar duplicidade com constantes.sh e melhorar a organizacao.
 
 # Criar diretorio de configuracao se especificado e nao existir
 if [[ -n "${CFG_DIR}" ]]; then
