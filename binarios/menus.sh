@@ -6,95 +6,124 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 22/06/2026-01
 # Autor: Luiz Augusto
 #
-#
 
-caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}" # Caminho do diretorio de configuracao
+caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"
 
-# Cria o diretorio de configuracao com seguranca    
 _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
     return 1
 }
 
-CFG_BASE_DIR="${CFG_BASE_DIR:-}"                          # Caminho do diretorio da primeira base de dados.
-CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                        # Caminho do diretorio da segunda base de dados.
-CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                        # Caminho do diretorio da terceira base de dados.
-CFG_VERCLASS="${CFG_VERCLASS:-}"                          # Versao do Iscobol em uso, se aplicavel.
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"
+CFG_VERCLASS="${CFG_VERCLASS:-}"
 
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 # Funcao auxiliar para leitura de opcao com suporte a ajuda contextual
-# Uso: _ler_opcao_menu "contexto" min_opcao max_opcao
+# Uso: _ler_opcao_menu "contexto"
 # Retorna: 0 se opcao normal, 1 se comando de ajuda processado
 _ler_opcao_menu() {
     local contexto="${1:-geral}"
-    
-    # Exibir linha de ajuda
+
     _linha "="
     printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)${NORM}"
     _linha "=" "${GREEN}"
-    
-         if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
-            printf '\n%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
-            _encerrar_programa 0
-        fi
-        
-        # Sanitizar entrada
-        # NOTA: _sanitizar_entrada nao esta definida no projeto — o fallback garante seguranca
-        # A funcao _trim (utils.sh) e suficiente para remover espacos extras
-        opcao=$(_trim "$opcao" 2>/dev/null || printf '%s' "$opcao")
-        
-        # Verificar comandos de ajuda
-        case "${opcao,,}" in
-            "?"|"h"|"help"|"ajuda")
-                _exibir_ajuda_contextual "$contexto"
-                return 1
-                ;;
-            "m"|"manual")
-                _exibir_manual_completo
-                return 1
-                ;;
-            "q"|"quit"|"sair"|"exit")
-                printf '%s' "${GREEN}Saindo do sistema...${NORM}\n"
-                exit 0
-                ;;
-        esac
+
+    if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
+        printf '\n%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
+        _encerrar_programa 0
+    fi
+
+    opcao=$(_trim "$opcao" 2>/dev/null || printf '%s' "$opcao")
+
+    case "${opcao,,}" in
+        "?"|"h"|"help"|"ajuda")
+            _exibir_ajuda_contextual "$contexto"
+            return 1
+            ;;
+        "m"|"manual")
+            _exibir_manual_completo
+            return 1
+            ;;
+        "q"|"quit"|"sair"|"exit")
+            printf '%s' "${GREEN}Saindo do sistema...${NORM}\n"
+            exit 0
+            ;;
+    esac
 
     return 0
 }
 
+#---------- FUNCOES AUXILIARES DE MENU ----------#
+# Exibe cabecalho padronizado para menus
+# Parametros: $1=titulo_do_menu
+_exibir_cabecalho_menu() {
+    local titulo="${1:-Menu}"
+    _linha "=" "${GREEN}"
+    _mensagec "${RED}" "${titulo}"
+    _linha
+    printf "\n"
+}
+
+# Exibe titulo de secao dentro do menu
+# Parametros: $1=mensagem $2=cor (opcional, padrao=PURPLE)
+_exibir_titulo_secao() {
+    local mensagem="${1}"
+    local cor="${2:-${PURPLE}}"
+    _mensagec "${cor}" "${mensagem}"
+}
+
+# Exibe opcao de menu padronizada
+# Parametros: $1=numero $2=descricao $3=cor_opcao (opcional, padrao=GREEN)
+_exibir_opcao_menu() {
+    local numero="${1}"
+    local descricao="${2}"
+    local cor_opcao="${3:-${GREEN}}"
+    _mensageb "${cor_opcao}" "${numero}${NORM} -|: ${descricao}"
+    printf "\n"
+}
+
+# Exibe separador de opcoes
+_exibir_separador_menu() {
+    _meia_linha "-" "${YELLOW}"
+}
+
+# Exibe rodape de menu com opcao de saida
+_exibir_rodape_menu() {
+    _exibir_separador_menu
+    _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
+}
+
+# Processa selecao de opcao de menu com validacao
+# Uso: _processar_opcao_menu "opcao" "case_variavel"
+# Retorna: resultado do case ou invalido
+_processar_opcao_invalida() {
+    _opinvalida
+    _aguardar 1
+}
+
 #---------- MENU PRINCIPAL ----------#
-# Menu principal do sistema
 _principal() {
     while true; do
         _limpa_tela
-        # Cabecalho
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu Principal"
-        _linha
+        _exibir_cabecalho_menu "Menu Principal"
         _mensagec "${GREEN}" ".. Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} - Versao Iscobol: ${CYAN}${CFG_VERCLASS} .."
         _linha
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        # Opcoes do menu
-        _mensageb "${GREEN}" "1${NORM} -|: Atualizar Programa(s) "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Atualizar Biblioteca  "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Gerenciar Arquivos    "
-        printf "\n"
-        _mensageb "${GREEN}" "4${NORM} -|: Ferramentas           "
-        printf "\n"        
-        _mensageb "${GREEN}" "0${NORM} -|: Sistema de Ajuda      "
-        _meia_linha "-" "${YELLOW}"
-#        printf "\n"
-        _mensageb "${WHITE}" "9${RED} -|: Sair do Sistema "
-        _mensaged "${BLUE}" "${UPDATE:-}"     
-        
-        # Usar funcao centralizada
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Atualizar Programa(s)"
+        _exibir_opcao_menu "2" "Atualizar Biblioteca"
+        _exibir_opcao_menu "3" "Gerenciar Arquivos"
+        _exibir_opcao_menu "4" "Ferramentas"
+        _exibir_opcao_menu "0" "Sistema de Ajuda"
+        _exibir_rodape_menu
+        _mensaged "${BLUE}" "${UPDATE:-}"
+
         local opcao
         if ! _ler_opcao_menu "principal"; then
             continue
@@ -106,48 +135,36 @@ _principal() {
             3) _menu_arquivos ;;
             4) _menu_ferramentas ;;
             0) _menu_ajuda_principal ;;
-            9) 
+            9)
                 _limpa_tela
                 _encerrar_programa 0
                 ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE PROGRAMAS ----------#
-# Menu de atualizacao de programas
 _menu_programas() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Programas"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" "Escolha o tipo de Atualizacao:"
-        _meia_linha "-" "${YELLOW}" 
-        _mensageb "${GREEN}" "1${NORM} -|: Programa(s) ON-Line       "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Programa(s) OFF-Line      "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Programa(s) em Pacote     "
-        printf "\n"
-        _mensagec "${PURPLE}" "Escolha Desatualizar:         "
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "4${NORM} -|: Voltar programa Atualizado"
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
+        _exibir_cabecalho_menu "Menu de Programas"
+        _exibir_titulo_secao "Escolha o tipo de Atualizacao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Programa(s) ON-Line"
+        _exibir_opcao_menu "2" "Programa(s) OFF-Line"
+        _exibir_opcao_menu "3" "Programa(s) em Pacote"
+        _exibir_titulo_secao "Escolha Desatualizar:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "4" "Voltar programa Atualizado"
+        _exibir_separador_menu
         _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        
+
         if [[ -n "${CFG_VERCLASS}" ]]; then
             printf "\n"
             _mensaged "${BLUE}" "Versao do Iscobol - ${CFG_VERCLASS}"
         fi
-        
-        # Usar funcao centralizada
+
         local opcao
         if ! _ler_opcao_menu "programas"; then
             continue
@@ -159,50 +176,37 @@ _menu_programas() {
             3) _atualizar_programa_pacote || true ;;
             4) _reverter_programa || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE BIBLIOTECA ----------#
-# Menu de atualizacao de biblioteca
 _menu_biblioteca() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu da Biblioteca"
-        _linha 
-        printf "\n"
-        _mensagec "${PURPLE}" "Escolha o local da Biblioteca:      "
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Atualizacao do Transpc  "
-        printf "\n" 
-        _mensageb "${GREEN}" "2${NORM} -|: Atualizacao OFF-Line    "
-        printf "\n"
-        _mensageb "${PURPLE}" "Escolha Desatualizar:               "
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "3${NORM} -|: Voltar o(s) Programa(s) "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
+        _exibir_cabecalho_menu "Menu da Biblioteca"
+        _exibir_titulo_secao "Escolha o local da Biblioteca:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Atualizacao do Transpc"
+        _exibir_opcao_menu "2" "Atualizacao OFF-Line"
+        _exibir_titulo_secao "Escolha Desatualizar:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "3" "Voltar o(s) Programa(s)"
+        _exibir_separador_menu
         _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Carregar versao anterior se disponivel
+
         if [[ -f "${CFG_DIR}/.versao" ]]; then
             if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
                 printf '%s\n' "AVISO: Falha ao carregar ${CFG_DIR}/.versao" >&2
             fi
         fi
 
-        if [[ -n "${VERSAOANT}" ]]; then
+        if [[ -n "${VERSAOANT:-}" ]]; then
             printf "\n"
             _mensaged "${BLUE}" "Versao Anterior - ${VERSAOANT}"
         fi
-        
-        # Usar funcao centralizada
+
         local opcao
         if ! _ler_opcao_menu "biblioteca"; then
             continue
@@ -213,63 +217,45 @@ _menu_biblioteca() {
             2) _atualizar_biblioteca_offline || true ;;
             3) _reverter_biblioteca || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-####
 #---------- MENU DE ARQUIVOS ----------#
-# Menu de arquivos do sistema
 _menu_arquivos() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu Gerencial dos Arquivos"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        
-        # Verificar se sistema tem banco de dados
-        if [[ "${CFG_USA_DBMAKER}" != "s" ]]; then
-            _mensageb "${GREEN}" "1${NORM} -|: Rotinas de Backup        "
-            printf "\n" 
-            _mensageb "${GREEN}" "2${NORM} -|: Reconstruir Arquivos     "
-            printf "\n"
+        _exibir_cabecalho_menu "Menu Gerencial dos Arquivos"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+
+        if [[ "${CFG_USA_DBMAKER:-}" != "s" ]]; then
+            _exibir_opcao_menu "1" "Rotinas de Backup"
+            _exibir_opcao_menu "2" "Reconstruir Arquivos"
         fi
-        _mensageb "${GREEN}" "3${NORM} -|: Enviar & Receber Arquivos"
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "4${NORM} -|: Arquivos Temporarios     "
-        printf "\n"
-        _mensageb "${GREEN}" "5${NORM} -|: Expurgador de Arquivos   "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"        
-        # Usar funcao centralizada
+        _exibir_opcao_menu "3" "Enviar & Receber Arquivos"
+        _exibir_separador_menu
+        _exibir_opcao_menu "4" "Arquivos Temporarios"
+        _exibir_opcao_menu "5" "Expurgador de Arquivos"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "arquivos"; then
             continue
         fi
 
         case "${opcao}" in
-            1) 
-                if [[ "${CFG_USA_DBMAKER}" = "s" ]]; then
-                    _opinvalida
-                    _aguardar 1
+            1)
+                if [[ "${CFG_USA_DBMAKER:-}" = "s" ]]; then
+                    _processar_opcao_invalida
                 else
                     _menu_backup || true
                 fi
                 ;;
-            2) 
-                if [[ "${CFG_USA_DBMAKER}" = "s" ]]; then
-                    _opinvalida
-                    _aguardar 1
+            2)
+                if [[ "${CFG_USA_DBMAKER:-}" = "s" ]]; then
+                    _processar_opcao_invalida
                 else
                     _menu_recuperar_arquivos || true
                 fi
@@ -278,42 +264,25 @@ _menu_arquivos() {
             4) _menu_temporarios || true ;;
             5) _executar_expurgador "arquivos" || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE FERRAMENTAS ----------#
-# Menu de ferramentas do sistema
 _menu_ferramentas() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu das Ferramentas"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
+        _exibir_cabecalho_menu "Menu das Ferramentas"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Configuracoes"
+        _exibir_opcao_menu "2" "Update"
+        _exibir_opcao_menu "3" "Lembretes"
+        _exibir_opcao_menu "4" "Avisos iniciais"
+        _exibir_opcao_menu "5" "Logs do sistema"
+        _exibir_rodape_menu
 
-        # Opcoes do menu 
-        _mensageb "${GREEN}" "1${NORM} -|: Configuracoes         "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Update                "
-        printf "\n" 
-        _mensageb "${GREEN}" "3${NORM} -|: Lembretes             "
-        printf "\n"
-        _mensageb "${GREEN}" "4${NORM} -|: Avisos iniciais       "
-        printf "\n"
-        _mensageb "${GREEN}" "5${NORM} -|: Logs do sistema       "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior  "
-        printf "\n"
-
-        # Usar funcao centralizada
         local opcao
         if ! _ler_opcao_menu "ferramentas"; then
             continue
@@ -326,36 +295,23 @@ _menu_ferramentas() {
             4) _menu_avisos || true ;;
             5) _menu_logs || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE TEMPORARIOS ----------#
-# Menu de limpeza de arquivos temporarios
 _menu_temporarios() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Limpeza"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Limpeza dos Arquivos Temporarios "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Adicionar Arquivos Temporarios   "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Listar os registros dos Arquivos "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu de Limpeza"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Limpeza dos Arquivos Temporarios"
+        _exibir_opcao_menu "2" "Adicionar Arquivos Temporarios"
+        _exibir_opcao_menu "3" "Listar os registros dos Arquivos"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "temporarios"; then
             continue
@@ -366,34 +322,22 @@ _menu_temporarios() {
             2) _adicionar_arquivo_lixo || true ;;
             3) _lista_arquivos_lixo || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE RECUPERACAO ----------#
-# Menu de recuperacao de arquivos
 _menu_recuperar_arquivos() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Recuperacao de Arquivo(s)"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Um arquivo ou Todos   "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Arquivos Principais   "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu de Recuperacao de Arquivo(s)"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Um arquivo ou Todos"
+        _exibir_opcao_menu "2" "Arquivos Principais"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "recuperacao"; then
             continue
@@ -403,39 +347,25 @@ _menu_recuperar_arquivos() {
             1) _recuperar_arquivo_especifico || true ;;
             2) _recuperar_arquivos_principais || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE BACKUP ----------#
-# Menu de backup do sistema
 _menu_backup() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Backup(s)"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Backup da base de dados      "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Backup com Multiplos Padroes "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Restaurar base de dados      "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "4${NORM} -|: Enviar Backup                "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu de Backup(s)"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Backup da base de dados"
+        _exibir_opcao_menu "2" "Backup com Multiplos Padroes"
+        _exibir_opcao_menu "3" "Restaurar base de dados"
+        _exibir_separador_menu
+        _exibir_opcao_menu "4" "Enviar Backup"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "backup"; then
             continue
@@ -447,35 +377,22 @@ _menu_backup() {
             3) _restaurar_backup || true ;;
             4) _enviar_backup_avulso || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-
 #---------- MENU DE TRANSFERENCIA ----------#
-# Menu de envio e recebimento de arquivos
 _menu_transferencia_arquivos() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Enviar e Receber Arquivo(s)"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Enviar arquivo(s)     "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Receber arquivo(s)    "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu de Enviar e Receber Arquivo(s)"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Enviar arquivo(s)"
+        _exibir_opcao_menu "2" "Receber arquivo(s)"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "transferencia"; then
             continue
@@ -485,41 +402,28 @@ _menu_transferencia_arquivos() {
             1) _enviar_arquivo_avulso || true ;;
             2) _receber_arquivo_avulso || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-# Menu de setups do sistema
+#---------- MENU DE CONFIGURACOES ----------#
 _menu_configs() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu das Configuracoes"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Parametros do Sistema   "
-        printf "\n" 
-        if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
-            _mensageb "${GREEN}" "2${NORM} -|: Versao do Iscobol       "
+        _exibir_cabecalho_menu "Menu das Configuracoes"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Parametros do Sistema"
+        if [[ "${CFG_SISTEMA:-}" = "iscobol" ]]; then
+            _exibir_opcao_menu "2" "Versao do Iscobol"
         else
-            _mensageb "${GREEN}" "2${NORM} -|: Funcao nao disponivel   "
+            _exibir_opcao_menu "2" "Funcao nao disponivel"
         fi
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Versao do Linux         "
-        printf "\n"
-        _mensageb "${GREEN}" "4${NORM} -|: Consultar Variaveis   "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_opcao_menu "3" "Versao do Linux"
+        _exibir_opcao_menu "4" "Consultar Variaveis"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "configs"; then
             continue
@@ -531,37 +435,24 @@ _menu_configs() {
             3) _mostrar_versao_linux || true ;;
             4) _consultar_variaveis || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-# Menu de setups do sistema
+#---------- MENU DE SETUPS ----------#
 _menu_setups() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Setup do Sistema"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Consulta de setup    "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Manutencao de setup  "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Validar configuracao "
-        printf "\n"
-        _mensageb "${GREEN}" "4${NORM} -|: Configurar Acesso SSH "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu de Setup do Sistema"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Consulta de setup"
+        _exibir_opcao_menu "2" "Manutencao de setup"
+        _exibir_opcao_menu "3" "Validar configuracao"
+        _exibir_opcao_menu "4" "Configurar Acesso SSH"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "setups"; then
             continue
@@ -569,10 +460,8 @@ _menu_setups() {
 
         case "${opcao}" in
             1) _mostrar_parametros || true ;;
-            2) 
-               _manutencao_setup || true
-                # Apos a manutencao, recarregar as configuracoes
-                # CORRECAO: source de .config sem || true com set -e ativo pode encerrar o shell
+            2)
+                _manutencao_setup || true
                 if [[ -f "${CFG_DIR}/.config" ]]; then
                     "." "${CFG_DIR}/.config" || true
                     _mensagec "${GREEN}" "Configuracoes recarregadas com sucesso!"
@@ -582,38 +471,24 @@ _menu_setups() {
             3) _validar_configuracao || true ; _aguardar_tecla ;;
             4) _menu_configurar_ssh || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE LEMBRETES ----------#
-# Menu de bloco de notas/lembretes
 _menu_lembretes() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" " Bloco de Notas "
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Escrever nova nota    "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Visualizar nota       "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Editar nota           "
-        printf "\n"
-        _mensageb "${GREEN}" "4${NORM} -|: Apagar nota           "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Bloco de Notas"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Escrever nova nota"
+        _exibir_opcao_menu "2" "Visualizar nota"
+        _exibir_opcao_menu "3" "Editar nota"
+        _exibir_opcao_menu "4" "Apagar nota"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "lembretes"; then
             continue
@@ -621,7 +496,7 @@ _menu_lembretes() {
 
         case "${opcao}" in
             1) _escrever_nova_nota || true ;;
-            2) 
+            2)
                 if [[ -f "${CFG_DIR}/lembrete" ]]; then
                     _visualizar_notas_arquivo "${CFG_DIR}/lembrete" || true
                 else
@@ -632,35 +507,23 @@ _menu_lembretes() {
             3) _editar_nota_existente || true ;;
             4) _apagar_nota_existente || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-# Menu de aviso inicial
+#---------- MENU DE AVISOS ----------#
 _menu_avisos() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Aviso(s)"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Gerar Aviso ao Iniciar  "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Editar Aviso Existente  "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Apagar Aviso Existente  "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu de Aviso(s)"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Gerar Aviso ao Iniciar"
+        _exibir_opcao_menu "2" "Editar Aviso Existente"
+        _exibir_opcao_menu "3" "Apagar Aviso Existente"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "aviso"; then
             continue
@@ -671,33 +534,22 @@ _menu_avisos() {
             2) _editar_aviso_existente || true ;;
             3) _apagar_aviso_entrada || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-# Menu dos logs do sistema
+#---------- MENU DE LOGS ----------#
 _menu_logs() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu dos Logs"
-        _linha
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Log de Atualizacao "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Log de Limpeza     "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior"
-        printf "\n"
-        
-        # Usar funcao centralizada
+        _exibir_cabecalho_menu "Menu dos Logs"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Log de Atualizacao"
+        _exibir_opcao_menu "2" "Log de Limpeza"
+        _exibir_rodape_menu
+
         local opcao
         if ! _ler_opcao_menu "logs"; then
             continue
@@ -707,50 +559,37 @@ _menu_logs() {
             1) _listar_logs_atualizacao || true ;;
             2) _listar_logs_limpeza || true ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU PRINCIPAL DE AJUDA ----------#
-# Menu principal do sistema de ajuda
 _menu_ajuda_principal() {
-    # Verifica se manual existe ao entrar no menu
     if ! _verificar_manual; then
         _aguardar_tecla
         return
     fi
-    
+
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "SISTEMA DE AJUDA"
-        _linha 
-        printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${GREEN}" "1${NORM} -|: Manual Completo    "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Ajuda Rapida       "
-        printf "\n"
-        _mensageb "${GREEN}" "3${NORM} -|: Ajuda no Geral     "
-        printf "\n"
-        _mensageb "${GREEN}" "4${NORM} -|: Buscar no Manual   "
-        printf "\n"
-        _mensageb "${GREEN}" "5${NORM} -|: Exportar Manual    "
-        printf "\n"
-        _mensageb "${GREEN}" "6${NORM} -|: Ajuda por Contexto "
-        printf "\n"
-        _meia_linha "-" "${YELLOW}"
+        _exibir_cabecalho_menu "SISTEMA DE AJUDA"
+        _exibir_titulo_secao " Escolha a opcao:"
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Manual Completo"
+        _exibir_opcao_menu "2" "Ajuda Rapida"
+        _exibir_opcao_menu "3" "Ajuda no Geral"
+        _exibir_opcao_menu "4" "Buscar no Manual"
+        _exibir_opcao_menu "5" "Exportar Manual"
+        _exibir_opcao_menu "6" "Ajuda por Contexto"
+        _exibir_separador_menu
         _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
         _linha "=" "${GREEN}"
-        
+
         local opcao
-        read -rp "${YELLOW}Digite a opcao desejada ->: ${NORM}" opcao
+        if ! _ler_opcao_menu "ajuda"; then
+            continue
+        fi
 
         case "${opcao}" in
             1) _exibir_manual_completo ;;
@@ -760,16 +599,12 @@ _menu_ajuda_principal() {
             5) _exportar_manual ;;
             6) _menu_selecao_contexto ;;
             9) return ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-
-# Menu para selecionar contexto de ajuda
+#---------- MENU DE SELECAO DE CONTEXTO ----------#
 _menu_selecao_contexto() {
     _limpa_tela
     _linha "=" "${CYAN}"
@@ -781,19 +616,21 @@ _menu_selecao_contexto() {
     printf "%s\n" "${GREEN}2${NORM}  - Programas"
     printf "%s\n" "${GREEN}3${NORM}  - Biblioteca"
     printf "%s\n" "${GREEN}4${NORM}  - Ferramentas"
-    printf "%s\n" "${GREEN}5${NORM}  - Temporários"
-    printf "%s\n" "${GREEN}6${NORM}  - Recuperaçao"
+    printf "%s\n" "${GREEN}5${NORM}  - Temporarios"
+    printf "%s\n" "${GREEN}6${NORM}  - Recuperacao"
     printf "%s\n" "${GREEN}7${NORM}  - Backup"
-    printf "%s\n" "${GREEN}8${NORM}  - Transferência"
+    printf "%s\n" "${GREEN}8${NORM}  - Transferencia"
     printf "%s\n" "${GREEN}9${NORM}  - Setups"
     printf "%s\n" "${GREEN}10${NORM} - Lembretes"
     printf "\n"
     _linha "=" "${CYAN}"
-    
+
     local opcao
-    read -rp "${YELLOW}Opçao: ${NORM}" opcao
-    
-    case "$opcao" in
+    if ! _ler_opcao_menu "contexto"; then
+        return
+    fi
+
+    case "${opcao}" in
         1) _exibir_ajuda_contextual "principal" ;;
         2) _exibir_ajuda_contextual "programas" ;;
         3) _exibir_ajuda_contextual "biblioteca" ;;
@@ -804,123 +641,98 @@ _menu_selecao_contexto() {
         8) _exibir_ajuda_contextual "transferencia" ;;
         9) _exibir_ajuda_contextual "setups" ;;
         10) _exibir_ajuda_contextual "lembretes" ;;
-        *) 
-            _mensagec "${RED}" "Opcao invalida" 
-            sleep 1 
-            ;;
+        *) _processar_opcao_invalida ;;
     esac
 }
 
 #---------- MENU DE ESCOLHA DE BASE ----------#
-# Menu para escolher base de dados
 _menu_escolha_base() {
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Escolha a Base"
-        _linha
+        _exibir_cabecalho_menu "Escolha a Base"
+        _exibir_titulo_secao " Escolha a opcao:"
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        printf "\n"
-        _mensageb "${GREEN}" "1${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR}"
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR2}"
-        printf "\n"
-        
+        _exibir_opcao_menu "1" "Base em ${RAIZ}${CFG_BASE_DIR}"
+        _exibir_opcao_menu "2" "Base em ${RAIZ}${CFG_BASE_DIR2}"
+
         if [[ -n "${CFG_BASE_DIR3}" ]]; then
-            _mensageb "${GREEN}" "3${NORM} -|: Base em ${RAIZ}${CFG_BASE_DIR3}"
-            printf "\n"
+            _exibir_opcao_menu "3" "Base em ${RAIZ}${CFG_BASE_DIR3}"
         fi
-        
+
         printf "\n"
-        _meia_linha "-" "${YELLOW}"
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
-        printf "\n"
+        _exibir_rodape_menu
         _linha "=" "${GREEN}"
 
         local opcao
-        read -rp "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao
+        if ! _ler_opcao_menu "base"; then
+            continue
+        fi
 
         case "${opcao}" in
-            1) 
+            1)
                 if _definir_base_trabalho "CFG_BASE_DIR"; then
                     return 0
                 fi
                 ;;
-            2) 
+            2)
                 if _definir_base_trabalho "CFG_BASE_DIR2"; then
                     return 0
                 fi
                 ;;
-            3) 
+            3)
                 if [[ -n "${CFG_BASE_DIR3}" ]]; then
                     if _definir_base_trabalho "CFG_BASE_DIR3"; then
                         return 0
                     fi
                 else
-                    _opinvalida
-                    _aguardar 1
+                    _processar_opcao_invalida
                 fi
                 ;;
-            9) return
-                ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            9) return ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
 #---------- MENU DE TIPO DE BACKUP ----------#
-# Menu para escolher tipo de backup
-
 _menu_tipo_backup() {
-
     while true; do
         _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Menu de Tipo de Backup(s)"
-        _linha
+        _exibir_cabecalho_menu "Menu de Tipo de Backup(s)"
+        _exibir_titulo_secao " Escolha a opcao:"
         printf "\n"
-        _mensagec "${PURPLE}" " Escolha a opcao:"
-        printf "\n"
-        _mensageb "${GREEN}" "1${NORM} -|: Backup Completo       "
-        printf "\n"
-        _mensageb "${GREEN}" "2${NORM} -|: Backup Incremental    "
-        printf "\n"
-        _mensageb "${WHITE}" "9${NORM} -|: ${RED}Menu Anterior"
-        printf "\n"
+        _exibir_opcao_menu "1" "Backup Completo"
+        _exibir_opcao_menu "2" "Backup Incremental"
+        _exibir_rodape_menu
         _linha "=" "${GREEN}"
 
         local opcao
-        read -rp "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao
+        if ! _ler_opcao_menu "tipobackup"; then
+            continue
+        fi
 
         case "${opcao}" in
-            1) 
+            1)
                 tipo_backup="completo"
                 export tipo_backup
                 return 0
                 ;;
-            2) 
+            2)
                 tipo_backup="incremental"
                 export tipo_backup
                 return 0
                 ;;
-            9) 
+            9)
                 tipo_backup=""
                 export tipo_backup
                 return 1
                 ;;
-            *)
-                _opinvalida
-                _aguardar 1
-                ;;
+            *) _processar_opcao_invalida ;;
         esac
     done
 }
 
-#---------- FUNcoES AUXILIARES DE MENU ----------#
+#---------- FUNCOES AUXILIARES ----------#
 # Define a base de trabalho atual
 # Parametros: $1=nome_da_base (CFG_BASE_DIR, CFG_BASE_DIR2, CFG_BASE_DIR3)
 _definir_base_trabalho() {
@@ -933,41 +745,36 @@ _definir_base_trabalho() {
         _aguardar 2
         return 1
     fi
-    
+
     export base_trabalho="${RAIZ}${base_dir}"
-    
+
     if [[ ! -d "${base_trabalho}" ]]; then
         _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
         _linha
         _aguardar 2
         return 1
     fi
-    
+
     _mensagec "${GREEN}" "Base de trabalho definida: ${base_trabalho}"
     return 0
 }
 
 #---------- MENU DE CONFIGURACAO DE SSH ----------#
-# Menu para configurar acesso SSH sem senha com chaves SSH
 _menu_configurar_ssh() {
-    while true; do
-        _limpa_tela
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Configuracao de Acesso SSH sem Senha"
-        _linha
-        _mensagec "${GREEN}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
-        _linha
-        printf "\n"           
+    _limpa_tela
+    _exibir_cabecalho_menu "Configuracao de Acesso SSH sem Senha"
+    _mensagec "${GREEN}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
+    _linha
+    printf "\n"
 
     _checar_dependencias
     _preparar_diretorio_ssh
     _verificar_ou_criar_chave
 
-    # Pergunta se deseja enviar a chave agora
-        local ENVIAR
-        read -rp "${YELLOW} Deseja enviar a chave publica para o servidor principal agora? [s/N]  ${NORM}" ENVIAR
+    local ENVIAR
+    read -rp "${YELLOW} Deseja enviar a chave publica para o servidor principal agora? [s/N]  ${NORM}" ENVIAR
 
-    case "$ENVIAR" in
+    case "${ENVIAR}" in
         [sS]|[sS][iI][mM])
             _enviar_chave_para_servidor
             ;;
@@ -978,18 +785,16 @@ _menu_configurar_ssh() {
             ;;
     esac
 
-    # Pergunta se deseja testar a conexao
-        local TESTAR
-        read -rp "${YELLOW} Deseja testar a conexao agora? [s/N]  ${NORM}" TESTAR
+    local TESTAR
+    read -rp "${YELLOW} Deseja testar a conexao agora? [s/N]  ${NORM}" TESTAR
 
-    case "$TESTAR" in
+    case "${TESTAR}" in
         [sS]|[sS][iI][mM])
             _testar_conexao
             ;;
     esac
 
     _mensagec "${GREEN}" "Configuracao concluida."
-    _aguardar 2
-    return 0 
-    done
-}    
+    _aguardar_tecla
+    return 0
+}
