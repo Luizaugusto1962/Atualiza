@@ -18,26 +18,26 @@ programas, arquivos, backups e bibliotecas do sistema **IsCOBOL / ISAM**.
 
 ## Estrutura de Arquivos
 
-| Arquivo          | Responsabilidade                                      |
-|------------------|-------------------------------------------------------|
-| `atualiza.sh`    | Ponto de entrada principal; roteia para módulos       |
-| `principal.sh`   | Inicialização, carregamento de módulos e main loop    |
-| `config.sh`      | Configurações, validações e variáveis globais         |
-| `auth.sh`        | Autenticação de usuários (login / cadastro / senha)   |
-| `menus.sh`       | Sistema de menus interativos                          |
-| `utils.sh`       | Utilitários: formatação, log, validação, progresso    |
-| `arquivos.sh`    | Limpeza, recuperação, transferência e expurgo         |
-| `backup.sh`      | Backup completo, incremental e restauração            |
-| `programas.sh`   | Atualização, reversão e gestão de programas           |
-| `biblioteca.sh`  | Gestão de bibliotecas do sistema                      |
-| `baixar.sh`      | Atualização do sistema                                |
-| `sistema.sh`     | Informações do SO, versões, parâmetros                |
-| `vaievem.sh`     | Transferência de arquivos via rsync/scp               |
-| `lembrete.sh`    | Bloco de notas / lembretes internos                   |
-| `setup.sh`       | Configuração inicial interativa                       |
-| `help.sh`        | Sistema de ajuda e manual interativo                  |
-| `variaveis.sh`   | Consulta de variáveis e constantes do sistema         |
-| `cadastro.sh`    | Cadastro standalone de usuários                       |
+| Arquivo         | Responsabilidade                                    |
+| --------------- | --------------------------------------------------- |
+| `atualiza.sh`   | Ponto de entrada principal; roteia para módulos     |
+| `principal.sh`  | Inicialização, carregamento de módulos e main loop  |
+| `config.sh`     | Configurações, validações e variáveis globais       |
+| `auth.sh`       | Autenticação de usuários (login / cadastro / senha) |
+| `menus.sh`      | Sistema de menus interativos                        |
+| `utils.sh`      | Utilitários: formatação, log, validação, progresso  |
+| `arquivos.sh`   | Limpeza, recuperação, transferência e expurgo       |
+| `backup.sh`     | Backup completo, incremental e restauração          |
+| `programas.sh`  | Atualização, reversão e gestão de programas         |
+| `biblioteca.sh` | Gestão de bibliotecas do sistema                    |
+| `baixar.sh`     | Atualização do sistema                              |
+| `sistema.sh`    | Informações do SO, versões, parâmetros              |
+| `vaievem.sh`    | Transferência de arquivos via rsync/scp             |
+| `lembrete.sh`   | Bloco de notas / lembretes internos                 |
+| `setup.sh`      | Configuração inicial interativa                     |
+| `help.sh`       | Sistema de ajuda e manual interativo                |
+| `variaveis.sh`  | Consulta de variáveis e constantes do sistema       |
+| `cadastro.sh`   | Cadastro standalone de usuários                     |
 
 ---
 
