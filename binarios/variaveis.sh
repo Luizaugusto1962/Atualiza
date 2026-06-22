@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 22/06/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -100,7 +100,7 @@ _var_verificar_dependencias() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        printf "%s[ERRO] Dependencias faltando: %s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
+        _erro "Dependencias faltando: %s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
         return 1
     fi
 

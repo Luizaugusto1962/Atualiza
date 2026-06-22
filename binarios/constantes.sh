@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 22/06/2026-01
 #
 
 # =============================================================================
@@ -63,7 +63,7 @@ _carregar_config_seguro() {
             
             # Validar que o valor nao contem comandos perigosos
             if [[ "$value" =~ [\$\`\;] ]]; then
-                printf "AVISO: Valor suspeito ignorado para %s: %s\n" "$key" "$value" >&2
+                _aviso "Valor suspeito ignorado para %s: %s\n" "$key" "$value" >&2
                 continue
             fi
             

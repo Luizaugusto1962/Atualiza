@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-02
+# Versao: 22/06/2026-02
 #
 
 # Variaveis globais esperadas
@@ -627,7 +627,7 @@ _processar_atualizacao_pacotes() {
 # Processa reversao de programas
 _processar_reversao_programas() {
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+        _erro "Ao criar diretorio de configuracao %s\n" "${DEFAULT_RECEBE_DIR}" >&2
         return 1
     }
 
@@ -663,7 +663,7 @@ _processar_reversao_programas() {
 _validar_diretorio_backups() {
         local caminho="${1:-${DEFAULT_OLDS_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
 }

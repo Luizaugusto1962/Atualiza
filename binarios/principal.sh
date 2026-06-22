@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 16/06/2026-01
+# Versao: 22/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -35,7 +35,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="19/06/26-v.1"
+declare -rx UPDATE="22/06/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
@@ -59,7 +59,7 @@ _criar_diretorio_seguro() {
     
     # Validar caminho
     if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
-        printf "Erro: Caminho invalido ou inseguro: %s\n" "$caminho" >&2
+        _erro "Caminho invalido ou inseguro: %s\n" "$caminho" >&2
         return 1
     fi
     
@@ -68,7 +68,7 @@ _criar_diretorio_seguro() {
         if [[ -d "$caminho" ]]; then
             return 0
         else
-            printf "Erro: Caminho existe mas nao e diretorio: %s\n" "$caminho" >&2
+            _erro "Caminho existe mas nao e diretorio: %s\n" "$caminho" >&2
             return 1
         fi
     fi
@@ -83,11 +83,11 @@ _criar_diretorio_seguro() {
             fi
             return 0
         else
-            printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
+            _aviso "Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
             exit 1  # Nao falhar por permissao
         fi
     else
-        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
+        _erro "Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
         exit 1
     fi
 }
@@ -102,14 +102,14 @@ declare -a AUX_DIRS=("${LIBS_DIR}" "${CFG_DIR}")
 for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
     if [[ -z "${dir}" ]]; then
-        printf "ERRO: Variavel de diretorio nao definida.\n" >&2
+        _erro "Variavel de diretorio nao definida.\n" >&2
         exit 1
     fi
 
     # Criar diretório caso não exista com permissões seguras
     if [[ ! -d "${dir}" ]]; then
         if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
-                printf "ERRO: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
+                _erro "Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
             exit 1
         fi
     fi
@@ -117,7 +117,7 @@ for dir in "${AUX_DIRS[@]}"; do
     # APLICAR PERMISSOES DE FORMA SEGURA: usar constante ao inves de hardcoded
     # Recursivo apenas quando necessario, e com permissao segura
     chmod 0755 "${dir}" 2>/dev/null || {
-        printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
+        _aviso "Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
         printf "Execute como root ou sudo ...\n" >&2
         exit 1
@@ -125,7 +125,7 @@ for dir in "${AUX_DIRS[@]}"; do
 
     # Verificar se o diretório existe após criação
     [[ -d "${dir}" ]] || {
-        printf "ERRO: O diretorio '%s' nao foi encontrado.\n" "${dir}" >&2
+        _erro "O diretorio '%s' nao foi encontrado.\n" "${dir}" >&2
         printf "Certifique-se de que os arquivos/modulos correspondentes estao instalados corretamente.\n" >&2
         exit 1
     }
@@ -145,26 +145,26 @@ _caminho_modulo() {
 
     # Verificar se o arquivo existe
     if [[ ! -f "${caminho}" ]]; then
-        printf "ERRO: Modulo '%s' nao encontrado em '%s'\n" "${modulo}" "${caminho}" >&2
+        _erro "Modulo '%s' nao encontrado em '%s'\n" "${modulo}" "${caminho}" >&2
         return 1
     fi
 
     # Verificar se o arquivo pode ser lido
     if [[ ! -r "${caminho}" ]]; then
-        printf "ERRO: Modulo '%s' nao pode ser lido\n" "${modulo}" >&2
+        _erro "Modulo '%s' nao pode ser lido\n" "${modulo}" >&2
         return 1
     fi
 
     # Verificar se o arquivo não está vazio
     if [[ ! -s "${caminho}" ]]; then
-        printf "ERRO: Modulo '%s' esta vazio\n" "${modulo}" >&2
+        _erro "Modulo '%s' esta vazio\n" "${modulo}" >&2
         return 1
     fi
 
     # Carregar o módulo
     # shellcheck disable=SC1090
     if ! . "${caminho}"; then
-        printf "ERRO: Falha ao carregar modulo '%s'\n" "${modulo}" >&2
+        _erro "Falha ao carregar modulo '%s'\n" "${modulo}" >&2
         return 1
     fi
 }
@@ -203,7 +203,7 @@ _carregar_modulos() {
     done
 
     if (( erros > 0 )); then
-        printf "ERRO: %d modulo(s) falharam ao carregar.\n" "$erros" >&2
+        erro "%d modulo(s) falharam ao carregar.\n" "$erros" >&2
         for _m in "${modulos_com_erro[@]}"; do
             printf "  - %s\n" "$_m" >&2
         done
@@ -222,7 +222,7 @@ _inicializar_sistema() {
 
     # Carregar módulos do sistema
     if ! _carregar_modulos; then
-        printf "ERRO: Falha ao carregar modulos.\n" >&2
+        _erro "Falha ao carregar modulos.\n" >&2
         return 1
     fi
 
@@ -233,13 +233,13 @@ _inicializar_sistema() {
 
     # Carregar e validar configuracoes
     if ! _carregar_configuracoes; then
-        printf "ERRO: Falha ao carregar configuracoes.\n" >&2
+        _erro "Falha ao carregar configuracoes.\n" >&2
         return 1
     fi
 
     # Verificar dependências (agora retorna erro ao inves de sair)
     if ! _check_instalado; then
-        printf "ERRO: Dependencias nao atendidas.\n" >&2
+        _erro "Dependencias nao atendidas.\n" >&2
         return 1
     fi
 
@@ -268,13 +268,13 @@ _main() {
 
     # Inicializar sistema
     if ! _inicializar_sistema; then
-        printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
+        _erro "Falha na inicializacao do sistema. Saindo...\n" >&2
         exit 1
     fi
 
     # Autenticacao
     if ! _login; then
-        printf "ERRO: Autenticacao falhou. Saindo...\n" >&2
+        _erro "Autenticacao falhou. Saindo...\n" >&2
         exit 1
     fi
 
@@ -292,7 +292,7 @@ _main() {
     if command -v _principal >/dev/null 2>&1; then
         _principal
     else
-        printf "ERRO: Menu principal nao encontrado.\n" >&2
+        _erro "Menu principal nao encontrado.\n" >&2
         exit 1
     fi
     

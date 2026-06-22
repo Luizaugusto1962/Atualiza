@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-02
+# Versao: 22/06/2026-02
 # Autor: Luiz Augusto
 #
 
@@ -45,7 +45,7 @@ _hash_senha() {
     local algoritmo="${HASH_ALGORITHM:-sha256sum}"
     
     if ! command -v "$algoritmo" >/dev/null 2>&1; then
-        printf "Erro: Algoritmo de hash '%s' nao encontrado.\n" "$algoritmo" >&2
+        _erro "Algoritmo de hash '%s' nao encontrado.\n" "$algoritmo" >&2
         return 1
     fi
     

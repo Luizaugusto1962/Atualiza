@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/06/2026-01
+# Versao: 22/06/2026-01
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -54,7 +54,7 @@ _register_var() {
     local var_category="${3:-OUTROS}"
 
     if [[ -z "$var_name" ]]; then
-        printf 'AVISO: Nome de variavel vazio, ignorando registro.\n' >&2
+        _aviso "Nome de variavel vazio, ignorando registro." >&2
         return 1
     fi
 
@@ -71,7 +71,7 @@ _register_var() {
 
     # Definir a variavel como global
     declare -g "$var_name"="$var_value" 2>/dev/null || {
-        printf 'AVISO: Nao foi possivel definir variavel %s (pode ser readonly).\n' "$var_name" >&2
+        _aviso "Nao foi possivel definir variavel %s (pode ser readonly) $var_name" >&2
         return 0
     }
 
@@ -206,12 +206,12 @@ _inicializar_variaveis_sistema() {
 if [[ -n "${CFG_DIR}" ]]; then
     if [[ ! -d "${CFG_DIR}" ]]; then
         mkdir -p "${CFG_DIR}" || {
-            printf '%s\n' "ERRO: Nao foi possivel criar o diretorio de configuracao '${CFG_DIR}'." >&2
+            _erro "Nao foi possivel criar o diretorio de configuracao '${CFG_DIR}'." >&2
             return 1
         }
     fi
     chmod "${PERM_DIR_SECURE}" "${CFG_DIR}" 2>/dev/null || {
-        printf '%s\n' "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'." >&2
+        _aviso "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'." >&2
     }
 fi
 
@@ -231,7 +231,7 @@ _configurar_comandos() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        printf "Erro: Comandos nao encontrados: %s\n" "${missing[*]}" >&2
+        _erro "Comandos nao encontrados: %s\n" "${missing[*]}" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi
@@ -244,13 +244,13 @@ _configurar_diretorios() {
         if command -v _mensagec >/dev/null 2>&1; then
             _mensagec "${CYAN}" "Diretorio principal nao encontrado: ${SCRIPT_DIR}"
         else
-            printf "Erro: Diretorio principal nao encontrado: %s\n" "${SCRIPT_DIR}" >&2
+            _erro "Diretorio principal nao encontrado: %s\n" "${SCRIPT_DIR}" >&2
         fi
         return 1
     fi
 
     _criar_diretorio_seguro "${CFG_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        printf "Erro ao criar diretorio de configuracao %s\n" "${CFG_DIR}" >&2
+        _erro "Ao criar diretorio de configuracao %s\n" "${CFG_DIR}" >&2
         return 1
     }
 
@@ -258,7 +258,7 @@ _configurar_diretorios() {
     local dir
     for dir in "${dirs[@]}"; do
         _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-            printf "Erro ao criar diretorio %s\n" "${dir}" >&2
+            _erro "Ao criar diretorio %s\n" "${dir}" >&2
             return 1
         }
     done
@@ -329,19 +329,19 @@ _validar_config_file() {
     local linha num_linha=0 erros=0
 
     if [[ ! -f "$CONFIG_FILE" ]]; then
-        printf "ERRO: Arquivo de configuracao nao encontrado: %s\n" "$CONFIG_FILE" >&2
+        _erro "Arquivo de configuracao nao encontrado: %s\n" "$CONFIG_FILE" >&2
         return 1
     fi
 
     if [[ ! -r "$CONFIG_FILE" ]]; then
-        printf "ERRO: Arquivo de configuracao sem permissao de leitura: %s\n" "$CONFIG_FILE" >&2
+        _erro "Arquivo de configuracao sem permissao de leitura: %s\n" "$CONFIG_FILE" >&2
         return 1
     fi
 
     local tamanho
     tamanho=$(wc -c < "$CONFIG_FILE" 2>/dev/null || echo 0)
     if (( tamanho > 1048576 )); then
-        printf "ERRO: Arquivo de configuracao muito grande: %d bytes\n" "$tamanho" >&2
+        _erro "Arquivo de configuracao muito grande: %d bytes\n" "$tamanho" >&2
         return 1
     fi
 
@@ -361,28 +361,28 @@ _validar_config_file() {
 
         # Validar formato de atribuicao
         if ! [[ "$linha" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-            printf "ERRO: Linha %d tem formato invalido: %s\n" "$num_linha" "$linha" >&2
+            _erro "Linha %d tem formato invalido: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
             return 1
         fi
 
         # Verificar caracteres perigosos
         if printf '%s\n' "$linha" | grep -qE '[\`\;|\&<>(){}]'; then
-            printf "ERRO: Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
+            _erro "Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
             return 1
         fi
 
         # Verificar command substitution
         if [[ "$linha" =~ \$\( ]] || [[ "$linha" =~ \` ]]; then
-            printf "ERRO: Linha %d contem command substitution: %s\n" "$num_linha" "$linha" >&2
+            _erro "Linha %d contem command substitution: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
             continue
         fi
 
         # Verificar expansao de variavel suspeita
         if [[ "$linha" =~ \$\{.*\} ]]; then
-            printf "ERRO: Linha %d contem expansao de variavel suspeita: %s\n" "$num_linha" "$linha" >&2
+            _erro "Linha %d contem expansao de variavel suspeita: %s\n" "$num_linha" "$linha" >&2
             ((erros++))
             continue
         fi
@@ -390,7 +390,7 @@ _validar_config_file() {
     done < "$CONFIG_FILE"
 
     if (( erros > 0 )); then
-        printf "ERRO: Arquivo de configuracao contem %d erro(s). Carregamento bloqueado.\n" "$erros" >&2
+        _erro "Arquivo de configuracao contem %d erro(s). Carregamento bloqueado.\n" "$erros" >&2
         return 1
     fi
     return 0
@@ -401,27 +401,27 @@ _carregar_config_empresa() {
     local CONFIG_FILE="${CFG_DIR}/.config"
 
     if [[ ! -e "${CONFIG_FILE}" ]]; then
-        printf "ERRO: Arquivo de configuracao nao existe no diretorio.\n" >&2
-        printf "ATENCAO: Execute './atualiza.sh --setup' para criar as configuracoes.\n" >&2
+        _erro "Arquivo de configuracao nao existe no diretorio.\n" >&2
+        _aviso "ATENCAO: Execute './atualiza.sh --setup' para criar as configuracoes.\n" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi
 
     if [[ ! -r "${CONFIG_FILE}" ]]; then
-        printf "ERRO: Arquivo %s sem permissao de leitura.\n" "${CONFIG_FILE}" >&2
+        _erro "Arquivo %s sem permissao de leitura.\n" "${CONFIG_FILE}" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi
 
     if ! _validar_config_file "${CONFIG_FILE}"; then
-        printf "ERRO: Arquivo de configuracao contem formato invalido ou comandos suspeitos.\n" >&2
-        printf "AVISO: Carregamento do arquivo de configuracao bloqueado por seguranca.\n" >&2
+        _erro "Arquivo de configuracao contem formato invalido ou comandos suspeitos.\n" >&2
+        _aviso "Carregamento do arquivo de configuracao bloqueado por seguranca.\n" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi
 
     if ! _carregar_config_seguro "${CONFIG_FILE}"; then
-        printf "ERRO: Falha ao carregar arquivo de configuracao %s.\n" "${CONFIG_FILE}" >&2
+        _erro "Falha ao carregar arquivo de configuracao %s.\n" "${CONFIG_FILE}" >&2
         return 1
     fi
     return 0
@@ -430,7 +430,7 @@ _carregar_config_empresa() {
 # Funcao principal de carregamento de configuracoes
 _carregar_configuracoes() {
     if ! cd "${SCRIPT_DIR}"; then
-        printf "Erro: Nao foi possivel acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
+        _erro "Nao foi possivel acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
         return 1
     fi
 
@@ -446,7 +446,7 @@ _configurar_ambiente() {
         if command -v _mensagec >/dev/null 2>&1; then
             _mensagec "${YELLOW}" "Aviso: jutil nao encontrado em ${REBUILD}"
         else
-            printf "Aviso: jutil nao encontrado em %s\n" "${REBUILD}" >&2
+            _aviso "jutil nao encontrado em %s\n" "${REBUILD}" >&2
         fi
     fi
 }
@@ -544,7 +544,7 @@ _validar_configuracao() {
 # Navegar para o diretorio de ferramentas
 _ir_para_tools() {
     if ! cd "${SCRIPT_DIR}"; then
-        printf "Erro ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
+        _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
         return 1
     fi
     return 0

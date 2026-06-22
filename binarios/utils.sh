@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 19/06/2026-01
+# Versao: 22/06/2026-01
 
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 #---------- FUNCOES DE CHAVES SSH ----------#
@@ -33,6 +33,13 @@ if [ -t 1 ]; then
 else
     RED=''; GREEN=''; YELLOW=''; CYAN='' 
 fi
+
+# Configuração de alertas
+
+    _msg()   { printf "${CYAN}[INFO]${NORM}  %s\n" "$1"; }
+    _ok()    { printf "${GREEN}[OK]${NORM}    %s\n" "$1"; }
+    _aviso()  { printf "${YELLOW}[AVISO]${NORM} %s\n" "$1"; }
+    _erro()  { printf "${RED}[ERRO]${NORM}  %s\n" "$1"; }
 
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
@@ -228,12 +235,12 @@ _aguardar() {
     local tempo="${1:-}"
 
     if [[ -z "$tempo" ]]; then
-        printf "Erro: Nenhum argumento passado para _aguardar.\n" >&2
+        _erro "Nenhum argumento passado para _aguardar.\n" >&2
         return 1
     fi
 
     if ! [[ "$tempo" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-        printf "Erro: Argumento inválido para _aguardar: %s\n" "$tempo" >&2
+        _erro "Argumento inválido para _aguardar: %s\n" "$tempo" >&2
         return 1
     fi
 
@@ -484,7 +491,7 @@ _log() {
     local log_dir
     log_dir=$(dirname "$arquivo_log")
     if [[ ! -d "$log_dir" ]]; then
-        printf "Erro: Diretorio de log nao existe: %s\n" "$log_dir" >&2
+        _erro "Diretorio de log nao existe: %s\n" "$log_dir" >&2
         return 1
     fi
 
@@ -499,7 +506,7 @@ _log() {
     if printf "[%s] [%s] %s\n" "$timestamp" "$usuario_log" "$mensagem" >> "$arquivo_log"; then
         return 0
     else
-        printf "Erro: Falha ao escrever no log: %s\n" "$arquivo_log" >&2
+        _erro "Falha ao escrever no log: %s\n" "$arquivo_log" >&2
         return 1
     fi
 }
@@ -647,10 +654,10 @@ _check_instalado() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        printf "\n%sERRO: Programas nao encontrados%s\n" "${RED}" "${NORM}"
-        printf "%sProgramas ausentes: %s%s\n" "${YELLOW}" "${missing[*]}" "${NORM}"
-        printf "%sSugestao: %s %s%s\n" "${YELLOW}" "$install_cmd" "${missing[*]}" "${NORM}"
-        printf "%sInstale os programas ausentes e tente novamente.%s\n" "${YELLOW}" "${NORM}"
+        _erro "Programas nao encontrados%s\n" "${RED}" "${NORM}"
+        _aviso "Programas ausentes: %s%s\n" "${YELLOW}" "${missing[*]}" "${NORM}"
+        _aviso "Sugestao: %s %s%s\n" "${YELLOW}" "$install_cmd" "${missing[*]}" "${NORM}"
+        _aviso "Instale os programas ausentes e tente novamente.%s\n" "${YELLOW}" "${NORM}"
         return 1
     fi
 }
@@ -725,27 +732,23 @@ _enviabackup_para_receber() {
 # Complementa _configure_ssh_access adicionando autenticacao por chave
 #===================================================================
 
-    msg()   { printf "${CYAN}[INFO]${NORM}  %s\n" "$1"; }
-    ok()    { printf "${GREEN}[OK]${NORM}    %s\n" "$1"; }
-    warn()  { printf "${YELLOW}[AVISO]${NORM} %s\n" "$1"; }
-    erro()  { printf "${RED}[ERRO]${NORM}  %s\n" "$1"; }
     # -------------------------------------------------------------------------
     # Verifica dependencias
     # -------------------------------------------------------------------------
     _checar_dependencias() {
         # Validacao das variaveis obrigatorias
         if [[ -z "${SERVIDOR}" ]]; then
-            erro "Variavel DEFAULT_IP_SERVER nao foi definida."
+            _erro "Variavel DEFAULT_IP_SERVER nao foi definida."
             return 1
         fi
         for cmd in ssh ssh-keygen ssh-copy-id; do
             if ! command -v "$cmd" >/dev/null 2>&1; then
-                erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."
+                _erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."
                 exit 1
             fi
         done
-        ok "Dependencias verificadas."
-        warn "Verificando configuracao de chaves SSH..."
+        _ok "Dependencias verificadas."
+        _aviso "Verificando configuracao de chaves SSH..."
     }
 
     # -------------------------------------------------------------------------
@@ -755,7 +758,7 @@ _enviabackup_para_receber() {
         if [ ! -d "$HOME/.ssh" ]; then
             mkdir -p "$HOME/.ssh"
             chmod 700 "$HOME/.ssh"
-            ok "Diretorio ~/.ssh criado."
+            _ok "Diretorio ~/.ssh criado."
         fi
     }
 
@@ -764,25 +767,25 @@ _enviabackup_para_receber() {
     # -------------------------------------------------------------------------
     _verificar_ou_criar_chave() {
         if [ -f "$CHAVE" ] && [ -f "$CHAVE_PUB" ]; then
-            ok "Chave SSH encontrada: $CHAVE"
+            _ok "Chave SSH encontrada: $CHAVE"
             return 0
         fi
 
-        warn "Chave SSH nao encontrada em $CHAVE"
+        _aviso "Chave SSH nao encontrada em $CHAVE"
         printf "\nDeseja criar uma nova chave SSH agora? [s/N] "
         read -r RESPOSTA
 
         case "$RESPOSTA" in
             [sS]|[sS][iI][mM])
-                msg "Gerando par de chaves RSA 4096 bits..."
+                _msg "Gerando par de chaves RSA 4096 bits..."
                 if ssh-keygen -t rsa -b 4096 -f "$CHAVE" -C "${USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
-                    ok "Chave criada com sucesso: $CHAVE"
+                    _ok "Chave criada com sucesso: $CHAVE"
                 else
-                    erro "Falha ao criar a chave SSH."
+                    _erro "Falha ao criar a chave SSH."
                 fi
                 ;;
             *)
-                warn "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
+                _aviso "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
                 ;;
         esac
     }
@@ -791,18 +794,18 @@ _enviabackup_para_receber() {
     # Envia a chave publica ao servidor principal
     # -------------------------------------------------------------------------
     _enviar_chave_para_servidor() {
-        msg "Enviando chave publica para ${USUARIO}@${SERVIDOR}:${PORTA}..."
-        warn "Sera solicitada a senha do usuario '${USUARIO}' no servidor (ultima vez)."
+        _msg "Enviando chave publica para ${USUARIO}@${SERVIDOR}:${PORTA}..."
+        _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor (ultima vez)."
 
         if ssh-copy-id -i "$CHAVE_PUB" -p "$PORTA" "${USUARIO}@${SERVIDOR}"; then
-            ok "Chave enviada com sucesso!"
-            ok "A partir de agora a conexao sera feita sem senha."
+            _ok "Chave enviada com sucesso!"
+            _ok "A partir de agora a conexao sera feita sem senha."
         else
-            erro "Falha ao enviar a chave. Verifique:"
-            erro "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
-            erro "  - Se o usuario '${USUARIO}' existe no servidor"
-            erro "  - Se a senha informada esta correta"
-            warn "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
+            _erro "Falha ao enviar a chave. Verifique:"
+            _erro "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
+            _erro "  - Se o usuario '${USUARIO}' existe no servidor"
+            _erro "  - Se a senha informada esta correta"
+            _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
         fi
     }
 
@@ -810,7 +813,7 @@ _enviabackup_para_receber() {
     # Testa a conexao sem senha
     # -------------------------------------------------------------------------
     _testar_conexao() {
-        msg "Testando conexao sem senha..."
+        _msg "Testando conexao sem senha..."
         if ssh -o BatchMode=yes \
             -o ConnectTimeout=10 \
             -o StrictHostKeyChecking=accept-new \
@@ -818,10 +821,10 @@ _enviabackup_para_receber() {
             -p "$PORTA" \
             "${USUARIO}@${SERVIDOR}" \
             "echo 'Conexao OK em: \$(hostname) - \$(date)'"; then
-            ok "Conexao sem senha funcionando perfeitamente!"
+            _ok "Conexao sem senha funcionando perfeitamente!"
         else
-            erro "Conexao sem senha falhou. Verifique as permissoes no servidor:"
-            erro "  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+            _erro "Conexao sem senha falhou. Verifique as permissoes no servidor:"
+            _erro "  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
         fi
     }
 

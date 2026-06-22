@@ -13,7 +13,7 @@ set -euo pipefail
 caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"
 
 _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-    printf "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+    _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
     return 1
 }
 
@@ -198,7 +198,7 @@ _menu_biblioteca() {
 
         if [[ -f "${CFG_DIR}/.versao" ]]; then
             if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
-                printf '%s\n' "AVISO: Falha ao carregar ${CFG_DIR}/.versao" >&2
+                _aviso "Falha ao carregar ${CFG_DIR}/.versao" >&2
             fi
         fi
 
