@@ -802,9 +802,9 @@ _enviabackup_para_receber() {
             _ok "A partir de agora a conexao sera feita sem senha."
         else
             _erro "Falha ao enviar a chave. Verifique:"
-            _erro "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
-            _erro "  - Se o usuario '${USUARIO}' existe no servidor"
-            _erro "  - Se a senha informada esta correta"
+            _msg "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
+            _msg "  - Se o usuario '${USUARIO}' existe no servidor"
+            _msg "  - Se a senha informada esta correta"
             _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
         fi
     }
