@@ -243,7 +243,7 @@ _inicializar_sistema() {
         return 1
     fi
 
-    # Configurar ambiente
+     # Configurar ambiente
     _configurar_ambiente
 
     # Executar limpeza automatica diaria

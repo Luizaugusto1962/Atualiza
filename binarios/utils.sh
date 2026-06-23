@@ -305,7 +305,6 @@ _validar_nome_programa() {
     [[ "$programa" =~ ^[A-Z0-9]+$ ]]
 }
 
-
 # Solicita confirmacao S/N
 # Parametros: $1=mensagem $2=padrao(S/N)
 # Retorna: 0=sim 1=nao

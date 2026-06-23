@@ -8,6 +8,8 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 23/06/2026-01 (Atualizado com reforços de segurança)
 #
+
+CHAVE="${DEFAULT_CHAVE_SSH:-}"
 # Variaveis globais esperadas
 arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
 
@@ -25,13 +27,47 @@ _validar_caminho_seguro() {
     return 0
 }
 
+# Verifica se autenticacao por chave SSH deve ser utilizada
+# Retorna 0 (true) se chave deve ser usada, 1 (false) caso contrario
+_usar_chave_ssh() {
+    local acessochave="${CFG_CHAVE_SSH:-}"
+    local chave="${CHAVE:-}"
+
+    if [[ "${acessochave,,}" != "s" ]]; then
+        return 1
+    fi
+
+    if [[ -z "$chave" ]]; then
+        _log_erro "CFG_CHAVE_SSH configurado como 's', mas DEFAULT_CHAVE_SSH nao definido"
+        return 1
+    fi
+
+    if [[ ! -f "$chave" ]]; then
+        _log_erro "Arquivo de chave SSH nao encontrado: ${chave}"
+        return 1
+    fi
+
+    if [[ ! -r "$chave" ]]; then
+        _log_erro "Arquivo de chave SSH sem permissao de leitura: ${chave}"
+        return 1
+    fi
+
+    return 0
+}
+
+# Adiciona opcoes SSH de chave a um array de opcoes
+# Uso: _adicionar_opcoes_chave _array_ref
+_adicionar_opcoes_chave() {
+    local -n _opts_ref=$1
+    _opts_ref+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
+}
+
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
 # Download via SFTP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
 _receber_sftp_ssh() {
     local arquivo_remoto="${1:-}"
-    local CHAVE="${CHAVE:-}"
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Arquivo remoto nao especificado para SFTP SSH"
         return 1
@@ -64,12 +100,11 @@ _receber_sftp_ssh() {
     
     # Construir destino de forma segura
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
-    local acessochave="${CFG_CHAVE_SSH:-}"
 
     # Construir opções SFTP com controle de acesso por chave
     local sftp_opts=("-P" "$porta_ssh")
-    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
-        sftp_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
+    if _usar_chave_ssh; then
+        _adicionar_opcoes_chave sftp_opts
     fi
 
     sftp_output=$(sftp "${sftp_opts[@]}" "${user_ssh}@${host_ssh}" <<EOF 2>&1
@@ -123,9 +158,6 @@ _receber_scp() {
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
 
-    local acessochave="${CFG_CHAVE_SSH:-}"
-    local CHAVE="${CHAVE:-}"
-
     [[ -z "$arquivo_remoto" ]] && {
         _log_erro "Arquivo remoto nao especificado para SCP"
         return 1
@@ -156,7 +188,7 @@ _receber_scp() {
         -o ServerAliveCountMax=3
     )
 
-    if [[ "${acessochave,,}" == "s" && -n "$CHAVE" && -f "$CHAVE" ]]; then
+    if _usar_chave_ssh; then
         scp_cmd+=(
             -i "$CHAVE"
             -o BatchMode=yes
@@ -196,8 +228,6 @@ _receber_scp() {
 _enviar_rsync() {
     local arquivo_local="${1:-}"
     local CFG_BACKUP_PATH="${2:-${CFG_BACKUP_PATH:-}}"
-    local acessochave="${CFG_CHAVE_SSH:-}"
-    local CHAVE="${CHAVE:-}"
 
     if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
         _log_erro "Parametros obrigatorios nao informados para upload RSYNC"
@@ -219,7 +249,7 @@ _enviar_rsync() {
     local rsync_base=("rsync" "-avzP")
     local ssh_opts=("ssh" "-p" "$porta")
 
-    if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
+    if _usar_chave_ssh; then
         ssh_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
     fi
 
@@ -235,43 +265,36 @@ _enviar_rsync() {
 
 
 #---------- FUNCOES DE DOWNLOAD (ALTO NIVEL) ----------#
-
 # Download da biblioteca via SFTP/SCP (funcao principal)
 _baixar_biblioteca_sincroniza() {
 
     local servidor="${1:-$DEFAULT_IP_SERVER}"
     local porta="${2:-$DEFAULT_SSH_PORTA}"
     local rem_user="${3:-$DEFAULT_SSH_USER}"
-    local acessochave="${CFG_CHAVE_SSH:-}"
-    local CHAVE="${CHAVE:-}"
+	
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
         
         # SEGURANCA: Validar diretorio de recebimento
         if ! _validar_caminho_seguro "${DEFAULT_RECEBE_DIR:-}"; then
-            _log_erro "Diretorio de recebimento invalido."
+            _log_erro "Erro: Diretorio de recebimento invalido."
             return 1
         fi
 
-        if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
+        if _usar_chave_ssh; then
             local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
             
             # SEGURANCA: Validar caminho construído
             if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
-                _log_erro "Caminho da biblioteca invalido."
+                _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
             local sftp_lib_opts=("-P" "$porta") 
-            if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
-                sftp_lib_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=accept-new")
-            fi
+            _adicionar_opcoes_chave sftp_lib_opts
+            local src="${rem_user}@${servidor}:${arquivo_biblioteca}"
 
-            if sftp "${sftp_lib_opts[@]}" "${rem_user}@${servidor}" <<EOF 2>&1
-get "${arquivo_biblioteca}"
-quit
-EOF
-            then
+            if sftp "${sftp_lib_opts[@]}" "${src}" .; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
             else
@@ -289,23 +312,22 @@ EOF
             for arquivo in "${arquivos_update[@]}"; do
                 # SEGURANCA: Validar cada nome de arquivo antes do uso
                 if ! _validar_caminho_seguro "$arquivo"; then
-                    _log_erro "Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
+                    _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
                     return 1
                 fi
                 
                 local src="${rem_user}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
                 local scp_cmd=("scp" "-P" "$porta")
-                local scp_opts=()
 
-                if [[ "${acessochave,,}" == "s" ]] && [ -f "$CHAVE" ]; then
-                    scp_opts+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=accept-new" "-o" "BatchMode=yes")
-                    # Sem chave SSH (usa senha)
-                    if "${scp_cmd[@]}" "${scp_opts[@]}" "$src" "."; then
-                        _log_sucesso "Download concluido: ${arquivo}"
-                    else
-                        _log_erro "Falha no download: ${arquivo}"
-                        return 1
-                    fi
+                if _usar_chave_ssh; then
+                    scp_cmd+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=accept-new" "-o" "BatchMode=yes")
+                fi
+
+                if "${scp_cmd[@]}" "$src" "."; then
+                    _log_sucesso "Download concluido: ${arquivo}"
+                else
+                    _log_erro "Falha no download: ${arquivo}"
+                    return 1
                 fi
             done
             return 0
@@ -316,7 +338,6 @@ EOF
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
     local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
-    local acessochave="${CFG_CHAVE_SSH:-}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
@@ -335,7 +356,7 @@ _baixar_programas_vaievem() {
             _mensagec "${GREEN}" "Transferindo: $arquivo"
             _linha
             
-            if [[ "${acessochave,,}" == "s" ]]; then
+            if _usar_chave_ssh; then
                 if ! _receber_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
                     _mensagec "${RED}" "Falha no download: $arquivo"
                     return 1
