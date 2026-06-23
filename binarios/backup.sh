@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -77,14 +77,14 @@ _validar_pre_backup() {
 
     # Verificar se o diretorio de backup existe
     if [[ ! -d "$DEFAULT_BASEBACKUP_DIR" ]]; then
-        _mensagec "$YELLOW" "Diretorio de backups em $DEFAULT_BASEBACKUP_DIR nao encontrado..."
+        _mensagec "${YELLOW}" "Diretorio de backups em $DEFAULT_BASEBACKUP_DIR nao encontrado..."
         _aguardar 3
         return 1
     fi
 
     # Verificar espaco em disco
     if ! _verificar_espaco_disco "$DEFAULT_BASEBACKUP_DIR"; then
-        _mensagec "$RED" "Espaco em disco insuficiente em $DEFAULT_BASEBACKUP_DIR"
+        _mensagec "${RED}" "Espaco em disco insuficiente em $DEFAULT_BASEBACKUP_DIR"
         _aguardar 3
         return 1
     fi
@@ -207,7 +207,7 @@ _executar_backup() {
     else
         _mensagec "$RED" "Erro ao criar backup"
         _aguardar 3
-        return 0
+        return 1
     fi
 
     # Perguntar sobre envio
@@ -245,7 +245,7 @@ _enviar_backup_avulso() {
     if [[ -z "${nome_backup:-}" ]]; then
         _mensagec "${RED}" "Erro: Nome do backup nao definido"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
@@ -497,7 +497,7 @@ _restaurar_backup_completo() {
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     _linha
@@ -507,7 +507,7 @@ _restaurar_backup_completo() {
     if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _mensagec "${RED}" "Erro na restauracao completa"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     _mensagec "${GREEN}" "Restauracao completa concluida"
@@ -523,7 +523,7 @@ _restaurar_arquivo_especifico() {
     if [[ ! -f "$arquivo_backup" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
    
     while true; do
@@ -587,7 +587,7 @@ _enviar_backup_servidor() {
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar 3
-        return 0
+        return 1
     fi
 
     # Determinar destino
@@ -596,7 +596,7 @@ _enviar_backup_servidor() {
     else
         read -rp "${YELLOW}Diretorio de destino no servidor: ${NORM}" DESTINO_REMOTO
         while [[ -z "$DESTINO_REMOTO" ]]; do
-            _mensagec "$RED" "Diretorio nao pode estar vazio"
+            _mensagec "${RED}" "Diretorio nao pode estar vazio"
             read -rp "${YELLOW}Diretorio de destino: ${NORM}" DESTINO_REMOTO
         done
     fi
@@ -627,7 +627,7 @@ _enviar_backup_servidor() {
         _linha
         _mensagec "${RED}" "Erro ao enviar backup"
         _aguardar 3
-        return 0
+        return 1
     fi
 }
 
@@ -639,7 +639,7 @@ _mover_backup_offline() {
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     _linha
@@ -649,10 +649,10 @@ _mover_backup_offline() {
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${RED}" "Diretorio offline nao configurado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
-	local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+	local caminho="${DEFAULT_RECEBE_DIR}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
@@ -664,7 +664,7 @@ _mover_backup_offline() {
     else
         _mensagec "${RED}" "Erro ao mover backup"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 }
 
@@ -677,7 +677,7 @@ _enviar_backup_rede() {
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
         _aguardar_tecla
-        return 0
+        return 1
     fi
     
     if [[ -n "${CFG_BACKUP_PATH}" ]]; then
@@ -702,7 +702,7 @@ _enviar_backup_rede() {
         _linha
         _mensagec "${RED}" "Erro ao enviar backup via vaievem"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 }
 
@@ -727,7 +727,7 @@ _verificar_espaco_disco() {
 _verificar_backups_recentes() {
     if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*zip" -print -quit | grep -q .; then
         _linha
-        _mensagec "$CYAN" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
+        _mensagec "${CYAN}" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
         ls -ltrh "${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip 2>/dev/null
         _linha
@@ -806,7 +806,7 @@ _executar_backup_multiplos_padroes() {
             _mensagec "${YELLOW}" "Aviso: Arquivo(s), '${padrao_expandido}' incluido(s)."
             padrao_entrada="${padrao_expandido}"
         elif [[ ! -f "${padrao_entrada}" ]]; then
-            _mensagec "${YELLOW}" "Aviso: Arquivo '${padrao_entrada}' nao encontrado na Diretorio base '$base_trabalho'"
+            _mensagec "${YELLOW}" "Aviso: Arquivo '${padrao_entrada}' nao encontrado no Diretorio base '$base_trabalho'"
         fi
 
         padroes+=("$padrao_entrada")

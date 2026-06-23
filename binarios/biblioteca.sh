@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 #
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
@@ -77,7 +77,7 @@ _atualizar_transpc() {
         #_configurar_acessos
         # Verificar espaco em disco
         if ! _verificar_espaco_disco "$E_EXEC"; then
-            _mensagec "$RED" "Espaco em disco insuficiente em $E_EXEC"
+            _mensagec "${RED}" "Espaco em disco insuficiente em $E_EXEC"
             _aguardar 3
             return 1
         fi
@@ -90,7 +90,7 @@ _atualizar_transpc() {
 _atualizar_biblioteca_offline() {
     _limpa_tela
        _linha
-    _mensagec "${YELLOW}" "Diretorio de download: ${WHITE}${DEFAULT_RECEBE_DIR}"
+    _mensagec "${YELLOW}" "Diretorio de download: ${NORM}${DEFAULT_RECEBE_DIR}"
      _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then
@@ -131,7 +131,7 @@ _reverter_biblioteca() {
     fi
 
     if [[ ! -r "${arquivo_backup}" ]]; then
-        _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${WHITE}${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
+        _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${NORM}${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
         _linha
         _aguardar_tecla
         return 0
@@ -285,12 +285,13 @@ _processar_atualizacao_biblioteca() {
         local pid_gzip=$!
         pids+=("$pid_gzip")
         _mostrar_progresso_backup "$pid_gzip" "Comprimindo os diretorios"
-        pids=("${pids[@]/$pid_gzip}")  # Remover PID apos concluido
         
         if [[ ! -f "${caminho_backup_final}" ]]; then
+            pids=("${pids[@]/$pid_gzip}")  # Remover PID apos verificar falha
             _mensagec "${RED}" "Falha na compressao do arquivo de backup"
             return 1
         fi
+        pids=("${pids[@]/$pid_gzip}")  # Remover PID apos sucesso
     fi
 
     _ir_para_tools
@@ -435,7 +436,7 @@ _reverter_biblioteca_completa() {
         return 1
     fi
 
-    local temp_restore="/"
+    local temp_restore="${E_EXEC}/.."  # Diretorio pai dos executaveis
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
@@ -448,13 +449,13 @@ _reverter_biblioteca_completa() {
 
     # Verificar se o arquivo e tar.gz ou zip
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" >>"${LOG_ATU}"; then
+        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
             _aguardar_tecla
             return 1
         fi
     else
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${temp_restore}" >>"${LOG_ATU}"; then
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${temp_restore}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo_backup}"
             _aguardar_tecla
             return 1
@@ -471,7 +472,7 @@ _reverter_biblioteca_completa() {
 _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
-    local temp_restore="/"
+    local temp_restore="${E_EXEC}/.."  # Diretorio pai dos executaveis
     
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
@@ -494,14 +495,14 @@ _reverter_programa_especifico_biblioteca() {
     # Verificar se o arquivo e tar.gz ou zip
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
         # No tar, usamos wildcards para encontrar o programa
-        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" --wildcards "*${programa_reverter}*" >>"${LOG_ATU}"; then
+        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" --wildcards "*${programa_reverter}*" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
             _aguardar_tecla
             return 1
         fi
     else
         local padrao="*/"
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "${temp_restore}" >>"${LOG_ATU}"; then
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "${temp_restore}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro: Ao descompactar programa ${programa_reverter}"
             _aguardar_tecla
             return 1
@@ -517,7 +518,7 @@ _reverter_programa_especifico_biblioteca() {
 # Solicita versao da biblioteca
 _solicitar_versao_biblioteca() {
     _linha
-    _mensagec "${YELLOW}" "Informe versao a da Biblioteca a ser atualizada:"
+    _mensagec "${YELLOW}" "Informe a versao da Biblioteca a ser atualizada:"
     _linha
     printf "\n"
     read -rp "${GREEN}Informe somente o numeral da versao: ${NORM}" VERSAO

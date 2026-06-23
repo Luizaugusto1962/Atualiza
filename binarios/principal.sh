@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -35,7 +35,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="22/06/26-v.1"
+declare -rx UPDATE="23/06/26-v.1"
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA
@@ -84,11 +84,11 @@ _criar_diretorio_seguro() {
             return 0
         else
             _aviso "Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            exit 1  # Nao falhar por permissao
+            return 1
         fi
     else
         _erro "Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        exit 1
+        return 1
     fi
 }
 
@@ -203,7 +203,7 @@ _carregar_modulos() {
     done
 
     if (( erros > 0 )); then
-        erro "%d modulo(s) falharam ao carregar.\n" "$erros" >&2
+        _erro "%d modulo(s) falharam ao carregar.\n" "$erros" >&2
         for _m in "${modulos_com_erro[@]}"; do
             printf "  - %s\n" "$_m" >&2
         done

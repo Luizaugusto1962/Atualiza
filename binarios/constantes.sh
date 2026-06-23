@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 #
 
 # =============================================================================
@@ -93,9 +93,6 @@ fi
 # =============================================================================
 CONFIG_FILE="${CFG_DIR}/.config"
 
-# =============================================================================
-# CARREGAR CONFIGURACOES DO ARQUIVO .config
-# =============================================================================
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "AVISO: Arquivo de configuracao $CONFIG_FILE nao encontrado." >&2
 
@@ -157,7 +154,7 @@ CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                        # Modo offline (
 # =============================================================================
 # PERMISSOES DE ARQUIVO E DIRETORIO
 # =============================================================================
-PERM_DIR_SECURE="0755"                                          # Diretorios seguros (rwx------)
+PERM_DIR_SECURE="0755"                                          # Diretorios seguros (rwxr-xr-x)
 PERM_FILE_PRIVATE="0600"                                        # Arquivos privados 600 (rw-------)
 PERM_FILE_EXEC="0755"                                           # Arquivos executaveis (rwxr-xr-x)
 
@@ -266,9 +263,8 @@ export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
 export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT
 export PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC
-export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER SSH_TIMEOUT
 export HASH_ALGORITHM MAX_LOGIN_ATTEMPTS
-export DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_ALIVE_COUNT
+export DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL SSH_ALIVE_COUNT
 export DEFAULT_COLUMNS DEFAULT_LINES
 export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR
 export DEFAULT_BIBLIOTECA_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BASEBACKUP_DIR

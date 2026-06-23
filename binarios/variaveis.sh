@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -32,7 +32,11 @@ if [[ -z "${BOLD:-}" ]]; then
         RED="${BOLD}$(tput setaf 1)"
         NORM="$(tput sgr0)"
     else
-        BOLD="" GREEN="" YELLOW="" RED="" NORM=""
+        BOLD=""
+        GREEN=""
+        YELLOW=""
+        RED=""
+        NORM=""
     fi
 fi
 
@@ -100,7 +104,7 @@ _var_verificar_dependencias() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Dependencias faltando: %s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
+        _erro "Dependencias faltando: %s%s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
         return 1
     fi
 

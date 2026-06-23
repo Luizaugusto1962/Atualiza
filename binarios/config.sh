@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -71,7 +71,7 @@ _register_var() {
 
     # Definir a variavel como global
     declare -g "$var_name"="$var_value" 2>/dev/null || {
-        _aviso "Nao foi possivel definir variavel %s (pode ser readonly) $var_name" >&2
+        _aviso "Nao foi possivel definir variavel %s (pode ser readonly)" "$var_name" >&2
         return 0
     }
 
@@ -124,6 +124,7 @@ _inicializar_variaveis_sistema() {
         BLUE="\033[0;34m"
         PURPLE="\033[0;35m"
         CYAN="\033[0;36m"
+        WHITE="\033[0;37m"
         NORM="\033[0m"
         COLUMNS="${COLUMNS:-80}"
     fi
@@ -289,12 +290,12 @@ _configurar_variaveis_sistema() {
     else
         E_EXEC="${E_EXEC:-${RAIZ}/int}"
         T_TELAS="${T_TELAS:-${RAIZ}/tel}"
-        compilado="-${compilado:-6}"
-        debugado="-${debugado:-m6}"
+        compilado="${compilado:-6}"
+        debugado="${debugado:-m6}"
         SAVATU1="tempSAVintA_"
         SAVATU2="tempSAVintB_"
         SAVATU3="tempSAVtel_"
-        SAVATU="tempSAV????_"
+        SAVATU="tempSAV????"
     fi
 
     BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"
@@ -362,14 +363,12 @@ _validar_config_file() {
         # Validar formato de atribuicao
         if ! [[ "$linha" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
             _erro "Linha %d tem formato invalido: %s\n" "$num_linha" "$linha" >&2
-            ((erros++))
             return 1
         fi
 
         # Verificar caracteres perigosos
         if printf '%s\n' "$linha" | grep -qE '[\`\;|\&<>(){}]'; then
             _erro "Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
-            ((erros++))
             return 1
         fi
 
@@ -520,7 +519,7 @@ _validar_configuracao() {
     # Modo offline
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "n" ]]; then
-            _mensagec "${WHITE}" "INFO: Servidor em modo On ..."
+            _mensagec "${NORM}" "INFO: Servidor em modo On ..."
         else
             _mensagec "${GREEN}" "INFO: Servidor em modo Off ..."
         fi

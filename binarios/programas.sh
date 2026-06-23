@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-02
+# Versao: 23/06/2026-02
 #
 
 # Variaveis globais esperadas
@@ -74,7 +74,7 @@ _atualizar_programa_offline() {
     fi
     
     _linha
-    _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${WHITE}${DEFAULT_RECEBE_DIR}"
+    _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${NORM}${DEFAULT_RECEBE_DIR}"
     _linha
     _aguardar 0
     
@@ -188,7 +188,7 @@ _selecionar_programas_reversao() {
         fi
 
         # Remover duplicatas mantendo a ordem
-        declare -A seen=()
+        local -A seen=()
         for token in "${indices[@]}"; do
             if [[ -n "${seen[$token]:-}" ]]; then
                 continue
@@ -230,9 +230,9 @@ _resolver_arquivo_compilado() {
     read -rp "${YELLOW}Tipo de compilacao: ${NORM}" -n1 tipo_compilacao
     printf "\n"
 
-    if [ "$tipo_compilacao" == "1" ]; then
+    if [[ "$tipo_compilacao" == "1" ]]; then
         ARQUIVO_COMPILADO_ATUAL="${nome_item}${compilado}.zip"
-    elif [ "$tipo_compilacao" == "2" ]; then
+    elif [[ "$tipo_compilacao" == "2" ]]; then
         ARQUIVO_COMPILADO_ATUAL="${nome_item}${debugado}.zip"
     else
         return 1
@@ -392,7 +392,7 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo}" ]]; then
             _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
-            return 0
+            return 1
         fi
     done
 
@@ -459,7 +459,7 @@ _processar_atualizacao_programas() {
 
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}"; then
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
             continue
         fi

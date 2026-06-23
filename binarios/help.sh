@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 23/06/2026-01
 #
 
 
@@ -57,7 +57,7 @@ _exibir_paginado() {
             case "${resposta,,}" in
                 q)
                     echo ""
-                    echo "${GREEN}Exibicao interrompida${NORM}"
+                    _mensagec "${GREEN}" "Exibicao interrompida"
                     return 0
                     ;;
                 a)
@@ -281,7 +281,7 @@ _exportar_manual() {
     else
         _mensagec "${RED}" "Erro ao exportar manual"
         _aguardar 2
-        return 0
+        return 1
     fi
     
     _aguardar_tecla

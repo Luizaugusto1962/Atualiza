@@ -6,27 +6,15 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-01
+# Versao: 23/06/2026-01
 
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
-#---------- FUNCOES DE CHAVES SSH ----------#
-#===================================================================
-# _configure_ssh_com_chaves - Gerencia criacao e envio de chaves SSH
-# Complementa _configure_ssh_access adicionando autenticacao por chave
-#===================================================================
-# Variaveis de configuracao com fallback para variaveis globais
-
-    SERVIDOR="${DEFAULT_IP_SERVER:-}"
-    PORTA="${DEFAULT_SSH_PORTA:-}"
-    USUARIO="${DEFAULT_SSH_USER:-}"
-    CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
-    CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
 
 #---------- FUNCOES DE FORMATACAO DE TELA ----------#
 # Variaveis globais esperadas
 NORM=$(tput sgr0)
 #---------- FUNCOES DE STRING ----------#
-# Cores (desativadas se terminal não suportar)
+# Cores (desativadas se terminal nao suportar)
 if [ -t 1 ]; then
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
     CYAN='\033[0;36m'
@@ -34,7 +22,17 @@ else
     RED=''; GREEN=''; YELLOW=''; CYAN='' 
 fi
 
-# Configuração de alertas
+# Obtem largura do terminal com fallback seguro
+# Retorna: numero de colunas
+_obter_colunas() {
+    local colunas
+    if ! colunas=$(tput cols 2>/dev/null); then
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS:-80}}"
+    fi
+    printf '%s' "$colunas"
+}
+
+# Configuracao de alertas
 
     _msg()   { printf "${CYAN}[INFO]${NORM}  %s\n" "$1"; }
     _ok()    { printf "${GREEN}[OK]${NORM}    %s\n" "$1"; }
@@ -61,7 +59,7 @@ _upper() {
 }
 
 # Funcao para limpar tela
-_clear_screen() {
+_limpa_tela() {
     clear
 }
 
@@ -71,7 +69,7 @@ _meio_da_tela() {
     local colunas
 
     linhas=$(tput lines 2>/dev/null || echo "${LINES:-${DEFAULT_LINES}}")
-    colunas=$(tput cols 2>/dev/null || echo "${COLUMNS:-${DEFAULT_COLUMNS}}")
+    colunas=$(_obter_colunas)
 
     # Usar tput para posicionar o cursor — consistente com o restante do arquivo
     tput clear 2>/dev/null || true
@@ -84,7 +82,7 @@ _mensageb() {
 #_exibir_bloco_centralizado() {
     local cor="${1}"
     local mensagem="${2}"
-    local largura_bloco="${3:-30}" # Largura do bloco (padrão 30)
+    local largura_bloco="${3:-30}" # Largura do bloco (padrao 30)
     local colunas
     local margem_esquerda
 
@@ -93,9 +91,7 @@ _mensageb() {
     : "${cor:=}"
 
     # Obter largura do terminal
-    if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    colunas=$(_obter_colunas)
 
     # Calcular a margem para centralizar o BLOCO inteiro na tela
     if [[ "$colunas" -le "$largura_bloco" ]]; then
@@ -117,7 +113,7 @@ _exibir_mensagem_centralizada() {
     local mensagem="${2}"
     local colunas
 
-    colunas=$(tput cols 2>/dev/null || echo "${COLUMNS:-${DEFAULT_COLUMNS}}")
+    colunas=$(_obter_colunas)
     local tamanho_mensagem=${#mensagem}
 
     if [[ "$colunas" -lt "$tamanho_mensagem" ]]; then
@@ -138,9 +134,7 @@ _exibir_mensagem_direita() {
     local largura_terminal largura_mensagem posicao_inicio
 
     # Obter largura do terminal com fallback seguro
-    if ! largura_terminal=$(tput cols 2>/dev/null); then
-        largura_terminal="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    largura_terminal=$(_obter_colunas)
 
     largura_mensagem=${#mensagem}
     posicao_inicio=$((largura_terminal - largura_mensagem))
@@ -159,9 +153,7 @@ _exibir_mensagem_corrida() {
     local largura_terminal largura_mensagem posicao_inicio
 
     # Obter largura do terminal com fallback seguro
-    if ! largura_terminal=$(tput cols 2>/dev/null); then
-        largura_terminal="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    largura_terminal=$(_obter_colunas)
 
     largura_mensagem=${#mensagem}
     posicao_inicio=$(( (largura_terminal - largura_mensagem) / 2 ))
@@ -188,9 +180,7 @@ _linha() {
     local cor="${2:-}"
     local colunas
 
-    if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    colunas=$(_obter_colunas)
 
     if [[ "$colunas" -lt 10 ]]; then
         colunas=10
@@ -215,9 +205,7 @@ _meia_linha() {
     local largura="${3:-40}"
     local espacos linhas colunas
 
-    if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    colunas=$(_obter_colunas)
 
     printf -v espacos "%${largura}s" ""
     linhas=${espacos// /$traco}
@@ -254,9 +242,7 @@ _aguardar_tecla() {
     local timeout="${2:-${DEFAULT_PRESS_TIMEOUT}}"
     local colunas
 
-    if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    colunas=$(_obter_colunas)
 
     printf "%s" "${YELLOW}"
     printf "%*s\n" $(((36 + colunas) / 2)) "<< $mensagem >>"
@@ -268,8 +254,7 @@ _aguardar_tecla() {
 #---------- ALIASES PARA COMPATIBILIDADE ----------#
 # Manter compatibilidade com código existente durante transição
 
-# Aliases para funções renomeadas
-_limpa_tela() { _clear_screen "$@"; }
+# Aliases para funcoes renomeadas
 _mensagec() { _exibir_mensagem_centralizada "$@"; }
 _mensaged() { _exibir_mensagem_direita "$@"; }
 _mensagex() { _exibir_mensagem_corrida "$@"; }
@@ -279,12 +264,9 @@ _opinvalida() {
     local largura
     local tamanho_msg
     local espacos
-    local RED="${RED:-\033[31m}" YELLOW="${YELLOW:-\033[33m}" NORM="${NORM:-\033[0m}"
     
     # Obter largura do terminal com fallback seguro
-    if ! largura=$(tput cols 2>/dev/null); then
-        largura="${COLUMNS:-${DEFAULT_COLUMNS}}"
-    fi
+    largura=$(_obter_colunas)
 
     tamanho_msg=${#mensagem}
     espacos=$(( (largura - tamanho_msg) / 2 ))
@@ -376,12 +358,24 @@ _confirmar() {
 # =============================================================================
 # FUNCOES DE PROGRESSO
 # =============================================================================
+# Formata tempo decorrido em segundos para exibicao
+# Parametros: $1=elapsed seconds
+# Retorna: string formatada (ex: "2m 30s" ou "45s")
+_formatar_tempo() {
+    local elapsed="$1"
+    local min=$(( elapsed / 60 ))
+    local seg=$(( elapsed % 60 ))
+    local tempo_str=""
+    (( min > 0 )) && tempo_str="${min}m "
+    tempo_str+="${seg}s"
+    printf '%s' "$tempo_str"
+}
+
 # Exibe barra de progresso visual enquanto processo esta em andamento
 # Parametros:
 #   $1 = PID do processo em background
 #   $2 = mensagem opcional (padrao: "Processando")
 # Retorna: codigo de saida do processo
-#---------- FUNCOES DE PROGRESSO ----------#
 _mostrar_progresso_backup() {
     local pid="${1:-}"
     local msg="${2:-Processando}"
@@ -404,70 +398,45 @@ _mostrar_progresso_backup() {
     printf "\033[?25l" 2>/dev/null || true
 
     # Forcar sync do output para evitar buffering
-    exec 3>&1  # Duplicar stdout para fd 3
+    exec 3>&1
 
     while kill -0 "$pid" 2>/dev/null; do
         elapsed=$((elapsed + 1))
 
         # Animacao: mostrar letras do texto base progressivamente e preencher com pontos
-        # A cada tick, avanca uma letra, quando completa recomeca
         anim_pos=$(( (elapsed - 1) % texto_len ))
         barra="${texto_base:0:anim_pos + 1}"
-        # Preencher o resto com pontos ate completar texto_len
         local dots_needed=$((texto_len - ${#barra}))
         printf -v barra_format "%s%${dots_needed}s" "$barra" ""
         barra="${barra_format// /.}"
 
-        # Formatar tempo decorrido
-        local min=$(( elapsed / 60 ))
-        local seg=$(( elapsed % 60 ))
-        local tempo_str=""
-        (( min > 0 )) && tempo_str="${min}m "
-        tempo_str+="${seg}s"
-
-        # === CORRECAO PRINCIPAL: garantir tamanho fixo para evitar concatenacao ===
-        # Usar campos com tamanho fixo para que \r sobrescreva corretamente
-        # msg: 25 chars, tempo: 8 chars
-        local msg_format
+        # Formatar campos com tamanho fixo para que \r sobrescreva corretamente
+        local msg_format tempo_format
         printf -v msg_format "%-25s" "$msg"
-        local tempo_format
-        printf -v tempo_format "%8s" "$tempo_str"
+        printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
 
         printf "\r\033[K%s[INFO]%s %s |%s| %s" \
             "${CYAN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${YELLOW}${tempo_format}"
-        # Forcar escrita imediata para o terminal (evitar buffering)
         printf "%s" "" >&3
 
         sleep 1 2>/dev/null || sleep 1
     done
 
-    # Barra completa ao finalizar
-    barra=" Concluido "
-    
     # Coletar status de saida
+    barra=" Concluido "
     wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
-
-    # Formatar tempo para saida final
-    local min=$(( elapsed / 60 ))
-    local seg=$(( elapsed % 60 ))
-    local tempo_str=""
-    (( min > 0 )) && tempo_str="${min}m "
-    tempo_str+="${seg}s"
 
     # Restaurar cursor
     printf "\033[?25h" 2>/dev/null || true
 
-    # Formatar msg e tempo com tamanhos fixos para consistencia
-    local msg_format
+    # Formatar e exibir resultado final
+    local msg_format tempo_format
     printf -v msg_format "%-25s" "$msg"
-    local tempo_format
-    printf -v tempo_format "%8s" "$tempo_str"
+    printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
 
-    # Limpar linha e mostrar resultado com mesmo formato do loop
     printf "\r\033[K%s[ok]%s %s |%s| %s concluido\n" \
         "${GREEN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${YELLOW}${tempo_format}"
 
-    # Fechar fd 3
     exec 3>&-
 
     return $status_proc
@@ -654,10 +623,10 @@ _check_instalado() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Programas nao encontrados%s\n" "${RED}" "${NORM}"
-        _aviso "Programas ausentes: %s%s\n" "${YELLOW}" "${missing[*]}" "${NORM}"
-        _aviso "Sugestao: %s %s%s\n" "${YELLOW}" "$install_cmd" "${missing[*]}" "${NORM}"
-        _aviso "Instale os programas ausentes e tente novamente.%s\n" "${YELLOW}" "${NORM}"
+        _erro "Programas nao encontrados"
+        _aviso "Programas ausentes: ${missing[*]}"
+        _aviso "Sugestao: ${install_cmd} ${missing[*]}"
+        _aviso "Instale os programas ausentes e tente novamente."
         return 1
     fi
 }
@@ -736,6 +705,12 @@ _enviabackup_para_receber() {
     # Verifica dependencias
     # -------------------------------------------------------------------------
     _checar_dependencias() {
+        SERVIDOR="${DEFAULT_IP_SERVER:-}"
+        PORTA="${DEFAULT_SSH_PORTA:-}"
+        USUARIO="${DEFAULT_SSH_USER:-}"
+        CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
+        CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
+
         # Validacao das variaveis obrigatorias
         if [[ -z "${SERVIDOR}" ]]; then
             _erro "Variavel DEFAULT_IP_SERVER nao foi definida."
@@ -744,7 +719,7 @@ _enviabackup_para_receber() {
         for cmd in ssh ssh-keygen ssh-copy-id; do
             if ! command -v "$cmd" >/dev/null 2>&1; then
                 _erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."
-                exit 1
+                return 1
             fi
         done
         _ok "Dependencias verificadas."
@@ -828,8 +803,4 @@ _enviabackup_para_receber() {
         fi
     }
 
-    # -------------------------------------------------------------------------
-    # Execucao principal
-    # -------------------------------------------------------------------------
-    _checar_dependencias
-    return 0
+

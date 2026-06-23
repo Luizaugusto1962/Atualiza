@@ -5,7 +5,7 @@
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-02
+# Versao: 23/06/2026-02
 # Autor: Luiz Augusto
 #
 # Uso:
@@ -39,9 +39,15 @@ CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 "." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
 
 # Cores para o menu
-        RED=$(tput bold)$(tput setaf 1)          # Vermelho
-        GREEN=$(tput bold)$(tput setaf 2)        # Verde
-        YELLOW=$(tput bold)$(tput setaf 3)       # Amarelo
+if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
+    RED=$(tput bold 2>/dev/null; tput setaf 1 2>/dev/null)
+    GREEN=$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null)
+    YELLOW=$(tput bold 2>/dev/null; tput setaf 3 2>/dev/null)
+else
+    RED="\033[0;31m"
+    GREEN="\033[0;32m"
+    YELLOW="\033[0;33m"
+fi
 
 # Funcao principal
 main() {

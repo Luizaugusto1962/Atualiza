@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 23/06/2026-01
 #
 
 # Variaveis globais esperadas
@@ -58,38 +58,38 @@ _mostrar_versao_linux() {
 
     # Checando se conecta com a internet ou nao
     if ping -c 1 -W 3 google.com &>/dev/null; then
-        printf "${GREEN}Internet: ${NORM}Conectada${NORM}%*s\n"
+        printf '%s' "${GREEN}Internet: ${NORM}Conectada${NORM}\n"
     else
-        printf "${GREEN}Internet: ${NORM}Desconectada${NORM}%*s\n"
+        printf '%s' "${GREEN}Internet: ${NORM}Desconectada${NORM}\n"
     fi
 
     # Checando tipo de OS
     local os
     os=$(uname -o)
-    printf "${GREEN}Sistema Operacional :${NORM}${os}${NORM}%*s\n"
+    printf '%s%s%s%s\n' "${GREEN}" "Sistema Operacional :" "${NORM}" "${os}${NORM}"
 
     # Checando OS Versao e nome
     if [[ -f /etc/os-release ]]; then
         grep 'NAME\|VERSION' /etc/os-release | grep -v 'VERSION_ID\|PRETTY_NAME' >"${LOG_TMP}osrelease"
-        printf "${GREEN}OS Nome :${NORM}%*s\n"
+        printf '%s' "${GREEN}OS Nome :${NORM}"
         grep -v "VERSION" "${LOG_TMP}osrelease" | cut -f2 -d\"
-        printf "${GREEN}OS Versao: ${NORM}%*s\n"
+        printf '%s' "${GREEN}OS Versao: ${NORM}"
         grep -v "NAME" "${LOG_TMP}osrelease" | cut -f2 -d\"
     else
-        printf "${RED}""Arquivo /etc/os-release nao encontrado.${NORM}%*s\n"
+        printf '%s\n' "${RED}Arquivo /etc/os-release nao encontrado.${NORM}"
     fi
     printf "\n"
 
     # Checando hostname
     local nameservers
     nameservers=$(hostname)
-    printf "${GREEN}Nome do Servidor: ${NORM}${nameservers}${NORM}%*s\n"
+    printf '%s\n' "${GREEN}Nome do Servidor: ${NORM}${nameservers}${NORM}"
     printf "\n"
 
     # Checando Interno IP
     local internalip
     internalip=$(ip route get 1 | awk '{print $7;exit}')
-    printf "${GREEN}IP Interno: ${NORM}${internalip}${NORM}%*s\n"
+    printf '%s\n' "${GREEN}IP Interno: ${NORM}${internalip}${NORM}\n"
     printf "\n"
 
     # Checando Externo IP
@@ -100,7 +100,7 @@ _mostrar_versao_linux() {
         else
             externalip="curl nao instalado"
         fi
-        printf "${GREEN}IP Externo: ${NORM}${externalip}${NORM}%*s\n"
+        printf '%s\n' "${GREEN}IP Externo: ${NORM}${externalip}${NORM}\n"
     fi
 
     _linha
@@ -109,32 +109,29 @@ _mostrar_versao_linux() {
     _linha
 
     # Checando os usuarios logados
-    _run_who() {
-        who >"${LOG_TMP}who"
-    }
-    _run_who
-    printf "${GREEN}Usuario Logado: ${NORM}%*s\n"
+    who >"${LOG_TMP}who"
+    printf '%s\n' "${GREEN}Usuario Logado: ${NORM}\n"
     cat "${LOG_TMP}who"
     printf "\n"
 
     # Checando uso de memoria RAM e SWAP
     free | grep -v + >"${LOG_TMP}ramcache"
-    printf "${GREEN}Uso de Memoria Ram: ${NORM}%*s\n"
+    printf '%s\n' "${GREEN}Uso de Memoria Ram: ${NORM}\n"
     grep -v "Swap" "${LOG_TMP}ramcache"
-    printf "${GREEN}Uso de Swap: ${NORM}%*s\n"
+    printf '%s\n' "${GREEN}Uso de Swap: ${NORM}\n"
     grep -v "Mem" "${LOG_TMP}ramcache"
     printf "\n"
 
     # Checando uso de disco
-    df -h | grep 'Filesystem\|/dev/sda*' >"${LOG_TMP}diskusage"
-    printf "${GREEN}Espaco em Disco: ${NORM}%*s\n"
+    df -h | grep -E 'Filesystem|^/dev/' >"${LOG_TMP}diskusage"
+    printf '%s\n' "${GREEN}Espaco em Disco: ${NORM}\n"
     cat "${LOG_TMP}diskusage"
     printf "\n"
 
     # Checando o Sistema Uptime
     local tecuptime
-    tecuptime=$(uptime -p | cut -d " " -f2-)
-    printf "${GREEN}Sistema em uso Dias/(HH:MM): ${NORM}""${tecuptime}${NORM}%*s\n"
+    tecuptime=$(uptime -p 2>/dev/null | cut -d " " -f2- || uptime | sed 's/.*up //' | sed 's/,.*//')
+    printf '%s\n' "${GREEN}Sistema em uso Dias/(HH:MM): ${NORM}${tecuptime}${NORM}\n"
 
     # Unset Variables
     # as vars sao locais, entao unset nao e estritamente necessario, mas mantem a intencao de limpeza

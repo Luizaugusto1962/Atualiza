@@ -5,7 +5,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026
+# Versao: 23/06/2026
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -41,7 +41,7 @@ _atualizando() {
     }
 
     shopt -s nullglob
-    local arquivos_sh=("${DEFAULT_LIBS_DIR}"/*.sh)
+    local arquivos_sh=("${LIBS_DIR}"/*.sh)
     shopt -u nullglob
 
     for arquivo in "${arquivos_sh[@]}"; do
@@ -132,7 +132,7 @@ _atualizando() {
     for arquivo in *.sh; do
         [[ -f "$arquivo" ]] || continue
         chmod +x "$arquivo" 2>/dev/null || true
-        local sh_destino="${DEFAULT_LIBS_DIR}"
+        local sh_destino="${LIBS_DIR}"
         [[ "$arquivo" == "atualiza.sh" ]] && sh_destino="${SCRIPT_DIR}"
         if mv -f "$arquivo" "${sh_destino}/"; then
             _mensagec "${GREEN}" "Instalado $arquivo em $sh_destino"
@@ -174,8 +174,8 @@ _atualizando() {
     fi
 
     # 4. Limpeza residual segura (apenas arquivos nomeados como 'atualiza*' no diretorio receber)
-  # Excluir TODOS os arquivos e subdiretórios (inclusive ocultos) sem remover a pasta principal
-    if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; then
+  # Excluir arquivos de atualizacao (atualiza.zip, extracao temporaria) sem remover a pasta principal
+    if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -name "atualiza*" -exec rm -rf {} + 2>/dev/null; then
         _mensagec "${GREEN}" "Diretorio limpo com sucesso."
     else
         _mensagec "${YELLOW}" "AVISO: Alguns arquivos podem nao ter sido removidos."
@@ -189,7 +189,7 @@ _atualizando() {
     if command -v _finalizar_sistema >/dev/null 2>&1; then
         _finalizar_sistema
     fi
-    exit 1
+    exit 0
 }
 
 _atualizar_online() {

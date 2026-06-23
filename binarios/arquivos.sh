@@ -4,7 +4,7 @@
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-01
+# Versao: 23/06/2026-01
 #
 
 # Variaveis globais esperadas
@@ -165,7 +165,7 @@ _limpar_base_especifica() {
         fi
     done
     _linha
-    _mensagex "${GREEN}" "Limpeza concluida"
+    _mensagec "${GREEN}" "Limpeza concluida"
     _linha 
 
     return 0
@@ -309,7 +309,7 @@ _recuperar_arquivo_especifico() {
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
     local base_trabalho="$1"
-    local -a extensoes=("${DATA_EXTENSIONS[@]}")
+    local -a extensoes=("${DATA_EXTENSIONS[@]:-*.dat}")
     _mensagec "${RED}" "Recuperando todos os arquivos principais..."
     _linha "-" "${YELLOW}"
     
@@ -662,7 +662,7 @@ _executar_expurgador() {
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local arquivos_removidos
-            arquivos_removidos=$(find "$diretorio" -mtime +30 -type f -delete -print 2>/dev/null | wc -l)
+            arquivos_removidos=$(find "$diretorio" -mtime +30 -type f -print -delete 2>/dev/null | wc -l)
             _mensagec "${GREEN}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
         else
             _mensagec "${YELLOW}" "Diretorio nao encontrado: ${diretorio}"
@@ -678,7 +678,7 @@ _executar_expurgador() {
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local zips_removidos
-            zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -delete -print 2>/dev/null | wc -l)
+            zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
             _mensagec "${GREEN}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
             _mensagec "${YELLOW}" "Diretorio nao encontrado: ${diretorio}"
