@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 24/06/2026-01
 
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 
@@ -719,7 +719,7 @@ _enviabackup_para_receber() {
     _preparar_diretorio_ssh() {
         if [ ! -d "$HOME/.ssh" ]; then
             mkdir -p "$HOME/.ssh"
-            chmod 700 "$HOME/.ssh"
+            chmod "${PERM_DIR_SECURE}" "$HOME/.ssh"
             _ok "Diretorio ~/.ssh criado."
         fi
     }
