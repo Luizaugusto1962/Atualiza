@@ -23,26 +23,6 @@ LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 CONFIG_FILE="${CONFIG_FILE:-${CFG_DIR}/.config}"
 
-# Cores do terminal - reaproveitar se ja definidas por utils.sh/constantes.sh
-if [[ -z "${BOLD:-}" ]]; then
-    if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        BOLD="$(tput bold)"
-        GREEN="${BOLD}$(tput setaf 2)"
-        YELLOW="${BOLD}$(tput setaf 3)"
-        RED="${BOLD}$(tput setaf 1)"
-        NORM="$(tput sgr0)"
-    else
-        BOLD=""
-        GREEN=""
-        YELLOW=""
-        RED=""
-        NORM=""
-    fi
-fi
-
-# Colunas do terminal
-COLUMNS="${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}"
-
 # =============================================================================
 # DEFINICAO DE CONSTANTES POR CATEGORIA
 # Estrutura usada pela listagem tabular do modulo.
@@ -104,7 +84,7 @@ _var_verificar_dependencias() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Dependencias faltando: %s%s%s\n" "$RED" "${missing[*]}" "$NORM" >&2
+        _erro "Dependencias faltando: %s%s%s\n" "${RED}" "${missing[*]}" "${NORM}" >&2
         return 1
     fi
 
@@ -141,16 +121,16 @@ _var_exibir_tabular() {
     printf "\n"
 
     # Exibir informacoes sobre o arquivo de configuracao
-    printf "%s%s Fonte de Configuracao:%s\n" "$GREEN" "$BOLD" "$NORM"
+    printf "%s%s Fonte de Configuracao:%s\n" "${GREEN}" "${BOLD}" "${NORM}"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
-        printf "   %s Status: Carregado com sucesso %s" "$GREEN" "$CONFIG_FILE"
+        printf "   %s Status: Carregado com sucesso %s" "${GREEN}" "$CONFIG_FILE"
     else
-        printf "   %s Status: Nao encontrado (usando valores padrao) %s" "$YELLOW" "$CONFIG_FILE"
+        printf "   %s Status: Nao encontrado (usando valores padrao) %s" "${YELLOW}" "$CONFIG_FILE"
     fi
     printf "\n"
 
     # Cabecalho da tabela
-    printf "%s%-35s%s %s\n" "$GREEN" "VARIAVEL" "$NORM" "VALOR"
+    printf "%s%-35s%s %s\n" "${GREEN}" "VARIAVEL" "${NORM}" "VALOR"
     printf "%-35s %s\n" "$(printf '%.0s-' {1..35})" "$(printf '%.0s-' {1..60})"
 
     # Iterar sobre as categorias
@@ -164,7 +144,7 @@ _var_exibir_tabular() {
             fi
         fi
 
-        printf "\n%s%s[%s]%s\n" "$YELLOW" "$BOLD" "$categoria" "$NORM"
+        printf "\n%s%s[%s]%s\n" "${YELLOW}" "${BOLD}" "$categoria" "${NORM}"
 
         for variavel in ${_VAR_CATEGORIAS[$categoria]}; do
             valor=$(_var_obter_valor "$variavel")
