@@ -319,21 +319,100 @@ _configurar_variaveis_sistema() {
 
 # Validar acesso SSH
 _validar_ssh() {
-    if [[ "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_ACESSO_SSH}" == "s" ]]; then
-            _mensagec "${GREEN}" "OK: Acesso SSH habilitado"
-            if ssh -o BatchMode=yes sav_servidor exit 2>/dev/null; then
-                _mensagec "${GREEN}" "Conexao SSH estabelecida com sucesso!"
-            else
-                _mensagec "${RED}" "Conexao SSH estabelecida sem sucesso!"
-            fi
-            _linha "=" "${GREEN}"
-        else
-            _mensagec "${YELLOW}" "Alerta: Acesso SSH desabilitado"
-        fi
-    else
+    if [[ ! "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
         _mensagec "${YELLOW}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
+        return 1
     fi
+
+    if [[ "${CFG_ACESSO_SSH}" == "n" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Acesso SSH desabilitado"
+        return 0
+    fi
+
+    _mensagec "${GREEN}" "OK: Acesso SSH habilitado"
+
+    local ssh_host="${DEFAULT_IP_SERVER}"
+    local ssh_user="${DEFAULT_SSH_USER}"
+    local ssh_port="${DEFAULT_SSH_PORTA:-22}"
+    local ssh_key="${DEFAULT_CHAVE_SSH:-}"
+    local ssh_timeout="${SSH_TIMEOUT:-10}"
+
+    if [[ -z "${ssh_host}" ]]; then
+        _mensagec "${RED}" "ERRO: Variavel DEFAULT_IP_SERVER nao definida"
+        return 1
+    fi
+
+    if [[ -z "${ssh_user}" ]]; then
+        _mensagec "${YELLOW}" "Alerta: Variavel DEFAULT_SSH_USER nao definida, usando 'root'"
+        ssh_user="root"
+    fi
+
+    local ssh_opts=("-o" "ConnectTimeout=${ssh_timeout}" "-o" "StrictHostKeyChecking=accept-new")
+
+    if [[ -n "${ssh_port}" ]]; then
+        ssh_opts+=("-p" "${ssh_port}")
+    fi
+
+    if [[ -n "${ssh_key}" ]]; then
+        if [[ -f "${ssh_key}" ]]; then
+            ssh_opts+=("-i" "${ssh_key}")
+        else
+            _mensagec "${YELLOW}" "Alerta: Chave SSH nao encontrada: ${ssh_key}"
+        fi
+    fi
+
+    local ssh_output ssh_exit=0
+    ssh_output=$(ssh "${ssh_opts[@]}" "${ssh_user}@${ssh_host}" exit 2>&1) || ssh_exit=$?
+
+    if (( ssh_exit == 0 )); then
+        _mensagec "${GREEN}" "Conexao SSH estabelecida com sucesso para ${ssh_user}@${ssh_host}"
+    else
+        _mensagec "${RED}" "Falha na conexao SSH para ${ssh_user}@${ssh_host}"
+        _linha "-" "${YELLOW}"
+        _mensagec "${YELLOW}" "Comando: ssh ${ssh_opts[*]} ${ssh_user}@${ssh_host} exit"
+        _linha "-" "${YELLOW}"
+
+        if [[ "${ssh_output}" == *"Permission denied"* ]]; then
+            _mensagec "${RED}" "Motivo: Permissao negada (publickey,password)"
+            _mensagec "${YELLOW}" "Possiveis causas:"
+            if [[ -n "${ssh_key}" ]]; then
+                if [[ -f "${ssh_key}" ]]; then
+                    local key_perm
+                    key_perm=$(stat -c "%a" "${ssh_key}" 2>/dev/null || stat -f "%Lp" "${ssh_key}" 2>/dev/null || echo "?")
+                    _mensagec "${NORM}" "  - Chave usada: ${ssh_key} (perm: ${key_perm})"
+                    _mensagec "${NORM}" "  - A chave privada deve ter permissao 600"
+                    _mensagec "${NORM}" "  - Chave publica pode nao estar em /home/${ssh_user}/.ssh/authorized_keys"
+                else
+                    _mensagec "${NORM}" "  - Chave configurada nao existe: ${ssh_key}"
+                fi
+            else
+                _mensagec "${NORM}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
+                _mensagec "${NORM}" "  - O SSH procura padrao em: ~/.ssh/id_{rsa,ed25519,ecdsa}"
+                _mensagec "${NORM}" "  - Se a chave esta em /root/.ssh/, configure:"
+                _mensagec "${NORM}" "    CFG_CHAVE_SSH=/root/.ssh/id_rsa_atualiza"
+                _mensagec "${NORM}" "    Ou copie a chave para ~/.ssh/ do usuario atual"
+                _mensagec "${NORM}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
+            fi
+            _mensagec "${NORM}" "  - A chave publica pode nao estar cadastrada no servidor"
+            _mensagec "${NORM}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${ssh_user}@${ssh_host}"
+            _mensagec "${NORM}" "  - Usuario '${ssh_user}' pode estar incorreto"
+        elif [[ "${ssh_output}" == *"Connection refused"* ]]; then
+            _mensagec "${RED}" "Motivo: Conexao recusada na porta ${ssh_port}"
+            _mensagec "${YELLOW}" "Verifique se o servidor SSH esta rodando e a porta correta"
+        elif [[ "${ssh_output}" == *"Connection timed out"* ]]; then
+            _mensagec "${RED}" "Motivo: Conexao excedeu timeout de ${ssh_timeout}s"
+            _mensagec "${YELLOW}" "Verifique se o IP '${ssh_host}' esta correto e acessivel"
+        elif [[ "${ssh_output}" == *"Host key verification failed"* ]]; then
+            _mensagec "${RED}" "Motivo: Falha na verificacao da chave do host"
+            _mensagec "${YELLOW}" "Execute: ssh-keygen -R '${ssh_host}'"
+        else
+            _mensagec "${RED}" "Erro desconhecido:"
+            printf "%s\n" "${ssh_output}" >&2
+        fi
+        _linha "-" "${YELLOW}"
+        _mensagec "${YELLOW}" "Dica: execute 'ssh ${ssh_user}@${ssh_host}' manualmente para diagnosticar"
+    fi
+    _linha "=" "${GREEN}"
 }
 
 # Validar conteudo do arquivo de configuracao (seguranca)
@@ -351,10 +430,11 @@ _validar_config_file() {
         return 1
     fi
 
+    # Arquivo deve ser de tamanho seguro (<= 1MB)
     local tamanho
     tamanho=$(wc -c < "$CONFIG_FILE" 2>/dev/null || echo 0)
     if (( tamanho > 1048576 )); then
-        _erro "Arquivo de configuracao muito grande: %d bytes\n" "$tamanho" >&2
+        _erro "Arquivo de configuracao muito grande: %d bytes (maximo 1MB)\n" "$tamanho" >&2
         return 1
     fi
 
