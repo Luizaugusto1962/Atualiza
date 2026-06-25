@@ -682,6 +682,15 @@ _enviabackup_para_receber() {
 }
 
 
+# ---------- COMPATIBILIDADE SSH ----------
+# Retorna opcao compativel para StrictHostKeyChecking.
+# Usamos 'yes' porque servers antigos (RHEL 6, CentOS 6) nao suportam 'accept-new'.
+# yes funciona em qualquer versao do SSH desde o OpenSSH 3.8.
+# NUNCA escreva StrictHostKeyChecking=aceitar diretamente — chame esta funcao.
+_ssh_accept_new() {
+    printf 'yes'
+}
+
 #---------- FUNCOES DE CHAVES SSH ----------#
 #===================================================================
 # _configure_ssh_com_chaves - Gerencia criacao e envio de chaves SSH
@@ -778,7 +787,7 @@ _enviabackup_para_receber() {
         _msg "Testando conexao sem senha..."
         if ssh -o BatchMode=yes \
             -o ConnectTimeout=10 \
-            -o StrictHostKeyChecking=accept-new \
+            -o "StrictHostKeyChecking=$(_ssh_accept_new)" \
             -i "$CHAVE" \
             -p "$PORTA" \
             "${USUARIO}@${SERVIDOR}" \

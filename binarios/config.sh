@@ -347,7 +347,7 @@ _validar_ssh() {
         ssh_user="root"
     fi
 
-    local ssh_opts=("-o" "ConnectTimeout=${ssh_timeout}" "-o" "StrictHostKeyChecking=accept-new")
+    local ssh_opts=("-o" "ConnectTimeout=${ssh_timeout}" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)")
 
     if [[ -n "${ssh_port}" ]]; then
         ssh_opts+=("-p" "${ssh_port}")
