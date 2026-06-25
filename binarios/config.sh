@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 25/06/2026-01
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -147,15 +147,24 @@ _inicializar_variaveis_sistema() {
 
     # CAMINHOS
     _define_category_vars "CAMINHOS" \
-        "BASE1=${BASE1:-}" \
-        "BASE2=${BASE2:-}" \
-        "BASE3=${BASE3:-}" \
         "SCRIPT_DIR=${SCRIPT_DIR:-}" \
         "RAIZ=${RAIZ:-}" \
+        "CFG_DIR=${CFG_DIR:-}" \
+        "LIBS_DIR=${LIBS_DIR:-}" \
         "CFG_BASE_DIR=${CFG_BASE_DIR:-}" \
         "CFG_BASE_DIR2=${CFG_BASE_DIR2:-}" \
         "CFG_BASE_DIR3=${CFG_BASE_DIR3:-}" \
-        "INI=${INI:-}" \
+        "DEFAULT_CONFIG_DIR=${DEFAULT_CONFIG_DIR:-}" \
+        "DEFAULT_LIBS_DIR=${DEFAULT_LIBS_DIR:-}" \
+        "DEFAULT_LOGS_DIR=${DEFAULT_LOGS_DIR:-}" \
+        "DEFAULT_BACKUP_DIR=${DEFAULT_BACKUP_DIR:-}" \
+        "DEFAULT_BASEBACKUP_DIR=${DEFAULT_BASEBACKUP_DIR:-}" \
+        "DEFAULT_BIBLIOTECA_ATUAL_DIR=${DEFAULT_BIBLIOTECA_ATUAL_DIR:-}" \
+        "DEFAULT_BIBLIOTECA_DIR=${DEFAULT_BIBLIOTECA_DIR:-}" \
+        "DEFAULT_PROGS_DIR=${DEFAULT_PROGS_DIR:-}" \
+        "DEFAULT_OLDS_DIR=${DEFAULT_OLDS_DIR:-}" \
+        "DEFAULT_ENVIA_DIR=${DEFAULT_ENVIA_DIR:-}" \
+        "DEFAULT_RECEBE_DIR=${DEFAULT_RECEBE_DIR:-}" \
         "UMADATA=${UMADATA:-}" \
         "E_EXEC=${E_EXEC:-}" \
         "T_TELAS=${T_TELAS:-}" \
@@ -172,30 +181,38 @@ _inicializar_variaveis_sistema() {
     # COMANDOS
     _define_category_vars "COMANDOS" \
         "DEFAULT_ZIP=${DEFAULT_ZIP:-}" \
+        "DEFAULT_TAR=${DEFAULT_TAR:-}" \
         "DEFAULT_FIND=${DEFAULT_FIND:-}" \
-        "DEFAULT_WHO=${DEFAULT_WHO:-}" \
         "DEFAULT_UNZIP=${DEFAULT_UNZIP:-}" \
         "REBUILD=${REBUILD:-}" \
         "JUTIL=${JUTIL:-}" \
-        "ISCCLIENT=${ISCCLIENT:-}" \
-        "ISCCLIENTT=${ISCCLIENTT:-}"
+        "ISCCLIENT=${ISCCLIENT:-}"
 
     # CONFIGURACOES
     _define_category_vars "CONFIGURACOES" \
         "DEFAULT_SSH_PORTA=${DEFAULT_SSH_PORTA:-}" \
         "DEFAULT_SSH_USER=${DEFAULT_SSH_USER:-}" \
+        "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER:-}" \
+        "DEFAULT_CHAVE_SSH=${DEFAULT_CHAVE_SSH:-}" \
+        "DEFAULT_CHAVE_SSH_PUB=${DEFAULT_CHAVE_SSH_PUB:-}" \
+        "SSH_TIMEOUT=${SSH_TIMEOUT:-}" \
+        "DEFAULT_READ_TIMEOUT=${DEFAULT_READ_TIMEOUT:-}" \
+        "DEFAULT_PRESS_TIMEOUT=${DEFAULT_PRESS_TIMEOUT:-}" \
+        "CFG_CHAVE_SSH=${CFG_CHAVE_SSH:-}" \
+        "DESTINO_SERVER=${DESTINO_SERVER:-}" \
+        "DESTINO_BIBLIOTECA=${DESTINO_BIBLIOTECA:-}" \
         "VERSAO=${VERSAO:-}" \
         "SAVISC=${SAVISC:-}" \
-        "DEFAULT_VERSAO=${DEFAULT_VERSAO:-}" \
-        "DEFAULT_ARQUIVO=${DEFAULT_ARQUIVO:-}" \
-        "DEFAULT_PEDARQ=${DEFAULT_PEDARQ:-}" \
-        "DEFAULT_PROG=${DEFAULT_PROG:-}" \
-        "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER:-}" \
         "base_trabalho=${base_trabalho:-}"
+
+    # SEGURANCA
+    _define_category_vars "SEGURANCA" \
+        "PERM_DIR_SECURE=${PERM_DIR_SECURE:-}" \
+        "PERM_FILE_PRIVATE=${PERM_FILE_PRIVATE:-}" \
+        "PERM_FILE_EXEC=${PERM_FILE_EXEC:-}"
 
     # LOGS
     _define_category_vars "LOGS" \
-        "LOG=${LOG:-}" \
         "LOG_ATU=${LOG_ATU:-}" \
         "LOG_LIMPA=${LOG_LIMPA:-}" \
         "LOG_TMP=${LOG_TMP:-}"
@@ -215,8 +232,6 @@ if [[ -n "${CFG_DIR}" ]]; then
         _aviso "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'." >&2
     }
 fi
-
-DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"
 
 # =============================================================================
 # FUNCOES DE CONFIGURACAO
@@ -298,10 +313,7 @@ _configurar_variaveis_sistema() {
         SAVATU="tempSAV????"
     fi
 
-    BASE1="${BASE1:-${RAIZ}${CFG_BASE_DIR}}"
-    BASE2="${BASE2:-${RAIZ}${CFG_BASE_DIR2}}"
-    BASE3="${BASE3:-${RAIZ}${CFG_BASE_DIR3}}"
-    export E_EXEC T_TELAS BASE1 BASE2 BASE3 CFG_OFFLINE
+    export E_EXEC T_TELAS CFG_OFFLINE
     export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU
 }
 
@@ -501,10 +513,10 @@ _validar_configuracao() {
     done
 
     # Diretorios essenciais
-    local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS" "BASE1")
+    local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS")
     local dir dir_path
     for dir in "${dirs[@]}"; do
-        if [[ "$dir" == "E_EXEC" ]] || [[ "$dir" == "T_TELAS" ]] || [[ "$dir" == "BASE1" ]]; then
+        if [[ "$dir" == "E_EXEC" ]] || [[ "$dir" == "T_TELAS" ]]; then
             dir_path="${!dir:-}"
         else
             dir_path="${SCRIPT_DIR}${!dir:-}"
@@ -581,13 +593,23 @@ _limpar_estado_variaveis() {
 _limpeza_emergencia() {
     local emergency_vars="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
     emergency_vars+=" CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE"
-    emergency_vars+=" CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT BASE1 BASE2 BASE3 SCRIPT_DIR"
-    emergency_vars+=" RAIZ CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 INI UMADATA E_EXEC"
-    emergency_vars+=" T_TELAS X_XML SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4 DEFAULT_ZIP"
-    emergency_vars+=" DEFAULT_FIND DEFAULT_WHO DEFAULT_UNZIP REBUILD JUTIL ISCCLIENT"
-    emergency_vars+=" ISCCLIENTT DEFAULT_SSH_PORTA DEFAULT_SSH_USER VERSAO SAVISC"
-    emergency_vars+=" DEFAULT_VERSAO DEFAULT_ARQUIVO DEFAULT_PEDARQ DEFAULT_PROG"
-    emergency_vars+=" DEFAULT_IP_SERVER UPDATE base_trabalho LOG LOG_ATU LOG_LIMPA LOG_TMP"
+    emergency_vars+=" CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT SCRIPT_DIR"
+    emergency_vars+=" RAIZ CFG_DIR LIBS_DIR CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3"
+    emergency_vars+=" DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_LOGS_DIR"
+    emergency_vars+=" DEFAULT_BACKUP_DIR DEFAULT_BASEBACKUP_DIR"
+    emergency_vars+=" DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BIBLIOTECA_DIR"
+    emergency_vars+=" DEFAULT_PROGS_DIR DEFAULT_OLDS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR"
+    emergency_vars+=" UMADATA E_EXEC T_TELAS X_XML"
+    emergency_vars+=" SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
+    emergency_vars+=" DEFAULT_ZIP DEFAULT_TAR DEFAULT_FIND DEFAULT_UNZIP"
+    emergency_vars+=" REBUILD JUTIL ISCCLIENT"
+    emergency_vars+=" DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER"
+    emergency_vars+=" DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT"
+    emergency_vars+=" DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT"
+    emergency_vars+=" CFG_CHAVE_SSH DESTINO_SERVER DESTINO_BIBLIOTECA"
+    emergency_vars+=" VERSAO SAVISC base_trabalho"
+    emergency_vars+=" PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC"
+    emergency_vars+=" UPDATE LOG_ATU LOG_LIMPA LOG_TMP"
 
     local var
     for var in $emergency_vars; do

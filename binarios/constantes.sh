@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 25/06/2026-01
 #
 
 # =============================================================================
@@ -270,6 +270,7 @@ export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR
 export DEFAULT_BIBLIOTECA_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BASEBACKUP_DIR
 export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
+export DEFAULT_TAR
 export SAVISC ISCCLIENT JUTIL REBUILD
 export ACESSO_OFF
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA INI compilado debugado

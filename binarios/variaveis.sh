@@ -2,7 +2,7 @@
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 25/06/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -22,7 +22,7 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 CONFIG_FILE="${CONFIG_FILE:-${CFG_DIR}/.config}"
-
+BOLD="$(tput bold)"
 # =============================================================================
 # DEFINICAO DE CONSTANTES POR CATEGORIA
 # Estrutura usada pela listagem tabular do modulo.
@@ -121,7 +121,7 @@ _var_exibir_tabular() {
     printf "\n"
 
     # Exibir informacoes sobre o arquivo de configuracao
-    printf "%s%s Fonte de Configuracao:%s\n" "${GREEN}" "${BOLD}" "${NORM}"
+    printf "%s%s Fonte de Configuracao:%s\n" "$GREEN" "$BOLD" "$NORM"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
         printf "   %s Status: Carregado com sucesso %s" "${GREEN}" "$CONFIG_FILE"
     else
@@ -144,7 +144,7 @@ _var_exibir_tabular() {
             fi
         fi
 
-        printf "\n%s%s[%s]%s\n" "${YELLOW}" "${BOLD}" "$categoria" "${NORM}"
+        printf "\n%s%s[%s]%s\n" "$YELLOW" "$BOLD" "$categoria" "$NORM"
 
         for variavel in ${_VAR_CATEGORIAS[$categoria]}; do
             valor=$(_var_obter_valor "$variavel")
