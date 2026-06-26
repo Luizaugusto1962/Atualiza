@@ -10,7 +10,9 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/06/2026-02
+# Versao: 26/06/2026-02
+
+set -euo pipefail
 
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
@@ -22,7 +24,7 @@ verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 20
 # =============================================================================
 
 # Carregar constantes se disponivel
-_contantes() {
+_carregar_constantes_setup() {
 if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
     "." "${LIBS_DIR}/constantes.sh"
 fi
@@ -32,16 +34,11 @@ fi
 declare -l sistema base base2 base3 dbmaker enviabackup
 declare -u empresa
 
-# Limpar tela
-_limpa_tela() {
-    clear
-}
-
 # Diretorio do servidor offline
 # Configuracao inicial do sistema
 _initial_setup() {
     _limpa_tela
-    _contantes
+    _carregar_constantes_setup
     
     local tracejada="#-------------------------------------------------------------------#"
     local traco="#####################################################################"
@@ -85,13 +82,12 @@ _initial_setup() {
 
     # Criar atalho global (requer permissao de root)
     if [[ $EUID -eq 0 ]]; then
-        echo "cd ${SCRIPT_DIR:-SCRIPT_DIR}" > /usr/local/bin/atualiza
-        echo "./atualiza.sh" >> /usr/local/bin/atualiza
-        chmod +x /usr/local/bin/atualiza
-        echo "Atalho /usr/local/bin/atualiza criado com sucesso."
+        printf 'cd %s\n./atualiza.sh\n' "${SCRIPT_DIR}" > /usr/local/bin/atualiza
+        chmod "${PERM_FILE_EXEC:-0755}" /usr/local/bin/atualiza
+        printf "%s\n" "Atalho /usr/local/bin/atualiza criado com sucesso."
     else
-        echo "AVISO: Sem permissao de root. Atalho global nao criado."
-        echo "Execute 'sudo ${SCRIPT_DIR}/atualiza.sh --setup' para criar o atalho."
+        printf "%s\n" "AVISO: Sem permissao de root. Atalho global nao criado."
+        printf "Execute 'sudo %s/atualiza.sh --setup' para criar o atalho.\n" "${SCRIPT_DIR}"
     fi
 
     echo "Pronto!"
@@ -100,7 +96,7 @@ _initial_setup() {
 # Edicao de configuracoes existentes
 _edit_setup() {
     local tracejada="#-------------------------------------------------------------------#"
-    _contantes
+    _carregar_constantes_setup
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
         echo "Erro: Diretorio 'configuracoes' nao encontrado."
@@ -118,7 +114,11 @@ _edit_setup() {
     echo "=================================================="
 
     # Carregar configuracoes existentes
-    "." ./.config
+    if command -v _carregar_config_seguro >/dev/null 2>&1; then
+        _carregar_config_seguro ./.config
+    else
+        "." ./.config
+    fi
 
     # Fazer backup
     cp .config .config.bkp
@@ -426,15 +426,15 @@ _recreate_config_files() {
 # _configure_ssh_access - Cria novo arquivo SSH config
 #===================================================================
 _configure_ssh_access() {
-    local DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-${DEFAULT_IP_SERVER}}"
-    local DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-${DEFAULT_SSH_PORTA}}"
-    local DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-${DEFAULT_SSH_USER}}"
+    local ip_server="${DEFAULT_IP_SERVER}"
+    local porta_ssh="${DEFAULT_SSH_PORTA}"
+    local user_ssh="${DEFAULT_SSH_USER}"
     local SSH_DIR="${HOME}/.ssh"
     local SSH_CONFIG_FILE="${SSH_DIR}/config"
     local CONTROL_PATH_BASE="${SSH_DIR}/control"
 
     # Validacao das variaveis obrigatorias
-    if [[ -z "${DEFAULT_IP_SERVER}" ]]; then
+    if [[ -z "${ip_server}" ]]; then
         echo "Erro: Variavel DEFAULT_IP_SERVER nao foi definida."
         return 1
     fi
@@ -453,9 +453,9 @@ _configure_ssh_access() {
 # ================================================
 
 Host sav_servidor
-    HostName ${DEFAULT_IP_SERVER}
-    Port ${DEFAULT_SSH_PORTA}
-    User ${DEFAULT_SSH_USER}
+    HostName ${ip_server}
+    Port ${porta_ssh}
+    User ${user_ssh}
     ControlMaster auto
     ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
     ControlPersist 10m
@@ -469,7 +469,7 @@ EOF
 
     # ====================== TESTE DE CONEXAO ======================
     echo
-    echo "Testando conexao com o servidor SAV (${DEFAULT_IP_SERVER})..."
+    echo "Testando conexao com o servidor SAV (${ip_server})..."
 
     if ssh -o BatchMode=yes sav_servidor exit 2>/dev/null; then
         echo "Conexao SSH estabelecida com sucesso!"
@@ -487,8 +487,8 @@ EOF
     else
         echo "Erro: nao foi possivel conectar ao servidor."
         echo "   Verifique:"
-        echo "     - Porta ${DEFAULT_SSH_PORTA} liberada"
-        echo "     - Usuario '${DEFAULT_SSH_USER}' existe no servidor remoto"
+        echo "     - Porta ${porta_ssh} liberada"
+        echo "     - Usuario '${user_ssh}' existe no servidor remoto"
         echo "     - Firewall permite a conexao"
         return 1
     fi

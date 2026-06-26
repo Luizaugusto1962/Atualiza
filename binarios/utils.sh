@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/06/2026-01
+# Versao: 26/06/2026-01
 
 RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
 
@@ -152,8 +152,8 @@ _exibir_mensagem_corrida() {
     fi
 # Imprimir espaços iniciais para centralizar
     printf "%${posicao_inicio}s" ""
-	
-	# Loop para imprimir cada letra com efeito de digitação
+
+    # Loop para imprimir cada letra com efeito de digitação
     for ((i=0; i<${#mensagem}; i++)); do
         printf "%s%s%s" "${cor}" "${mensagem:$i:1}" "${NORM}"
         sleep 0.05

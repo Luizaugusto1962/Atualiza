@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 26/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -463,7 +463,11 @@ _menu_setups() {
             2)
                 _manutencao_setup || true
                 if [[ -f "${CFG_DIR}/.config" ]]; then
-                    "." "${CFG_DIR}/.config" || true
+                    if command -v _carregar_config_seguro >/dev/null 2>&1; then
+                        _carregar_config_seguro "${CFG_DIR}/.config" || true
+                    else
+                        "." "${CFG_DIR}/.config" || true
+                    fi
                     _mensagec "${GREEN}" "Configuracoes recarregadas com sucesso!"
                     _aguardar 2
                 fi

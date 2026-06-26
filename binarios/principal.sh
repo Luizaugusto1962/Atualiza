@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 23/06/2026-01
+# Versao: 26/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -116,7 +116,7 @@ for dir in "${AUX_DIRS[@]}"; do
 
     # APLICAR PERMISSOES DE FORMA SEGURA: usar constante ao inves de hardcoded
     # Recursivo apenas quando necessario, e com permissao segura
-    chmod 0755 "${dir}" 2>/dev/null || {
+    chmod "${PERM_DIR_SECURE}" "${dir}" 2>/dev/null || {
         _aviso "Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
         printf "Execute como root ou sudo ...\n" >&2
@@ -193,7 +193,7 @@ _carregar_modulos() {
 
     local modulo=""
     local erros=0
-	local modulos_com_erro=()
+    local modulos_com_erro=()
 
     for modulo in "${modulos[@]}"; do
         if ! _caminho_modulo "$modulo"; then

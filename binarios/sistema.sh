@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 26/06/2026-01
 #
 
 # Variaveis globais esperadas
@@ -58,9 +58,9 @@ _mostrar_versao_linux() {
 
     # Checando se conecta com a internet ou nao
     if ping -c 1 -W 3 google.com &>/dev/null; then
-        printf '%s' "${GREEN}Internet: ${NORM}Conectada${NORM}\n"
+        printf '%s\n' "${GREEN}Internet: ${NORM}Conectada${NORM}"
     else
-        printf '%s' "${GREEN}Internet: ${NORM}Desconectada${NORM}\n"
+        printf '%s\n' "${GREEN}Internet: ${NORM}Desconectada${NORM}"
     fi
 
     # Checando tipo de OS
@@ -89,7 +89,7 @@ _mostrar_versao_linux() {
     # Checando Interno IP
     local internalip
     internalip=$(ip route get 1 | awk '{print $7;exit}')
-    printf '%s\n' "${GREEN}IP Interno: ${NORM}${internalip}${NORM}\n"
+    printf '%s\n' "${GREEN}IP Interno: ${NORM}${internalip}${NORM}"
     printf "\n"
 
     # Checando Externo IP
@@ -100,7 +100,7 @@ _mostrar_versao_linux() {
         else
             externalip="curl nao instalado"
         fi
-        printf '%s\n' "${GREEN}IP Externo: ${NORM}${externalip}${NORM}\n"
+        printf '%s\n' "${GREEN}IP Externo: ${NORM}${externalip}${NORM}"
     fi
 
     _linha
@@ -110,28 +110,28 @@ _mostrar_versao_linux() {
 
     # Checando os usuarios logados
     who >"${LOG_TMP}who"
-    printf '%s\n' "${GREEN}Usuario Logado: ${NORM}\n"
+    printf '%s\n' "${GREEN}Usuario Logado: ${NORM}"
     cat "${LOG_TMP}who"
     printf "\n"
 
     # Checando uso de memoria RAM e SWAP
     free | grep -v + >"${LOG_TMP}ramcache"
-    printf '%s\n' "${GREEN}Uso de Memoria Ram: ${NORM}\n"
+    printf '%s\n' "${GREEN}Uso de Memoria Ram: ${NORM}"
     grep -v "Swap" "${LOG_TMP}ramcache"
-    printf '%s\n' "${GREEN}Uso de Swap: ${NORM}\n"
+    printf '%s\n' "${GREEN}Uso de Swap: ${NORM}"
     grep -v "Mem" "${LOG_TMP}ramcache"
     printf "\n"
 
     # Checando uso de disco
     df -h | grep -E 'Filesystem|^/dev/' >"${LOG_TMP}diskusage"
-    printf '%s\n' "${GREEN}Espaco em Disco: ${NORM}\n"
+    printf '%s\n' "${GREEN}Espaco em Disco: ${NORM}"
     cat "${LOG_TMP}diskusage"
     printf "\n"
 
     # Checando o Sistema Uptime
     local tecuptime
     tecuptime=$(uptime -p 2>/dev/null | cut -d " " -f2- || uptime | sed 's/.*up //' | sed 's/,.*//')
-    printf '%s\n' "${GREEN}Sistema em uso Dias/(HH:MM): ${NORM}${tecuptime}${NORM}\n"
+    printf '%s\n' "${GREEN}Sistema em uso Dias/(HH:MM): ${NORM}${tecuptime}${NORM}"
 
     # Unset Variables
     # as vars sao locais, entao unset nao e estritamente necessario, mas mantem a intencao de limpeza

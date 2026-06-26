@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/06/2026-02
+# Versao: 26/06/2026-02
 # Autor: Luiz Augusto
 #
 
@@ -60,7 +60,7 @@ _cadastrar_usuario() {
     _meia_linha "=" "${RED}"
 
     read -rp "${YELLOW}Digite o nome do usuario: ${NORM}" usuario
-    usuario=$(echo "$usuario" | tr '[:lower:]' '[:upper:]')
+    usuario=$(_upper "$(_trim "$usuario")")
     if [[ -z "$usuario" ]]; then
         _mensagec "${RED}" "Usuario nao pode ser vazio."
         return 1
@@ -116,7 +116,7 @@ _login() {
         _linha "=" "${GREEN}"
 
         read -rp "${YELLOW}Usuario: ${NORM}" usuario
-        usuario=$(echo "$usuario" | tr '[:lower:]' '[:upper:]' | xargs)
+        usuario=$(_upper "$(_trim "$usuario")")
 
         if [[ -z "$usuario" ]]; then
             _mensagec "${RED}" "Nome de usuario nao pode ser vazio."

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01 (Atualizado com reforços de segurança)
+# Versao: 26/06/2026-01 (Atualizado com reforços de segurança)
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -271,7 +271,7 @@ _baixar_biblioteca_sincroniza() {
     local servidor="${1:-$DEFAULT_IP_SERVER}"
     local porta="${2:-$DEFAULT_SSH_PORTA}"
     local rem_user="${3:-$DEFAULT_SSH_USER}"
-	
+
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1

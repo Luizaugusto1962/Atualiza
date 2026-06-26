@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/06/2026-01
+# Versao: 26/06/2026-01
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -247,7 +247,7 @@ _configurar_comandos() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Comandos nao encontrados: %s\n" "${missing[*]}" >&2
+        _erro "Comandos nao encontrados: " "${missing[*]}" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi

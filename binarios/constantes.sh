@@ -5,8 +5,10 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/06/2026-01
+# Versao: 26/06/2026-01
 #
+
+set -euo pipefail
 
 # =============================================================================
 # Definir diretorio das bases extras
