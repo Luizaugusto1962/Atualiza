@@ -10,8 +10,7 @@
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
 # =============================================================================
-set -o pipefail
-set +u
+set -euo pipefail
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -26,9 +25,6 @@ declare -ga REGISTRO_VARIAVEIS=()
 declare -gA REGISTRO_CATEGORIAS=()
 declare -gA _REGISTRO_MAPA=()
 declare -g VAR_CONTADOR_REGISTRO=0
-
-# Reativar set -u apos inicializacao
-set -u
 
 # =============================================================================
 # SISTEMA DE REGISTRO DE VARIAVEIS

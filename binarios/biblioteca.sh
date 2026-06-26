@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # biblioteca.sh - Modulo de Gestao de Biblioteca
 # Responsavel pela atualizacao das bibliotecas do sistema (Transpc, Savatu)
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 26/06/2026-01
 #
+set -euo pipefail
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos

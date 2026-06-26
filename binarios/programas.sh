@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-02
+# Versao: 26/06/2026-02
 #
 
 # Variaveis globais esperadas
@@ -502,6 +502,12 @@ _processar_atualizacao_programas() {
     _linha
 
     # Mover arquivos .zip para .bkp
+    if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
+        _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+            _erro "Ao criar diretorio de programas %s\n" "${DEFAULT_PROGS_DIR}" >&2
+            return 1
+        }
+    fi
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ -f "${arquivo}" ]]; then
             local backup_file="${arquivo%.zip}.bkp"

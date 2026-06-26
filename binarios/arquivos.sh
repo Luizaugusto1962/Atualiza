@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # arquivos.sh - Modulo de Gestao de Arquivos
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 26/06/2026-01
 #
+
+set -euo pipefail
 
 # Variaveis globais esperadas
 #CFG_SISTEMA="${CFG_SISTEMA:-}"                                     # Tipo de sistema (ex: iscobol, outros).

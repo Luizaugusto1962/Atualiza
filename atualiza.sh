@@ -75,8 +75,7 @@ case "${1:-}" in
         if [[ -f "${PLIBS_DIR}/principal.sh" ]]; then
             printf "%s\n" "Carregando utilitario..."
             # Carrega o script principal
-            cd "${PLIBS_DIR}" || exit 1
-            "./principal.sh"
+            "${PLIBS_DIR}/principal.sh"
         else
             printf "%s\n" "ERRO: Arquivo ${PLIBS_DIR}/principal.sh nao encontrado."
             exit 1

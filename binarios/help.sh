@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # help.sh - Sistema de Ajuda e Manual do Usuario
 # Fornece documentacao completa e help contextual para o sistema SAV
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/06/2026-01
+# Versao: 26/06/2026-01
 #
 
-
+set -euo pipefail
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracoes
 

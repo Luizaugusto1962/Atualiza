@@ -28,7 +28,7 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 # Diretorios dos modulos e configuracoes
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"                           # Diretorio dos modulos de biblioteca
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
-PERM_DIR_SECURE="0755"                                                   # Diretórios seguros (rwxr-xr-x)
+PERM_DIR_SECURE="${PERM_DIR_SECURE:-0755}"                               # Diretórios seguros (rwxr-xr-x)
 
 export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE                       
 

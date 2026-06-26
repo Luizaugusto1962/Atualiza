@@ -247,14 +247,14 @@ _enviar_rsync() {
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     local rsync_base=("rsync" "-avzP")
-    local ssh_opts=("ssh" "-p" "$porta")
+    local ssh_cmd="ssh -p ${porta}"
 
     if _usar_chave_ssh; then
-        ssh_opts+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)")
+        ssh_cmd+=" -i ${CHAVE} -o BatchMode=yes -o StrictHostKeyChecking=$(_ssh_accept_new)"
     fi
 
     # Executa o upload (única chamada)
-    if "${rsync_base[@]}" -e "${ssh_opts[*]}" "$arquivo_local" "$destino_completo"; then
+    if "${rsync_base[@]}" -e "${ssh_cmd}" "$arquivo_local" "$destino_completo"; then
         _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
          return 0
     else

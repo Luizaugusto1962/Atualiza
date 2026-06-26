@@ -697,106 +697,106 @@ _ssh_accept_new() {
 # Complementa _configure_ssh_access adicionando autenticacao por chave
 #===================================================================
 
-    # -------------------------------------------------------------------------
-    # Verifica dependencias
-    # -------------------------------------------------------------------------
-    _checar_dependencias() {
-        SERVIDOR="${DEFAULT_IP_SERVER:-}"
-        PORTA="${DEFAULT_SSH_PORTA:-}"
-        USUARIO="${DEFAULT_SSH_USER:-}"
-        CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
-        CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
+# -------------------------------------------------------------------------
+# Verifica dependencias
+# -------------------------------------------------------------------------
+_checar_dependencias() {
+    SERVIDOR="${DEFAULT_IP_SERVER:-}"
+    PORTA="${DEFAULT_SSH_PORTA:-}"
+    USUARIO="${DEFAULT_SSH_USER:-}"
+    CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
+    CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
 
-        # Validacao das variaveis obrigatorias
-        if [[ -z "${SERVIDOR}" ]]; then
-            _erro "Variavel DEFAULT_IP_SERVER nao foi definida."
+    # Validacao das variaveis obrigatorias
+    if [[ -z "${SERVIDOR}" ]]; then
+        _erro "Variavel DEFAULT_IP_SERVER nao foi definida."
+        return 1
+    fi
+    for cmd in ssh ssh-keygen ssh-copy-id; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            _erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."
             return 1
         fi
-        for cmd in ssh ssh-keygen ssh-copy-id; do
-            if ! command -v "$cmd" >/dev/null 2>&1; then
-                _erro "Comando '$cmd' nao encontrado. Instale o pacote openssh-client."
-                return 1
+    done
+    _ok "Dependencias verificadas."
+    _aviso "Verificando configuracao de chaves SSH..."
+}
+
+# -------------------------------------------------------------------------
+# Garante que ~/.ssh existe com as permissoes corretas
+# -------------------------------------------------------------------------
+_preparar_diretorio_ssh() {
+    if [ ! -d "$HOME/.ssh" ]; then
+        mkdir -p "$HOME/.ssh"
+        chmod "${PERM_DIR_SECURE}" "$HOME/.ssh"
+        _ok "Diretorio ~/.ssh criado."
+    fi
+}
+
+# -------------------------------------------------------------------------
+# Verifica se a chave ja existe; pergunta se quer criar caso nao exista
+# -------------------------------------------------------------------------
+_verificar_ou_criar_chave() {
+    if [ -f "$CHAVE" ] && [ -f "$CHAVE_PUB" ]; then
+        _ok "Chave SSH encontrada: $CHAVE"
+        return 0
+    fi
+
+    _aviso "Chave SSH nao encontrada em $CHAVE"
+    printf "\nDeseja criar uma nova chave SSH agora? [s/N] "
+    read -r RESPOSTA
+
+    case "$RESPOSTA" in
+        [sS]|[sS][iI][mM])
+            _msg "Gerando par de chaves RSA 4096 bits..."
+            if ssh-keygen -t rsa -b 4096 -f "$CHAVE" -C "${USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
+                _ok "Chave criada com sucesso: $CHAVE"
+            else
+                _erro "Falha ao criar a chave SSH."
             fi
-        done
-        _ok "Dependencias verificadas."
-        _aviso "Verificando configuracao de chaves SSH..."
-    }
+            ;;
+        *)
+            _aviso "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
+            ;;
+    esac
+}
 
-    # -------------------------------------------------------------------------
-    # Garante que ~/.ssh existe com as permissoes corretas
-    # -------------------------------------------------------------------------
-    _preparar_diretorio_ssh() {
-        if [ ! -d "$HOME/.ssh" ]; then
-            mkdir -p "$HOME/.ssh"
-            chmod "${PERM_DIR_SECURE}" "$HOME/.ssh"
-            _ok "Diretorio ~/.ssh criado."
-        fi
-    }
+# -------------------------------------------------------------------------
+# Envia a chave publica ao servidor principal
+# -------------------------------------------------------------------------
+_enviar_chave_para_servidor() {
+    _msg "Enviando chave publica para ${USUARIO}@${SERVIDOR}:${PORTA}..."
+    _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor (ultima vez)."
 
-    # -------------------------------------------------------------------------
-    # Verifica se a chave ja existe; pergunta se quer criar caso nao exista
-    # -------------------------------------------------------------------------
-    _verificar_ou_criar_chave() {
-        if [ -f "$CHAVE" ] && [ -f "$CHAVE_PUB" ]; then
-            _ok "Chave SSH encontrada: $CHAVE"
-            return 0
-        fi
+    if ssh-copy-id -i "$CHAVE_PUB" -p "$PORTA" "${USUARIO}@${SERVIDOR}"; then
+        _ok "Chave enviada com sucesso!"
+        _ok "A partir de agora a conexao sera feita sem senha."
+    else
+        _erro "Falha ao enviar a chave. Verifique:"
+        _msg "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
+        _msg "  - Se o usuario '${USUARIO}' existe no servidor"
+        _msg "  - Se a senha informada esta correta"
+        _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
+    fi
+}
 
-        _aviso "Chave SSH nao encontrada em $CHAVE"
-        printf "\nDeseja criar uma nova chave SSH agora? [s/N] "
-        read -r RESPOSTA
-
-        case "$RESPOSTA" in
-            [sS]|[sS][iI][mM])
-                _msg "Gerando par de chaves RSA 4096 bits..."
-                if ssh-keygen -t rsa -b 4096 -f "$CHAVE" -C "${USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
-                    _ok "Chave criada com sucesso: $CHAVE"
-                else
-                    _erro "Falha ao criar a chave SSH."
-                fi
-                ;;
-            *)
-                _aviso "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
-                ;;
-        esac
-    }
-
-    # -------------------------------------------------------------------------
-    # Envia a chave publica ao servidor principal
-    # -------------------------------------------------------------------------
-    _enviar_chave_para_servidor() {
-        _msg "Enviando chave publica para ${USUARIO}@${SERVIDOR}:${PORTA}..."
-        _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor (ultima vez)."
-
-        if ssh-copy-id -i "$CHAVE_PUB" -p "$PORTA" "${USUARIO}@${SERVIDOR}"; then
-            _ok "Chave enviada com sucesso!"
-            _ok "A partir de agora a conexao sera feita sem senha."
-        else
-            _erro "Falha ao enviar a chave. Verifique:"
-            _msg "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
-            _msg "  - Se o usuario '${USUARIO}' existe no servidor"
-            _msg "  - Se a senha informada esta correta"
-            _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
-        fi
-    }
-
-    # -------------------------------------------------------------------------
-    # Testa a conexao sem senha
-    # -------------------------------------------------------------------------
-    _testar_conexao() {
-        _msg "Testando conexao sem senha..."
-        if ssh -o BatchMode=yes \
-            -o ConnectTimeout=10 \
-            -o "StrictHostKeyChecking=$(_ssh_accept_new)" \
-            -i "$CHAVE" \
-            -p "$PORTA" \
-            "${USUARIO}@${SERVIDOR}" \
-            "echo 'Conexao OK em: \$(hostname) - \$(date)'"; then
-            _ok "Conexao sem senha funcionando perfeitamente!"
-        else
-            _erro "Conexao sem senha falhou. Verifique as permissoes no servidor:"
-            _erro "  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
-        fi
-    }
+# -------------------------------------------------------------------------
+# Testa a conexao sem senha
+# -------------------------------------------------------------------------
+_testar_conexao() {
+    _msg "Testando conexao sem senha..."
+    if ssh -o BatchMode=yes \
+        -o ConnectTimeout=10 \
+        -o "StrictHostKeyChecking=$(_ssh_accept_new)" \
+        -i "$CHAVE" \
+        -p "$PORTA" \
+        "${USUARIO}@${SERVIDOR}" \
+        "echo 'Conexao OK em: \$(hostname) - \$(date)'"; then
+        _ok "Conexao sem senha funcionando perfeitamente!"
+    else
+        _erro "Conexao sem senha falhou. Verifique as permissoes no servidor:"
+        _erro "  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+    fi
+}
 
 

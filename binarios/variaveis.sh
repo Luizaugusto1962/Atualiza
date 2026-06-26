@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/06/2026-01
+# Versao: 26/06/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -13,6 +14,7 @@
 #       com outros modulos carregados no mesmo shell.
 #
 
+set -euo pipefail
 # =============================================================================
 # CONFIGURACAO INICIAL (apenas se ainda nao definida por modulos anteriores)
 # =============================================================================

@@ -13,8 +13,8 @@ set -euo pipefail
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
 
-# Arquivo de senhas oculto
-SENHA_FILE="${CFG_DIR}/.senhas"
+# Arquivo de senhas oculto — avaliado sob demanda em vez de tempo de source
+SENHA_FILE="${CFG_DIR:-}/.senhas"
 
 # Garantir que o arquivo de senhas tenha permissoes restritas
 if [[ -f "$SENHA_FILE" ]]; then

@@ -34,6 +34,7 @@ fi
 declare -l sistema base base2 base3 dbmaker enviabackup
 declare -u empresa
 
+
 # Diretorio do servidor offline
 # Configuracao inicial do sistema
 _initial_setup() {
@@ -117,7 +118,8 @@ _edit_setup() {
     if command -v _carregar_config_seguro >/dev/null 2>&1; then
         _carregar_config_seguro ./.config
     else
-        "." ./.config
+        echo "ERRO: Parser seguro de configuracao nao disponivel. Carregamento bloqueado." >&2
+        exit 1
     fi
 
     # Fazer backup

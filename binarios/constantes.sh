@@ -65,7 +65,7 @@ _carregar_config_seguro() {
             
             # Validar que o valor nao contem comandos perigosos
             if [[ "$value" =~ [\$\`\;] ]]; then
-                _aviso "Valor suspeito ignorado para %s: %s\n" "$key" "$value" >&2
+                _erro "Valor suspeito encontrado em %s, ignorando linha.\n" "$key" >&2
                 continue
             fi
             
