@@ -379,7 +379,7 @@ _executar_lista_arquivos() {
     local arquivo_lista="${CFG_DIR}/variosarquivos"
 
     if [[ ! -f "$arquivo_lista" ]]; then
-        _mensagec "${RED}" "Arquivo variosarquivos nao encontrado em ${CFG_DIR}"
+        _mensagec "${RED}" "A lista de arquivo, variosarquivos nao foi encontrado em ${CFG_DIR}"
         _aguardar_tecla
         return 1
     fi
