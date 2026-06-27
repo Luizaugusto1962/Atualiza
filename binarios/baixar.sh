@@ -115,7 +115,7 @@ _atualizando() {
     #---------- INSTALAR ARQUIVOS DE CONFIGURAÇÃO ----------#
     local arquivos_instalados=0
     local arquivos_erro=0
-    local -a configuracoes_files=("manual.txt" "avisos" "indexar" "limpetmp" ".senhas")
+    local -a configuracoes_files=("manual.txt" "avisos" "indexar" "limpetmp" ".senhas" "variosarquivos")
     for configuracoes_arquivo in "${configuracoes_files[@]}"; do
         if [[ ! -f "$configuracoes_arquivo" ]]; then continue; fi
         chmod +x "$configuracoes_arquivo" 2>/dev/null || true
