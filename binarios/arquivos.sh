@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 27/06/2026-01
 #
 
 set -euo pipefail

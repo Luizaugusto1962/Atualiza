@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 26/06/2026-01
+# Versao: 27/06/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #

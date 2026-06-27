@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-02
+# Versao: 27/06/2026-02
 # Autor: Luiz Augusto
 #
 
@@ -37,6 +37,13 @@ _obter_hash_usuario() {
         $1 == u {print $2; found=1; exit}
         END {exit !found}
     ' "$SENHA_FILE"
+}
+
+# Verificar se o usuario existe no arquivo de senhas
+_usuario_existe() {
+    local usuario="$1"
+    [[ -z "$usuario" ]] && return 1
+    awk -F: -v u="$usuario" '$1 == u {found=1; exit} END {exit !found}' "$SENHA_FILE" 2>/dev/null
 }
 
 # Funcao para hash da senha usando algoritmo configuravel
@@ -123,37 +130,40 @@ _login() {
         elif ! _usuario_valido "$usuario"; then
             _mensagec "${RED}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         else
-            read -rsp "${YELLOW}Senha: ${NORM}" senha
-            printf "\n"
-
-            if [[ -z "$senha" ]]; then
-                _mensagec "${RED}" "Senha nao pode ser vazia."
-            elif [[ ! -f "$SENHA_FILE" ]]; then
+            if [[ ! -f "$SENHA_FILE" ]]; then
                 _mensagec "${RED}" "Nenhum usuario cadastrado. Execute o programa de cadastro primeiro."
                 return 1
             elif [[ ! -s "$SENHA_FILE" ]]; then
-                # Verificar se o arquivo de senhas esta vazio
                 _mensagec "${RED}" "ALERTA: Arquivo de senhas esta vazio. Nenhum usuario cadastrado no sistema."
                 _mensagec "${YELLOW}" "Execute o programa de cadastro primeiro."
                 _linha "-" "${RED}"
                 return 1
+            elif ! _usuario_existe "$usuario"; then
+                _mensagec "${RED}" "Usuario nao cadastrado no sistema."
+                _linha "-" "${RED}"
             else
-                stored_hash=$(_obter_hash_usuario "$usuario")
-                if [[ -z "$stored_hash" ]]; then
-                    _mensagec "${RED}" "Usuario nao encontrado."
-                    _linha "-" "${RED}"
+                read -rsp "${YELLOW}Senha: ${NORM}" senha
+                printf "\n"
+
+                if [[ -z "$senha" ]]; then
+                    _mensagec "${RED}" "Senha nao pode ser vazia."
                 else
-                    hash_senha=$(_hash_senha "$senha")
-                    if [[ "$hash_senha" == "$stored_hash" ]]; then
-                        _mensagec "${GREEN}" "Login bem-sucedido."
-                        export usuario
-                        return 0
-                    else
-                        _mensagec "${RED}" "Senha incorreta."
+                    stored_hash=$(_obter_hash_usuario "$usuario")
+                    if [[ -z "$stored_hash" ]]; then
+                        _mensagec "${RED}" "Usuario nao encontrado."
                         _linha "-" "${RED}"
-                        printf "\n"
-                        # _limpa_tela usuario on failure
-                        unset usuario
+                    else
+                        hash_senha=$(_hash_senha "$senha")
+                        if [[ "$hash_senha" == "$stored_hash" ]]; then
+                            _mensagec "${GREEN}" "Login bem-sucedido."
+                            export usuario
+                            return 0
+                        else
+                            _mensagec "${RED}" "Senha incorreta."
+                            _linha "-" "${RED}"
+                            printf "\n"
+                            unset usuario
+                        fi
                     fi
                 fi
             fi
