@@ -374,6 +374,45 @@ _recuperar_arquivo_individual() {
     fi
 }
 
+# Executa recuperacao dos arquivos listados no variosarquivos
+_executar_lista_arquivos() {
+    local arquivo_lista="${CFG_DIR}/variosarquivos"
+
+    if [[ ! -f "$arquivo_lista" ]]; then
+        _mensagec "${RED}" "Arquivo variosarquivos nao encontrado em ${CFG_DIR}"
+        _aguardar_tecla
+        return 1
+    fi
+
+    if ! _selecionar_base_arquivos; then
+        return 0
+    fi
+
+    _limpa_tela
+    _linha
+    _mensagec "${CYAN}" "Recuperando arquivos da lista 'variosarquivos'..."
+    _linha
+
+    local total=0
+
+    while IFS= read -r linha || [[ -n "$linha" ]]; do
+        linha="${linha#"${linha%%[![:space:]]*}"}"
+        linha="${linha%"${linha##*[![:space:]]}"}"
+        [[ -z "$linha" ]] && continue
+
+        local nome_base="${linha%%.*}"
+        nome_base="${nome_base^^}"
+        nome_base="${nome_base//[[:space:]]/}"
+
+        _recuperar_arquivo_individual "$nome_base" "$base_trabalho"
+        ((total++)) || true
+    done < "$arquivo_lista"
+
+    _linha
+    _mensagec "${GREEN}" "${total} arquivo(s) processados da lista."
+    _aguardar_tecla
+}
+
 # Recupera arquivos principais baseado na lista
 _recuperar_arquivos_principais() {
     cd "${CFG_DIR}" || return 1

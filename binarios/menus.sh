@@ -336,6 +336,7 @@ _menu_recuperar_arquivos() {
         _exibir_separador_menu
         _exibir_opcao_menu "1" "Um arquivo ou Todos"
         _exibir_opcao_menu "2" "Arquivos Principais"
+        _exibir_opcao_menu "3" "Lista de Arquivos"
         _exibir_rodape_menu
 
         local opcao
@@ -346,6 +347,7 @@ _menu_recuperar_arquivos() {
         case "${opcao}" in
             1) _recuperar_arquivo_especifico || true ;;
             2) _recuperar_arquivos_principais || true ;;
+            3) _executar_lista_arquivos || true ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
