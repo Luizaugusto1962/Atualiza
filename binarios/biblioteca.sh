@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 28/06/2026-01
 #
 set -euo pipefail
 
@@ -438,7 +438,7 @@ _reverter_biblioteca_completa() {
         return 1
     fi
 
-    local temp_restore="${E_EXEC}/.."  # Diretorio pai dos executaveis
+    local temp_restore="/"  # Diretorio pai dos executaveis
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
@@ -474,7 +474,7 @@ _reverter_biblioteca_completa() {
 _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
-    local temp_restore="${E_EXEC}/.."  # Diretorio pai dos executaveis
+    local temp_restore="/"  # Diretorio pai dos executaveis
     
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
