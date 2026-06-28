@@ -119,6 +119,9 @@ _login() {
     # usuario is made global to be used in logging
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
     while [[ $tentativas -le $max_tentativas ]]; do
+        printf '%b\n' "${GREEN}" ".. Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} - Versao Iscobol: ${CYAN}${CFG_VERCLASS}${GREEN}..${NORM}"
+        printf "\n"
+        _linha "-" "${CYAN}"
         _mensagec "${RED}" "Login no Sistema"
         _linha "=" "${GREEN}"
 
