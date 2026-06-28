@@ -12,7 +12,7 @@ set -euo pipefail
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
-
+ROOT_DIR="/"
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
     local sinal="$1"
@@ -438,7 +438,8 @@ _reverter_biblioteca_completa() {
         return 1
     fi
 
-    local temp_restore="/"  # Diretorio pai dos executaveis
+    local temp_restore="$ROOT_DIR" 
+#    local temp_restore="/"  # Diretorio pai dos executaveis
 
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
@@ -474,7 +475,8 @@ _reverter_biblioteca_completa() {
 _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
-    local temp_restore="/"  # Diretorio pai dos executaveis
+    local temp_restore="$ROOT_DIR" 
+#    local temp_restore="/"  # Diretorio pai dos executaveis
     
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
