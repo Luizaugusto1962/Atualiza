@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-02
+# Versao: 28/06/2026-02
 #
 
 # Variaveis globais esperadas
@@ -33,9 +33,6 @@ _atualizar_programa_online() {
             return 0
         fi
     fi
-
-    # Verifica acesso ssh/sftp e configura se necessario
-    _download_sftp_ssh
     
     # Solicitar programas a serem atualizados
     _solicitar_programas_atualizacao
@@ -305,6 +302,7 @@ _coletar_artefatos_atualizacao() {
         _linha
         _mensagec "${GREEN}" "${rotulo_item^} adicionado: ${arquivo_compilado}"
         _linha
+        _aguardar_tecla
 
         if [[ -n "$mensagem_lista" ]]; then
             _mensagec "${YELLOW}" "$mensagem_lista"
