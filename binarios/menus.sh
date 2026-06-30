@@ -30,7 +30,7 @@ _ler_opcao_menu() {
     local contexto="${1:-geral}"
 
     _linha "=" "${WHITE}"
-    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)    ||    ${GREEN}Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} | Iscobol: ${CYAN}${CFG_VERCLASS}${GREEN} |"
+    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)    ||    ${BLUE}Empresa: ${WHITE}${CFG_EMPRESA}${BLUE} | Iscobol: ${CYAN}${CFG_VERCLASS}${BLUE} |"
     _linha "=" "${GREEN}"
 
     if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
