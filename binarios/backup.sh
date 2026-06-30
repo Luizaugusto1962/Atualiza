@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 30/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -99,10 +99,11 @@ _executar_backup() {
     ano_agora=$(date +%Y)
 
     # Registrar trap local apenas durante o backup
-    trap '_limpar_backup' INT TERM
+    trap '_limpar_backup; trap - INT TERM' INT TERM
 
     # Validar pre-requisitos e definir base_trabalho
     if ! _validar_pre_backup base_trabalho; then
+        trap - INT TERM
         return 1
     fi
 
@@ -112,6 +113,7 @@ _executar_backup() {
     # Escolher tipo de backup
     _menu_tipo_backup
     if [[ -z "$tipo_backup" ]]; then
+        trap - INT TERM
         return 0
     fi
 
@@ -123,6 +125,7 @@ _executar_backup() {
     # Verificar backups recentes
     if _verificar_backups_recentes; then
         if ! _confirmar "Ja existe backup recente. Deseja continuar?" "N"; then
+            trap - INT TERM
             _mensagec "$RED" "Operacao cancelada"
             _aguardar 3
             return 0
@@ -133,6 +136,7 @@ _executar_backup() {
 
     # Mudar para diretorio base
     if ! _diretorio_trabalho; then
+        trap - INT TERM
         _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
         _aguardar 3
         return 0
@@ -160,6 +164,7 @@ _executar_backup() {
 
         # Validar entrada
         if ! [[ "$mes" =~ ^(0[1-9]|1[0-2])$ ]] || ! [[ "$ano" =~ ^[0-9]{4}$ ]]; then
+            trap - INT TERM
             _mensagec "$RED" "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
             _aguardar 2
             return 0
@@ -167,6 +172,7 @@ _executar_backup() {
 
         # Validar ano nao seja muito antigo ou futuro
         if (( ano < 1990 || ano > ano_agora )); then
+            trap - INT TERM
             _mensagec "$RED" "Ano fora do intervalo valido (1990-$ano_agora)"
             _aguardar 2
             return 0
@@ -177,12 +183,14 @@ _executar_backup() {
         data_atual=$(date +%Y%m%d)
         local data_input
         data_input=$(date -d "$data_referencia" +%Y%m%d 2>/dev/null) || {
+            trap - INT TERM
             _mensagec "$RED" "Data invalida."
             _aguardar 2
             return 0
         }
 
         if [[ "$data_input" -gt "$data_atual" ]]; then
+            trap - INT TERM
             _mensagec "$RED" "A data nao pode ser futura."
             _aguardar 2
             return 0
@@ -205,6 +213,7 @@ _executar_backup() {
     if [[ $resultado -eq 0 ]] && [[ -f "$caminho_backup" ]]; then
         _finalizar_backup_sucesso "$nome_backup"
     else
+        trap - INT TERM
         _mensagec "$RED" "Erro ao criar backup"
         _aguardar 3
         return 1
@@ -300,9 +309,9 @@ _executar_backup_completo() {
         return 1
     }
 
-    find . -maxdepth 1 -type f \
+    find . -type f \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-         -print0 > "$arquivos_temp"
+         -print > "$arquivos_temp"
 
     if [[ ! -s "$arquivos_temp" ]]; then
         _log_bkp "Nenhum arquivo encontrado para backup completo"
@@ -310,7 +319,7 @@ _executar_backup_completo() {
         return 1
     fi
 
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao criar arquivo de backup"
         rm -f "$arquivos_temp"
         return 1
@@ -320,6 +329,13 @@ _executar_backup_completo() {
 
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
+        return 1
+    fi
+
+    # Validar integridade do zip
+    if ! _validar_integridade_backup "$arquivo_destino"; then
+        _log_bkp "ERRO: Backup completo corrompido (falhou no teste de integridade)"
+        rm -f "$arquivo_destino"
         return 1
     fi
 
@@ -361,7 +377,7 @@ _executar_backup_incremental() {
     # Buscar arquivos modificados
     find . -type f -newermt "$data_referencia" \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -print0 > "$arquivos_temp"
+         -print > "$arquivos_temp"
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
     if [[ ! -s "$arquivos_temp" ]]; then
@@ -371,7 +387,7 @@ _executar_backup_incremental() {
     fi
 
     # Executar compactacao
-    if ! xargs -0 "$DEFAULT_ZIP" "$arquivo_destino" < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+    if ! "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
         rm -f "$arquivos_temp"
         return 1
@@ -380,6 +396,13 @@ _executar_backup_incremental() {
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
         rm -f "$arquivos_temp"
+        return 1
+    fi
+
+    # Validar integridade do zip
+    if ! _validar_integridade_backup "$arquivo_destino"; then
+        _log_bkp "ERRO: Backup incremental corrompido (falhou no teste de integridade)"
+        rm -f "$arquivos_temp" "$arquivo_destino"
         return 1
     fi
 

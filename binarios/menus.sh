@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 30/06/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -30,7 +30,7 @@ _ler_opcao_menu() {
     local contexto="${1:-geral}"
 
     _linha "=" "${WHITE}"
-    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help) | ${GREEN}Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} | Iscobol: ${CYAN}${CFG_VERCLASS}${GREEN} |"
+    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)    ||    ${GREEN}Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} | Iscobol: ${CYAN}${CFG_VERCLASS}${GREEN} |"
     _linha "=" "${GREEN}"
 
     if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
