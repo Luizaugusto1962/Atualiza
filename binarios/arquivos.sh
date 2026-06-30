@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/06/2026-01
+# Versao: 30/06/2026-01
 #
 
 set -euo pipefail
@@ -141,7 +141,7 @@ _limpar_base_especifica() {
 
         # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
         local arquivos_zip=()
-        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo")
+        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo" -mtime +0)
         local qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
