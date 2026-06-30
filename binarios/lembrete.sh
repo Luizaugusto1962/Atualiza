@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 16/06/2026-00
+# Versao: 16/06/2026-01
 # Autor: Luiz Augusto
 #
 #---------- FUNcoES DE LEMBRETES ----------#

@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-02
+# Versao: 26/06/2026-01
 
 set -euo pipefail
 

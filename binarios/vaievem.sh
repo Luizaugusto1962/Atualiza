@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01 (Atualizado com reforços de segurança)
+# Versao: 26/06/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"

@@ -6,13 +6,14 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/06/2026-02
+# Versao: 30/06/2026-01
 #
 
 # Variaveis globais esperadas
-compilado="${compilado:-class}"     # Sufixo para arquivos compilados
-debugado="${debugado:-mclass}"      # Sufixo para arquivos em depuração
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                      # Comando de compactacao (ex: zip) 
+compilado="${compilado:-class}"                 # Sufixo para arquivos compilados
+debugado="${debugado:-mclass}"                  # Sufixo para arquivos em depuração
+DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Diretorio de recebimento de arquivos
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip) 
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
