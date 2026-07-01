@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 01/07/2026-01
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -235,7 +235,7 @@ fi
 
 # Configurar comandos do sistema
 _configurar_comandos() {
-    local cmds=("$DEFAULT_ZIP" "$DEFAULT_UNZIP")
+    local cmds=("$DEFAULT_ZIP" "$DEFAULT_UNZIP" "$DEFAULT_TAR" "$DEFAULT_FIND")
     local cmd missing=()
 
     for cmd in "${cmds[@]}"; do
