@@ -6,13 +6,14 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/06/2026-01
+# Versao: 01/07/2026-01
 #
 set -euo pipefail
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
 ROOT_DIR="/"
+
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
     local sinal="$1"
