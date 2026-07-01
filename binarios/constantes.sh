@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 01/07/2026-01
 #
 
 set -euo pipefail
@@ -210,7 +210,7 @@ DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-${SCRIPT_DIR}/receber}"
 # =============================================================================
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-/usr/bin/unzip}"
 DEFAULT_ZIP="${DEFAULT_ZIP:-/usr/bin/zip}"
-DEFAULT_TAR="${DEFAULT_TAR:-/usr/bin/tar}"
+DEFAULT_TAR="${DEFAULT_TAR:-tar}"
 DEFAULT_FIND="${DEFAULT_FIND:-/usr/bin/find}"
 DEFAULT_WHO="${DEFAULT_WHO:-/usr/bin/who}"
 
