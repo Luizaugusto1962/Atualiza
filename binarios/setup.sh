@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 01/07/2026-01
 
 set -euo pipefail
 
@@ -31,7 +31,7 @@ fi
 }
 
 # Variáveis globais
-declare -l sistema base base2 base3 dbmaker enviabackup
+declare -l base base2 base3 enviabackup
 declare -u empresa
 
 
@@ -55,25 +55,7 @@ _initial_setup() {
         echo "$traco"
     } > .config
 
-    # Selecionar sistema (IsCobol ou Microfocus)
-    echo "Em qual sistema o SAV esta rodando?"
-    echo "1) Iscobol"
-    echo "2) Microfocus"
-    read -n1 -rp "Escolha o sistema: " escolha
-    echo
-
-    case "$escolha" in
-        1) _setup_iscobol ;;
-        2) _setup_cobol ;;
-        *)
-            echo "Alternativa incorreta, saindo!"
-            sleep 1
-            exit 1
-            ;;
-    esac
-
     # Configuracoes adicionais
-    _setup_banco_de_dados
     _setup_diretorios
     _setup_acesso_remoto
     _setup_chave_acesso
@@ -126,9 +108,7 @@ _edit_setup() {
     cp .config .config.bkp
 
     # Edicao interativa das variaveis
-    _editar_variavel sistema
     _editar_variavel verclass
-    _editar_variavel dbmaker
     _editar_variavel acessossh
     _editar_variavel chavessh
     _editar_variavel Offline
@@ -159,8 +139,6 @@ _edit_setup() {
 
 # Configuracao para IsCobol
 _setup_iscobol() {
-    sistema="iscobol"
-    echo "sistema=iscobol" >> .config
     echo "$tracejada"
     echo "Escolha a versao do Iscobol:"
     echo "1) Versao 2020"
@@ -186,14 +164,6 @@ _setup_iscobol() {
 
     }
 
-
-# Configuracao para Micro Focus Cobol
-_setup_cobol() {
-    sistema="cobol"
-    {
-        echo "sistema=cobol"
-    } >> .config
-}
 # Funcoes de versao do IsCobol
 _2020() {
     {
@@ -227,23 +197,7 @@ _2026() {
     verclass="2026"
 }
 # Configuracoes adicionais
-_setup_banco_de_dados() {
-    echo "$tracejada"
-    while true; do
-        read -rp "Sistema em banco de dados [S/N]: " -n1 dbmaker
-        echo
-        if [[ "${dbmaker,,}" =~ ^[sn]$ ]]; then
-            break
-        else
-            echo "Entrada inválida. Digite S ou N."
-        fi
-    done
-    if [[ "${dbmaker,,}" == "s" ]]; then
-        echo "dbmaker=s" >> .config
-    else
-        echo "dbmaker=n" >> .config
-    fi
-}
+
 _setup_diretorios() {
     echo ${tracejada}
     echo "###     ( Nome de pasta no servidor )              ###"
@@ -370,14 +324,7 @@ _editar_variavel() {
     done
     if [[ "${alterar,,}" == "s" ]]; then
         case "$nome" in
-            "sistema")
-                echo "1) IsCobol"
-                echo "2) Micro Focus Cobol"
-                read -rp "Opcao [1-2]: " opt
-                [[ "$opt" == "1" ]] && sistema="iscobol"
-                [[ "$opt" == "2" ]] && sistema="cobol"
-                ;;
-            "dbmaker"|"acessossh"|"chavessh"|"Offline")
+            "acessossh"|"chavessh"|"Offline")
                 while true; do
                     read -rp "Novo valor [s/n]: " opt
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
@@ -404,9 +351,7 @@ _recreate_config_files() {
     echo "Recriando arquivos de configuracao..."
 
     {
-        echo "sistema=${sistema}"
-        [[ -n "$verclass" ]] && echo "verclass=${verclass}"
-        echo "dbmaker=${dbmaker}"
+        echo "verclass=${verclass}"
         echo "acessossh=${acessossh}"
         echo "chavessh=${chavessh}"
         echo "Offline=${Offline}"

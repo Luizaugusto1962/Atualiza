@@ -26,7 +26,6 @@ _limpar_backup() {
 }
 
 # _log_bkp: log seguro para uso em subshell background.
-# Usa /dev/null como fallback quando LOG_ATU nao estiver exportado.
 _log_bkp() {
     local destino="${LOG_ATU:-/dev/null}"
     [[ -z "$destino" ]] && destino="/dev/null"
@@ -742,7 +741,6 @@ _verificar_espaco_disco() {
     if [[ -z "$espaco_disponivel" ]] || (( espaco_disponivel < espaco_minimo )); then
         return 1
     fi
-    
     return 0
 }
 
@@ -758,7 +756,6 @@ _verificar_backups_recentes() {
     fi
     return 1
 }
-
 
 # Executa backup com múltiplos padrões de arquivos
 _executar_backup_multiplos_padroes() {

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 01/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -17,29 +17,17 @@ CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Variavel do nome da base de da
 #---------- FUNCOES DE VERSAO ----------#
 # Mostra versao do IsCOBOL
 _mostrar_versao_iscobol() {
-    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-        if [[ -x "${SAVISC}${ISCCLIENT}" ]]; then
-            _limpa_tela
-            _linha "=" "${GREEN}"
-            _mensagec "${GREEN}" "Versao do IsCobol"
-            _linha "=" "${GREEN}"
-            "${SAVISC}${ISCCLIENT}" -v
-            _linha "=" "${GREEN}"
-            printf "\n"
-        else
-            _linha
-            _mensagec "${RED}" "Erro: ${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
-            _linha
-            _aguardar 2
-        fi
-    elif [[ -z "${CFG_SISTEMA}" ]]; then
-        _linha
-        _mensagec "${RED}" "Erro: Variavel de sistema nao configurada"
-        _linha
-        _aguardar 2
+    if [[ -x "${SAVISC}${ISCCLIENT}" ]]; then
+        _limpa_tela
+        _linha "=" "${GREEN}"
+        _mensagec "${GREEN}" "Versao do IsCobol"
+        _linha "=" "${GREEN}"
+        "${SAVISC}${ISCCLIENT}" -v
+        _linha "=" "${GREEN}"
+        printf "\n"
     else
         _linha
-        _mensagec "${YELLOW}" "Sistema nao e IsCOBOL"
+        _mensagec "${RED}" "Erro: ${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
         _linha
         _aguardar 2
     fi
@@ -152,7 +140,6 @@ _mostrar_parametros() {
     fi
     _limpa_tela
     _linha "=" "${GREEN}"
-    printf "${GREEN}Sistema e banco de dados: ${NORM}${CFG_USA_DBMAKER}${NORM}%*s\n"
     printf "${GREEN}Diretorio RAIZ: ${NORM}${RAIZ}${NORM}%*s\n"
     printf "${GREEN}Diretorio do atualiza.sh: ${NORM}${SCRIPT_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio da base principal: ${NORM}${RAIZ}${CFG_BASE_DIR}${NORM}%*s\n"
@@ -160,9 +147,6 @@ _mostrar_parametros() {
     [[ -n "${CFG_BASE_DIR3}" ]] && printf "${GREEN}Diretorio da terceira base: ${NORM}${RAIZ}${CFG_BASE_DIR3}${NORM}%*s\n"
     printf "${GREEN}Diretorio dos executaveis: ${NORM}${E_EXEC}${NORM}%*s\n"
     printf "${GREEN}Diretorio das telas: ${NORM}${T_TELAS}${NORM}%*s\n"
-    if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
-        printf "${GREEN}Diretorio dos xmls: ${NORM}${X_XML}${NORM}%*s\n"
-    fi
     printf "${GREEN}Diretorio dos logs: ${NORM}${DEFAULT_LOGS_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio dos olds: ${NORM}${DEFAULT_OLDS_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio dos progs: ${NORM}${DEFAULT_PROGS_DIR}${NORM}%*s\n"
@@ -170,12 +154,10 @@ _mostrar_parametros() {
     printf "${GREEN}Diretorio de configuracoes: ${NORM}${CFG_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio de receber: ${NORM}${DEFAULT_RECEBE_DIR}${NORM}%*s\n"
     printf "${GREEN}Diretorio de enviar: ${NORM}${DEFAULT_ENVIA_DIR}${NORM}%*s\n"    
-    printf "${GREEN}Sistema em uso: ${NORM}${CFG_SISTEMA}${NORM}%*s\n"
-    printf "${GREEN}Versao do ${CFG_SISTEMA} em uso: ${NORM}${CFG_VERCLASS}${NORM}%*s\n"
+    printf "${GREEN}Versao em uso: ${NORM}${CFG_VERSAOCLASS}${NORM}%*s\n"
     printf "${GREEN}Biblioteca 1: ${NORM}${SAVATU1}${NORM}%*s\n"
     printf "${GREEN}Biblioteca 2: ${NORM}${SAVATU2}${NORM}%*s\n"
     printf "${GREEN}Biblioteca 3: ${NORM}${SAVATU3}${NORM}%*s\n"
-    printf "${GREEN}Biblioteca 4: ${NORM}${SAVATU4}${NORM}%*s\n"
     _linha "=" "${GREEN}"
     _aguardar_tecla
     _limpa_tela

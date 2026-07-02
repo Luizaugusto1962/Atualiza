@@ -1,7 +1,7 @@
 # atualiza2026
 
 Sistema modular de atualização SAV — utilitário de linha de comando para gerenciar
-programas, arquivos, backups e bibliotecas do sistema **IsCOBOL / ISAM**.
+programas, arquivos, backups e bibliotecas do sistema **IsCOBOL**.
 
 ---
 
@@ -44,7 +44,7 @@ programas, arquivos, backups e bibliotecas do sistema **IsCOBOL / ISAM**.
 ## Pré-requisitos
 
 - Bash 4.0+
-- `zip`, `unzip`, `rsync`, `wget`
+- `zip`, `unzip`, `rsync`, `wget`, `tar`
 - Terminal com suporte a cores (`tput`)
 
 ---

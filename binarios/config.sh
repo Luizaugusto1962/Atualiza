@@ -19,6 +19,8 @@ DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"
 RAIZ="${RAIZ:-}"
 CFG_DIR="${CFG_DIR:-}"
 REBUILD="${REBUILD:-}"
+compilado="${compilado:-}"
+debugado="${debugado:-}"
 
 # Arrays para registro e limpeza de variaveis
 declare -ga REGISTRO_VARIAVEIS=()
@@ -132,9 +134,7 @@ _inicializar_variaveis_sistema() {
 
     # ATUALIZACAO
     _define_category_vars "ATUALIZACAO" \
-        "CFG_SISTEMA=${CFG_SISTEMA:-}" \
-        "CFG_VERCLASS=${CFG_VERCLASS:-}" \
-        "CFG_USA_DBMAKER=${CFG_USA_DBMAKER:-}" \
+        "CFG_VERSAOCLASS=${CFG_VERSAOCLASS:-}" \
         "CFG_ACESSO_SSH=${CFG_ACESSO_SSH:-}" \
         "CFG_OFFLINE=${CFG_OFFLINE:-}" \
         "CFG_BACKUP_PATH=${CFG_BACKUP_PATH:-}" \
@@ -278,37 +278,21 @@ _configurar_diretorios() {
 
 # Configurar variaveis do sistema baseado no tipo de compilacao
 _configurar_variaveis_sistema() {
-    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-        E_EXEC="${E_EXEC:-${RAIZ}/classes}"
-        T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"
-        X_XML="${X_XML:-${RAIZ}/xml}"
-        export E_EXEC T_TELAS X_XML
-
-        local verclass_sufixo="${CFG_VERCLASS: -2}"
-        compilado="-class${verclass_sufixo}"
-        debugado="-mclass${verclass_sufixo}"
-
-        local classA="IS${CFG_VERCLASS}_classA_"
-        local classB="IS${CFG_VERCLASS}_classB_"
-        local classC="IS${CFG_VERCLASS}_tel_isc_"
-        local classD="IS${CFG_VERCLASS}_xml_"
-        local classX="IS${CFG_VERCLASS}_*_"
-        SAVATU1="tempSAV_${classA}"
-        SAVATU2="tempSAV_${classB}"
-        SAVATU3="tempSAV_${classC}"
-        SAVATU4="tempSAV_${classD}"
-        SAVATU="tempSAV_${classX}"
-    else
-        E_EXEC="${E_EXEC:-${RAIZ}/int}"
-        T_TELAS="${T_TELAS:-${RAIZ}/tel}"
-        compilado="${compilado:-6}"
-        debugado="${debugado:-m6}"
-        SAVATU1="tempSAVintA_"
-        SAVATU2="tempSAVintB_"
-        SAVATU3="tempSAVtel_"
-        SAVATU="tempSAV????"
-    fi
-
+    E_EXEC="${E_EXEC:-${RAIZ}/classes}"
+    T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"
+    export E_EXEC T_TELAS
+    
+    local verclass_sufixo="${CFG_VERSAOCLASS: -2}"
+    compilado="-class${verclass_sufixo}"
+    debugado="-mclass${verclass_sufixo}"
+    local classA="IS${CFG_VERSAOCLASS}_classA_"
+    local classB="IS${CFG_VERSAOCLASS}_classB_"
+    local classC="IS${CFG_VERSAOCLASS}_tel_isc_"
+    local classX="IS${CFG_VERSAOCLASS}_*_"
+    SAVATU1="tempSAV_${classA}"
+    SAVATU2="tempSAV_${classB}"
+    SAVATU3="tempSAV_${classC}"
+    SAVATU="tempSAV_${classX}"
     export E_EXEC T_TELAS CFG_OFFLINE
     export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU
 }
@@ -522,14 +506,14 @@ _carregar_configuracoes() {
     fi
 
     _carregar_config_empresa || return 1
-    _configurar_comandos || return 1
-    _configurar_diretorios || return 1
+    _configurar_comandos     || return 1
+    _configurar_diretorios   || return 1
     _configurar_variaveis_sistema
 }
 
 # Configurar ambiente final
 _configurar_ambiente() {
-    if [[ "${CFG_SISTEMA}" == "iscobol" ]] && [[ ! -x "${REBUILD}" ]]; then
+    if [[ ! -x "${REBUILD}" ]]; then
         if command -v _mensagec >/dev/null 2>&1; then
             _mensagec "${YELLOW}" "Aviso: jutil nao encontrado em ${REBUILD}"
         else
@@ -559,16 +543,6 @@ _validar_configuracao() {
     fi
 
     # Variaveis essenciais
-    if [[ -z "${CFG_SISTEMA}" ]]; then
-        _mensagec "${RED}" "ERRO: Variavel 'sistema' nao definida!"
-        ((erros++)) || true
-    elif [[ "${CFG_SISTEMA}" != "iscobol" && "${CFG_SISTEMA}" != "cobol" ]]; then
-        _mensagec "${YELLOW}" "Alerta: Valor desconhecido para 'sistema': ${CFG_SISTEMA}"
-        ((warnings++)) || true
-    else
-        _mensagec "${GREEN}" "OK: Sistema definido como ${CFG_SISTEMA}"
-    fi
-
     if [[ -z "${RAIZ}" ]]; then
         _mensagec "${RED}" "ERRO: Variavel 'RAIZ' nao definida!"
         ((erros++)) || true
@@ -577,7 +551,7 @@ _validar_configuracao() {
     fi
 
     # Variaveis opcionais
-    local vars_opcionais=("CFG_USA_DBMAKER" "CFG_ACESSO_SSH" "CFG_OFFLINE" "CFG_CHAVE_SSH")
+    local vars_opcionais=("CFG_ACESSO_SSH" "CFG_OFFLINE" "CFG_CHAVE_SSH")
     local var
     for var in "${vars_opcionais[@]}"; do
         if [[ -z "${!var:-}" ]]; then
@@ -668,7 +642,7 @@ _limpar_estado_variaveis() {
 # Limpeza de emergencia (sem dependencias de arrays)
 _limpeza_emergencia() {
     local emergency_vars="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
-    emergency_vars+=" CFG_SISTEMA CFG_VERCLASS CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE"
+    emergency_vars+=" CFG_VERSAOCLASS CFG_ACESSO_SSH CFG_OFFLINE"
     emergency_vars+=" CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT SCRIPT_DIR"
     emergency_vars+=" RAIZ CFG_DIR LIBS_DIR CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3"
     emergency_vars+=" DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_LOGS_DIR"

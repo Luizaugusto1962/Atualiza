@@ -99,9 +99,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "AVISO: Arquivo de configuracao $CONFIG_FILE nao encontrado." >&2
 
     # Definir valores padrao caso o arquivo nao exista
-    sistema=""
     verclass=""
-    dbmaker=""
     acessossh=""
     chavessh=""
     Offline=""
@@ -139,8 +137,7 @@ CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/Atualiza}"  # Diretorio do por
 # =============================================================================
 # CONFIGURACOES DO SISTEMA (variaveis do .config)   
 # =============================================================================
-CFG_SISTEMA="${CFG_SISTEMA:-${sistema}}"                        # Nome do sistema (ex: iscobol, linux)
-CFG_VERCLASS="${CFG_VERCLASS:-${verclass}}"                     # Versao da classe
+CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-${verclass}}"                     # Versao da classe
 CFG_EMPRESA="${CFG_EMPRESA:-${empresa}}"                        # Nome da empresa
 CFG_BASE_DIR="${CFG_BASE_DIR:-${base}}"                         # Diretorio base principal
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-${base2}}"                      # Diretorio base secundario
@@ -148,7 +145,6 @@ CFG_BASE_DIR3="${CFG_BASE_DIR3:-${base3}}"                      # Diretorio base
 CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-${enviabackup}}"            # Path para envio de backup
 
 # Flags booleanas do sistema
-CFG_USA_DBMAKER="${CFG_USA_DBMAKER:-${dbmaker}}"                # Usa DBMaker (s/n)
 CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-${acessossh}}"                # Acesso SSH habilitado (s/n)
 CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                   # Caminho da chave SSH privada
 CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                        # Modo offline (s/n)
@@ -163,9 +159,9 @@ PERM_FILE_EXEC="0755"                                           # Arquivos execu
 # =============================================================================
 # CONFIGURACOES DE REDE
 # =============================================================================
+DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-189.55.194.179}"
 DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-41122}"
 DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-atualiza}"
-DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-189.55.194.179}"
 DEFAULT_CHAVE_SSH="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa_atualiza}"
 DEFAULT_CHAVE_SSH_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa_atualiza.pub}"
 SSH_TIMEOUT="${SSH_TIMEOUT:-15}"
@@ -260,9 +256,9 @@ debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 # EXPORTAR CONSTANTES
 # =============================================================================
 export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
-export CFG_SISTEMA CFG_VERCLASS CFG_EMPRESA
+export CFG_VERSAOCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
-export CFG_USA_DBMAKER CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
+export CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
 export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT
 export PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC
 export HASH_ALGORITHM MAX_LOGIN_ATTEMPTS

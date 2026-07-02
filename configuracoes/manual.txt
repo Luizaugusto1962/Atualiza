@@ -833,8 +833,6 @@ MENU DE BACKUP(S)
 
 Sistema completo de backup e restauracao da base de dados.
 
-DISPONIVEL PARA: Sistemas sem banco de dados (dbmaker=n)
-
 OPCOES DISPONIVEIS:
 ---------------------------------------------------------------
 
@@ -1263,9 +1261,7 @@ OPCOES DISPONIVEIS:
     Permite editar configuracoes existentes.
     
     PARAMETROS EDITAVEIS:
-    * sistema: iscobol ou cobol
     * verclass: Versao do IsCOBOL
-    * dbmaker: Sistema usa banco (s/n)
     * acessossh: Modo facilitado (s/n)
     * Offline: Modo offline (s/n)
     * enviabackup: Diretorio backup servidor
@@ -1312,9 +1308,7 @@ FORMATO:
 Arquivo texto com pares chave=valor
 
 EXEMPLO:
-sistema=iscobol
 verclass=2024
-dbmaker=n
 empresa=MINHAEMP
 base=/dados_jisam
 ipserver=192.168.1.100
@@ -1329,20 +1323,10 @@ IMPORTANTE:
 PARAMETROS PRINCIPAIS:
 -------------------------------------------------------------------
 
-sistema:
-* iscobol: Sistema IsCOBOL
-* cobol: Micro Focus COBOL
-* Determina modulos a usar
-
 verclass:
 * 2018, 2020, 2023, 2024
 * Versao do IsCOBOL
 * Define compatibilidade biblioteca
-
-dbmaker:
-* s: Sistema usa banco de dados
-* n: Sistema file-based
-* Afeta menus disponiveis
 
 base:
 * Diretorio principal de dados

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/06/2026-01
+# Versao: 01/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -318,7 +318,7 @@ _coletar_artefatos_atualizacao() {
 _solicitar_programas_atualizacao() {
     _coletar_artefatos_atualizacao \
         "programa" \
-        "Informe o nome do programa a ser atualizado da versao do sistema ${CFG_VERCLASS}" \
+        "Informe o nome do programa a ser atualizado da versao do sistema ${CFG_VERSAOCLASS}" \
         "Finalizando selecao de programas..." \
         "Programas selecionados:"
 }
@@ -327,7 +327,7 @@ _solicitar_programas_atualizacao() {
 _solicitar_pacotes_atualizacao() {
     _coletar_artefatos_atualizacao \
         "pacote" \
-        "Informe o nome do pacote da versao do sistema ${CFG_VERCLASS}" \
+        "Informe o nome do pacote da versao do sistema ${CFG_VERSAOCLASS}" \
         "Finalizando selecao de pacotes..." \
         "Pacotes selecionados:"
 }
@@ -572,23 +572,14 @@ _processar_atualizacao_pacotes() {
         dir_path="$(dirname "$classfile")"
         local arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
 
-        # Backup dos arquivos antigos
-        if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-            if ! find "${E_EXEC}" -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
-                _log_erro "Falha ao fazer backup de ${progname}*.class"
-                return 1
-            fi
-        else
-            if ! find "${E_EXEC}" -name "${progname}*.int" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
-                _log_erro "Falha ao fazer backup de ${progname}*.int"
-                return 1
-            fi
+        # Backup dos arquivos class antigos
+        if ! find "${E_EXEC}" -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+            _log_erro "Falha ao fazer backup de ${progname}*.class"
+            return 1
         fi
 
         # Backup de arquivos .TEL se existirem
         if [[ -d "${T_TELAS}" ]] && find "${T_TELAS}" -maxdepth 1 -name "${progname}*.TEL" -print -quit | grep -q .; then
- 
-#        if [[ -f "${progname}.TEL" ]]; then
             if ! find "${T_TELAS}" -name "${progname}*.TEL" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
                 _log_erro "Falha ao fazer backup de ${progname}*.TEL"
                 return 1
@@ -606,8 +597,6 @@ _processar_atualizacao_pacotes() {
                 # Move usando caminho completo retornado pelo find
         if ! mv -f "${classfile}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
             _log_erro "Falha ao mover ${classfile} para ${E_EXEC}"
-#        if ! mv -f "${progname}"*.class "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-#            _log_erro "Falha ao mover ${progname}*.class para ${E_EXEC}"
             return 1
         fi
 
@@ -618,14 +607,8 @@ _processar_atualizacao_pacotes() {
             shopt -u nullglob
             for tel in "${tels[@]}"; do
                 mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
-#        if [[ -f "${progname}.TEL" ]]; then
-#            if ! mv -f "${progname}"*.TEL "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
-#                _log_erro "Falha ao mover ${progname}*.TEL para ${T_TELAS}"
-#                return 1
-#            fi
              done
         fi
-#    done < <(find . -type f -name "*.class")
     done < <(find . -type f -name "*.class" -print0)
 }
 

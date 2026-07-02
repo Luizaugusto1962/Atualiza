@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/06/2026-01
+# Versao: 01/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -119,7 +119,7 @@ _login() {
     # usuario is made global to be used in logging
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
     while [[ $tentativas -le $max_tentativas ]]; do
-        printf '%b\n' "${GREEN}" ".. Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} - Versao Iscobol: ${CYAN}${CFG_VERCLASS}${GREEN}..${NORM}"
+        printf '%b\n' "${GREEN}" ".. Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} |-| Versao Iscobol: ${CYAN}${CFG_VERSAOCLASS}${GREEN}..${NORM}"
         printf "\n"
         _linha "-" "${CYAN}"
         _mensagec "${RED}" "Login no Sistema"

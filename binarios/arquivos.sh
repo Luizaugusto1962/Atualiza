@@ -5,14 +5,14 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/06/2026-01
+# Versao: 01/07/2026-01
 #
 
 set -euo pipefail
 
 # Variaveis globais esperadas
-#CFG_SISTEMA="${CFG_SISTEMA:-}"                                     # Tipo de sistema (ex: iscobol, outros).
-CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da primeira base de dados.
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                                 # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"                                 # Caminho do diretorio da terceira base de dados.
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                      # Comando de compactacao (ex: zip) 
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
@@ -250,11 +250,6 @@ _recuperar_arquivo_especifico() {
     fi
 
     _limpa_tela
-    if [[ "${CFG_SISTEMA}" != "iscobol" ]]; then
-        _mensagec "${RED}" "Recuperacao em desenvolvimento para este sistema. Disponivel apenas para IsCOBOL no momento."
-        _aguardar_tecla
-        return 1
-    fi
 
     # Loop para permitir múltiplas recuperações
     while [[ "${continuar}" =~ ^[Ss]$ ]]; do
@@ -421,42 +416,39 @@ _recuperar_arquivos_principais() {
         return 1
     fi
     
-    if [[ "${CFG_SISTEMA}" = "iscobol" ]]; then
-        # Usar valor padrão se base_trabalho estiver vazia
-        base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
-        cd "$base_trabalho" || {
-            _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
-            return 1
-        }
-        
-        # Gerar lista de arquivos atuais
-        local var_ano var_ano4
-        var_ano=$(date +%y)
-        var_ano4=$(date +%Y)
-        
-        # Criar lista temporaria
-        {
-            ls ATE"${var_ano}"*.dat 2>/dev/null || true
-            ls NFE?"${var_ano4}".*.dat 2>/dev/null || true
-        } > "${CFG_DIR}/indexar2"
-        
-        cd "${CFG_DIR}" || return 1
-        _aguardar 1
-        
-        # Verificar arquivos de lista
-        for lista in "indexar2" "indexar"; do
-            if [[ -f "$lista" && -r "$lista" ]]; then
-                _processar_lista_arquivos "$lista" "$base_trabalho"
-            fi
-        done
+    # Usar valor padrão se base_trabalho estiver vazia
+    base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
+    cd "$base_trabalho" || {
+        _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
+        return 1
+    }
+    
+    # Gerar lista de arquivos atuais
+    local var_ano var_ano4
+    var_ano=$(date +%y)
+    var_ano4=$(date +%Y)
+    
+    # Criar lista temporaria
+    {
+        ls ATE"${var_ano}"*.dat 2>/dev/null || true
+        ls NFE?"${var_ano4}".*.dat 2>/dev/null || true
+    } > "${CFG_DIR}/indexar2"
+    
+    cd "${CFG_DIR}" || return 1
+    _aguardar 1
+    
+    # Verificar arquivos de lista
+    for lista in "indexar2" "indexar"; do
+        if [[ -f "$lista" && -r "$lista" ]]; then
+            _processar_lista_arquivos "$lista" "$base_trabalho"
+        fi
+    done
         
         # Limpar arquivo temporario
         [[ -f "indexar2" ]] && rm -f "indexar2"
         
         _mensagec "${YELLOW}" "Arquivos principais recuperados"
-    else
-        _mensagec "${RED}" "Recuperacao nao disponivel para este sistema. Disponivel apenas para IsCOBOL no momento."
-    fi
+
     _aguardar_tecla
 }
 

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/06/2026-01
+# Versao: 01/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -20,7 +20,7 @@ _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"
-CFG_VERCLASS="${CFG_VERCLASS:-}"
+CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-}"
 
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 # Funcao auxiliar para leitura de opcao com suporte a ajuda contextual
@@ -30,7 +30,7 @@ _ler_opcao_menu() {
     local contexto="${1:-geral}"
 
     _linha "=" "${WHITE}"
-    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)    ||    ${BLUE}Empresa: ${WHITE}${CFG_EMPRESA}${BLUE} | Iscobol: ${CYAN}${CFG_VERCLASS}${BLUE} |"
+    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)    ||    ${BLUE}Empresa: ${WHITE}${CFG_EMPRESA}${BLUE} | Iscobol: ${CYAN}${CFG_VERSAOCLASS}${BLUE} |"
     _linha "=" "${GREEN}"
 
     if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
@@ -157,9 +157,9 @@ _menu_programas() {
         _exibir_separador_menu
         _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
 
-        if [[ -n "${CFG_VERCLASS}" ]]; then
+        if [[ -n "${CFG_VERSAOCLASS}" ]]; then
             printf "\n"
-            _mensaged "${BLUE}" "Versao do Iscobol - ${CFG_VERCLASS}"
+            _mensaged "${BLUE}" "Versao do Iscobol - ${CFG_VERSAOCLASS}"
         fi
 
         local opcao
@@ -226,11 +226,8 @@ _menu_arquivos() {
         _exibir_cabecalho_menu "Menu Gerencial dos Arquivos"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
-
-        if [[ "${CFG_USA_DBMAKER:-}" != "s" ]]; then
-            _exibir_opcao_menu "1" "Rotinas de Backup"
-            _exibir_opcao_menu "2" "Reconstruir Arquivos"
-        fi
+        _exibir_opcao_menu "1" "Rotinas de Backup"
+        _exibir_opcao_menu "2" "Reconstruir Arquivos"
         _exibir_opcao_menu "3" "Enviar & Receber Arquivos"
         _exibir_separador_menu
         _exibir_opcao_menu "4" "Arquivos Temporarios"
@@ -243,20 +240,8 @@ _menu_arquivos() {
         fi
 
         case "${opcao}" in
-            1)
-                if [[ "${CFG_USA_DBMAKER:-}" = "s" ]]; then
-                    _processar_opcao_invalida
-                else
-                    _menu_backup || true
-                fi
-                ;;
-            2)
-                if [[ "${CFG_USA_DBMAKER:-}" = "s" ]]; then
-                    _processar_opcao_invalida
-                else
-                    _menu_recuperar_arquivos || true
-                fi
-                ;;
+            1) _menu_backup || true ;;
+            2) _menu_recuperar_arquivos || true ;;
             3) _menu_transferencia_arquivos || true ;;
             4) _menu_temporarios || true ;;
             5) _executar_expurgador "arquivos" || true ;;
@@ -414,11 +399,7 @@ _menu_configs() {
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
         _exibir_opcao_menu "1" "Parametros do Sistema"
-        if [[ "${CFG_SISTEMA:-}" = "iscobol" ]]; then
-            _exibir_opcao_menu "2" "Versao do Iscobol"
-        else
-            _exibir_opcao_menu "2" "Funcao nao disponivel"
-        fi
+        _exibir_opcao_menu "2" "Versao do Iscobol"
         _exibir_opcao_menu "3" "Versao do Linux"
         _exibir_opcao_menu "4" "Consultar Variaveis"
         _exibir_rodape_menu

@@ -11,7 +11,7 @@ set -euo pipefail
 set -euo pipefail
 
 declare -g pids=()                     # Array global para rastrear PIDs de background
-declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3="" ATUALIZA4="" # Variaveis de artefatos
+declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
 ROOT_DIR="/"
 
 # Funcao de cleanup em caso de interrupcao
@@ -214,10 +214,7 @@ _processar_atualizacao_biblioteca() {
 
     # Inicializar contadores para progresso geral (opcional, para log final)
     local contador=0
-    local total_etapas=2 # Para sistemas nao-iscobol
-    if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
-        total_etapas=3 # Para iscobol inclui XML
-    fi
+    local total_etapas=2 
 
     # Exibir mensagem inicial
     _linha
@@ -259,24 +256,6 @@ _processar_atualizacao_biblioteca() {
     else
         _mensagec "${RED}" "Falha na compactacao de $T_TELAS"
         return 1
-    fi
-
-    # Compactacao em X_XML (apenas para IsCOBOL)
-    if [[ "$CFG_SISTEMA" == "iscobol" ]]; then
-        {
-            "$DEFAULT_FIND" "$X_XML"/ -type f \( -iname "*.xml" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
-        } &
-        local pid_tar_xml=$!
-        pids+=("$pid_tar_xml")  # Registrar PID
-        _mostrar_progresso_backup "$pid_tar_xml" "Compactando $X_XML"
-        if wait "$pid_tar_xml"; then
-            ((contador++)) || true
-            _mensagec "${GREEN}" "Compactacao de $X_XML concluida [Etapa ${contador}/${total_etapas}]"
-            _linha
-        else
-            _mensagec "${RED}" "Falha na compactacao de $X_XML"
-            return 1
-        fi
     fi
 
  # Comprimir o arquivo tar final com barra de progresso
@@ -477,7 +456,6 @@ _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
     local temp_restore="$ROOT_DIR" 
-#    local temp_restore="/"  # Diretorio pai dos executaveis
     
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _mensagec "${RED}" "Erro: Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
@@ -545,13 +523,9 @@ _definir_variaveis_biblioteca() {
     ATUALIZA1="${SAVATU1:-}${VERSAO}.zip"
     ATUALIZA2="${SAVATU2:-}${VERSAO}.zip"
     ATUALIZA3="${SAVATU3:-}${VERSAO}.zip"
-    ATUALIZA4="${SAVATU4:-}${VERSAO}.zip"
 }
 
 _obter_arquivos_atualizacao() {
-    if [[ "${CFG_SISTEMA}" == "iscobol" ]]; then
-        echo "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" "${ATUALIZA4}"
-    else
-        echo "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" 
-    fi
+    echo "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}" 
+
 }
