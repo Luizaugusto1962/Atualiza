@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 02/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -333,8 +333,6 @@ _solicitar_pacotes_atualizacao() {
 }
 
 #---------- FUNCOES DE DOWNLOAD ----------#
-
-
 # Baixa pacotes para diretorio especifico
 _baixar_pacotes_vaievem() {
     cd "${DEFAULT_RECEBE_DIR}" || {
@@ -342,7 +340,6 @@ _baixar_pacotes_vaievem() {
         _aguardar 2
         return 1
     }
-
     _baixar_programas_vaievem
 }
 
@@ -466,8 +463,6 @@ _processar_atualizacao_programas() {
 
 # Mover arquivos para diretorios corretos
     for extensao in ".class" ".int" ".TEL"; do
-#        if ls -- *"${extensao}" 1>/dev/null 2>&1; then
-#       if compgen -G "*${extensao}" >/dev/null; then
         shopt -s nullglob
         local arquivos_encontrados=(*"${extensao}")
         shopt -u nullglob
@@ -561,10 +556,6 @@ _processar_atualizacao_pacotes() {
     done
 
     # Processar arquivos .class encontrados (usando redirection para evitar subshell do pipe)
-#    while read -r classfile; do
-#        local progname="${classfile##*/}" # Extrair nome do arquivo
-#        progname="${progname%%.class}"    # Remover extensao
-    # CORREÇÃO: Loop seguro com -print0 e caminhos completos para mv
     while IFS= read -r -d '' classfile; do
         local progname
         progname="$(basename "$classfile" .class)"
@@ -594,7 +585,7 @@ _processar_atualizacao_pacotes() {
         fi
 
         # Mover novos arquivos
-                # Move usando caminho completo retornado pelo find
+        # Move usando caminho completo retornado pelo find
         if ! mv -f "${classfile}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
             _log_erro "Falha ao mover ${classfile} para ${E_EXEC}"
             return 1
