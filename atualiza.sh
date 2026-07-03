@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
-# Versao: 16/06/2026-01
+# Versao: 04/07/2026-01
 # Autor: Luiz Augusto
 # Os scripts de suporte devem estar no diretório binarios ao lado deste script.
 # Padrões e regras de desenvolvimento: ver AGENTS.md
@@ -24,21 +24,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # Diretorio do script atual
 
-RLIBS_DIR="${SCRIPT_DIR}/libs"
-# Chamar move_dir.sh para organizar diretórios após atualização
-# Verificar se o diretório libs existe antes de executar
-# CORRECAO: _mensagec nao esta disponivel aqui (utils.sh ainda nao foi carregado)
-# Usar printf diretamente para mensagens neste ponto do script
-    if [[ -d "${SCRIPT_DIR}/libs" && -f "${RLIBS_DIR}/move_dir.sh" ]]; then
-        if bash "${RLIBS_DIR}/move_dir.sh"; then
-            printf "%s\n" "Organizacao de diretorios concluida."
-        else
-            printf "%s\n" "AVISO: Falha ao organizar diretorios." >&2
-        fi
-    fi
-
 # Diretorio do script SCRIPT_DIR
-
 PLIBS_DIR="${SCRIPT_DIR}/binarios" # Diretorio das bibliotecas usadas pelo script
 
 # Verifica se o diretorio binarios existe
