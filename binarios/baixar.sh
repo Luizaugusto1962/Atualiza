@@ -131,7 +131,7 @@ _atualizando() {
     if [[ -f ".senhas" ]]; then
         chmod 600 ".senhas" 2>/dev/null || true
         if mv -f ".senhas" "${CFG_DIR}/"; then
-            _ok "Arquivo .senhas instalado em ${CFG_DIR}"
+            _mensagec "${GREEN}" "Arquivo .senhas instalado em ${CFG_DIR}"
             ((arquivos_instalados++)) || true
         else
             ((arquivos_erro++)) || true
