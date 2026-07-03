@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 03/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -25,10 +25,10 @@ _obter_colunas() {
 
 # Configuracao de alertas
 
-    _msg()   { printf "${CYAN}[INFO]${NORM}  %s\n" "$1"; }
-    _ok()    { printf "${GREEN}[OK]${NORM}    %s\n" "$1"; }
-    _aviso()  { printf "${YELLOW}[AVISO]${NORM} %s\n" "$1"; }
-    _erro()  { printf "${RED}[ERRO]${NORM}  %s\n" "$1"; }
+    _msg()   { _exibir_mensagem_centralizada "${CYAN}"   "[INFO]  $1"; }
+    _ok()    { _exibir_mensagem_centralizada "${GREEN}"  "[OK]    $1"; }
+    _aviso() { _exibir_mensagem_centralizada "${YELLOW}" "[AVISO] $1"; }
+    _erro()  { _exibir_mensagem_centralizada "${RED}"    "[ERRO]  $1"; }
 
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
