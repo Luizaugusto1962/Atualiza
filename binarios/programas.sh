@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 02/07/2026-01
+# Versao: 0307/2026-01
 #
 
 # Variaveis globais esperadas
@@ -28,7 +28,7 @@ _atualizar_programa_online() {
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then    
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
-            _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
+            _aviso "Parametro do servidor OFF ativo"
             _linha
             _aguardar_tecla
             return 0
@@ -47,7 +47,7 @@ _atualizar_programa_online() {
     
     # Baixar programas via vaievem
     if ! _baixar_programas_vaievem; then
-        _mensagec "${RED}" "Falha ao baixar programas"
+        _erro "Falha ao baixar programas"
         _linha
         _aguardar_tecla
         return 1
@@ -55,7 +55,7 @@ _atualizar_programa_online() {
     
     # Atualizar programas baixados
     if ! _processar_atualizacao_programas; then
-        _mensagec "${RED}" "Falha ao processar atualizacao"
+        _erro "Falha ao processar atualizacao"
         _linha
         _aguardar_tecla
         return 1
@@ -98,7 +98,7 @@ _atualizar_programa_offline() {
     
     # Atualizar programas
     if ! _processar_atualizacao_programas; then
-        _mensagec "${RED}" "Falha ao processar atualizacao"
+        _erro "Falha ao processar atualizacao"
         _linha
         _aguardar_tecla
         return 1
@@ -134,7 +134,7 @@ _atualizar_programa_pacote() {
         fi
     else
         if ! _baixar_pacotes_vaievem; then
-            _mensagec "${RED}" "Falha ao baixar pacotes"
+            _erro "Falha ao baixar pacotes"
             _linha
             _aguardar_tecla
             return 1
@@ -142,7 +142,7 @@ _atualizar_programa_pacote() {
     fi
 
     if ! _processar_atualizacao_pacotes; then
-        _mensagec "${RED}" "Falha ao processar atualizacao dos pacotes"
+        _erro "Falha ao processar atualizacao dos pacotes"
         _linha
         _aguardar_tecla
         return 1
@@ -162,7 +162,7 @@ _selecionar_programas_reversao() {
     ARQUIVOS_PROGRAMA=()
 
     if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
-        _mensagec "${RED}" "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
+        _erro "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
         _aguardar_tecla
         return 0
     fi
@@ -172,7 +172,7 @@ _selecionar_programas_reversao() {
     shopt -u nullglob
 
     if (( ${#backups[@]} == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
+        _aviso "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
         _aguardar_tecla
         return 0
     fi
@@ -202,7 +202,7 @@ _selecionar_programas_reversao() {
 
         # Tratar cancelamento
         if [[ -z "${escolha}" || "${escolha}" == "0" ]]; then
-            _mensagec "${YELLOW}" "Operacao cancelada."
+            _aviso "Operacao cancelada."
             return 1
         fi
 
@@ -226,7 +226,7 @@ _selecionar_programas_reversao() {
         done
 
         if (( invalido )); then
-            _mensagec "${RED}" "Opcao invalida. Informe numero(s) entre 1 e ${#programas[@]}."
+            _erro "Opcao invalida. Informe numero(s) entre 1 e ${#programas[@]}."
             continue
         fi
 
@@ -337,7 +337,7 @@ _coletar_artefatos_atualizacao() {
         fi
 
         if ! _validar_nome_programa "$item"; then
-            _mensagec "${RED}" "Erro: Nome invalido. Use apenas letras maiusculas e numeros."
+            _erro "Nome invalido. Use apenas letras maiusculas e numeros."
             continue
         fi
 
@@ -386,7 +386,7 @@ _solicitar_pacotes_atualizacao() {
 # Baixa pacotes para diretorio especifico
 _baixar_pacotes_vaievem() {
     cd "${DEFAULT_RECEBE_DIR}" || {
-        _mensagec "${RED}" "Erro: Diretorio $DEFAULT_RECEBE_DIR nao encontrado"
+        _erro "Erro: Diretorio $DEFAULT_RECEBE_DIR nao encontrado"
         _aguardar 2
         return 1
     }
@@ -402,7 +402,7 @@ _mover_arquivos_offline() {
         if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
             _mensagec "${GREEN}" "Arquivo encontrado: ${arquivo}"
         else
-            _mensagec "${RED}" "Arquivo nao encontrado: ${arquivo}"
+            _erro "Arquivo nao encontrado: ${arquivo}"
             todos_encontrados=1
         fi
         _linha
@@ -414,25 +414,25 @@ _mover_arquivos_offline() {
 _processar_atualizacao_programas() {
     # Validar configuracoes basicas antes de qualquer operacao
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        _erro "ERRO: DEFAULT_RECEBE_DIR nao configurado"
         return 1
     fi
 
     if [[ -z "${DEFAULT_PROGS_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO: DEFAULT_PROGS_DIR nao configurado"
+        _erro "ERRO: DEFAULT_PROGS_DIR nao configurado"
         return 1
     fi
 
     # SEGURANCA: Validar diretorio de backups antes de qualquer operacao
     if ! _validar_diretorio_backups; then
-        _mensagec "${RED}" "OPERACAO ABORTADA: Impossivel garantir integridade de backups"
+        _erro "OPERACAO ABORTADA: Impossivel garantir integridade de backups"
         return 1
     fi
 
     # Verificar se arquivos existem no diretorio de recebimento
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
-            _mensagec "${RED}" "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
+            _erro "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
             return 1
         fi
     done
@@ -448,7 +448,7 @@ _processar_atualizacao_programas() {
     # Mover arquivos para o diretorio temporario e acessa-lo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${temp_update}/"; then
-            _mensagec "${RED}" "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
+            _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
             rm -rf "${temp_update}"
             return 1
         fi
@@ -473,7 +473,7 @@ _processar_atualizacao_programas() {
             local timestamp
             timestamp=$(date +"%Y%m%d_%H%M%S")
             if ! mv -f "$arquivo_backup" "${DEFAULT_OLDS_DIR}/${timestamp}-${programa}-anterior.zip"; then
-                _mensagec "${RED}" "ERRO: Falha ao arquivar backup anterior de ${programa}"
+                _erro "ERRO: Falha ao arquivar backup anterior de ${programa}"
                 rm -rf "${temp_update}"
                 return 1
             fi
@@ -489,7 +489,7 @@ _processar_atualizacao_programas() {
             if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
-                _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .class de ${programa}"
+                _erro "Falha ao fazer backup dos arquivos .class de ${programa}"
                 rm -rf "${temp_update}"
                 return 1
             fi
@@ -503,7 +503,7 @@ _processar_atualizacao_programas() {
             if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
-                _mensagec "${RED}" "ERRO: Falha ao fazer backup dos arquivos .TEL de ${programa}"
+                _erro "Falha ao fazer backup dos arquivos .TEL de ${programa}"
                 rm -rf "${temp_update}"
                 return 1
             fi
@@ -512,7 +512,7 @@ _processar_atualizacao_programas() {
         # SEGURANCA: Validar integridade do backup criado
         if (( backup_criado )); then
             if ! _validar_integridade_backup "$arquivo_backup"; then
-                _mensagec "${RED}" "ERRO CRITICO: Backup criado mas invalido para ${programa}"
+                _erro "CRITICO: Backup criado mas invalido para ${programa}"
                 rm -rf "${temp_update}"
                 return 1
             fi
@@ -521,14 +521,14 @@ _processar_atualizacao_programas() {
     done
 
     _linha
-    _mensagec "${YELLOW}" "Backup dos programas efetuado"
+    _aviso "Backup dos programas efetuado"
     _linha
     _aguardar 1
 
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
-            _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
+            _erro "ao descompactar ${arquivo}"
             rm -rf "${temp_update}"
             return 1
         fi
@@ -545,14 +545,14 @@ _processar_atualizacao_programas() {
                 if [[ "${extensao}" == ".TEL" ]]; then
                     if ! mv -f "${arquivo}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
                         _log_erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
-                        _mensagec "${RED}" "ERRO: Falha ao mover ${arquivo} para ${T_TELAS}/"
+                        _erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
                     else
                         _mensagec "${GREEN}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
                     fi
                 else
                     if ! mv -f "${arquivo}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
                         _log_erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
-                        _mensagec "${RED}" "ERRO: Falha ao mover ${arquivo} para ${E_EXEC}/"
+                        _erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
                         _mensagec "${YELLOW}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
                         _mensagec "${YELLOW}" "Use a opcao 4 de reversao para restaurar o programa anterior."
                     else
@@ -566,7 +566,7 @@ _processar_atualizacao_programas() {
     done
 
     _linha
-    _mensagec "${GREEN}" "Atualizando o(s) programa(s)..."
+    _ok "Atualizando o(s) programa(s)..."
     _linha
 
     # Mover arquivos .zip para .bkp em DEFAULT_PROGS_DIR
@@ -596,7 +596,7 @@ _processar_atualizacao_programas() {
 # Processa atualizacao de pacotes
 _processar_atualizacao_pacotes() {
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-        _mensagec "${RED}" "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+        _erro "DEFAULT_RECEBE_DIR nao configurado"
         return 1
     fi
 
@@ -609,7 +609,7 @@ _processar_atualizacao_pacotes() {
     # Verificar se arquivos existem no diretorio de recebimento
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
-            _mensagec "${RED}" "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
+            _erro "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
             return 1
         fi
     done
@@ -625,7 +625,7 @@ _processar_atualizacao_pacotes() {
     # Mover pacotes para o diretorio temporario e acessa-lo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${temp_update}/"; then
-            _mensagec "${RED}" "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
+            _erro "Falha ao mover ${arquivo} para diretorio temporario"
             rm -rf "${temp_update}"
             return 1
         fi
@@ -639,7 +639,7 @@ _processar_atualizacao_pacotes() {
     # Descompactar pacotes
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
-            _mensagec "${RED}" "Erro ao descompactar ${arquivo}"
+            _erro "ao descompactar ${arquivo}"
             rm -rf "${temp_update}"
             return 1
         fi
@@ -732,24 +732,24 @@ _processar_reversao_programas() {
         if [[ -f "$arquivo_anterior" ]]; then
             # SEGURANCA: Validar integridade do backup antes de reverter
             if ! _validar_integridade_backup "$arquivo_anterior"; then
-                _mensagec "${RED}" "ERRO: Backup invalido ou corrompido para ${programa}. Reversao abortada."
+                _erro "Backup invalido ou corrompido para ${programa}. Reversao abortada."
                 return 1
             fi
 
             if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${compilado}.zip"; then
-                _mensagec "${RED}" "ERRO: Falha ao preparar backup para reversao de ${programa}"
+                _erro "Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
             _mensagec "${GREEN}" "Backup validado e preparado para reversao: ${programa}"
         else
-            _mensagec "${RED}" "Backup nao encontrado para: ${programa}"
+            _erro "Backup nao encontrado para: ${programa}"
             return 1
         fi
     done
 
     # Processar atualizacao com os arquivos revertidos
     if ! _processar_atualizacao_programas; then
-        _mensagec "${RED}" "Falha ao processar reversao dos programas"
+        _erro "Falha ao processar reversao dos programas"
         return 1
     fi
 }
@@ -771,7 +771,7 @@ _validar_integridade_backup() {
 
     # Verificar se arquivo existe
     if [[ ! -f "${arquivo_backup}" ]]; then
-        _mensagec "${RED}" "ERRO: Arquivo de backup nao encontrado: ${arquivo_backup}"
+        _erro "Arquivo de backup nao encontrado: ${arquivo_backup}"
         return 1
     fi
 
@@ -780,13 +780,13 @@ _validar_integridade_backup() {
     tamanho=$(stat -c%s "${arquivo_backup}" 2>/dev/null || true)
     if [[ -z "${tamanho}" || "${tamanho}" -lt 22 ]]; then
         tamanho="${tamanho:-0}"
-        _mensagec "${RED}" "ERRO: Arquivo de backup corrompido (tamanho: ${tamanho} bytes): ${arquivo_backup}"
+        _erro "Arquivo de backup corrompido (tamanho: ${tamanho} bytes): ${arquivo_backup}"
         return 1
     fi
 
     # Testar integridade do arquivo zip
     if ! "${DEFAULT_UNZIP}" -t "${arquivo_backup}" >/dev/null 2>&1; then
-        _mensagec "${RED}" "ERRO: Arquivo de backup invalido ou corrompido: ${arquivo_backup}"
+        _erro "Arquivo de backup invalido ou corrompido: ${arquivo_backup}"
         return 1
     fi
 
@@ -811,7 +811,7 @@ _obter_data_arquivo() {
 # Mensagem de conclusao da reversao
 _mensagem_conclusao_reversao() {
     _linha
-    _mensagec "${YELLOW}" "Volta do(s) Programa(s) Concluida(s)"
+    _aviso "Volta do(s) Programa(s) Concluida(s)"
     _linha
     _aguardar_tecla
     _linha

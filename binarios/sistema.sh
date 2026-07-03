@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 0307/2026-01
 #
 
 # Variaveis globais esperadas
@@ -27,7 +27,7 @@ _mostrar_versao_iscobol() {
         printf "\n"
     else
         _linha
-        _mensagec "${RED}" "Erro: ${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
+        _erro "${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
         _linha
         _aguardar 2
     fi
@@ -186,7 +186,7 @@ _manutencao_setup() {
     local atualiza="${SCRIPT_DIR}/atualiza.sh"
 
     if [[ ! -f "${atualiza}" ]]; then
-        _mensagec "${RED}" "Erro: atualiza.sh nao encontrado em ${SCRIPT_DIR}"
+        _erro "atualiza.sh nao encontrado em ${SCRIPT_DIR}"
         _aguardar 2
         return 1
     fi

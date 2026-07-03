@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 03/07/2026-01
 #
 
 set -euo pipefail
@@ -32,19 +32,19 @@ _selecionar_base_arquivos() {
 
     # Validar antes de prosseguir
     if [[ -z "${base_trabalho}" ]]; then
-        _mensagec "${RED}" "Erro: Diretorio de trabalho nao foi definido"
+        _erro "Diretorio de trabalho nao foi definido"
         _aguardar_tecla
         return 1
     fi
 
     if [[ ! -d "${base_trabalho}" ]]; then
-        _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
+        _erro "Diretorio ${base_trabalho} nao encontrado"
         _aguardar_tecla
         return 1
     fi
 
     if [[ ! -r "${base_trabalho}" ]]; then
-        _mensagec "${RED}" "Erro: Sem permissao de leitura em ${base_trabalho}"
+        _erro "Sem permissao de leitura em ${base_trabalho}"
         _aguardar_tecla
         return 1
     fi
@@ -71,11 +71,11 @@ _executar_limpeza_temporarios() {
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
     if [[ ! -f "${arquivo_lista}" ]]; then
-        _mensagec "${RED}" "ERRO: Arquivo ${arquivo_lista} nao existe no diretorio"
+        _erro "Arquivo ${arquivo_lista} nao existe no diretorio"
         _aguardar 2
         return 1
     elif [[ ! -r "${arquivo_lista}" ]]; then
-        _mensagec "${RED}" "ERRO: Arquivo ${arquivo_lista} sem permissao de leitura"
+        _erro "Arquivo ${arquivo_lista} sem permissao de leitura"
         _aguardar 2
         return 1
     fi
@@ -96,7 +96,7 @@ _executar_limpeza_temporarios() {
                     _limpar_base_especifica "$caminho_base" "$arquivo_lista2"
                 fi
             else
-                _mensagec "${YELLOW}" "Diretorio nao existe: ${caminho_base}"
+                _aviso "Diretorio nao existe: ${caminho_base}"
                 _aguardar 2
             fi
         fi
@@ -112,24 +112,24 @@ _limpar_base_especifica() {
     
     # Validar parâmetros
     if [[ -z "$caminho_base" || -z "$arquivo_lista" ]]; then
-        _mensagec "${RED}" "ERRO: Parametros invalidos"
+        _erro "Parametros invalidos"
         return 1  
     fi
     
     if [[ ! -d "$caminho_base" ]]; then
-        _mensagec "${RED}" "ERRO: Diretorio nao existe: $caminho_base"
+        _erro "Diretorio nao existe: $caminho_base"
         return 1  
     fi
     
     if [[ ! -f "$arquivo_lista" ]]; then
-        _mensagec "${RED}" "ERRO: Arquivo de lista nao existe"
+        _erro "Arquivo de lista nao existe"
         return 1  
     fi
     
     # Ler lista de arquivos temporarios
     mapfile -t arquivos_temp < "$arquivo_lista"
     
-    _mensagec "${YELLOW}" "Limpando arquivos temporarios do diretorio: ${caminho_base}"
+    _aviso "Limpando arquivos temporarios do diretorio: ${caminho_base}"
     _aguardar 1
     _linha
     
@@ -163,12 +163,12 @@ _limpar_base_especifica() {
             fi
          else
             _log "ERRO ao compactar arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
-            _mensagec "${RED}" "  >> ERRO ao compactar padrao: ${padrao_arquivo}"
+            _erro "  >> Ao compactar padrao: ${padrao_arquivo}"
             _aguardar 1
         fi
     done
     _linha
-    _mensagec "${GREEN}" "Limpeza concluida"
+    _ok "Limpeza concluida"
     _linha 
 
     return 0
@@ -187,7 +187,7 @@ _adicionar_arquivo_lixo() {
     _linha
 
     if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._*-]+$ ]]; then
-        _mensagec "${RED}" "Nome de arquivo invalido. Use apenas letras, numeros, pontos, hifens ou '*'."
+        _erro "Nome de arquivo invalido. Use apenas letras, numeros, pontos, hifens ou '*'."
         _aguardar_tecla
         return 1
     fi
@@ -223,7 +223,7 @@ _lista_arquivos_lixo() {
     if [[ -f "${CFG_DIR}/limpetmp" && -s "${CFG_DIR}/limpetmp" ]]; then
         nl -w3 -s'. ' "${CFG_DIR}/limpetmp"
     else
-        _mensagec "${YELLOW}" "Nenhum arquivo listado no 'limpetmp'"
+        _aviso "Nenhum arquivo listado no 'limpetmp'"
     fi
 
     _linha
@@ -233,7 +233,7 @@ _lista_arquivos_lixo() {
     if [[ -f "${CFG_DIR}/limpetmp2" && -s "${CFG_DIR}/limpetmp2" ]]; then
         nl -w3 -s'. ' "${CFG_DIR}/limpetmp2"
     else
-        _mensagec "${YELLOW}" "Nenhum arquivo listado no 'limpetmp2'"
+        _aviso "Nenhum arquivo listado no 'limpetmp2'"
     fi
 
     _linha
@@ -266,7 +266,7 @@ _recuperar_arquivo_especifico() {
         
         if [[ -z "$nome_arquivo" ]]; then
             # Pergunta confirmação antes de recuperar todos
-            _mensagec "${YELLOW}" "Deseja recuperar TODOS os arquivos principais?"
+            _aviso "Deseja recuperar TODOS os arquivos principais?"
             read -rp "${YELLOW}[S/N]: ${NORM}" confirmar_todos
             confirmar_todos=$(_trim "$confirmar_todos")
             confirmar_todos=$(_upper "$confirmar_todos")
@@ -274,7 +274,7 @@ _recuperar_arquivo_especifico() {
             if [[ "$confirmar_todos" =~ ^[Ss]$ ]]; then
                 # Recupera todos → executa e sai do loop
                 _recuperar_todos_arquivos "$base_trabalho"
-                _mensagec "${YELLOW}" "Todos os arquivos principais foram recuperados."
+                _aviso "Todos os arquivos principais foram recuperados."
                 break
             else
                 _mensagec "${CYAN}" "Operacao cancelada."
@@ -285,7 +285,7 @@ _recuperar_arquivo_especifico() {
         else
             # Recupera arquivo específico
             _recuperar_arquivo_individual "$nome_arquivo" "$base_trabalho"
-            _mensagec "${YELLOW}" "Arquivo(s) recuperado(s)..."
+            _aviso "Arquivo(s) recuperado(s)..."
         fi
         _linha
         
@@ -318,14 +318,14 @@ _recuperar_todos_arquivos() {
                 if [[ -f "$arquivo" && -s "$arquivo" ]]; then
                     _executar_jutil "$arquivo"
                 else
-                    _mensagec "${YELLOW}" "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
+                    _aviso "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
                     _linha "-" "${GREEN}"
                 fi
             done
         done
         shopt -u nullglob
     else
-        _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao existe"
+        _erro "Diretorio ${base_trabalho} nao existe"
         return 1
     fi
     return 0
@@ -364,7 +364,7 @@ _recuperar_arquivo_individual() {
     shopt -u nullglob
     
     if (( arquivos_encontrados == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum arquivo encontrado para: ${nome_arquivo}"
+        _aviso "Nenhum arquivo encontrado para: ${nome_arquivo}"
         _linha "-" "${GREEN}"
     fi
 }
@@ -419,7 +419,7 @@ _recuperar_arquivos_principais() {
     # Usar valor padrão se base_trabalho estiver vazia
     base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
     cd "$base_trabalho" || {
-        _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
+        _erro "Diretorio ${base_trabalho} nao encontrado"
         return 1
     }
     
@@ -485,15 +485,14 @@ _executar_jutil() {
                     fi
                 done
             else
-                _mensagec "${RED}" "Erro no rebuild: $(basename "$arquivo")"
+                _erro "no rebuild: $(basename "$arquivo")"
             fi
             _linha "-" "${GREEN}"
-
         else
             _mensagec "${YELLOW}" "Arquivo nao encontrado ou vazio: $(basename "$arquivo" 2>/dev/null || echo "$arquivo")"
         fi
     else
-        _mensagec "${RED}" "Erro: jutil nao encontrado em ${REBUILD}"
+        _erro "jutil nao encontrado em ${REBUILD}"
         return 1
     fi    
 }
@@ -530,7 +529,7 @@ _enviar_arquivo_avulso() {
             return 1
         fi
     elif [[ ! -d "$DIRETORIO_ORIGEM" ]]; then
-        _mensagec "${RED}" "Diretorio nao encontrado: ${DIRETORIO_ORIGEM}"
+        _erro "Diretorio nao encontrado: ${DIRETORIO_ORIGEM}"
         _aguardar_tecla
         return 1
     fi
@@ -599,7 +598,7 @@ _enviar_arquivo_avulso() {
     _linha
     
     if [[ -z "$DESTINO_REMOTO" ]]; then
-        _mensagec "${RED}" "Destino nao informado"
+        _erro "Destino nao informado"
         _aguardar_tecla
         return 1
     fi
@@ -657,7 +656,7 @@ _receber_arquivo_avulso() {
         _linha
         _aguardar 3
     else
-        _mensagec "${RED}" "Erro no recebimento do arquivo"
+        _erro "no recebimento do arquivo"
         _aguardar_tecla
     fi
 }
@@ -741,7 +740,7 @@ _listar_logs_atualizacao() {
     
     local logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
     if [[ ! -e "${logs[0]}" ]]; then
-        _mensagec "${RED}" "Nenhum log de atualizacao encontrado."
+        _erro "Nenhum log de atualizacao encontrado."
         _aguardar_tecla
         return 1
     fi
@@ -777,7 +776,7 @@ _listar_logs_atualizacao() {
 
     if (( opcao == 0 )); then
         # Visualizar todos os logs
-        _mensagec "${YELLOW}" "Exibindo todos os logs de atualizacao:"
+        _aviso "Exibindo todos os logs de atualizacao:"
         _linha
         for log in "${logs[@]}"; do
             _mensagec "${CYAN}" ">>> Arquivo: $(basename "$log")"

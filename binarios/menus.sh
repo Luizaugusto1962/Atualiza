@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 03/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -724,7 +724,7 @@ _definir_base_trabalho() {
     local base_dir="${!base_var}"
 
     if [[ -z "${RAIZ}" ]] || [[ -z "${base_dir}" ]]; then
-        _mensagec "${RED}" "Erro: Variaveis de configuracao nao definidas"
+        _erro "Erro: Variaveis de configuracao nao definidas"
         _linha
         _aguardar 2
         return 1
@@ -733,7 +733,7 @@ _definir_base_trabalho() {
     export base_trabalho="${RAIZ}${base_dir}"
 
     if [[ ! -d "${base_trabalho}" ]]; then
-        _mensagec "${RED}" "Erro: Diretorio ${base_trabalho} nao encontrado"
+        _erro "Erro: Diretorio ${base_trabalho} nao encontrado"
         _linha
         _aguardar 2
         return 1

@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 16/06/2026-01
+# Versao: 03/07/2026-01
 # Autor: Luiz Augusto
 #
 #---------- FUNcoES DE LEMBRETES ----------#
@@ -41,7 +41,7 @@ _escrever_nova_nota() {
         fi
         _aguardar 2
     else
-        _mensagec "${RED}" "Erro ao gravar nota"
+        _erro "Erro ao gravar nota"
         _aguardar 2
     fi
 }
@@ -80,7 +80,7 @@ _gerar_aviso_entrada() {
         _aguardar 2
     else
         rm -f "$arquivo_tmp"
-        _mensagec "${RED}" "Erro ao gravar mensagem"
+        _erro "ao gravar mensagem"
         _aguardar 2
     fi
 }
@@ -92,7 +92,7 @@ _editar_aviso_existente() {
     _limpa_tela
     if [[ -f "$arquivo_avisos" ]]; then
         if ! ${EDITOR:-nano} "$arquivo_avisos"; then
-            _mensagec "${RED}" "Erro ao abrir editor!"
+            _erro "ao abrir editor!"
             _aguardar 2
         fi
     else
@@ -118,7 +118,7 @@ _mostrar_aviso() {
         _linha
         if _confirmar "Excluir mensagem de entrada?" "N"; then
             rm -f "$arquivo_msg"
-            _mensagec "${GREEN}" "Mensagem removida"
+            _ok "Mensagem removida"
             _aguardar 1
         fi
     fi
@@ -140,7 +140,7 @@ _apagar_arquivo_configuracoes() {
         if rm -f "$arquivo"; then
             _mensagec "${RED}" "${descricao^} excluida com sucesso!"
         else
-            _mensagec "${RED}" "Erro ao excluir ${descricao}"
+            _erro "Erro ao excluir ${descricao}"
         fi
         _aguardar 2
     fi
@@ -170,7 +170,7 @@ _visualizar_notas_arquivo() {
     [[ $largura -lt 40 ]] && largura=40
 
     if [[ ! -f "$arquivo" || ! -r "$arquivo" ]]; then
-        _mensagec "${RED}" "Arquivo de notas nao encontrado ou ilegivel: $arquivo"
+        _erro "Arquivo de notas nao encontrado ou ilegivel: $arquivo"
         _aguardar_tecla
         return 1
     fi
@@ -207,11 +207,11 @@ _editar_nota_existente() {
     _limpa_tela
     if [[ -f "$arquivo_notas" ]]; then
         if ! ${EDITOR:-nano} "$arquivo_notas"; then
-            _mensagec "${RED}" "Erro ao abrir editor!"
+            _erro "ao abrir editor!"
             _aguardar 2
         fi
     else
-        _mensagec "${YELLOW}" "Nenhuma nota encontrada para editar!"
+        _aviso "Nenhuma nota encontrada para editar!"
         _aguardar 2
     fi
 }

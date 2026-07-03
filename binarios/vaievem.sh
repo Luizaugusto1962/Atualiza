@@ -235,7 +235,7 @@ _enviar_rsync() {
     fi
     
     if [[ ! -f "$arquivo_local" ]]; then
-        _mensagec "${RED}" "Erro: Arquivo local nao encontrado: ${arquivo_local}"
+        _erro "Arquivo local nao encontrado: ${arquivo_local}"
         return 1
     fi
     
@@ -306,7 +306,7 @@ _baixar_biblioteca_sincroniza() {
             local arquivos_update
             read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
             if [[ ${#arquivos_update[@]} -eq 0 ]]; then
-                _mensagec "${RED}" "Erro: Nenhum arquivo de atualizacao encontrado"
+                _erro "Nenhum arquivo de atualizacao encontrado"
                 return 1
             fi
             for arquivo in "${arquivos_update[@]}"; do
@@ -358,12 +358,12 @@ _baixar_programas_vaievem() {
             
             if _usar_chave_ssh; then
                 if ! _receber_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
-                    _mensagec "${RED}" "Falha no download: $arquivo"
+                    _erro "Falha no download: $arquivo"
                     return 1
                 fi
             else
                 if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
-                    _mensagec "${RED}" "Falha no download: $arquivo"
+                    _erro "Falha no download: $arquivo"
                     return 1
                 fi
             fi
@@ -371,13 +371,13 @@ _baixar_programas_vaievem() {
             _linha
             # Verificar se arquivo foi baixado
             if [[ ! -f "$arquivo" || ! -s "$arquivo" ]]; then
-                _mensagec "${RED}" "ERRO: Falha ao baixar verificar se existe no servidor: $arquivo"
+                _erro "Falha ao baixar verificar se existe no servidor: $arquivo"
                 _aguardar 0
                 return 1
             fi
             
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
-                _mensagec "${RED}" "ERRO: Arquivo corrompido: $arquivo"
+                _erro "Arquivo corrompido: $arquivo"
                 # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
                 rm -f "$arquivo"
                 _aguardar 2
@@ -395,20 +395,20 @@ _baixar_programas_vaievem() {
 _enviar_arquivo_multi() {
     # Validar variaveis globais necessarias
     if [[ -z "$ARQUIVO_ENVIAR" ]]; then
-        _mensagec "${RED}" "Erro: Nenhum arquivo especificado para envio"
+        _erro "Nenhum arquivo especificado para envio"
         _aguardar 2
         return 1
     fi
     
     if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
-        _mensagec "${RED}" "Erro: Destino remoto nao especificado"
+        _erro "Destino remoto nao especificado"
         _aguardar 2
         return 1
     fi
     
     # SEGURANCA: Validar caminhos contra traversal e injeção
     if ! _validar_caminho_seguro "${DIRETORIO_ORIGEM:-.}" || ! _validar_caminho_seguro "${CFG_BACKUP_PATH:-}"; then
-        _mensagec "${RED}" "Erro: Caminhos contem caracteres invalidos ou tentativas de traversal."
+        _erro "Caminhos contem caracteres invalidos ou tentativas de traversal."
         _aguardar 2
         return 1
     fi
@@ -428,7 +428,7 @@ _enviar_arquivo_multi() {
             _linha
             _aguardar 3
         else
-            _mensagec "${RED}" "Erro no envio de ${falhas_envio} arquivo(s)"
+            _erro "Falha no envio de ${falhas_envio} arquivo(s)"
             _aguardar_tecla
         fi
     else
@@ -438,7 +438,7 @@ _enviar_arquivo_multi() {
             _linha
             _aguardar 3
         else
-            _mensagec "${RED}" "Erro no envio do arquivo"
+            _erro "Falha no envio do arquivo"
             _aguardar_tecla
         fi
     fi

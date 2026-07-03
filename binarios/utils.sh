@@ -331,14 +331,14 @@ _confirmar() {
             n|nao) return 1 ;;
             *)
                 _linha "-" "${RED}"
-                _mensagec "${RED}" "Resposta invalida. Use S ou N."
+                _erro "Resposta invalida. Use S ou N."
                 _linha "-" "${RED}"
                 ((tentativas++)) || true
                 ;;
         esac
     done
 
-    _mensagec "${RED}" "Maximo de tentativas excedido. Usando padrao: ${padrao}"
+    _erro "Maximo de tentativas excedido. Usando padrao: ${padrao}"
     case "${padrao,,}" in
         s|sim) return 0 ;;
         *) return 1 ;;
@@ -378,7 +378,7 @@ _mostrar_progresso_backup() {
     local status_proc=0
 
     if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
-        _mensagec "${YELLOW:-}" "Aviso: PID nao informado ou processo ja terminado"
+        _aviso "Aviso: PID nao informado ou processo ja terminado"
         return 0
     fi
 
@@ -630,17 +630,17 @@ _enviabackup_para_receber() {
 
     # Validar diretórios de origem e destino
     if [[ ! -d "${source_dir}" ]]; then
-        _mensagec "${YELLOW}" "Diretorio de origem nao existe: ${source_dir}"
+        _aviso "Diretorio de origem nao existe: ${source_dir}"
         return 1
     fi
 
     if [[ ! -d "${dest_dir}" ]]; then
-        _mensagec "${RED}" "Diretorio de destino nao existe: ${dest_dir}"
+        _erro "Diretorio de destino nao existe: ${dest_dir}"
         return 2
     fi
 
     if [[ ! -w "${dest_dir}" ]]; then
-        _mensagec "${RED}" "Sem permissao de escrita em: ${dest_dir}"
+        _erro "Sem permissao de escrita em: ${dest_dir}"
         return 3
     fi
 
@@ -655,15 +655,15 @@ _enviabackup_para_receber() {
 
         # Verificar se o arquivo já existe no destino
         if [[ -e "${dest_dir}/${nome_arquivo}" ]]; then
-            _mensagec "${YELLOW}" "Arquivo ja existe (sobrescrevendo): ${nome_arquivo}"
+            _aviso "Arquivo ja existe (sobrescrevendo): ${nome_arquivo}"
         fi
 
         # Tentar mover o arquivo
         if mv -f "${arquivo}" "${dest_dir}/" >> "${LOG_ATU}" 2>&1; then
-            _mensagec "${GREEN}" "✓ Arquivo movido: ${nome_arquivo}"
+            _ok "Arquivo movido: ${nome_arquivo}"
             ((arquivos_copiados++))
         else
-            _mensagec "${RED}" "✗ Erro ao mover: ${nome_arquivo}"
+            _erro "Erro ao mover: ${nome_arquivo}"
             ((arquivos_erro++))
         fi
     done < <(find "${source_dir}" -maxdepth 1 -type f -name "*.zip" -print0)
@@ -671,11 +671,11 @@ _enviabackup_para_receber() {
     # Resumo da operação
     _linha
     if (( arquivos_copiados == 0 && arquivos_erro == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum arquivo .zip encontrado em ${source_dir}"
+        _aviso "Nenhum arquivo .zip encontrado em ${source_dir}"
     else
         _mensagec "${GREEN}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
         if (( arquivos_erro > 0 )); then
-            _mensagec "${RED}" "Atencao: ${arquivos_erro} arquivo(s) com erro"
+            _erro "Atencao: ${arquivos_erro} arquivo(s) com erro"
         fi
     fi
     _linha

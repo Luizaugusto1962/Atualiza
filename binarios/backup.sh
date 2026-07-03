@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/06/2026-01
+# Versao: 03/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -41,13 +41,13 @@ _validar_pre_backup() {
 
     # Validar comando de compactacao
     if [[ -z "$DEFAULT_ZIP" ]]; then
-        _mensagec "${RED}" "Erro: Comando de compactacao nao configurado"
+        _erro "Comando de compactacao nao configurado"
         _aguardar 3
         return 1
     fi
 
     if ! command -v "$DEFAULT_ZIP" &>/dev/null; then
-        _mensagec "${RED}" "Erro: Comando '$DEFAULT_ZIP' nao disponivel no sistema"
+        _erro "Comando '$DEFAULT_ZIP' nao disponivel no sistema"
         _aguardar 3
         return 1
     fi
@@ -57,7 +57,7 @@ _validar_pre_backup() {
         _menu_escolha_base || return 1
         if [[ -z "${base_trabalho}" ]]; then
             _linha
-            _mensagec "${RED}" "Erro: Base de trabalho nao foi selecionada"
+            _erro "Base de trabalho nao foi selecionada"
             _linha
             _aguardar 2
             return 1
@@ -69,7 +69,7 @@ _validar_pre_backup() {
 
     # Validar se o diretorio base existe
     if [[ ! -d "${_base_ref}" ]]; then
-        _mensagec "${RED}" "Erro: Diretorio base '${_base_ref}' nao existe"
+        _erro "Diretorio base '${_base_ref}' nao existe"
         _aguardar 3
         return 1
     fi
@@ -136,7 +136,7 @@ _executar_backup() {
     # Mudar para diretorio base
     if ! _diretorio_trabalho; then
         trap - INT TERM
-        _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
+        _erro "Ao acessar diretorio de trabalho"
         _aguardar 3
         return 0
     fi
@@ -164,7 +164,7 @@ _executar_backup() {
         # Validar entrada
         if ! [[ "$mes" =~ ^(0[1-9]|1[0-2])$ ]] || ! [[ "$ano" =~ ^[0-9]{4}$ ]]; then
             trap - INT TERM
-            _mensagec "$RED" "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
+            _erro "$RED" "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
             _aguardar 2
             return 0
         fi
@@ -172,7 +172,7 @@ _executar_backup() {
         # Validar ano nao seja muito antigo ou futuro
         if (( ano < 1990 || ano > ano_agora )); then
             trap - INT TERM
-            _mensagec "$RED" "Ano fora do intervalo valido (1990-$ano_agora)"
+            _erro "Ano fora do intervalo valido (1990-$ano_agora)"
             _aguardar 2
             return 0
         fi
@@ -183,14 +183,14 @@ _executar_backup() {
         local data_input
         data_input=$(date -d "$data_referencia" +%Y%m%d 2>/dev/null) || {
             trap - INT TERM
-            _mensagec "$RED" "Data invalida."
+            _erro "Data invalida."
             _aguardar 2
             return 0
         }
 
         if [[ "$data_input" -gt "$data_atual" ]]; then
             trap - INT TERM
-            _mensagec "$RED" "A data nao pode ser futura."
+            _erro "A data nao pode ser futura."
             _aguardar 2
             return 0
         fi
@@ -213,7 +213,7 @@ _executar_backup() {
         _finalizar_backup_sucesso "$nome_backup"
     else
         trap - INT TERM
-        _mensagec "$RED" "Erro ao criar backup"
+        _erro "Erro ao criar backup"
         _aguardar 3
         return 1
     fi
@@ -251,7 +251,7 @@ _enviar_backup_avulso() {
 
     # Validar que o nome do backup foi definido
     if [[ -z "${nome_backup:-}" ]]; then
-        _mensagec "${RED}" "Erro: Nome do backup nao definido"
+        _erro "Nome do backup nao definido"
         _aguardar_tecla
         return 1
     fi
@@ -266,7 +266,7 @@ _enviar_backup_avulso() {
             _enviar_backup_rede "$nome_backup"
         fi
     else
-        _mensagec "${YELLOW}" "CFG_OFFLINE nao configurado corretamente. Nenhuma acao de envio feita."
+        _aviso "CFG_OFFLINE nao configurado corretamente. Nenhuma acao de envio feita."
     fi
 }
 
@@ -464,7 +464,7 @@ _selecionar_backup() {
             backup_selecionado="${arquivos_backup[0]}"
         else
             _linha
-            _mensagec "${YELLOW}" "Operacao cancelada."
+            _aviso "Operacao cancelada."
             _linha
             _aguardar 2
             return 1
@@ -480,7 +480,7 @@ _selecionar_backup() {
             echo ""
 
             if [[ "$REPLY" == "0" || -z "$REPLY" ]]; then
-                _mensagec "${YELLOW}" "Operacao cancelada."
+                _aviso "Operacao cancelada."
                 return 1
             fi
 
@@ -496,7 +496,7 @@ _selecionar_backup() {
                 backup_selecionado="${arquivos_backup[$idx]}"
                 break
             else
-                _mensagec "${RED}" "Numero invalido. Use 1 a ${#arquivos_backup[@]} ou 0 para cancelar."
+                _erro "Numero invalido. Use 1 a ${#arquivos_backup[@]} ou 0 para cancelar."
             fi
         done
     fi
@@ -517,22 +517,22 @@ _restaurar_backup_completo() {
     local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
     
     if [[ ! -f "$arquivo_backup" ]]; then
-        _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
     
     _linha
-    _mensagec "${YELLOW}" "Restaurando todos os arquivos..."
+    _aviso "Restaurando todos os arquivos..."
     _linha
     
     if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
-        _mensagec "${RED}" "Erro na restauracao completa"
+        _erro "Erro na restauracao completa"
         _aguardar_tecla
         return 1
     fi
     
-    _mensagec "${GREEN}" "Restauracao completa concluida"
+    _ok "Restauracao completa concluida"
     _aguardar_tecla
 }
 
@@ -543,7 +543,7 @@ _restaurar_arquivo_especifico() {
     local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
    
     if [[ ! -f "$arquivo_backup" ]]; then
-        _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
@@ -574,11 +574,11 @@ _restaurar_arquivo_especifico() {
         fi
        
         _linha
-        _mensagec "${YELLOW}" "Restaurando ${nome_arquivo}..."
+        _aviso "Restaurando ${nome_arquivo}..."
         _linha
        
         if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
-            _mensagec "${RED}" "Erro ao extrair ${nome_arquivo}"
+            _erro "Ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else
             if ls "${base_trabalho}/${nome_arquivo}"*.* >/dev/null 2>&1; then
@@ -607,7 +607,7 @@ _enviar_backup_servidor() {
 
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
-        _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _erro "Arquivo de backup nao encontrado"
         _aguardar 3
         return 1
     fi
@@ -641,13 +641,13 @@ _enviar_backup_servidor() {
                 _mensagec "${YELLOW}" "Backup local excluido"
                 _aguardar 2
             else
-                _mensagec "${RED}" "Erro ao excluir backup local"
+                _erro "ao excluir backup local"
                 _aguardar 2
             fi
         fi
     else
         _linha
-        _mensagec "${RED}" "Erro ao enviar backup"
+        _erro "Erro ao enviar backup"
         _aguardar 3
         return 1
     fi
@@ -659,13 +659,13 @@ _mover_backup_offline() {
     
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
-        _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
     
     _linha
-    _mensagec "${YELLOW}" "Movendo backup para diretorio offline..."
+    _aviso "Movendo backup para diretorio offline..."
     _linha
     
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
@@ -684,7 +684,7 @@ _mover_backup_offline() {
         _mensagec "${GREEN}" "Backup movido para: ${DEFAULT_RECEBE_DIR}"
         _aguardar_tecla
     else
-        _mensagec "${RED}" "Erro ao mover backup"
+        _erro "Ao mover backup"
         _aguardar_tecla
         return 1
     fi
@@ -697,7 +697,7 @@ _enviar_backup_rede() {
     
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
-        _mensagec "${RED}" "Erro: Arquivo de backup nao encontrado"
+        _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
@@ -707,7 +707,7 @@ _enviar_backup_rede() {
     else
         read -rp "${YELLOW}Diretorio remoto: ${NORM}" DESTINO_REMOTO
         while [[ -z "$DESTINO_REMOTO" ]]; do
-            _mensagec "$RED" "Diretorio nao informado"
+            _erro "Diretorio nao informado"
             read -rp "${YELLOW}Diretorio remoto: ${NORM}" DESTINO_REMOTO
         done
     fi
@@ -722,7 +722,7 @@ _enviar_backup_rede() {
         _aguardar 3
     else
         _linha
-        _mensagec "${RED}" "Erro ao enviar backup via vaievem"
+        _erro "Ao enviar backup via o vaievem"
         _aguardar_tecla
         return 1
     fi
@@ -776,7 +776,7 @@ _executar_backup_multiplos_padroes() {
 
     # Verificar e mudar para o diretorio de trabalho antes de solicitar os padroes
     if ! _diretorio_trabalho; then
-        _mensagec "${RED}" "Erro ao acessar diretorio de trabalho"
+        _erro "Ao acessar diretorio de trabalho"
         _aguardar 3
         return 1
     fi
@@ -823,10 +823,10 @@ _executar_backup_multiplos_padroes() {
         fi
 
         if [[ ! -f "${padrao_entrada}" ]] && compgen -G "${padrao_expandido}" > /dev/null 2>&1; then
-            _mensagec "${YELLOW}" "Aviso: Arquivo(s), '${padrao_expandido}' incluido(s)."
+            _aviso "Arquivo(s), '${padrao_expandido}' incluido(s)."
             padrao_entrada="${padrao_expandido}"
         elif [[ ! -f "${padrao_entrada}" ]]; then
-            _mensagec "${YELLOW}" "Aviso: Arquivo '${padrao_entrada}' nao encontrado no Diretorio base '$base_trabalho'"
+            _aviso "Arquivo '${padrao_entrada}' nao encontrado no Diretorio base '$base_trabalho'"
         fi
 
         padroes+=("$padrao_entrada")
@@ -859,7 +859,7 @@ _executar_backup_multiplos_padroes() {
         shopt -u nullglob
 
         if (( qtd_encontrados == 0 )); then
-            _mensagec "${YELLOW}" "Arquivo '$padrao' - nenhum arquivo encontrado"
+            _aviso "Arquivo '$padrao' - nenhum arquivo encontrado"
         else
             _mensagec "${GREEN}" "Arquivo '$padrao' - $qtd_encontrados arquivo(s) encontrado(s)"
         fi
@@ -894,12 +894,12 @@ _executar_backup_multiplos_padroes() {
     local nome_backup
     nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).zip"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
-    _mensagec "${YELLOW}" "Criando backup com multiplos padroes..."
+    _aviso "Criando backup com multiplos padroes..."
     _linha
 
     # Executar compactação com os arquivos especificados
     if ! "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
-        _mensagec "${RED}" "Erro ao criar backup"
+        _erro "Erro ao criar backup"
         [[ -f "$caminho_backup" ]] && rm -f "$caminho_backup"
         _aguardar 3
         return 1
@@ -907,14 +907,14 @@ _executar_backup_multiplos_padroes() {
 
     # Verificar se o backup foi criado
     if [[ ! -f "$caminho_backup" ]]; then
-        _mensagec "${RED}" "Erro: Backup nao foi criado"
+        _erro "Backup nao foi criado"
         _aguardar 3
         return 1
     fi
 
     # Validar integridade
     if ! _validar_integridade_backup "$caminho_backup"; then
-        _mensagec "${RED}" "ERRO CRITICO: Backup criado mas invalido (corrompido)"
+        _erro "CRITICO: Backup criado mas invalido (corrompido)"
         rm -f "$caminho_backup"
         _aguardar 3
         return 1
@@ -938,7 +938,7 @@ _finalizar_backup_sucesso() {
     if [[ -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         tamanho_backup=$(du -h "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" | cut -f1)
         _linha
-        _mensagec "$GREEN" "Backup Concluido!"
+        _ok "Backup Concluido!"
         _linha
         _mensagec "$YELLOW" "Arquivo: $nome_backup"
         _mensagec "$YELLOW" "Local: ${DEFAULT_BASEBACKUP_DIR}"

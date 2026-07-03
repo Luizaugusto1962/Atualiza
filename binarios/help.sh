@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 03/07/2026-01
 #
 
 set -euo pipefail
@@ -89,12 +89,12 @@ _ler_secao_manual() {
     local linha_fim
     
     if [[ ! -f "$MANUAL_FILE" ]]; then
-        _mensagec "${RED}" "Arquivo manual.txt nao encontrado!"
+        _erro "Arquivo manual.txt nao encontrado!"
         return 1
     fi
 
     if [[ ! -r "$MANUAL_FILE" ]]; then
-        _mensagec "${RED}" "Arquivo manual.txt sem permissao de leitura!"
+        _erro "Arquivo manual.txt sem permissao de leitura!"
         return 1
     fi
 
@@ -280,7 +280,7 @@ _exportar_manual() {
     if cp "$MANUAL_FILE" "$destino"; then
         _mensagec "${GREEN}" "Manual exportado para: $destino"
     else
-        _mensagec "${RED}" "Erro ao exportar manual"
+        _erro "ao exportar manual"
         _aguardar 2
         return 1
     fi

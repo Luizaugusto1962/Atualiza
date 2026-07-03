@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 03/07/2026-01
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -318,7 +318,7 @@ _validar_ssh() {
     local ssh_timeout="${SSH_TIMEOUT:-10}"
 
     if [[ -z "${ssh_host}" ]]; then
-        _mensagec "${RED}" "ERRO: Variavel DEFAULT_IP_SERVER nao definida"
+        _erro "Variavel DEFAULT_IP_SERVER nao definida"
         return 1
     fi
 
@@ -514,11 +514,7 @@ _carregar_configuracoes() {
 # Configurar ambiente final
 _configurar_ambiente() {
     if [[ ! -x "${REBUILD}" ]]; then
-        if command -v _mensagec >/dev/null 2>&1; then
-            _mensagec "${YELLOW}" "Aviso: jutil nao encontrado em ${REBUILD}"
-        else
-            _aviso "jutil nao encontrado em %s\n" "${REBUILD}" >&2
-        fi
+        _aviso "Aviso: jutil nao encontrado em ${REBUILD}"
     fi
 }
 
@@ -536,7 +532,7 @@ _validar_configuracao() {
 
     # Arquivo de configuracao
     if [[ ! -f "${CFG_DIR}/.config" ]]; then
-        _mensagec "${RED}" "ERRO: Arquivo .config nao encontrado!"
+        _erro "Arquivo .config nao encontrado!"
         ((erros++)) || true
     else
         _mensagec "${GREEN}" "OK: Arquivo .config encontrado"
@@ -544,7 +540,7 @@ _validar_configuracao() {
 
     # Variaveis essenciais
     if [[ -z "${RAIZ}" ]]; then
-        _mensagec "${RED}" "ERRO: Variavel 'RAIZ' nao definida!"
+        _erro "Variavel 'RAIZ' nao definida!"
         ((erros++)) || true
     else
         _mensagec "${GREEN}" "OK: Diretorio RAIZ definido"
@@ -590,9 +586,9 @@ _validar_configuracao() {
     # Resumo
     _linha
     printf "\n"
-    _mensagec "${CYAN}" "Resumo:"
-    _mensagec "${RED}" "Erros: ${erros}"
-    _mensagec "${YELLOW}" "Avisos: ${warnings}"
+    _msg "Resumo:"
+    _erro "Erros: ${erros}"
+    _aviso "Avisos: ${warnings}"
 
     if (( erros == 0 )); then
         _mensagec "${GREEN}" "Configuracao valida!"

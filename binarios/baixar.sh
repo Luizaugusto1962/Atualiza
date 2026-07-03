@@ -35,7 +35,7 @@ _atualizando() {
     local backup_sucesso=0
     local backup_erro=0
     cd "${LIBS_DIR}" || {
-        _mensagec "${RED}" "Erro: Diretorio de atualizacao nao encontrado"
+        _erro "Diretorio de atualizacao nao encontrado"
         _aguardar 2
         return 1
     }
@@ -49,7 +49,7 @@ _atualizando() {
             _mensagec "${GREEN}" "Backup do arquivo $(basename "$arquivo") feito com sucesso"
             ((backup_sucesso++)) || true
         else
-            _mensagec "${RED}" "Erro ao fazer backup de $(basename "$arquivo")"
+            _erro "Ao fazer backup de $(basename "$arquivo")"
             ((backup_erro++)) || true
             _aguardar 2
         fi
@@ -60,17 +60,17 @@ _atualizando() {
             _mensagec "${GREEN}" "Backup do arquivo atualiza.sh feito com sucesso"
             ((backup_sucesso++)) || true
         else
-            _mensagec "${RED}" "ERRO: Falha ao fazer backup de atualiza.sh"
+            _erro "Falha ao fazer backup de atualiza.sh"
             ((backup_erro++)) || true
         fi
     fi
 
     if [[ $backup_erro -gt 0 ]]; then
-        _mensagec "${RED}" "Falha no backup de $backup_erro arquivo(s)"
+        _erro "Falha no backup de $backup_erro arquivo(s)"
         _aguardar 2
         return 1
     elif [[ $backup_sucesso -eq 0 ]]; then
-        _mensagec "${YELLOW}" "Nenhum arquivo foi copiado para backup"
+        _aviso "Nenhum arquivo foi copiado para backup"
         _aguardar 2
         return 1
     else
@@ -81,7 +81,7 @@ _atualizando() {
         if (cd "${DEFAULT_BACKUP_DIR}" && zip -jm "${zip_nome}" ./*.sh.bkp >>"$LOG_ATU" 2>&1); then
             _mensagec "${GREEN}" "Backup compactado com sucesso: ${DEFAULT_BACKUP_DIR}/${zip_nome}"
         else
-            _mensagec "${YELLOW}" "Aviso: Nao foi possivel compactar os arquivos de backup"
+            _aviso "Nao foi possivel compactar os arquivos de backup"
         fi
     fi
 
@@ -96,19 +96,19 @@ _atualizando() {
     elif [[ -f "${DEFAULT_RECEBE_DIR}/${zipfile}" ]]; then
         origem_zip="${DEFAULT_RECEBE_DIR}/${zipfile}"
     else
-        _mensagec "${RED}" "ERRO: Arquivo ${zipfile} nao encontrado para descompactacao."
+        _erro "Arquivo ${zipfile} nao encontrado para descompactacao."
         return 1
     fi
 
     # Acessar diretorio de trabalho para extracao segura
     cd "$(dirname "$origem_zip")" || {
-        _mensagec "${RED}" "Erro: Diretorio de trabalho nao acessivel"
+        _erro "Diretorio de trabalho nao acessivel"
         return 1
     }
 
     # Descompactar
     if ! "${DEFAULT_UNZIP}" -o -j "$origem_zip" >>"$LOG_ATU" 2>&1; then
-        _mensagec "${RED}" "Erro ao descompactar atualizacao"
+        _erro "Ao descompactar atualizacao"
         return 1
     fi
 
@@ -155,10 +155,10 @@ _atualizando() {
     done
 
     if [[ $arquivos_erro -gt 0 ]]; then
-        _mensagec "${RED}" "Falha na instalacao de $arquivos_erro arquivo(s)"
+        _erro "Falha na instalacao de $arquivos_erro arquivo(s)"
         return 1
     elif [[ $arquivos_instalados -eq 0 ]]; then
-        _mensagec "${YELLOW}" "Nenhum arquivo foi instalado - verifique os arquivos no ZIP"
+        _aviso "Nenhum arquivo foi instalado - verifique os arquivos no ZIP"
         return 1
     else
         _mensagec "${GREEN}" "SUCESSO: $arquivos_instalados arquivo(s) instalado(s)"
@@ -189,10 +189,10 @@ _atualizando() {
     if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -name "atualiza*" -exec rm -rf {} + 2>/dev/null; then
         _mensagec "${GREEN}" "Diretorio limpo com sucesso."
     else
-        _mensagec "${YELLOW}" "AVISO: Alguns arquivos podem nao ter sido removidos."
+        _aviso "Alguns arquivos podem nao ter sido removidos."
     fi
     _linha
-    _mensagec "${GREEN}" "Atualizacao concluida com sucesso!"
+    _ok "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
 
@@ -209,11 +209,11 @@ _atualizar_online() {
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
     
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-    _mensagec "${RED}" "Erro ao criar diretorio de download"
+    _erro "Ao criar diretorio de download"
     return 1
     }
     if ! wget -q -c "$link" -O "${DEFAULT_RECEBE_DIR}/${zipfile}"; then
-        _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao. Verifique a conexao."
+        _erro "Ao baixar arquivo de atualizacao. Verifique a conexao."
         return 1
     fi
     _atualizando
@@ -224,7 +224,7 @@ _atualizar_offline() {
     local zipfile="atualiza.zip"
     
     if [[ ! -f "${temp_dir}/${zipfile}" ]]; then
-        _mensagec "${RED}" "Erro: $zipfile nao encontrado em $temp_dir"
+        _erro "Arquivo $zipfile nao encontrado em $temp_dir"
         return 1
     fi
     _atualizando
