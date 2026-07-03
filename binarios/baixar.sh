@@ -5,7 +5,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 27/06/2026-01
+# Versao: 03/07/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -115,7 +115,7 @@ _atualizando() {
     #---------- INSTALAR ARQUIVOS DE CONFIGURAÇÃO ----------#
     local arquivos_instalados=0
     local arquivos_erro=0
-    local -a configuracoes_files=("manual.txt" "avisos" "indexar" "limpetmp" ".senhas" "variosarquivos")
+    local -a configuracoes_files=("manual.txt" "avisos" "indexar" "limpetmp" "variosarquivos")
     for configuracoes_arquivo in "${configuracoes_files[@]}"; do
         if [[ ! -f "$configuracoes_arquivo" ]]; then continue; fi
         chmod +x "$configuracoes_arquivo" 2>/dev/null || true
@@ -126,6 +126,17 @@ _atualizando() {
             ((arquivos_erro++)) || true
         fi
     done
+
+    # .senhas tratado separadamente — permissao 0600 (privado)
+    if [[ -f ".senhas" ]]; then
+        chmod 600 ".senhas" 2>/dev/null || true
+        if mv -f ".senhas" "${CFG_DIR}/"; then
+            _ok "Arquivo .senhas instalado em ${CFG_DIR}"
+            ((arquivos_instalados++)) || true
+        else
+            ((arquivos_erro++)) || true
+        fi
+    fi
 
     #---------- INSTALAR ARQUIVOS .SH ----------#
     local sh_instalados=0
@@ -185,7 +196,7 @@ _atualizando() {
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
 
-        # Finalizar sistema de variáveis (limpeza explícita)
+    # Finalizar sistema de variáveis (limpeza explícita)
     if command -v _finalizar_sistema >/dev/null 2>&1; then
         _finalizar_sistema
     fi
@@ -193,13 +204,14 @@ _atualizando() {
 }
 
 _atualizar_online() {
-    local link="https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip"
+    local link="${GITHUB_UPDATE_URL}"
     local zipfile="atualiza.zip"
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
     
-    mkdir -p "${DEFAULT_RECEBE_DIR}" || { _mensagec "${RED}" "Erro ao criar diretorio de download"; return 1; }
-    cd "${DEFAULT_RECEBE_DIR}" || { _mensagec "${RED}" "Erro ao acessar diretorio de download"; return 1; }
-
+    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+    _mensagec "${RED}" "Erro ao criar diretorio de download"
+    return 1
+    }
     if ! wget -q -c "$link" -O "${DEFAULT_RECEBE_DIR}/${zipfile}"; then
         _mensagec "${RED}" "Erro ao baixar arquivo de atualizacao. Verifique a conexao."
         return 1

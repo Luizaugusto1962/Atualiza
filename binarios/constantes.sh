@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # constantes.sh - Constantes do Sistema SAV
 # Centraliza valores hardcoded para facilitar manutencao
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 03/07/2026-01
 #
-
-set -euo pipefail
-
 # =============================================================================
 # Definir diretorio das bases extras
 # =============================================================================
@@ -160,6 +158,7 @@ PERM_FILE_EXEC="0755"                                           # Arquivos execu
 # CONFIGURACOES DE REDE
 # =============================================================================
 DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-189.55.194.179}"
+GITHUB_UPDATE_URL="${GITHUB_UPDATE_URL:-https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip}"
 DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-41122}"
 DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-atualiza}"
 DEFAULT_CHAVE_SSH="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa_atualiza}"
@@ -259,7 +258,7 @@ export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
 export CFG_VERSAOCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
-export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT
+export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER GITHUB_UPDATE_URL DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT
 export PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC
 export HASH_ALGORITHM MAX_LOGIN_ATTEMPTS
 export DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL SSH_ALIVE_COUNT

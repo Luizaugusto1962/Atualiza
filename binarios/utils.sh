@@ -6,9 +6,12 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
-
-RAIZ="${RAIZ:-}"                                       # Diretorio RAIZ do sistema.
+# Versao: 03/07/2026-01
+#
+# =============================================================================
+# Definição de variáveis globais
+# =============================================================================
+RAIZ="${RAIZ:-}"                                   # Diretorio RAIZ do sistema.
 
 # Obtem largura do terminal com fallback seguro
 # Retorna: numero de colunas
