@@ -146,7 +146,7 @@ _atualizando() {
         local sh_destino="${LIBS_DIR}"
         [[ "$arquivo" == "atualiza.sh" ]] && sh_destino="${SCRIPT_DIR}"
         if mv -f "$arquivo" "${sh_destino}/"; then
-            _mensagec "${GREEN}" "Instalado $arquivo em $sh_destino"
+            _mensagec "${GREEN}" "Instalando programa $arquivo em $sh_destino"
             ((arquivos_instalados++)) || true
             ((sh_instalados++)) || true
         else
