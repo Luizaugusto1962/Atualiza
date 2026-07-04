@@ -5,7 +5,7 @@
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 03/07/2026-02
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
@@ -559,13 +559,27 @@ _validar_configuracao() {
     done
 
     # Diretorios essenciais
-    local dirs=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS")
-    local dir dir_path
-    for dir in "${dirs[@]}"; do
+    local -A _mapa_dirs=(
+        [biblioteca]="DEFAULT_BIBLIOTECA_DIR"
+        [olds]="DEFAULT_OLDS_DIR"
+        [logs]="DEFAULT_LOGS_DIR"
+        [configuracoes]="CFG_DIR"
+        [binarios]="LIBS_DIR"
+        [backup]="DEFAULT_BACKUP_DIR"
+        [bases_backup]="DEFAULT_BASEBACKUP_DIR"
+        [enviar]="DEFAULT_ENVIA_DIR"
+        [receber]="DEFAULT_RECEBE_DIR"
+        [E_EXEC]="E_EXEC"
+        [T_TELAS]="T_TELAS"
+    )
+    local dir dir_path var_name
+    local dirs_order=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS")
+    for dir in "${dirs_order[@]}"; do
+        var_name="${_mapa_dirs[$dir]}"
         if [[ "$dir" == "E_EXEC" ]] || [[ "$dir" == "T_TELAS" ]]; then
-            dir_path="${!dir:-}"
+            dir_path="${!var_name:-}"
         else
-            dir_path="${SCRIPT_DIR}${!dir:-}"
+            dir_path="${SCRIPT_DIR}${!var_name:-}"
         fi
 
         if [[ ! -d "${dir_path}" ]]; then

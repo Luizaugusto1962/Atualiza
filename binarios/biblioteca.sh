@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 03/07/2026-02
 #
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -238,8 +238,7 @@ _processar_atualizacao_biblioteca() {
     } &
     local pid_tar_exec=$!
     pids+=("$pid_tar_exec")  # Registrar PID para trap
-    _mostrar_progresso_backup "$pid_tar_exec" "Compactando $E_EXEC"
-    if wait "$pid_tar_exec"; then
+    if _mostrar_progresso_backup "$pid_tar_exec" "Compactando $E_EXEC"; then
         pids=("${pids[@]/$pid_tar_exec}")  # Remover PID apos concluido
         ((contador++)) || true
         _ok "Compactacao de $E_EXEC concluida [Etapa ${contador}/${total_etapas}]"
@@ -255,8 +254,7 @@ _processar_atualizacao_biblioteca() {
     } &
     local pid_tar_telas=$!
     pids+=("$pid_tar_telas")  # Registrar PID
-    _mostrar_progresso_backup "$pid_tar_telas" "Compactando $T_TELAS"
-    if wait "$pid_tar_telas"; then
+    if _mostrar_progresso_backup "$pid_tar_telas" "Compactando $T_TELAS"; then
         ((contador++)) || true
         _mensagec "${GREEN}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
         _linha
@@ -273,13 +271,12 @@ _processar_atualizacao_biblioteca() {
         } &
         local pid_gzip=$!
         pids+=("$pid_gzip")
-        _mostrar_progresso_backup "$pid_gzip" "Comprimindo os diretorios"
-
-        if ! wait "$pid_gzip"; then
+        if _mostrar_progresso_backup "$pid_gzip" "Comprimindo os diretorios"; then
+            pids=("${pids[@]/$pid_gzip}")  # Remover PID apos sucesso
+        else
             _erro "Falha na compressao do arquivo de backup"
             return 1
         fi
-        pids=("${pids[@]/$pid_gzip}")  # Remover PID apos sucesso
     fi
 
     _ir_para_tools
@@ -331,8 +328,7 @@ _executar_atualizacao_biblioteca() {
     local contador=1
 
 # Definir diretorio de configuracao usando variaveis locais
-    local RAIZ_LOCAL
-    RAIZ_LOCAL="${SCRIPT_DIR%/*}"
+    local RAIZ_LOCAL="${RAIZ}"
     local principal_local
     principal_local="${RAIZ_LOCAL%/*}"
 

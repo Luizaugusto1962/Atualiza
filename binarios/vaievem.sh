@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/06/2026-01
+# Versao: 03/07/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -247,11 +247,15 @@ _enviar_rsync() {
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     local rsync_base=("rsync" "-avzP")
-    local ssh_cmd="ssh -p ${porta}"
+    local -a ssh_cmd_parts=("ssh" "-p" "${porta}")
 
     if _usar_chave_ssh; then
-        ssh_cmd+=" -i ${CHAVE} -o BatchMode=yes -o StrictHostKeyChecking=$(_ssh_accept_new)"
+        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)")
     fi
+
+    local ssh_cmd
+    printf -v ssh_cmd '%s ' "${ssh_cmd_parts[@]}"
+    ssh_cmd="${ssh_cmd% }"
 
     # Executa o upload (única chamada)
     if "${rsync_base[@]}" -e "${ssh_cmd}" "$arquivo_local" "$destino_completo"; then

@@ -10,7 +10,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 03/07/2026-01
 
 set -euo pipefail
 
@@ -34,15 +34,14 @@ fi
 declare -l base base2 base3 enviabackup
 declare -u empresa
 
+tracejada="#-------------------------------------------------------------------#"
+traco="#####################################################################"
 
 # Diretorio do servidor offline
 # Configuracao inicial do sistema
 _initial_setup() {
     _limpa_tela
     _carregar_constantes_setup
-    
-    local tracejada="#-------------------------------------------------------------------#"
-    local traco="#####################################################################"
 
     # Header inicial
     echo "$traco"
@@ -448,7 +447,7 @@ main() {
 
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
 # Quando chamado diretamente de /binarios, sobe um nivel para o diretorio do atualiza.sh
-    if [[ -z "${SCRIPT_DIR}" ]]; then
+    if [[ -z "${SCRIPT_DIR:-}" ]]; then
         _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         if [[ "$(basename "${_self_dir}")" == "binarios" ]]; then
             SCRIPT_DIR="$(dirname "${_self_dir}")"
@@ -476,8 +475,16 @@ cd "${SCRIPT_DIR}" || exit 1
         exit 1
     fi
 
+    # Carregar modulos necessarios
+    if [[ -f "${LIBS_DIR}/utils.sh" ]]; then
+        "." "${LIBS_DIR}/utils.sh"
+    else
+        echo "ERRO: utils.sh nao encontrado em ${LIBS_DIR}"
+        exit 1
+    fi
+
     # Verificar modo de operacao
-    if [[ "$1" == "--edit" ]]; then
+    if [[ "${1:-}" == "--edit" ]]; then
         _edit_setup
     else
         # Verificar se os arquivos de configuracao ja existem

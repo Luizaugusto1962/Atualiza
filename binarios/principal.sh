@@ -3,7 +3,7 @@
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 27/06/2026-01
+# Versao: 03/07/2026-02
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -36,14 +36,6 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # VERSAO DO SISTEMA
 # =============================================================================
 declare -rx UPDATE="01/07/26-v.1"
-
-# =============================================================================
-# CARREGAR CONSTANTES DO SISTEMA
-# =============================================================================
-# Carregar constantes se disponivel
-if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
-    "." "${LIBS_DIR}/constantes.sh"
-fi
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
