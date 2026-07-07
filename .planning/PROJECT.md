@@ -8,6 +8,18 @@ Ferramenta de distribuição em Bash puro para gerenciar atualizações de siste
 
 Manter sistemas IsCOBOL atualizados de forma confiável via ferramenta modular em Bash — distribuída para sites de clientes, funcionando mesmo em servidores antigos com ferramentas mínimas.
 
+## Current Milestone: v2.0 — Infraestrutura e Padronização
+
+**Goal:** Estabilizar o sistema com testes, CI, lockfile, e padronizar todos os módulos .sh seguindo as convenções estabelecidas no v1.0.
+
+**Target features:**
+- Testes automatizados com bats
+- Pipeline CI com ShellCheck
+- Lockfile para execução segura
+- Extrair funções de biblioteca.sh
+- Consolidar lógica SSH em utils.sh
+- Padronizar todos os módulos .sh (convenções, formatação, organização)
+
 ## Requirements
 
 ### Validated
@@ -25,23 +37,30 @@ Manter sistemas IsCOBOL atualizados de forma confiável via ferramenta modular e
 - ✓ Configuração via setup interativo — existente
 - ✓ Validação de .config contra command injection — existente
 - ✓ Suporte SSH a servidores antigos (fallback) — existente
+- ✓ **EXT-01**: Extrair funções duplicadas de `backup.sh`, `programas.sh`, `arquivos.sh` para `utils.sh` — v1.0
+- ✓ **EXT-02**: Unificar `_listar_logs_atualizacao` e `_listar_logs_limpeza` em função parametrizada — v1.0
+- ✓ **EXT-03**: Extrair preâmbulo compartilhado de `_processar_atualizacao_programas` e `_processar_atualizacao_pacotes` — v1.0
+- ✓ **EXT-04**: Unificar `_executar_backup_completo` e `_executar_backup_incremental` — v1.0
+- ✓ **EXT-05**: Criar helpers `_validar_arquivo_existe`, `_mudar_diretorio`, `_coletar_arquivos` — v1.0
+- ✓ **EXT-06**: Unificar `_enviar_backup_servidor` e `_enviar_backup_rede` — v1.0
+- ✓ **EXT-07**: Garantir que extração não altere comportamento externo — v1.0
 
 ### Active
 
-- [ ] **EXT-01**: Extrair funções duplicadas de `backup.sh`, `programas.sh`, `arquivos.sh` para `utils.sh`
-- [ ] **EXT-02**: Unificar `_listar_logs_atualizacao` e `_listar_logs_limpeza` em uma função parametrizada
-- [ ] **EXT-03**: Extrair preâmbulo compartilhado de `_processar_atualizacao_programas` e `_processar_atualizacao_pacotes`
-- [ ] **EXT-04**: Unificar `_executar_backup_completo` e `_executar_backup_incremental`
-- [ ] **EXT-05**: Criar helpers `_validar_arquivo_existe`, `_mudar_diretorio`, `_coletar_arquivos` para eliminar código repetido inline
-- [ ] **EXT-06**: Unificar `_enviar_backup_servidor` e `_enviar_backup_rede`
-- [ ] **EXT-07**: Garantir que extração não altere comportamento externo
+- [ ] **TEST-01**: Adicionar testes automatizados com bats para módulos principais
+- [ ] **CI-01**: Configurar pipeline CI com ShellCheck para todos os módulos
+- [ ] **LOCK-01**: Adicionar lockfile para evitar execução concorrente do sistema
+- [ ] **MOD-01**: Extrair funções de `biblioteca.sh` para módulos menores
+- [ ] **MOD-02**: Consolidar lógica SSH duplicada em `utils.sh`
+- [ ] **STD-01**: Padronizar declaração de variáveis e funções em todos os módulos .sh
+- [ ] **STD-02**: Unificar formatação, indentação e headers em todos os módulos
+- [ ] **STD-03**: Garantir `set -euo pipefail` e tratamento de erros consistente em todos os módulos
 
 ### Out of Scope
 
-- Novas funcionalidades (fora do escopo de extração) — fase futura
-- Testes automatizados — fase futura
-- Reescrever módulos inteiros — apenas extrair duplicação
-- Mudanças na interface do usuário (menus) — apenas refatoração interna
+- Novas funcionalidades para usuário final — apenas infraestrutura e padronização
+- Reescrever módulos inteiros — apenas extrair duplicação e padronizar
+- Mudanças na interface do usuário (menus) — refatoração interna
 - Migração para outra linguagem — Bash puro é requisito
 
 ## Context
@@ -85,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 06/07/26 after initialization*
+*Last updated: 07/07/26 after v2.0 milestone start*
