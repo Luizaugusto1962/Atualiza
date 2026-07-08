@@ -411,6 +411,121 @@ _executar_lista_arquivos() {
     _aguardar_tecla
 }
 
+# Edita a lista de arquivos (variosarquivos): visualiza, adiciona, altera ou remove linhas
+_editar_lista_arquivos() {
+    local arquivo_lista="${CFG_DIR}/variosarquivos"
+
+    if [[ ! -f "$arquivo_lista" ]]; then
+        _erro "Arquivo ${arquivo_lista} nao encontrado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    while true; do
+        _limpa_tela
+        _exibir_cabecalho_menu "Editar Lista de Arquivos (variosarquivos)"
+        _exibir_titulo_secao " Conteudo atual:"
+        _linha
+
+        local linhas=()
+        mapfile -t linhas < "$arquivo_lista"
+
+        if [[ ${#linhas[@]} -eq 0 ]]; then
+            _aviso "Lista vazia"
+        else
+            local idx=1
+            for linha in "${linhas[@]}"; do
+                [[ -n "$linha" ]] || continue
+                printf '%b' "${GREEN}${idx}${NORM} - ${linha}\n"
+                ((idx++))
+            done
+        fi
+
+        _linha
+        _exibir_separador_menu
+        _exibir_opcao_menu "1" "Adicionar nova entrada"
+        _exibir_opcao_menu "2" "Alterar uma entrada"
+        _exibir_opcao_menu "3" "Remover uma entrada"
+        _exibir_opcao_menu "4" "Zerar lista (remover todas as entradas)"
+        _exibir_rodape_menu
+        printf "\n"
+
+        local opcao
+        if ! _ler_opcao_menu "variosarquivos"; then
+            continue
+        fi
+
+        case "${opcao}" in
+            1)
+                read -rp "${YELLOW}Nome do arquivo a adicionar: ${NORM}" novo
+                novo=$(_trim "$novo")
+                if [[ -n "$novo" ]]; then
+                    echo "$novo" >> "$arquivo_lista"
+                    _ok "'${novo}' adicionado a lista"
+                else
+                    _aviso "Nenhum nome informado"
+                fi
+                _aguardar 1
+                ;;
+            2)
+                read -rp "${YELLOW}Numero da linha a alterar: ${NORM}" num
+                if [[ "$num" =~ ^[0-9]+$ ]] && (( num > 0 && num <= ${#linhas[@]} )); then
+                    read -rp "${YELLOW}Novo valor: ${NORM}" novo
+                    novo=$(_trim "$novo")
+                    if [[ -n "$novo" ]]; then
+                        local tmp_lista=()
+                        for i in "${!linhas[@]}"; do
+                            if (( i + 1 == num )); then
+                                tmp_lista+=("$novo")
+                            else
+                                tmp_lista+=("${linhas[$i]}")
+                            fi
+                        done
+                        printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
+                        _ok "Linha ${num} alterada"
+                    else
+                        _aviso "Valor vazio, operacao cancelada"
+                    fi
+                else
+                    _aviso "Numero invalido"
+                fi
+                _aguardar 1
+                ;;
+            3)
+                read -rp "${YELLOW}Numero da linha a remover: ${NORM}" num
+                if [[ "$num" =~ ^[0-9]+$ ]] && (( num > 0 && num <= ${#linhas[@]} )); then
+                    local tmp_lista=()
+                    for i in "${!linhas[@]}"; do
+                        if (( i + 1 != num )); then
+                            tmp_lista+=("${linhas[$i]}")
+                        fi
+                    done
+                    printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
+                    _ok "Linha ${num} removida"
+                else
+                    _aviso "Numero invalido"
+                fi
+                _aguardar 1
+                ;;
+            4)
+                _aviso "Tem certeza que deseja ZERAR toda a lista?"
+                read -rp "${YELLOW}Confirma [S/N]: ${NORM}" conf
+                conf=$(_trim "$conf")
+                conf="${conf^^}"
+                if [[ "$conf" == "S" ]]; then
+                    > "$arquivo_lista"
+                    _ok "Lista zerada com sucesso"
+                else
+                    _aviso "Operacao cancelada"
+                fi
+                _aguardar 1
+                ;;
+            9) return ;;
+            *) _processar_opcao_invalida ;;
+        esac
+    done
+}
+
 # Recupera arquivos principais baseado na lista
 _recuperar_arquivos_principais() {
     cd "${CFG_DIR}" || return 1
