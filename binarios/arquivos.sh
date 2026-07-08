@@ -5,11 +5,8 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 08/07/2026-01
 #
-
-set -euo pipefail
-
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da primeira base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"                                 # Caminho do diretorio da segunda base de dados.

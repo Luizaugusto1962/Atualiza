@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # config.sh - Modulo de Configuracoes e Validacoes
 # Responsavel por carregar configuracoes, validar sistema e definir variaveis globais
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-02
-
-# =============================================================================
-# CONFIGURACOES DE SEGURANCA
-# =============================================================================
-set -euo pipefail
+# Versao: 08/07/2026-02
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)

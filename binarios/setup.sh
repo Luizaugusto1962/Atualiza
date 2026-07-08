@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # setup.sh - Gerencia a configuracao do sistema
 # Este script gerencia a criacao e a edicao dos arquivos de configuracao
@@ -10,10 +11,7 @@
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
-
-set -euo pipefail
-
+# Versao: 08/07/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)

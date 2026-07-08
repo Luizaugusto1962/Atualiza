@@ -4,12 +4,9 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 03/07/2026-01
+# Versao: 08/07/2026-01
 # Autor: Luiz Augusto
 #
-#---------- FUNcoES DE LEMBRETES ----------#
-# Variaveis globais esperadas
-#CFG_DIR="${CFG_DIR:-}"          # Caminho do diretorio de configuracao do programa.
 
 # Mostra menu de lembretes
 # Escreve nova nota
