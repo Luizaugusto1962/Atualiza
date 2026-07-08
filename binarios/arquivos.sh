@@ -312,7 +312,10 @@ _recuperar_todos_arquivos() {
         shopt -s nullglob
         for extensao in "${extensoes[@]}"; do
             for arquivo in ${base_trabalho}/${extensao}; do
-                if [[ -f "$arquivo" && -s "$arquivo" ]]; then
+                if [[ -L "$arquivo" ]]; then
+                    _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
+                    _linha "-" "${GREEN}"
+                elif [[ -f "$arquivo" && -s "$arquivo" ]]; then
                     _executar_jutil "$arquivo"
                 else
                     _aviso "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
@@ -353,7 +356,10 @@ _recuperar_arquivo_individual() {
     
     shopt -s nullglob
     for arquivo in ${base_trabalho}/${padrao_arquivo}; do
-        if [[ -f "$arquivo" ]]; then
+        if [[ -L "$arquivo" ]]; then
+            _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
+            _linha "-" "${GREEN}"
+        elif [[ -f "$arquivo" ]]; then
             _executar_jutil "$arquivo"
             ((arquivos_encontrados++)) || true
         fi
@@ -457,13 +463,21 @@ _processar_lista_arquivos() {
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
         local caminho_arquivo="${base_trabalho}/${listando}"
-        _executar_jutil "$caminho_arquivo"
+        if [[ -L "$caminho_arquivo" ]]; then
+            _aviso "Arquivo linkado, pulando: ${listando}"
+        else
+            _executar_jutil "$caminho_arquivo"
+        fi
     done < "$arquivo_lista"
 }
 
 # Executa jutil no arquivo especificado
 _executar_jutil() {
     local arquivo="$1"
+    if [[ -L "$arquivo" ]]; then
+        _aviso "Arquivo linkado, pulando recuperacao: $(basename "$arquivo")"
+        return 0
+    fi
     if [[ -x "${REBUILD}" ]]; then    
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
             if "${REBUILD}" -rebuild "$arquivo" -a -f; then
