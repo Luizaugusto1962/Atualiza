@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 08/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -117,8 +117,9 @@ _executar_backup() {
     fi
 
     # Gerar nome do arquivo
-    local nome_backup
-    nome_backup="${CFG_EMPRESA}_${tipo_backup}_$(date +%Y%m%d%H%M).zip"
+    local nome_backup nome_base_dir
+    nome_base_dir=$(basename "$base_trabalho")
+    nome_backup="${CFG_EMPRESA}_${tipo_backup}_${nome_base_dir}_$(date +%Y%m%d%H%M).zip"
     local caminho_backup="${DEFAULT_BASEBACKUP_DIR}/$nome_backup"
 
     # Verificar backups recentes
@@ -891,8 +892,9 @@ _executar_backup_multiplos_padroes() {
     _linha
 
     # Gerar nome do arquivo
-    local nome_backup
-    nome_backup="${CFG_EMPRESA}_multiplos_$(date +%Y%m%d%H%M).zip"
+    local nome_backup nome_base_dir
+    nome_base_dir=$(basename "$base_trabalho")
+    nome_backup="${CFG_EMPRESA}_multiplos_${nome_base_dir}_$(date +%Y%m%d%H%M).zip"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
     _aviso "Criando backup com multiplos padroes..."
     _linha
