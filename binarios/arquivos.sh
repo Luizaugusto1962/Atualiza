@@ -513,7 +513,7 @@ _editar_lista_arquivos() {
                 conf=$(_trim "$conf")
                 conf="${conf^^}"
                 if [[ "$conf" == "S" ]]; then
-                    > "$arquivo_lista"
+                    rm -f "$arquivo_lista" && touch "$arquivo_lista"
                     _ok "Lista zerada com sucesso"
                 else
                     _aviso "Operacao cancelada"
