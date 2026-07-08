@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 08/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -154,12 +154,10 @@ _menu_programas() {
         _exibir_titulo_secao "Escolha Desatualizar:"
         _exibir_separador_menu
         _exibir_opcao_menu "4" "Voltar programa Atualizado"
-        _exibir_separador_menu
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
+        _exibir_rodape_menu
 
         if [[ -n "${CFG_VERSAOCLASS}" ]]; then
             printf "\n"
-            _mensaged "${BLUE}" "Versao do Iscobol - ${CFG_VERSAOCLASS}"
         fi
 
         local opcao
@@ -190,8 +188,7 @@ _menu_biblioteca() {
         _exibir_titulo_secao "Escolha Desatualizar:"
         _exibir_separador_menu
         _exibir_opcao_menu "3" "Voltar o(s) Programa(s)"
-        _exibir_separador_menu
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
+        _exibir_rodape_menu
 
         if [[ -f "${CFG_DIR}/.versao" ]]; then
             if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
@@ -233,6 +230,7 @@ _menu_arquivos() {
         _exibir_opcao_menu "4" "Arquivos Temporarios"
         _exibir_opcao_menu "5" "Expurgador de Arquivos"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "arquivos"; then
@@ -264,6 +262,7 @@ _menu_ferramentas() {
         _exibir_opcao_menu "4" "Avisos iniciais"
         _exibir_opcao_menu "5" "Logs do sistema"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "ferramentas"; then
@@ -293,6 +292,7 @@ _menu_temporarios() {
         _exibir_opcao_menu "2" "Adicionar Arquivos Temporarios"
         _exibir_opcao_menu "3" "Listar os registros dos Arquivos"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "temporarios"; then
@@ -320,6 +320,7 @@ _menu_recuperar_arquivos() {
         _exibir_opcao_menu "2" "Arquivos Principais"
         _exibir_opcao_menu "3" "Lista de Arquivos"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "recuperacao"; then
@@ -349,6 +350,7 @@ _menu_backup() {
         _exibir_separador_menu
         _exibir_opcao_menu "4" "Enviar Backup"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "backup"; then
@@ -376,7 +378,7 @@ _menu_transferencia_arquivos() {
         _exibir_opcao_menu "1" "Enviar arquivo(s)"
         _exibir_opcao_menu "2" "Receber arquivo(s)"
         _exibir_rodape_menu
-
+        printf "\n"
         local opcao
         if ! _ler_opcao_menu "transferencia"; then
             continue
@@ -403,6 +405,7 @@ _menu_configs() {
         _exibir_opcao_menu "3" "Versao do Linux"
         _exibir_opcao_menu "4" "Consultar Variaveis"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "configs"; then
@@ -432,7 +435,7 @@ _menu_setups() {
         _exibir_opcao_menu "3" "Validar configuracao"
         _exibir_opcao_menu "4" "Configurar Acesso SSH"
         _exibir_rodape_menu
-
+        printf "\n"
         local opcao
         if ! _ler_opcao_menu "setups"; then
             continue
@@ -472,6 +475,7 @@ _menu_lembretes() {
         _exibir_opcao_menu "3" "Editar nota"
         _exibir_opcao_menu "4" "Apagar nota"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "lembretes"; then
@@ -507,6 +511,7 @@ _menu_avisos() {
         _exibir_opcao_menu "2" "Editar Aviso Existente"
         _exibir_opcao_menu "3" "Apagar Aviso Existente"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "aviso"; then
@@ -533,6 +538,7 @@ _menu_logs() {
         _exibir_opcao_menu "1" "Log de Atualizacao"
         _exibir_opcao_menu "2" "Log de Limpeza"
         _exibir_rodape_menu
+        printf "\n"
 
         local opcao
         if ! _ler_opcao_menu "logs"; then
@@ -566,8 +572,7 @@ _menu_ajuda_principal() {
         _exibir_opcao_menu "4" "Buscar no Manual"
         _exibir_opcao_menu "5" "Exportar Manual"
         _exibir_opcao_menu "6" "Ajuda por Contexto"
-        _exibir_separador_menu
-        _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
+        _exibir_rodape_menu
         _linha "=" "${GREEN}"
 
         local opcao
@@ -642,11 +647,9 @@ _menu_escolha_base() {
         if [[ -n "${CFG_BASE_DIR3}" ]]; then
             _exibir_opcao_menu "3" "Base em ${RAIZ}${CFG_BASE_DIR3}"
         fi
-
-        printf "\n"
         _exibir_rodape_menu
-        _linha "=" "${GREEN}"
-
+        printf "\n"
+        
         local opcao
         if ! _ler_opcao_menu "base"; then
             continue
@@ -688,7 +691,8 @@ _menu_tipo_backup() {
         _exibir_opcao_menu "1" "Backup Completo"
         _exibir_opcao_menu "2" "Backup Incremental"
         _exibir_rodape_menu
-        _linha "=" "${GREEN}"
+        printf "\n"
+#        _linha "=" "${GREEN}"
 
         local opcao
         if ! _ler_opcao_menu "tipobackup"; then
