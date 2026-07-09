@@ -342,7 +342,7 @@ _menu_recuperar_arquivos() {
 
 #---------- MENU DE BACKUP ----------#
 _menu_backup() {
-        while true; do
+    while true; do
         _limpa_tela
         _exibir_cabecalho_menu "Menu de Backup(s)"
         _exibir_titulo_secao " Escolha a opcao:"
