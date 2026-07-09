@@ -342,7 +342,7 @@ _menu_recuperar_arquivos() {
 
 #---------- MENU DE BACKUP ----------#
 _menu_backup() {
-    while true; do
+        while true; do
         _limpa_tela
         _exibir_cabecalho_menu "Menu de Backup(s)"
         _exibir_titulo_secao " Escolha a opcao:"
@@ -652,7 +652,7 @@ _menu_escolha_base() {
         fi
         _exibir_rodape_menu
         printf "\n"
-        
+
         local opcao
         if ! _ler_opcao_menu "base"; then
             continue

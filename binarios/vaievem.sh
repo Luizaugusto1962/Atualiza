@@ -20,7 +20,7 @@ arquivos_encontrados=()                        # Array para armazenar arquivos e
 _validar_caminho_seguro() {
     local caminho="$1"
     local regex_perigoso=$'[;|&$`<>"\']'
-    
+
     if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" =~ $regex_perigoso ]]; then
         return 1
     fi
@@ -72,7 +72,7 @@ _receber_sftp_ssh() {
         _log_erro "Arquivo remoto nao especificado para SFTP SSH"
         return 1
     fi
-    
+
     # SEGURANCA: Validar caminho remoto contra injeção e traversal
     if ! _validar_caminho_seguro "$arquivo_remoto"; then
         _log_erro "Caminho remoto invalido ou malicioso: ${arquivo_remoto}"
@@ -80,7 +80,7 @@ _receber_sftp_ssh() {
     fi
 
     local destino_local="${2:-.}"
-    
+
     # SEGURANCA: Validar caminho de destino
     if ! _validar_caminho_seguro "$destino_local"; then
         _log_erro "Caminho de destino invalido ou malicioso: ${destino_local}"
@@ -89,15 +89,15 @@ _receber_sftp_ssh() {
 
     local nome_arquivo="${arquivo_remoto##*/}"
     _log "Iniciando download SFTP com chave SSH: ${arquivo_remoto}"
-    
+
     # Captura stdout e stderr para inspecionar mensagens de erro do sftp
     local sftp_output
     local host_ssh="${CFG_SSH_HOST:-sav_servidor}"
-    
+
     # SEGURANCA: Tornar conexão explícita (usuário e porta) para evitar dependência de ~/.ssh/config
     local user_ssh="${DEFAULT_SSH_USER:-}"
     local porta_ssh="${DEFAULT_SSH_PORTA:-}"
-    
+
     # Construir destino de forma segura
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
 
@@ -132,19 +132,19 @@ EOF
     )
     local IFS='|'
     local regex_erro="${padroes_erro[*]}"
-    
+
     if echo "$sftp_output" | grep -qiE "$regex_erro"; then
         _log_erro "Falha no download SFTP SSH: ${arquivo_remoto}"
         _log_erro "Saida sftp: ${sftp_output}"
         return 1
     fi
-    
+
     # 3ª verificacao: confirma que o arquivo existe e nao esta vazio no destino
     if [[ ! -f "$destino_seguro" || ! -s "$destino_seguro" ]]; then
         _log_erro "Falha no download SFTP SSH: arquivo ausente apos transferencia: ${destino_seguro}"
         return 1
     fi
-    
+
     _log_sucesso "Download SFTP SSH concluido: ${arquivo_remoto}"
     return 0
 }
@@ -233,12 +233,12 @@ _enviar_rsync() {
         _log_erro "Parametros obrigatorios nao informados para upload RSYNC"
         return 1
     fi
-    
+
     if [[ ! -f "$arquivo_local" ]]; then
         _erro "Arquivo local nao encontrado: ${arquivo_local}"
         return 1
     fi
-    
+
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
@@ -279,7 +279,7 @@ _baixar_biblioteca_sincroniza() {
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
-        
+
         # SEGURANCA: Validar diretorio de recebimento
         if ! _validar_caminho_seguro "${DEFAULT_RECEBE_DIR:-}"; then
             _log_erro "Erro: Diretorio de recebimento invalido."
@@ -288,13 +288,13 @@ _baixar_biblioteca_sincroniza() {
 
         if _usar_chave_ssh; then
             local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
-            
+
             # SEGURANCA: Validar caminho construído
             if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
                 _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
-            local sftp_lib_opts=("-P" "$porta") 
+            local sftp_lib_opts=("-P" "$porta")
             _adicionar_opcoes_chave sftp_lib_opts
             local src="${rem_user}@${servidor}:${arquivo_biblioteca}"
 
@@ -319,7 +319,7 @@ _baixar_biblioteca_sincroniza() {
                     _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
                     return 1
                 fi
-                
+
                 local src="${rem_user}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
                 local scp_cmd=("scp" "-P" "$porta")
 
@@ -346,11 +346,11 @@ _baixar_programas_vaievem() {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
-    
+
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         return 0
     fi
-    
+
     _linha
     _mensagec "${YELLOW}" "Realizando sincronizacao dos arquivos..."
     (
@@ -359,7 +359,7 @@ _baixar_programas_vaievem() {
             _linha
             _mensagec "${GREEN}" "Transferindo: $arquivo"
             _linha
-            
+
             if _usar_chave_ssh; then
                 if ! _receber_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
                     _erro "Falha no download: $arquivo"
@@ -371,7 +371,7 @@ _baixar_programas_vaievem() {
                     return 1
                 fi
             fi
-            
+
             _linha
             # Verificar se arquivo foi baixado
             if [[ ! -f "$arquivo" || ! -s "$arquivo" ]]; then
@@ -379,7 +379,7 @@ _baixar_programas_vaievem() {
                 _aguardar 0
                 return 1
             fi
-            
+
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _erro "Arquivo corrompido: $arquivo"
                 # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
@@ -387,7 +387,7 @@ _baixar_programas_vaievem() {
                 _aguardar 2
                 return 1
             fi
-            
+
             _mensagec "${GREEN}" "Download concluido: $arquivo"
         done
     )
@@ -403,20 +403,20 @@ _enviar_arquivo_multi() {
         _aguardar 2
         return 1
     fi
-    
+
     if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
         _erro "Destino remoto nao especificado"
         _aguardar 2
         return 1
     fi
-    
+
     # SEGURANCA: Validar caminhos contra traversal e injeção
     if ! _validar_caminho_seguro "${DIRETORIO_ORIGEM:-.}" || ! _validar_caminho_seguro "${CFG_BACKUP_PATH:-}"; then
         _erro "Caminhos contem caracteres invalidos ou tentativas de traversal."
         _aguardar 2
         return 1
     fi
-    
+
     # Verificar se esta enviando multiplos arquivos ou apenas um
     if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
         # Enviar multiplos arquivos usando _enviar_rsync
@@ -426,7 +426,7 @@ _enviar_arquivo_multi() {
                 ((falhas_envio++)) || true
             fi
         done
-        
+
         if (( falhas_envio == 0 )); then
             _mensagec "${YELLOW}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
             _linha
