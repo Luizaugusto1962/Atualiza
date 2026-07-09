@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/07/2026-01
+# Versao: 09/07/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                                   # Caminho do diretorio da primeira base de dados.
@@ -777,7 +777,7 @@ _receber_arquivo_avulso() {
     _linha
     _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
     _linha
-    if _download_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
+    if _receber_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
         _mensagec "${GREEN}" "Arquivo recebido com sucesso em \"${destino_local}\""
         _linha
         _aguardar 3

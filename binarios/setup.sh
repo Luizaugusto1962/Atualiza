@@ -11,7 +11,7 @@ set -euo pipefail
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/07/2026-01
+# Versao: 09/07/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -53,6 +53,7 @@ _initial_setup() {
     } > .config
 
     # Configuracoes adicionais
+    _setup_iscobol
     _setup_diretorios
     _setup_acesso_remoto
     _setup_chave_acesso

@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 09/07/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -55,20 +55,6 @@ _var_carregar_config() {
         fi
         return $?
     fi
-    return 1
-}
-
-# =============================================================================
-# FUNCAO: Carregar constantes do sistema (delegacao)
-# =============================================================================
-_var_carregar_constantes() {
-    local constantes_file="${LIBS_DIR}/constantes.sh"
-
-    if [[ -f "$constantes_file" ]] && [[ -r "$constantes_file" ]]; then
-        "." "$constantes_file"
-        return $?
-    fi
-
     return 1
 }
 
