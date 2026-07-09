@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-02
+# Versao: 09/07/2026-02
 #
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -83,9 +83,19 @@ _atualizar_transpc() {
             _aguardar 3
             return 1
         fi
-    fi    
-    _baixar_biblioteca_sincroniza || return 1
-    _salvar_atualizacao_biblioteca || return 1
+    fi
+    if ! _baixar_biblioteca_sincroniza; then
+        _erro "Falha ao baixar biblioteca do servidor."
+        _aviso "Verifique se a versao ${VERSAO} esta disponivel no servidor."
+        _linha "-" "${RED}"
+        _aguardar_tecla
+        return 1
+    fi
+    if ! _salvar_atualizacao_biblioteca; then
+        _erro "Falha ao salvar atualizacao da biblioteca."
+        _aguardar_tecla
+        return 1
+    fi
 }
 
 # Atualizacao offline da biblioteca
@@ -101,11 +111,21 @@ _atualizar_biblioteca_offline() {
 
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            _processar_biblioteca_offline || return 1
+            if ! _processar_biblioteca_offline; then
+                _erro "Falha ao processar biblioteca offline."
+                _aviso "Verifique se os arquivos estao no diretorio: ${DEFAULT_RECEBE_DIR}"
+                _linha "-" "${RED}"
+                _aguardar_tecla
+                return 1
+            fi
         else
-            _salvar_atualizacao_biblioteca || return 1
+            if ! _salvar_atualizacao_biblioteca; then
+                _erro "Falha ao salvar atualizacao da biblioteca."
+                _aguardar_tecla
+                return 1
+            fi
         fi
-    fi    
+    fi
 }
 
 # Reverter biblioteca para versao anterior
