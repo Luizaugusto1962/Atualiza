@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/07/2026-01
+# Versao: 10/07/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -72,7 +72,7 @@ _var_verificar_dependencias() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Dependencias faltando: %s%s%s\n" "${RED}" "${missing[*]}" "${NORM}" >&2
+        _erro "Dependencias faltando: %s%s%s\n" "${VERMELHO}" "${missing[*]}" "${NORMAL}" >&2
         return 1
     fi
 
@@ -109,16 +109,16 @@ _var_exibir_tabular() {
     printf "\n"
 
     # Exibir informacoes sobre o arquivo de configuracao
-    printf "%s%s Fonte de Configuracao:%s\n" "$GREEN" "$BOLD" "$NORM"
+    printf "%s%s Fonte de Configuracao:%s\n" "$VERDE" "$BOLD" "$NORMAL"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
-        printf "   %s Status: Carregado com sucesso %s" "${GREEN}" "$CONFIG_FILE"
+        printf "   %s Status: Carregado com sucesso %s" "${VERDE}" "$CONFIG_FILE"
     else
-        printf "   %s Status: Nao encontrado (usando valores padrao) %s" "${YELLOW}" "$CONFIG_FILE"
+        printf "   %s Status: Nao encontrado (usando valores padrao) %s" "${AMARELO}" "$CONFIG_FILE"
     fi
     printf "\n"
 
     # Cabecalho da tabela
-    printf "%s%-35s%s %s\n" "${GREEN}" "VARIAVEL" "${NORM}" "VALOR"
+    printf "%s%-35s%s %s\n" "${VERDE}" "VARIAVEL" "${NORMAL}" "VALOR"
     printf "%-35s %s\n" "$(printf '%.0s-' {1..35})" "$(printf '%.0s-' {1..60})"
 
     # Iterar sobre as categorias
@@ -132,7 +132,7 @@ _var_exibir_tabular() {
             fi
         fi
 
-        printf "\n%s%s[%s]%s\n" "$YELLOW" "$BOLD" "$categoria" "$NORM"
+        printf "\n%s%s[%s]%s\n" "$AMARELO" "$BOLD" "$categoria" "$NORMAL"
 
         for variavel in ${_VAR_CATEGORIAS[$categoria]}; do
             valor=$(_var_obter_valor "$variavel")
@@ -166,10 +166,10 @@ _consultar_variaveis() {
     # Se nao veio por argumento, perguntar interativamente
     if [[ -z "$filtro" && -t 0 ]]; then
         _limpa_tela 2>/dev/null || true
-        _linha "=" "${GREEN}" 2>/dev/null || true
-        printf '%s\n' "${RED}Consulta de Variaveis do Sistema${NORM}"
+        _linha "=" "${VERDE}" 2>/dev/null || true
+        printf '%s\n' "${VERMELHO}Consulta de Variaveis do Sistema${NORMAL}"
         _linha 2>/dev/null || true
-        printf '%s' "${YELLOW}Digite um filtro (ex: DIRETORIOS, REDE) ou ENTER para listar tudo: ${NORM}"
+        printf '%s' "${AMARELO}Digite um filtro (ex: DIRETORIOS, REDE) ou ENTER para listar tudo: ${NORMAL}"
         read -r filtro
         filtro="${filtro:-}"
     fi

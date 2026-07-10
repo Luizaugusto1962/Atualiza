@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-02
+# Versao: 10/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -18,17 +18,16 @@ RAIZ="${RAIZ:-}"                                   # Diretorio RAIZ do sistema.
 _obter_colunas() {
     local colunas
     if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS:-80}}"
+        colunas="${COLUNAS:-${DEFAULT_COLUMNS:-80}}"
     fi
     printf '%s' "$colunas"
 }
 
 # Configuracao de alertas
-
-    _msg()   { _exibir_mensagem_centralizada "${CYAN}"   "[INFO]  $1"; }
-    _ok()    { _exibir_mensagem_centralizada "${GREEN}"  "[OK]    $1"; }
-    _aviso() { _exibir_mensagem_centralizada "${YELLOW}" "[AVISO] $1"; }
-    _erro()  { _exibir_mensagem_centralizada "${RED}"    "[ERRO]  $1"; }
+    _msg()   { _exibir_mensagem_centralizada "${CIANO}" "[INFORMATIVO] $1"; }
+    _ok()    { _exibir_mensagem_centralizada "${VERDE}" "[OK] $1"; }
+    _aviso() { _exibir_mensagem_centralizada "${AMARELO}" "[AVISO] $1"; }
+    _erro()  { _exibir_mensagem_centralizada "${VERMELHO}" "[ERRO] $1"; }
 
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
@@ -78,7 +77,7 @@ _mensageb() {
     local margem_esquerda
 
     # Garantir que NORM e cor estejam definidos (fallback seguro)
-    : "${NORM:=}"
+    : "${NORMAL:=}"
     : "${cor:=}"
 
     # Obter largura do terminal
@@ -95,7 +94,7 @@ _mensageb() {
         "$margem_esquerda" "" \
         "${cor}" \
         "$largura_bloco" "${mensagem}" \
-        "${NORM}"
+        "${NORMAL}"
 }
 
 # Exibe mensagem centralizada com cor
@@ -109,11 +108,11 @@ _exibir_mensagem_centralizada() {
 
     if [[ "$colunas" -lt "$tamanho_mensagem" ]]; then
         # Terminal muito estreito — exibir sem centralizar
-        printf "%s%s%s\n" "${cor}" "${mensagem}" "${NORM}"
+        printf "%s%s%s\n" "${cor}" "${mensagem}" "${NORMAL}"
     else
         # Calcula margem esquerda para centralizar
         local margem=$(( (colunas - tamanho_mensagem) / 2 ))
-        printf "%s%*s%s%s\n" "${cor}" "$margem" "" "${mensagem}" "${NORM}"
+        printf "%s%*s%s%s\n" "${cor}" "$margem" "" "${mensagem}" "${NORMAL}"
     fi
 }
 
@@ -135,7 +134,7 @@ _exibir_mensagem_direita() {
         posicao_inicio=0
     fi
 
-    printf "%s%*s%s${NORM}\n" "${cor}" "${posicao_inicio}" "" "$mensagem"
+    printf "%s%*s%s${NORMAL}\n" "${cor}" "${posicao_inicio}" "" "$mensagem"
 }
 
 _exibir_mensagem_corrida() {
@@ -158,7 +157,7 @@ _exibir_mensagem_corrida() {
 
     # Loop para imprimir cada letra com efeito de digitação
     for ((i=0; i<${#mensagem}; i++)); do
-        printf "%s%s%s" "${cor}" "${mensagem:$i:1}" "${NORM}"
+        printf "%s%s%s" "${cor}" "${mensagem:$i:1}" "${NORMAL}"
         sleep 0.05
     done
     printf "\n"
@@ -179,7 +178,7 @@ _linha() {
 
     printf "%s" "${cor}"
     printf '%*s\n' "$colunas" '' | tr ' ' "$traco"
-    printf "%s" "${NORM}"
+    printf "%s" "${NORMAL}"
 }
 
 
@@ -202,7 +201,7 @@ _meia_linha() {
     linhas=${espacos// /$traco}
     printf "%s" "${cor}"
     printf "%*s\n" $(((colunas + largura) / 2)) "$linhas"
-    printf "%s" "${NORM}"
+    printf "%s" "${NORMAL}"
 }
 
 
@@ -235,9 +234,9 @@ _aguardar_tecla() {
 
     colunas=$(_obter_colunas)
 
-    printf "%s" "${YELLOW}"
+    printf "%s" "${AMARELO}"
     printf "%*s\n" $(((36 + colunas) / 2)) "<< $mensagem >>"
-    printf "%s" "${NORM}"
+    printf "%s" "${NORMAL}"
     read -rt "$timeout" || :
     tput sgr0 2>/dev/null || true
 }
@@ -267,18 +266,18 @@ _opinvalida() {
         espacos=0
     fi
 
-    _linha "-" "${YELLOW}"
+    _linha "-" "${AMARELO}"
 
     # Imprimir espacos iniciais para centralizar
     printf "%${espacos}s" ""
 
     # Loop para imprimir cada letra com efeito de digitacao
     for ((i=0; i<${#mensagem}; i++)); do
-        printf "%s" "${RED}${mensagem:$i:1}${NORM}"
+        printf "%s" "${VERMELHO}${mensagem:$i:1}${NORMAL}"
         _aguardar 0.05
     done
     printf "\n"
-    _linha "-" "${YELLOW}"
+    _linha "-" "${AMARELO}"
 }
 
 #---------- FUNCOES DE VALIDACAO ----------#
@@ -315,9 +314,9 @@ _confirmar() {
     esac
 
     while (( tentativas < max_tentativas )); do
-        if ! read -r -t "${timeout}" -p "${YELLOW}${mensagem} ${opcoes}: ${NORM}" resposta; then
+        if ! read -r -t "${timeout}" -p "${AMARELO}${mensagem} ${opcoes}: ${NORMAL}" resposta; then
             # Timeout ou erro de leitura — usar padrao
-            _mensagec "${YELLOW}" "Entrada expirada. Usando padrao: ${padrao}"
+            _mensagec "${AMARELO}" "Entrada expirada. Usando padrao: ${padrao}"
             resposta="$padrao"
         fi
 
@@ -330,9 +329,9 @@ _confirmar() {
             s|sim) return 0 ;;
             n|nao) return 1 ;;
             *)
-                _linha "-" "${RED}"
+                _linha "-" "${VERMELHO}"
                 _erro "Resposta invalida. Use S ou N."
-                _linha "-" "${RED}"
+                _linha "-" "${VERMELHO}"
                 ((tentativas++)) || true
                 ;;
         esac
@@ -382,7 +381,7 @@ _mostrar_progresso_backup() {
         return 0
     fi
 
-    : "${GREEN:=}" "${RED:-}" "${CYAN:=}" "${NORM:=}"
+    : "${VERDE:=}" "${VERMELHO:-}" "${CIANO:=}" "${NORMAL:=}"
 
     # Ocultar cursor se suportado
     printf "\033[?25l" 2>/dev/null || true
@@ -406,7 +405,7 @@ _mostrar_progresso_backup() {
         printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
 
         printf "\r\033[K%s[INFO]%s %s |%s| %s" \
-            "${CYAN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${YELLOW}${tempo_format}"
+            "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
         printf "%s" "" >&3
 
         sleep 1 2>/dev/null || sleep 1
@@ -425,7 +424,7 @@ _mostrar_progresso_backup() {
     printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
 
     printf "\r\033[K%s[ok]%s %s |%s| %s concluido\n" \
-        "${GREEN}" "${NORM}" "${msg_format}" "${GREEN}${barra}${NORM}" "${YELLOW}${tempo_format}"
+        "${VERDE}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
 
     exec 3>&-
 
@@ -645,7 +644,7 @@ _enviabackup_para_receber() {
     fi
 
     _linha
-    _mensagec "${YELLOW}" "Processando arquivos de backup: ${source_dir} → ${dest_dir}"
+    _mensagec "${AMARELO}" "Processando arquivos de backup: ${source_dir} → ${dest_dir}"
     _linha
 
     # Iterar sobre arquivos .zip com tratamento seguro
@@ -673,7 +672,7 @@ _enviabackup_para_receber() {
     if (( arquivos_copiados == 0 && arquivos_erro == 0 )); then
         _aviso "Nenhum arquivo .zip encontrado em ${source_dir}"
     else
-        _mensagec "${GREEN}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
+        _mensagec "${VERDE}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
         if (( arquivos_erro > 0 )); then
             _erro "Atencao: ${arquivos_erro} arquivo(s) com erro"
         fi

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 0307/2026-01
+# Versao: 10/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -39,7 +39,7 @@ _atualizar_programa_online() {
     _solicitar_programas_atualizacao
     
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum programa selecionado"
+        _mensagec "${AMARELO}" "Nenhum programa selecionado"
         _linha
         _aguardar_tecla
         return 0
@@ -76,21 +76,21 @@ _atualizar_programa_offline() {
     
 
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum programa selecionado"
+        _mensagec "${AMARELO}" "Nenhum programa selecionado"
         _linha
         _aguardar_tecla
         return 0
     fi
     
     _linha
-    _mensagec "${YELLOW}" "Os programas devem estar no diretorio ${NORM}${DEFAULT_RECEBE_DIR}"
+    _mensagec "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${DEFAULT_RECEBE_DIR}"
     _linha
     _aguardar 0
     
 
     # Mover arquivos do servidor offline se configurado
     if ! _mover_arquivos_offline; then
-        _mensagec "${RED}" "Arquivo(s) nao encontrado(s) no diretorio offline"
+        _mensagec "${VERMELHO}" "Arquivo(s) nao encontrado(s) no diretorio offline"
         _linha
         _aguardar_tecla
         return 1
@@ -117,7 +117,7 @@ _atualizar_programa_pacote() {
     _solicitar_pacotes_atualizacao
 
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
-        _mensagec "${YELLOW}" "Nenhum pacote selecionado"
+        _mensagec "${AMARELO}" "Nenhum pacote selecionado"
         _linha
         _aguardar_tecla
         return 0
@@ -125,9 +125,9 @@ _atualizar_programa_pacote() {
 
     if [[ "${CFG_OFFLINE}" == "s" ]]; then
         _linha
-        _mensagec "${YELLOW}" "Parametro do servidor OFF ativo"
+        _mensagec "${AMARELO}" "Parametro do servidor OFF ativo"
         if ! _mover_arquivos_offline; then
-            _mensagec "${RED}" "Pacote(s) nao encontrado(s) no diretorio offline"
+            _mensagec "${VERMELHO}" "Pacote(s) nao encontrado(s) no diretorio offline"
             _linha
             _aguardar_tecla
             return 1
@@ -183,21 +183,21 @@ _selecionar_programas_reversao() {
     done
 
     _linha
-    _mensagec "${CYAN}" "Backups disponiveis para reversao:"
+    _mensagec "${CIANO}" "Backups disponiveis para reversao:"
     _linha
 
     local idx=1
     for programa in "${programas[@]}"; do
-        _mensagec "${GREEN}" "${idx}) ${programa}"
+        _mensagec "${VERDE}" "${idx}) ${programa}"
         ((idx++)) || true
     done
 
     _linha
-    _mensagec "${YELLOW}" "Digite o(s) numero(s) do(s) programa(s) a reverter (ex: 1 2 3) ou 0 para sair:"
+    _mensagec "${AMARELO}" "Digite o(s) numero(s) do(s) programa(s) a reverter (ex: 1 2 3) ou 0 para sair:"
 
     local escolha
     while true; do
-        read -rp "${YELLOW}Opcao -> ${NORM}" escolha
+        read -rp "${AMARELO}Opcao -> ${NORMAL}" escolha
         _linha
 
         # Tratar cancelamento
@@ -254,12 +254,12 @@ _reverter_programa() {
         if _processar_reversao_programas; then
             _mensagem_conclusao_reversao
         else
-            _mensagec "${RED}" "Falha ao processar reversao dos programas"
+            _mensagec "${VERMELHO}" "Falha ao processar reversao dos programas"
             _linha
             _aguardar_tecla
         fi
     else
-        _mensagec "${RED}" "Nenhum programa foi selecionado para reversao"
+        _mensagec "${VERMELHO}" "Nenhum programa foi selecionado para reversao"
         _linha
         _aguardar_tecla
     fi
@@ -272,10 +272,10 @@ _resolver_arquivo_compilado() {
     local nome_item="$1"
     local tipo_compilacao
 
-    _mensagec "${RED}" "Informe o tipo de compilacao (1 - Normal, 2 - Depuracao):"
+    _mensagec "${VERMELHO}" "Informe o tipo de compilacao (1 - Normal, 2 - Depuracao):"
     _linha
 
-    read -rp "${YELLOW}Tipo de compilacao: ${NORM}" -n1 tipo_compilacao
+    read -rp "${AMARELO}Tipo de compilacao: ${NORMAL}" -n1 tipo_compilacao
     printf "\n"
 
     if [[ "$tipo_compilacao" == "1" ]]; then
@@ -304,33 +304,33 @@ _coletar_artefatos_atualizacao() {
 
     for ((contador = 1; contador <= max_repeticoes; contador++)); do
         _meio_da_tela
-        _mensagec "${RED}" "$mensagem_item"
+        _mensagec "${VERMELHO}" "$mensagem_item"
         _linha
 
-        read -rp "${YELLOW}Nome do ${rotulo_item} (ENTER para finalizar): ${NORM}" item
+        read -rp "${AMARELO}Nome do ${rotulo_item} (ENTER para finalizar): ${NORMAL}" item
         _linha
 
         if [[ -z "${item}" ]]; then
             if (( ${#PROGRAMAS_SELECIONADOS[@]} > 0 )); then
-                _mensagec "${CYAN}" "Programas informados:"
+                _mensagec "${CIANO}" "Programas informados:"
                 for idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
                     local prog="${PROGRAMAS_SELECIONADOS[$idx]}"
                     local arq="${ARQUIVOS_PROGRAMA[$idx]}"
                     if [[ "$arq" == *"${debugado}"* ]]; then
-                        _mensagec "${GREEN}" "  -> ${prog} - Depuracao"
+                        _mensagec "${VERDE}" "  -> ${prog} - Depuracao"
                     else
-                        _mensagec "${GREEN}" "  -> ${prog} - Normal"
+                        _mensagec "${VERDE}" "  -> ${prog} - Normal"
                     fi
                 done
                 _linha
-                if ! _confirmar "${WHITE} Confirma a selecao do(s) programa(s) acima?" "S"; then
+                if ! _confirmar "${BRANCO} Confirma a selecao do(s) programa(s) acima?" "S"; then
                     PROGRAMAS_SELECIONADOS=()
                     ARQUIVOS_PROGRAMA=()
-                    _mensagec "${YELLOW}" "Selecao cancelada."
+                    _mensagec "${AMARELO}" "Selecao cancelada."
                     _linha
                 fi
             else
-                _mensagec "${YELLOW}" "$mensagem_final"
+                _mensagec "${AMARELO}" "$mensagem_final"
             fi
             _linha
             break
@@ -342,7 +342,7 @@ _coletar_artefatos_atualizacao() {
         fi
 
         if ! _resolver_arquivo_compilado "$item"; then
-            _mensagec "${RED}" "Erro: Opcao invalida. Digite 1 ou 2."
+            _mensagec "${VERMELHO}" "Erro: Opcao invalida. Digite 1 ou 2."
             continue
         fi
 
@@ -351,14 +351,14 @@ _coletar_artefatos_atualizacao() {
         ARQUIVOS_PROGRAMA+=("$arquivo_compilado")
 
         _linha
-        _mensagec "${GREEN}" "${rotulo_item^} adicionado: ${arquivo_compilado}"
+        _mensagec "${VERDE}" "${rotulo_item^} adicionado: ${arquivo_compilado}"
         _linha
         _aguardar_tecla
 
         if [[ -n "$mensagem_lista" ]]; then
-            _mensagec "${YELLOW}" "$mensagem_lista"
+            _mensagec "${AMARELO}" "$mensagem_lista"
             for prog in "${PROGRAMAS_SELECIONADOS[@]}"; do
-                _mensagec "${GREEN}" "  - $prog"
+                _mensagec "${VERDE}" "  - $prog"
             done
         fi
     done
@@ -400,7 +400,7 @@ _mover_arquivos_offline() {
     local todos_encontrados=0
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
-            _mensagec "${GREEN}" "Arquivo encontrado: ${arquivo}"
+            _mensagec "${VERDE}" "Arquivo encontrado: ${arquivo}"
         else
             _erro "Arquivo nao encontrado: ${arquivo}"
             todos_encontrados=1
@@ -479,7 +479,7 @@ _processar_atualizacao_programas() {
             fi
         fi
 
-        _mensagec "${YELLOW}" "Salvando programa antigo: ${programa}"
+        _mensagec "${AMARELO}" "Salvando programa antigo: ${programa}"
 
         # Backup de arquivos .class (qualquer variante do nome)
         shopt -s nullglob
@@ -516,7 +516,7 @@ _processar_atualizacao_programas() {
                 rm -rf "${temp_update}"
                 return 1
             fi
-            _mensagec "${GREEN}" "Backup validado com sucesso: ${programa}"
+            _mensagec "${VERDE}" "Backup validado com sucesso: ${programa}"
         fi
     done
 
@@ -547,17 +547,17 @@ _processar_atualizacao_programas() {
                         _log_erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
                         _erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
                     else
-                        _mensagec "${GREEN}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
+                        _mensagec "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
                     fi
                 else
                     if ! mv -f "${arquivo}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
                         _log_erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
                         _erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
-                        _mensagec "${YELLOW}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
-                        _mensagec "${YELLOW}" "Use a opcao 4 de reversao para restaurar o programa anterior."
+                        _mensagec "${AMARELO}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
+                        _mensagec "${AMARELO}" "Use a opcao 4 de reversao para restaurar o programa anterior."
                     else
                         _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
-                        _mensagec "${GREEN}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
+                        _mensagec "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
                         _obter_data_arquivo "${arquivo}"
                     fi
                 fi
@@ -588,9 +588,9 @@ _processar_atualizacao_programas() {
     cd "${DEFAULT_RECEBE_DIR}" || true
     rm -rf "${temp_update}"
 
-    _mensagec "${GREEN}" "Alterando extensao da atualizacao"
+    _mensagec "${VERDE}" "Alterando extensao da atualizacao"
     _linha
-    _mensagec "${YELLOW}" "Atualizacao concluida com sucesso!"
+    _mensagec "${AMARELO}" "Atualizacao concluida com sucesso!"
 }
 
 # Processa atualizacao de pacotes
@@ -602,7 +602,7 @@ _processar_atualizacao_pacotes() {
 
     # SEGURANCA: Validar diretorio de backups
     if ! _validar_diretorio_backups; then
-        _mensagec "${RED}" "OPERACAO ABORTADA: Impossivel garantir integridade de backups"
+        _mensagec "${VERMELHO}" "OPERACAO ABORTADA: Impossivel garantir integridade de backups"
         return 1
     fi
 
@@ -740,7 +740,7 @@ _processar_reversao_programas() {
                 _erro "Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
-            _mensagec "${GREEN}" "Backup validado e preparado para reversao: ${programa}"
+            _mensagec "${VERDE}" "Backup validado e preparado para reversao: ${programa}"
         else
             _erro "Backup nao encontrado para: ${programa}"
             return 1
@@ -802,8 +802,8 @@ _obter_data_arquivo() {
         if [[ -n "$data_modificacao" ]]; then
             local data_formatada
             data_formatada=$(date -d "$data_modificacao" +"%d/%m/%Y %H:%M:%S" 2>/dev/null)
-            _mensagec "${GREEN}" "Nome do programa: ${arquivo}"
-            _mensagec "${YELLOW}" "Data do programa: ${data_formatada}"
+            _mensagec "${VERDE}" "Nome do programa: ${arquivo}"
+            _mensagec "${AMARELO}" "Data do programa: ${data_formatada}"
         fi
     fi
 }

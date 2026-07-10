@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/07/2026-01
+# Versao: 10/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -50,14 +50,14 @@ _exibir_paginado() {
         # Se ainda há mais conteúdo, solicita continuaçao
         if [[ $linha_atual -le $total_linhas ]]; then
             printf "\n"
-            _linha "=" "${CYAN}"
-            printf "%s" "${YELLOW}Pressione ENTER para continuar, 'q' para sair, 'a' para ver tudo: ${NORM}"
+            _linha "=" "${CIANO}"
+            printf "%s" "${AMARELO}Pressione ENTER para continuar, 'q' para sair, 'a' para ver tudo: ${NORMAL}"
             read -rsn1 resposta
             
             case "${resposta,,}" in
                 q)
                     echo ""
-                    _mensagec "${GREEN}" "Exibicao interrompida"
+                    _mensagec "${VERDE}" "Exibicao interrompida"
                     return 0
                     ;;
                 a)
@@ -101,7 +101,7 @@ _ler_secao_manual() {
     linha_inicio=$(grep -n "^\[${secao}\]$" "$MANUAL_FILE" | cut -d: -f1)
     
     if [[ -z "$linha_inicio" ]]; then
-        _mensagec "${YELLOW}" "Seçao [$secao] nao encontrada no manual."
+        _mensagec "${AMARELO}" "Seçao [$secao] nao encontrada no manual."
         return 1
     fi
     
@@ -129,8 +129,8 @@ _ler_secao_manual() {
 # Exibe o manual completo
 _exibir_manual_completo() {
     if [[ ! -f "$MANUAL_FILE" ]]; then
-        _mensagec "${RED}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
-        _mensagec "${YELLOW}" "Crie o arquivo manual.txt no diretorio configuracoes/"
+        _mensagec "${VERMELHO}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
+        _mensagec "${AMARELO}" "Crie o arquivo manual.txt no diretorio configuracoes/"
         _aguardar_tecla
         return 1
     fi
@@ -149,22 +149,22 @@ _exibir_secao_manual() {
     local conteudo
 
     _limpa_tela
-    _linha "=" "${CYAN}"
-    _mensagec "${CYAN}" "AJUDA - ${contexto^^}"
-    _linha "=" "${CYAN}"
+    _linha "=" "${CIANO}"
+    _mensagec "${CIANO}" "AJUDA - ${contexto^^}"
+    _linha "=" "${CIANO}"
     printf "\n"
 
     if conteudo=$(_ler_secao_manual "$secao_nome"); then
         _exibir_paginado "$conteudo" 25
     else
-        _mensagec "${YELLOW}" "Ajuda para '$contexto' nao disponivel no momento."
-        _mensagec "${YELLOW}" "Use 'M' para ver o manual completo."
+        _mensagec "${AMARELO}" "Ajuda para '$contexto' nao disponivel no momento."
+        _mensagec "${AMARELO}" "Use 'M' para ver o manual completo."
     fi
 
     printf "\n"
-    _linha "-" "${GREEN}"
-    _mensagec "${YELLOW}" "Pressione qualquer tecla para voltar ou 'M' para manual completo"
-    _linha "-" "${GREEN}"
+    _linha "-" "${VERDE}"
+    _mensagec "${AMARELO}" "Pressione qualquer tecla para voltar ou 'M' para manual completo"
+    _linha "-" "${VERDE}"
 
     local resposta
     read -rsn1 resposta
@@ -215,15 +215,15 @@ _ajuda_no_geral() {
 # Verifica se manual.txt existe, se nao, avisa o usuario
 _verificar_manual() {
     if [[ ! -f "$MANUAL_FILE" ]]; then
-        _linha "=" "${YELLOW}"
-        _mensagec "${YELLOW}" "  AVISO: Arquivo manual.txt nao encontrado!"
-        _linha "=" "${YELLOW}"
+        _linha "=" "${AMARELO}"
+        _mensagec "${AMARELO}" "  AVISO: Arquivo manual.txt nao encontrado!"
+        _linha "=" "${AMARELO}"
         printf "\n"
-        _mensagec "${WHITE}" "O arquivo manual.txt deve estar em: ${CYAN}$MANUAL_FILE${NORM}"
+        _mensagec "${BRANCO}" "O arquivo manual.txt deve estar em: ${CIANO}$MANUAL_FILE${NORMAL}"
         printf "\n"
-        _mensagec "${WHITE}" "Por favor, crie o arquivo manual.txt no diretorio configuracoes/"
+        _mensagec "${BRANCO}" "Por favor, crie o arquivo manual.txt no diretorio configuracoes/"
         printf "\n"
-        _linha "=" "${YELLOW}"
+        _linha "=" "${AMARELO}"
         return 1
     fi
     return 0
@@ -240,25 +240,25 @@ _buscar_manual() {
         return 1
     fi
     
-    read -rp "${YELLOW}Termo para buscar: ${NORM}" termo
+    read -rp "${AMARELO}Termo para buscar: ${NORMAL}" termo
     
     if [[ -z "$termo" ]]; then
-        _mensagec "${RED}" "Nenhum termo informado"
+        _mensagec "${VERMELHO}" "Nenhum termo informado"
         return 1
     fi
     
     _limpa_tela
-    _linha "=" "${CYAN}"
-    _mensagec "${CYAN}" "RESULTADOS DA BUSCA: $termo"
-    _linha "=" "${CYAN}"
+    _linha "=" "${CIANO}"
+    _mensagec "${CIANO}" "RESULTADOS DA BUSCA: $termo"
+    _linha "=" "${CIANO}"
     printf "\n"
     
     # Buscar e destacar resultados
     if grep -in --color=always "$termo" "$MANUAL_FILE"; then
         printf "\n"
-        _mensagec "${GREEN}" "Busca concluída"
+        _mensagec "${VERDE}" "Busca concluída"
     else
-        _mensagec "${YELLOW}" "Nenhum resultado encontrado para: $termo"
+        _mensagec "${AMARELO}" "Nenhum resultado encontrado para: $termo"
     fi
     
     printf "\n"
@@ -277,7 +277,7 @@ _exportar_manual() {
     fi
     
     if cp "$MANUAL_FILE" "$destino"; then
-        _mensagec "${GREEN}" "Manual exportado para: $destino"
+        _mensagec "${VERDE}" "Manual exportado para: $destino"
     else
         _erro "ao exportar manual"
         _aguardar 2

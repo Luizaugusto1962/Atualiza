@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 08/07/2026-01
+# Versao: 10/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -13,7 +13,7 @@ set -euo pipefail
 _escrever_nova_nota() {
     _limpa_tela
     _linha
-    _mensagec "${YELLOW}" "Digite sua nota (pressione Ctrl+D para finalizar):"
+    _mensagec "${AMARELO}" "Digite sua nota (pressione Ctrl+D para finalizar):"
     _linha
 
     local arquivo_notas="${CFG_DIR}/lembrete"
@@ -31,10 +31,10 @@ _escrever_nova_nota() {
 
         if [[ "$tamanho_depois" -gt "$tamanho_antes" ]]; then
             _linha
-            _mensagec "${GREEN}" "Nota gravada com sucesso!"
+            _mensagec "${VERDE}" "Nota gravada com sucesso!"
         else
             _linha
-            _mensagec "${YELLOW}" "Nenhum conteudo foi digitado."
+            _mensagec "${AMARELO}" "Nenhum conteudo foi digitado."
         fi
         _aguardar 2
     else
@@ -57,7 +57,7 @@ _mostrar_notas_iniciais() {
 _gerar_aviso_entrada() {
     _limpa_tela
     _linha
-    _mensagec "${YELLOW}" "Digite a mensagem de entrada (Ctrl+D para finalizar):"
+    _mensagec "${AMARELO}" "Digite a mensagem de entrada (Ctrl+D para finalizar):"
     _linha
 
     local arquivo_msg="${CFG_DIR}/avisos"
@@ -68,11 +68,11 @@ _gerar_aviso_entrada() {
         if [[ -s "$arquivo_tmp" ]]; then
             mv -f "$arquivo_tmp" "$arquivo_msg"
             _linha
-            _mensagec "${GREEN}" "Mensagem gravada com sucesso!"
+            _mensagec "${VERDE}" "Mensagem gravada com sucesso!"
         else
             rm -f "$arquivo_tmp"
             _linha
-            _mensagec "${YELLOW}" "Nenhum conteudo foi digitado. Mensagem nao alterada."
+            _mensagec "${AMARELO}" "Nenhum conteudo foi digitado. Mensagem nao alterada."
         fi
         _aguardar 2
     else
@@ -93,7 +93,7 @@ _editar_aviso_existente() {
             _aguardar 2
         fi
     else
-        _mensagec "${YELLOW}" "Nenhuma mensagem de aviso encontrada para editar!"
+        _mensagec "${AMARELO}" "Nenhuma mensagem de aviso encontrada para editar!"
         _aguardar 2
     fi
 }
@@ -103,9 +103,9 @@ _mostrar_aviso() {
     local arquivo_msg="${CFG_DIR}/avisos"
     if [[ -f "$arquivo_msg" ]] && grep -q '[^[:space:]]' "$arquivo_msg"; then
         _limpa_tela
-        _linha "=" "${CYAN}"
-        _mensagec "${YELLOW}" "MENSAGEM DE ENTRADA"
-        _linha "=" "${CYAN}"
+        _linha "=" "${CIANO}"
+        _mensagec "${AMARELO}" "MENSAGEM DE ENTRADA"
+        _linha "=" "${CIANO}"
         printf "\n"
         # exibicao simples, respeitando largura do terminal
         local cols
@@ -128,14 +128,14 @@ _apagar_arquivo_configuracoes() {
     local descricao="$2"
 
     if [[ ! -f "$arquivo" ]]; then
-        _mensagec "${YELLOW}" "Nenhuma ${descricao} encontrada para excluir!"
+        _mensagec "${AMARELO}" "Nenhuma ${descricao} encontrada para excluir!"
         _aguardar 2
         return
     fi
 
     if _confirmar "Tem certeza que deseja apagar ${descricao}?" "N"; then
         if rm -f "$arquivo"; then
-            _mensagec "${RED}" "${descricao^} excluida com sucesso!"
+            _mensagec "${VERMELHO}" "${descricao^} excluida com sucesso!"
         else
             _erro "Erro ao excluir ${descricao}"
         fi
@@ -173,9 +173,9 @@ _visualizar_notas_arquivo() {
     fi
 
     _limpa_tela
-    _linha "=" "${CYAN}"
-    _mensagec "${YELLOW}" "LEMBRETES E NOTAS"
-    _linha "=" "${CYAN}"
+    _linha "=" "${CIANO}"
+    _mensagec "${AMARELO}" "LEMBRETES E NOTAS"
+    _linha "=" "${CIANO}"
     printf "\n"
 
     while IFS= read -r llinha || [[ -n "$llinha" ]]; do

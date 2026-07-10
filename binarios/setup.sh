@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
-# Funcao de saida padronizada (local, sem dependencia de modulos)
-_encerrar_programa() {
-    local status="${1:-0}"
-    exit "$status"
-}
-
 #
 # setup.sh - Gerencia a configuracao do sistema
 # Este script gerencia a criacao e a edicao dos arquivos de configuracao
@@ -23,6 +17,11 @@ _encerrar_programa() {
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
 
+# Funcao de saida padronizada (local, sem dependencia de modulos)
+_encerrar_programa() {
+    local status="${1:-0}"
+    exit "$status"
+}
 
 # =============================================================================
 # CARREGAR CONSTANTES DO SISTEMA

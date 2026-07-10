@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/07/2026-01
+# Versao: 10/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -63,39 +63,39 @@ _hash_senha() {
 _cadastrar_usuario() {
     local usuario senha senha_confirm hash_senha
 
-    _mensagec "${RED}" "Cadastro de Usuario"
-    _meia_linha "=" "${RED}"
+    _mensagec "${VERMELHO}" "Cadastro de Usuario"
+    _meia_linha "=" "${VERMELHO}"
 
-    read -rp "${YELLOW}Digite o nome do usuario: ${NORM}" usuario
+    read -rp "${AMARELO}Digite o nome do usuario: ${NORMAL}" usuario
     usuario=$(_upper "$(_trim "$usuario")")
     if [[ -z "$usuario" ]]; then
-        _mensagec "${RED}" "Usuario nao pode ser vazio."
+        _mensagec "${VERMELHO}" "Usuario nao pode ser vazio."
         return 1
     fi
 
     if ! _usuario_valido "$usuario"; then
-        _mensagec "${RED}" "Usuario invalido. Use apenas letras maiusculas e numeros."
+        _mensagec "${VERMELHO}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         return 1
     fi
 
     # Verificar se usuario ja existe
     if _obter_hash_usuario "$usuario" >/dev/null 2>&1; then
-        _mensagec "${RED}" "Usuario ja existe."
+        _mensagec "${VERMELHO}" "Usuario ja existe."
         return 1
     fi
 
-    read -rsp "${YELLOW}Digite a senha: ${NORM}" senha
+    read -rsp "${AMARELO}Digite a senha: ${NORMAL}" senha
     printf "\n"
-    read -rsp "${YELLOW}Confirme a senha: ${NORM}" senha_confirm
+    read -rsp "${AMARELO}Confirme a senha: ${NORMAL}" senha_confirm
     printf "\n"
 
     if [[ -z "$senha" ]]; then
-        _mensagec "${RED}" "Senha nao pode ser vazia."
+        _mensagec "${VERMELHO}" "Senha nao pode ser vazia."
         return 1
     fi
 
     if [[ "$senha" != "$senha_confirm" ]]; then
-        _mensagec "${RED}" "Senhas nao coincidem."
+        _mensagec "${VERMELHO}" "Senhas nao coincidem."
         return 1
     fi
 
@@ -104,11 +104,11 @@ _cadastrar_usuario() {
 
     # Restringir permissoes do arquivo de senhas (somente dono: rw)
     chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || {
-        _mensagec "${YELLOW}" "AVISO: Nao foi possivel restringir permissoes de ${SENHA_FILE}"
+        _mensagec "${AMARELO}" "AVISO: Nao foi possivel restringir permissoes de ${SENHA_FILE}"
         _log "AVISO: Permissoes de ${SENHA_FILE} nao alteradas"
     }
 
-    _mensagec "${GREEN}" "Usuario cadastrado com sucesso."
+    _mensagec "${VERDE}" "Usuario cadastrado com sucesso."
 }
 
 # Funcao para login
@@ -119,51 +119,51 @@ _login() {
     # usuario is made global to be used in logging
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
     while [[ $tentativas -le $max_tentativas ]]; do
-        printf '%b\n' "${GREEN}" ".. Empresa: ${WHITE}${CFG_EMPRESA}${GREEN} |-| Versao Iscobol: ${CYAN}${CFG_VERSAOCLASS}${GREEN}..${NORM}"
+        printf '%b\n' "${VERDE}" ".. Empresa: ${BRANCO}${CFG_EMPRESA}${VERDE} |-| Versao Iscobol: ${CIANO}${CFG_VERSAOCLASS}${VERDE}..${NORMAL}"
         printf "\n"
-        _linha "-" "${CYAN}"
-        _mensagec "${RED}" "Login no Sistema"
-        _linha "=" "${GREEN}"
+        _linha "-" "${CIANO}"
+        _mensagec "${VERMELHO}" "Login no Sistema"
+        _linha "=" "${VERDE}"
 
-        read -rp "${YELLOW}Usuario: ${NORM}" usuario
+        read -rp "${AMARELO}Usuario: ${NORMAL}" usuario
         usuario=$(_upper "$(_trim "$usuario")")
 
         if [[ -z "$usuario" ]]; then
-            _mensagec "${RED}" "Nome de usuario nao pode ser vazio."
+            _mensagec "${VERMELHO}" "Nome de usuario nao pode ser vazio."
         elif ! _usuario_valido "$usuario"; then
-            _mensagec "${RED}" "Usuario invalido. Use apenas letras maiusculas e numeros."
+            _mensagec "${VERMELHO}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         else
             if [[ ! -f "$SENHA_FILE" ]]; then
-                _mensagec "${RED}" "Nenhum usuario cadastrado. Execute o programa de cadastro primeiro."
+                _mensagec "${VERMELHO}" "Nenhum usuario cadastrado. Execute o programa de cadastro primeiro."
                 return 1
             elif [[ ! -s "$SENHA_FILE" ]]; then
-                _mensagec "${RED}" "ALERTA: Arquivo de senhas esta vazio. Nenhum usuario cadastrado no sistema."
-                _mensagec "${YELLOW}" "Execute o programa de cadastro primeiro."
-                _linha "-" "${RED}"
+                _mensagec "${VERMELHO}" "ALERTA: Arquivo de senhas esta vazio. Nenhum usuario cadastrado no sistema."
+                _mensagec "${AMARELO}" "Execute o programa de cadastro primeiro."
+                _linha "-" "${VERMELHO}"
                 return 1
             elif ! _usuario_existe "$usuario"; then
-                _mensagec "${RED}" "Usuario nao cadastrado no sistema."
-                _linha "-" "${RED}"
+                _mensagec "${VERMELHO}" "Usuario nao cadastrado no sistema."
+                _linha "-" "${VERMELHO}"
             else
-                read -rsp "${YELLOW}Senha: ${NORM}" senha
+                read -rsp "${AMARELO}Senha: ${NORMAL}" senha
                 printf "\n"
 
                 if [[ -z "$senha" ]]; then
-                    _mensagec "${RED}" "Senha nao pode ser vazia."
+                    _mensagec "${VERMELHO}" "Senha nao pode ser vazia."
                 else
                     stored_hash=$(_obter_hash_usuario "$usuario")
                     if [[ -z "$stored_hash" ]]; then
-                        _mensagec "${RED}" "Usuario nao encontrado."
-                        _linha "-" "${RED}"
+                        _mensagec "${VERMELHO}" "Usuario nao encontrado."
+                        _linha "-" "${VERMELHO}"
                     else
                         hash_senha=$(_hash_senha "$senha")
                         if [[ "$hash_senha" == "$stored_hash" ]]; then
-                            _mensagec "${GREEN}" "Login bem-sucedido."
+                            _mensagec "${VERDE}" "Login bem-sucedido."
                             export usuario
                             return 0
                         else
-                            _mensagec "${RED}" "Senha incorreta."
-                            _linha "-" "${RED}"
+                            _mensagec "${VERMELHO}" "Senha incorreta."
+                            _linha "-" "${VERMELHO}"
                             printf "\n"
                             unset usuario
                         fi
@@ -176,7 +176,7 @@ _login() {
             return 1
         fi
         
-        read -rp "${YELLOW}Deseja tentar novamente? (s/N): ${NORM}" resposta
+        read -rp "${AMARELO}Deseja tentar novamente? (s/N): ${NORMAL}" resposta
         if [[ ! "$resposta" =~ ^[sS]$ ]]; then
             return 1
         fi
@@ -192,43 +192,43 @@ _alterar_senha() {
 
     # Usar o usuario ja autenticado globalmente
     if [[ -z "$usuario" ]]; then
-        _mensagec "${RED}" "Voce precisa estar logado para alterar a senha."
+        _mensagec "${VERMELHO}" "Voce precisa estar logado para alterar a senha."
         return 1
     fi
 
-    _mensagec "${RED}" "Alteracao de Senha"
-    _linha "=" "${RED}"
+    _mensagec "${VERMELHO}" "Alteracao de Senha"
+    _linha "=" "${VERMELHO}"
 
-    read -rsp "${YELLOW}Digite a senha atual: ${NORM}" senha_atual
+    read -rsp "${AMARELO}Digite a senha atual: ${NORMAL}" senha_atual
     printf "\n"
 
     # Verificar senha atual
     stored_hash=$(_obter_hash_usuario "$usuario")
     if [[ -z "$stored_hash" ]]; then
-        _mensagec "${RED}" "Usuario nao encontrado."
-        _linha "-" "${RED}"
+        _mensagec "${VERMELHO}" "Usuario nao encontrado."
+        _linha "-" "${VERMELHO}"
         return 1
     fi
 
     hash_atual=$(_hash_senha "$senha_atual")
     if [[ "$hash_atual" != "$stored_hash" ]]; then
-        _mensagec "${RED}" "Senha atual incorreta."
-        _linha "-" "${RED}"
+        _mensagec "${VERMELHO}" "Senha atual incorreta."
+        _linha "-" "${VERMELHO}"
         return 1
     fi
 
-    read -rsp "${YELLOW}Digite a nova senha: ${NORM}" nova_senha
+    read -rsp "${AMARELO}Digite a nova senha: ${NORMAL}" nova_senha
     printf "\n"
-    read -rsp "${YELLOW}Confirme a nova senha: ${NORM}" confirm_senha
+    read -rsp "${AMARELO}Confirme a nova senha: ${NORMAL}" confirm_senha
     printf "\n"
 
     if [[ -z "$nova_senha" ]]; then
-        _mensagec "${RED}" "Nova senha nao pode ser vazia."
+        _mensagec "${VERMELHO}" "Nova senha nao pode ser vazia."
         return 1
     fi
 
     if [[ "$nova_senha" != "$confirm_senha" ]]; then
-        _mensagec "${RED}" "Novas senhas nao coincidem."
+        _mensagec "${VERMELHO}" "Novas senhas nao coincidem."
         return 1
     fi
 
@@ -237,7 +237,7 @@ _alterar_senha() {
     # Atualizar a linha no arquivo usando arquivo temporario (seguro contra caracteres especiais)
     local tmp_senhas
     tmp_senhas=$(mktemp) || {
-        _mensagec "${RED}" "Erro ao criar arquivo temporario para atualizacao de senha."
+        _mensagec "${VERMELHO}" "Erro ao criar arquivo temporario para atualizacao de senha."
         return 1
     }
     # Reescrever o arquivo substituindo apenas a linha do usuario atual
@@ -251,10 +251,10 @@ _alterar_senha() {
 
     if mv -f "$tmp_senhas" "$SENHA_FILE"; then
         chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || true
-        _mensagec "${GREEN}" "Senha alterada com sucesso."
+        _mensagec "${VERDE}" "Senha alterada com sucesso."
     else
         rm -f "$tmp_senhas"
-        _mensagec "${RED}" "Erro ao salvar nova senha."
+        _mensagec "${VERMELHO}" "Erro ao salvar nova senha."
         return 1
     fi
 }

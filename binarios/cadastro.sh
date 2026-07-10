@@ -50,15 +50,15 @@ main() {
     while true; do
         _limpa_tela
         printf "\n"
-        _linha "=" "${GREEN}"
-        _mensagec "${RED}" "Cadastro de Usuario - Sistema SAV"
-        _linha "=" "${GREEN}"
+        _linha "=" "${VERDE}"
+        _mensagec "${VERMELHO}" "Cadastro de Usuario - Sistema SAV"
+        _linha "=" "${VERDE}"
         printf "\n"
-        _mensagec "${YELLOW}" "1. Cadastrar novo usuario"
-        _mensagec "${YELLOW}" "2. Alterar senha de usuario"
-        _mensagec "${YELLOW}" "0. Voltar"
-        _linha "=" "${GREEN}"
-        _mensagec "${GREEN}" "Digite o numero da opcao desejada e pressione ENTER."
+        _mensagec "${AMARELO}" "1. Cadastrar novo usuario"
+        _mensagec "${AMARELO}" "2. Alterar senha de usuario"
+        _mensagec "${AMARELO}" "0. Voltar"
+        _linha "=" "${VERDE}"
+        _mensagec "${VERDE}" "Digite o numero da opcao desejada e pressione ENTER."
         read -rp "Escolha uma opcao: " opcao
 
         case "$opcao" in
@@ -76,7 +76,7 @@ main() {
                 ;;
             0)
                 _limpa_tela
-                printf '%s' "${NORM:-}"
+                printf '%s' "${NORMAL:-}"
                 _encerrar_programa 0
                 ;;
             *)

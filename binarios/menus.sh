@@ -29,12 +29,12 @@ CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-}"
 _ler_opcao_menu() {
     local contexto="${1:-geral}"
 
-    _linha "=" "${WHITE}"
-    printf '%b\n' "${BLUE}Ajuda: Digite ${YELLOW}M${BLUE} (manual) | ${YELLOW}H${BLUE} (help)|| ${BLUE}Empresa: ${WHITE}${CFG_EMPRESA}${BLUE}| Iscobol: ${CYAN}${CFG_VERSAOCLASS}${BLUE}|"
-    _linha "=" "${GREEN}"
+    _linha "=" "${BRANCO}"
+    printf '%b\n' "${AZUL}Ajuda: Digite ${AMARELO}M${AZUL} (manual) | ${AMARELO}H${AZUL} (help)|| ${AZUL}Empresa: ${BRANCO}${CFG_EMPRESA}${AZUL}| Iscobol: ${CIANO}${CFG_VERSAOCLASS}${AZUL}|"
+    _linha "=" "${VERDE}"
 
-    if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${YELLOW} Digite a opcao desejada -> ${NORM}" opcao; then
-        printf '\n%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORM}"
+    if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${AMARELO} Digite a opcao desejada -> ${NORMAL}" opcao; then
+        printf '\n%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORMAL}"
         _encerrar_programa 0
     fi
 
@@ -50,7 +50,7 @@ _ler_opcao_menu() {
             return 1
             ;;
         "q"|"quit"|"sair"|"exit")
-            printf '%s' "${GREEN}Saindo do sistema...${NORM}\n"
+            printf '%s' "${VERDE}Saindo do sistema...${NORMAL}\n"
             _encerrar_programa 0
             ;;
     esac
@@ -63,9 +63,9 @@ _ler_opcao_menu() {
 # Parametros: $1=titulo_do_menu
 _exibir_cabecalho_menu() {
     local titulo="${1:-Menu}"
-    _linha "=" "${GREEN}"
-    _mensagec "${RED}" "${titulo}"
-    _linha "=" "${WHITE}"
+    _linha "=" "${VERDE}"
+    _mensagec "${VERMELHO}" "${titulo}"
+    _linha "=" "${BRANCO}"
     printf "\n"
 }
 
@@ -73,7 +73,7 @@ _exibir_cabecalho_menu() {
 # Parametros: $1=mensagem $2=cor (opcional, padrao=PURPLE)
 _exibir_titulo_secao() {
     local mensagem="${1}"
-    local cor="${2:-${PURPLE}}"
+    local cor="${2:-${ROXO}}"
     _mensagec "${cor}" "${mensagem}"
 }
 
@@ -82,20 +82,20 @@ _exibir_titulo_secao() {
 _exibir_opcao_menu() {
     local numero="${1}"
     local descricao="${2}"
-    local cor_opcao="${3:-${GREEN}}"
-    _mensageb "${cor_opcao}" "${numero}${NORM} -|: ${descricao}"
+    local cor_opcao="${3:-${VERDE}}"
+    _mensageb "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
     printf "\n"
 }
 
 # Exibe separador de opcoes
 _exibir_separador_menu() {
-    _meia_linha "-" "${YELLOW}"
+    _meia_linha "-" "${AMARELO}"
 }
 
 # Exibe rodape de menu com opcao de saida
 _exibir_rodape_menu() {
     _exibir_separador_menu
-    _mensageb "${WHITE}" "9${RED} -|: Menu Anterior "
+    _mensageb "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
 }
 
 # Processa selecao de opcao de menu com validacao
@@ -119,7 +119,7 @@ _principal() {
         _exibir_opcao_menu "4" "Ferramentas"
         _exibir_opcao_menu "0" "Sistema de Ajuda"
         _exibir_rodape_menu
-        _mensaged "${BLUE}" "${UPDATE:-}"
+        _mensaged "${AZUL}" "${UPDATE:-}"
 
         local opcao
         if ! _ler_opcao_menu "principal"; then
@@ -198,7 +198,7 @@ _menu_biblioteca() {
 
         if [[ -n "${VERSAOANT:-}" ]]; then
             printf "\n"
-            _mensaged "${BLUE}" "Versao Anterior - ${VERSAOANT}"
+            _mensaged "${AZUL}" "Versao Anterior - ${VERSAOANT}"
         fi
 
         local opcao
@@ -454,7 +454,7 @@ _menu_setups() {
                     else
                         "." "${CFG_DIR}/.config" || true
                     fi
-                    _mensagec "${GREEN}" "Configuracoes recarregadas com sucesso!"
+                    _mensagec "${VERDE}" "Configuracoes recarregadas com sucesso!"
                     _aguardar 2
                 fi
                 ;;
@@ -491,7 +491,7 @@ _menu_lembretes() {
                 if [[ -f "${CFG_DIR}/lembrete" ]]; then
                     _visualizar_notas_arquivo "${CFG_DIR}/lembrete" || true
                 else
-                    _mensagec "${YELLOW}" "Arquivo de notas nao encontrado"
+                    _mensagec "${AMARELO}" "Arquivo de notas nao encontrado"
                     _aguardar 1
                 fi
                 ;;
@@ -576,7 +576,7 @@ _menu_ajuda_principal() {
         _exibir_opcao_menu "5" "Exportar Manual"
         _exibir_opcao_menu "6" "Ajuda por Contexto"
         _exibir_rodape_menu
-        _linha "=" "${GREEN}"
+        _linha "=" "${VERDE}"
 
         local opcao
         if ! _ler_opcao_menu "ajuda"; then
@@ -599,23 +599,23 @@ _menu_ajuda_principal() {
 #---------- MENU DE SELECAO DE CONTEXTO ----------#
 _menu_selecao_contexto() {
     _limpa_tela
-    _linha "=" "${CYAN}"
-    _mensagec "${CYAN}" "SELECIONE O CONTEXTO"
-    _linha "=" "${CYAN}"
+    _linha "=" "${CIANO}"
+    _mensagec "${CIANO}" "SELECIONE O CONTEXTO"
+    _linha "=" "${CIANO}"
 
     printf "\n"
-    printf "%s\n" "${GREEN}1${NORM}  - Menu Principal"
-    printf "%s\n" "${GREEN}2${NORM}  - Programas"
-    printf "%s\n" "${GREEN}3${NORM}  - Biblioteca"
-    printf "%s\n" "${GREEN}4${NORM}  - Ferramentas"
-    printf "%s\n" "${GREEN}5${NORM}  - Temporarios"
-    printf "%s\n" "${GREEN}6${NORM}  - Recuperacao"
-    printf "%s\n" "${GREEN}7${NORM}  - Backup"
-    printf "%s\n" "${GREEN}8${NORM}  - Transferencia"
-    printf "%s\n" "${GREEN}9${NORM}  - Setups"
-    printf "%s\n" "${GREEN}10${NORM} - Lembretes"
+    printf "%s\n" "${VERDE}1${NORMAL}  - Menu Principal"
+    printf "%s\n" "${VERDE}2${NORMAL}  - Programas"
+    printf "%s\n" "${VERDE}3${NORMAL}  - Biblioteca"
+    printf "%s\n" "${VERDE}4${NORMAL}  - Ferramentas"
+    printf "%s\n" "${VERDE}5${NORMAL}  - Temporarios"
+    printf "%s\n" "${VERDE}6${NORMAL}  - Recuperacao"
+    printf "%s\n" "${VERDE}7${NORMAL}  - Backup"
+    printf "%s\n" "${VERDE}8${NORMAL}  - Transferencia"
+    printf "%s\n" "${VERDE}9${NORMAL}  - Setups"
+    printf "%s\n" "${VERDE}10${NORMAL} - Lembretes"
     printf "\n"
-    _linha "=" "${CYAN}"
+    _linha "=" "${CIANO}"
 
     local opcao
     if ! _ler_opcao_menu "contexto"; then
@@ -695,7 +695,7 @@ _menu_tipo_backup() {
         _exibir_opcao_menu "2" "Backup Incremental"
         _exibir_rodape_menu
         printf "\n"
-#        _linha "=" "${GREEN}"
+#        _linha "=" "${VERDE}"
 
         local opcao
         if ! _ler_opcao_menu "tipobackup"; then
@@ -746,7 +746,7 @@ _definir_base_trabalho() {
         return 1
     fi
 
-    _mensagec "${GREEN}" "Base de trabalho definida: ${base_trabalho}"
+    _mensagec "${VERDE}" "Base de trabalho definida: ${base_trabalho}"
     return 0
 }
 
@@ -754,7 +754,7 @@ _definir_base_trabalho() {
 _menu_configurar_ssh() {
     _limpa_tela
     _exibir_cabecalho_menu "Configuracao de Acesso SSH sem Senha"
-    _mensagec "${GREEN}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
+    _mensagec "${VERDE}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
     _linha
     printf "\n"
 
@@ -763,7 +763,7 @@ _menu_configurar_ssh() {
     _verificar_ou_criar_chave
 
     local ENVIAR
-    read -rp "${YELLOW} Deseja enviar a chave publica para o servidor principal agora? [s/N]  ${NORM}" ENVIAR
+    read -rp "${AMARELO} Deseja enviar a chave publica para o servidor principal agora? [s/N]  ${NORMAL}" ENVIAR
 
     case "${ENVIAR}" in
         [sS]|[sS][iI][mM])
@@ -771,13 +771,13 @@ _menu_configurar_ssh() {
             ;;
         *)
             _linha
-            _mensagec "${YELLOW}" "Envio cancelado. Para enviar manualmente, execute:"
-            _mensagec "${YELLOW}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA}@${DEFAULT_IP_SERVER}"
+            _mensagec "${AMARELO}" "Envio cancelado. Para enviar manualmente, execute:"
+            _mensagec "${AMARELO}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA}@${DEFAULT_IP_SERVER}"
             ;;
     esac
 
     local TESTAR
-    read -rp "${YELLOW} Deseja testar a conexao agora? [s/N]  ${NORM}" TESTAR
+    read -rp "${AMARELO} Deseja testar a conexao agora? [s/N]  ${NORMAL}" TESTAR
 
     case "${TESTAR}" in
         [sS]|[sS][iI][mM])
@@ -785,7 +785,7 @@ _menu_configurar_ssh() {
             ;;
     esac
 
-    _mensagec "${GREEN}" "Configuracao concluida."
+    _mensagec "${VERDE}" "Configuracao concluida."
     _aguardar_tecla
     return 0
 }

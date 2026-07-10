@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/07/2026-02
+# Versao: 10/07/2026-02
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -99,30 +99,30 @@ _define_category_vars() {
 _inicializar_variaveis_sistema() {
     # Cores do terminal
     if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        RED=$(tput bold; tput setaf 1 2>/dev/null)
-        GREEN=$(tput bold; tput setaf 2 2>/dev/null)
-        YELLOW=$(tput bold; tput setaf 3 2>/dev/null)
-        BLUE=$(tput bold; tput setaf 4 2>/dev/null)
-        PURPLE=$(tput bold; tput setaf 5 2>/dev/null)
-        CYAN=$(tput bold; tput setaf 6 2>/dev/null)
-        WHITE=$(tput bold; tput setaf 7 2>/dev/null)
-        NORM=$(tput sgr0 2>/dev/null)
-        COLUMNS=$(tput cols)
+        VERMELHO=$(tput bold; tput setaf 1 2>/dev/null)
+        VERDE=$(tput bold; tput setaf 2 2>/dev/null)
+        AMARELO=$(tput bold; tput setaf 3 2>/dev/null)
+        AZUL=$(tput bold; tput setaf 4 2>/dev/null)
+        ROXO=$(tput bold; tput setaf 5 2>/dev/null)
+        CIANO=$(tput bold; tput setaf 6 2>/dev/null)
+        BRANCO=$(tput bold; tput setaf 7 2>/dev/null)
+        NORMAL=$(tput sgr0 2>/dev/null)
+        COLUNAS=$(tput cols)
         tput clear 2>/dev/null || true
         tput bold 2>/dev/null || true
         tput setaf 7 2>/dev/null || true
     else
-        RED="\033[0;31m"
-        GREEN="\033[0;32m"
-        YELLOW="\033[0;33m"
-        BLUE="\033[0;34m"
-        PURPLE="\033[0;35m"
-        CYAN="\033[0;36m"
-        WHITE="\033[0;37m"
-        NORM="\033[0m"
-        COLUMNS="${COLUMNS:-80}"
+        VERMELHO="\033[0;31m"
+        VERDE="\033[0;32m"
+        AMARELO="\033[0;33m"
+        AZUL="\033[0;34m"
+        ROXO="\033[0;35m"
+        CIANO="\033[0;36m"
+        BRANCO="\033[0;37m"
+        NORMAL="\033[0m"
+        COLUNAS="${COLUNAS:-80}"
     fi
-    export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NORM COLUMNS
+    export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO NORMAL COLUNAS
 
     # Reinicializar arrays
     REGISTRO_VARIAVEIS=()
@@ -250,7 +250,7 @@ _configurar_comandos() {
 _configurar_diretorios() {
     if [[ -z "${SCRIPT_DIR}" ]] || [[ ! -d "${SCRIPT_DIR}" ]]; then
         if command -v _mensagec >/dev/null 2>&1; then
-            _mensagec "${CYAN}" "Diretorio principal nao encontrado: ${SCRIPT_DIR}"
+            _mensagec "${CIANO}" "Diretorio principal nao encontrado: ${SCRIPT_DIR}"
         else
             _erro "Diretorio principal nao encontrado: %s\n" "${SCRIPT_DIR}" >&2
         fi
@@ -296,16 +296,16 @@ _configurar_variaveis_sistema() {
 # Validar acesso SSH
 _validar_ssh() {
     if [[ ! "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
-        _mensagec "${YELLOW}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
+        _mensagec "${AMARELO}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
         return 1
     fi
 
     if [[ "${CFG_ACESSO_SSH}" == "n" ]]; then
-        _mensagec "${YELLOW}" "Alerta: Acesso SSH desabilitado"
+        _mensagec "${AMARELO}" "Alerta: Acesso SSH desabilitado"
         return 0
     fi
 
-    _mensagec "${GREEN}" "OK: Acesso SSH habilitado"
+    _mensagec "${VERDE}" "OK: Acesso SSH habilitado"
 
     local ssh_host="${DEFAULT_IP_SERVER}"
     local ssh_user="${DEFAULT_SSH_USER}"
@@ -319,7 +319,7 @@ _validar_ssh() {
     fi
 
     if [[ -z "${ssh_user}" ]]; then
-        _mensagec "${YELLOW}" "Alerta: Variavel DEFAULT_SSH_USER nao definida, usando 'root'"
+        _mensagec "${AMARELO}" "Alerta: Variavel DEFAULT_SSH_USER nao definida, usando 'root'"
         ssh_user="root"
     fi
 
@@ -333,7 +333,7 @@ _validar_ssh() {
         if [[ -f "${ssh_key}" ]]; then
             ssh_opts+=("-i" "${ssh_key}")
         else
-            _mensagec "${YELLOW}" "Alerta: Chave SSH nao encontrada: ${ssh_key}"
+            _mensagec "${AMARELO}" "Alerta: Chave SSH nao encontrada: ${ssh_key}"
         fi
     fi
 
@@ -341,54 +341,54 @@ _validar_ssh() {
     ssh_output=$(ssh "${ssh_opts[@]}" "${ssh_user}@${ssh_host}" exit 2>&1) || ssh_exit=$?
 
     if (( ssh_exit == 0 )); then
-        _mensagec "${GREEN}" "Conexao SSH estabelecida com sucesso para ${ssh_user}@${ssh_host}"
+        _mensagec "${VERDE}" "Conexao SSH estabelecida com sucesso para ${ssh_user}@${ssh_host}"
     else
-        _mensagec "${RED}" "Falha na conexao SSH para ${ssh_user}@${ssh_host}"
-        _linha "-" "${YELLOW}"
-        _mensagec "${YELLOW}" "Comando: ssh ${ssh_opts[*]} ${ssh_user}@${ssh_host} exit"
-        _linha "-" "${YELLOW}"
+        _mensagec "${VERMELHO}" "Falha na conexao SSH para ${ssh_user}@${ssh_host}"
+        _linha "-" "${AMARELO}"
+        _mensagec "${AMARELO}" "Comando: ssh ${ssh_opts[*]} ${ssh_user}@${ssh_host} exit"
+        _linha "-" "${AMARELO}"
 
         if [[ "${ssh_output}" == *"Permission denied"* ]]; then
-            _mensagec "${RED}" "Motivo: Permissao negada (publickey,password)"
-            _mensagec "${YELLOW}" "Possiveis causas:"
+            _mensagec "${VERMELHO}" "Motivo: Permissao negada (publickey,password)"
+            _mensagec "${AMARELO}" "Possiveis causas:"
             if [[ -n "${ssh_key}" ]]; then
                 if [[ -f "${ssh_key}" ]]; then
                     local key_perm
                     key_perm=$(stat -c "%a" "${ssh_key}" 2>/dev/null || stat -f "%Lp" "${ssh_key}" 2>/dev/null || echo "?")
-                    _mensagec "${NORM}" "  - Chave usada: ${ssh_key} (perm: ${key_perm})"
-                    _mensagec "${NORM}" "  - A chave privada deve ter permissao 600"
-                    _mensagec "${NORM}" "  - Chave publica pode nao estar em /home/${ssh_user}/.ssh/authorized_keys"
+                    _mensagec "${NORMAL}" "  - Chave usada: ${ssh_key} (perm: ${key_perm})"
+                    _mensagec "${NORMAL}" "  - A chave privada deve ter permissao 600"
+                    _mensagec "${NORMAL}" "  - Chave publica pode nao estar em /home/${ssh_user}/.ssh/authorized_keys"
                 else
-                    _mensagec "${NORM}" "  - Chave configurada nao existe: ${ssh_key}"
+                    _mensagec "${NORMAL}" "  - Chave configurada nao existe: ${ssh_key}"
                 fi
             else
-                _mensagec "${NORM}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
-                _mensagec "${NORM}" "  - O SSH procura padrao em: ~/.ssh/id_{rsa,ed25519,ecdsa}"
-                _mensagec "${NORM}" "  - Se a chave esta em /root/.ssh/, configure:"
-                _mensagec "${NORM}" "    CFG_CHAVE_SSH=/root/.ssh/id_rsa_atualiza"
-                _mensagec "${NORM}" "    Ou copie a chave para ~/.ssh/ do usuario atual"
-                _mensagec "${NORM}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
+                _mensagec "${NORMAL}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
+                _mensagec "${NORMAL}" "  - O SSH procura padrao em: ~/.ssh/id_{rsa,ed25519,ecdsa}"
+                _mensagec "${NORMAL}" "  - Se a chave esta em /root/.ssh/, configure:"
+                _mensagec "${NORMAL}" "    CFG_CHAVE_SSH=/root/.ssh/id_rsa_atualiza"
+                _mensagec "${NORMAL}" "    Ou copie a chave para ~/.ssh/ do usuario atual"
+                _mensagec "${NORMAL}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
             fi
-            _mensagec "${NORM}" "  - A chave publica pode nao estar cadastrada no servidor"
-            _mensagec "${NORM}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${ssh_user}@${ssh_host}"
-            _mensagec "${NORM}" "  - Usuario '${ssh_user}' pode estar incorreto"
+            _mensagec "${NORMAL}" "  - A chave publica pode nao estar cadastrada no servidor"
+            _mensagec "${NORMAL}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${ssh_user}@${ssh_host}"
+            _mensagec "${NORMAL}" "  - Usuario '${ssh_user}' pode estar incorreto"
         elif [[ "${ssh_output}" == *"Connection refused"* ]]; then
-            _mensagec "${RED}" "Motivo: Conexao recusada na porta ${ssh_port}"
-            _mensagec "${YELLOW}" "Verifique se o servidor SSH esta rodando e a porta correta"
+            _mensagec "${VERMELHO}" "Motivo: Conexao recusada na porta ${ssh_port}"
+            _mensagec "${AMARELO}" "Verifique se o servidor SSH esta rodando e a porta correta"
         elif [[ "${ssh_output}" == *"Connection timed out"* ]]; then
-            _mensagec "${RED}" "Motivo: Conexao excedeu timeout de ${ssh_timeout}s"
-            _mensagec "${YELLOW}" "Verifique se o IP '${ssh_host}' esta correto e acessivel"
+            _mensagec "${VERMELHO}" "Motivo: Conexao excedeu timeout de ${ssh_timeout}s"
+            _mensagec "${AMARELO}" "Verifique se o IP '${ssh_host}' esta correto e acessivel"
         elif [[ "${ssh_output}" == *"Host key verification failed"* ]]; then
-            _mensagec "${RED}" "Motivo: Falha na verificacao da chave do host"
-            _mensagec "${YELLOW}" "Execute: ssh-keygen -R '${ssh_host}'"
+            _mensagec "${VERMELHO}" "Motivo: Falha na verificacao da chave do host"
+            _mensagec "${AMARELO}" "Execute: ssh-keygen -R '${ssh_host}'"
         else
-            _mensagec "${RED}" "Erro desconhecido:"
+            _mensagec "${VERMELHO}" "Erro desconhecido:"
             printf "%s\n" "${ssh_output}" >&2
         fi
-        _linha "-" "${YELLOW}"
-        _mensagec "${YELLOW}" "Dica: execute 'ssh ${ssh_user}@${ssh_host}' manualmente para diagnosticar"
+        _linha "-" "${AMARELO}"
+        _mensagec "${AMARELO}" "Dica: execute 'ssh ${ssh_user}@${ssh_host}' manualmente para diagnosticar"
     fi
-    _linha "=" "${GREEN}"
+    _linha "=" "${VERDE}"
 }
 
 # Validar conteudo do arquivo de configuracao (seguranca)
@@ -520,8 +520,8 @@ _configurar_ambiente() {
 
 _validar_configuracao() {
     _limpa_tela
-    _linha "=" "${GREEN}"
-    _mensagec "${RED}" "Validacao de Configuracao"
+    _linha "=" "${VERDE}"
+    _mensagec "${VERMELHO}" "Validacao de Configuracao"
     _linha
 
     local erros=0 warnings=0
@@ -531,7 +531,7 @@ _validar_configuracao() {
         _erro "Arquivo .config nao encontrado!"
         ((erros++)) || true
     else
-        _mensagec "${GREEN}" "OK: Arquivo .config encontrado"
+        _mensagec "${VERDE}" "OK: Arquivo .config encontrado"
     fi
 
     # Variaveis essenciais
@@ -539,7 +539,7 @@ _validar_configuracao() {
         _erro "Variavel 'RAIZ' nao definida!"
         ((erros++)) || true
     else
-        _mensagec "${GREEN}" "OK: Diretorio RAIZ definido"
+        _mensagec "${VERDE}" "OK: Diretorio RAIZ definido"
     fi
 
     # Variaveis opcionais
@@ -547,10 +547,10 @@ _validar_configuracao() {
     local var
     for var in "${vars_opcionais[@]}"; do
         if [[ -z "${!var:-}" ]]; then
-            _mensagec "${YELLOW}" "Alerta: Variavel '${var}' nao definida"
+            _mensagec "${AMARELO}" "Alerta: Variavel '${var}' nao definida"
             ((warnings++)) || true
         else
-            _mensagec "${GREEN}" "OK: Configuracao ${var} definida"
+            _mensagec "${VERDE}" "OK: Configuracao ${var} definida"
         fi
     done
 
@@ -579,7 +579,7 @@ _validar_configuracao() {
         fi
 
         if [[ ! -d "${dir_path}" ]]; then
-            _mensagec "${YELLOW}" "Alerta: Diretorio ${dir} nao encontrado: ${dir_path}"
+            _mensagec "${AMARELO}" "Alerta: Diretorio ${dir} nao encontrado: ${dir_path}"
             ((warnings++)) || true
         fi
     done
@@ -587,9 +587,9 @@ _validar_configuracao() {
     # Modo offline
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "n" ]]; then
-            _mensagec "${NORM}" "INFO: Servidor em modo On ..."
+            _mensagec "${NORMAL}" "INFO: Servidor em modo On ..."
         else
-            _mensagec "${GREEN}" "INFO: Servidor em modo Off ..."
+            _mensagec "${VERDE}" "INFO: Servidor em modo Off ..."
         fi
     fi
 
@@ -601,9 +601,9 @@ _validar_configuracao() {
     _aviso "Avisos: ${warnings}"
 
     if (( erros == 0 )); then
-        _mensagec "${GREEN}" "Configuracao valida!"
+        _mensagec "${VERDE}" "Configuracao valida!"
     else
-        _mensagec "${RED}" "Configuracao com erros!"
+        _mensagec "${VERMELHO}" "Configuracao com erros!"
     fi
     _linha
 }
@@ -647,7 +647,7 @@ _limpar_estado_variaveis() {
 
 # Limpeza de emergencia (sem dependencias de arrays)
 _limpeza_emergencia() {
-    local emergency_vars="RED GREEN YELLOW BLUE PURPLE CYAN NORM"
+    local emergency_vars="VERMELHO VERDE AMARELO AZUL ROXO CIANO NORMAL"
     emergency_vars+=" CFG_VERSAOCLASS CFG_ACESSO_SSH CFG_OFFLINE"
     emergency_vars+=" CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT SCRIPT_DIR"
     emergency_vars+=" RAIZ CFG_DIR LIBS_DIR CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3"

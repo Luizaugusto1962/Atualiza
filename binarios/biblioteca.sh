@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/07/2026-02
+# Versao: 10/07/2026-02
 #
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -68,13 +68,13 @@ _atualizar_transpc() {
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
-            _mensagec "${YELLOW}" "Parametro de biblioteca do servidor OFF ativo"
+            _mensagec "${AMARELO}" "Parametro de biblioteca do servidor OFF ativo"
             _linha
             _aguardar_tecla
             return 0
         fi
         _linha
-        _mensagec "${YELLOW}" "Informe a senha para o usuario remoto:"
+        _mensagec "${AMARELO}" "Informe a senha para o usuario remoto:"
         _linha
         #_configurar_acessos
         # Verificar espaco em disco
@@ -87,7 +87,7 @@ _atualizar_transpc() {
     if ! _baixar_biblioteca_sincroniza; then
         _erro "Falha ao baixar biblioteca do servidor."
         _aviso "Verifique se a versao ${VERSAO} esta disponivel no servidor."
-        _linha "-" "${RED}"
+        _linha "-" "${VERMELHO}"
         _aguardar_tecla
         return 1
     fi
@@ -102,7 +102,7 @@ _atualizar_transpc() {
 _atualizar_biblioteca_offline() {
     _limpa_tela
        _linha
-    _mensagec "${YELLOW}" "Diretorio de download: ${NORM}${DEFAULT_RECEBE_DIR}"
+    _mensagec "${AMARELO}" "Diretorio de download: ${NORMAL}${DEFAULT_RECEBE_DIR}"
      _solicitar_versao_biblioteca
     
     if [[ -z "${VERSAO}" ]]; then
@@ -114,7 +114,7 @@ _atualizar_biblioteca_offline() {
             if ! _processar_biblioteca_offline; then
                 _erro "Falha ao processar biblioteca offline."
                 _aviso "Verifique se os arquivos estao no diretorio: ${DEFAULT_RECEBE_DIR}"
-                _linha "-" "${RED}"
+                _linha "-" "${VERMELHO}"
                 _aguardar_tecla
                 return 1
             fi
@@ -131,11 +131,11 @@ _atualizar_biblioteca_offline() {
 # Reverter biblioteca para versao anterior
 _reverter_biblioteca() {
     _meio_da_tela
-    _mensagec "${RED}" "Informe a versao da biblioteca para reverter:"
+    _mensagec "${VERMELHO}" "Informe a versao da biblioteca para reverter:"
     _linha
     
     local versao_reverter
-    read -rp "${YELLOW}Versao a reverter: ${NORM}" versao_reverter
+    read -rp "${AMARELO}Versao a reverter: ${NORMAL}" versao_reverter
     _linha
 
     if [[ -z "${versao_reverter}" ]]; then
@@ -153,7 +153,7 @@ _reverter_biblioteca() {
     fi
 
     if [[ ! -r "${arquivo_backup}" ]]; then
-        _mensagec "${RED}" "Backup da biblioteca nao encontrado: ${NORM}${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
+        _mensagec "${VERMELHO}" "Backup da biblioteca nao encontrado: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
         _linha
         _aguardar_tecla
         return 1
@@ -184,16 +184,16 @@ _processar_biblioteca_offline() {
     local arquivos_encontrados=0
     for arquivo in "${arquivos_update[@]}"; do
         if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
-            _mensagec "${GREEN}" "Arquivo encontrado: ${arquivo}"
+            _mensagec "${VERDE}" "Arquivo encontrado: ${arquivo}"
             _linha
             ((arquivos_encontrados++)) || true
         else
-            _mensagec "${YELLOW}" "Arquivo nao encontrado: ${arquivo}"
+            _mensagec "${AMARELO}" "Arquivo nao encontrado: ${arquivo}"
         fi
     done
 
     if (( arquivos_encontrados == 0 )); then
-        _mensagec "${RED}" "Nenhum arquivo de atualizacao encontrado em ${DEFAULT_RECEBE_DIR}"
+        _mensagec "${VERMELHO}" "Nenhum arquivo de atualizacao encontrado em ${DEFAULT_RECEBE_DIR}"
         _aguardar_tecla
         return 1
     fi
@@ -220,7 +220,7 @@ _salvar_atualizacao_biblioteca() {
 
     for arquivo in "${arquivos_verificar[@]}"; do
         if [[ ! -r "${arquivo}" ]]; then
-            _mensagec "${RED}" "Atualizacao nao encontrada ou incompleta: ${arquivo}"
+            _mensagec "${VERMELHO}" "Atualizacao nao encontrada ou incompleta: ${arquivo}"
             _linha
             _aguardar_tecla
             return 1
@@ -245,7 +245,7 @@ _processar_atualizacao_biblioteca() {
 
     # Exibir mensagem inicial
     _linha
-    _mensagec "${YELLOW}" "Iniciando compactacao dos arquivos anteriores para backup..."
+    _mensagec "${AMARELO}" "Iniciando compactacao dos arquivos anteriores para backup..."
     _linha
     _aguardar 1
 
@@ -276,16 +276,16 @@ _processar_atualizacao_biblioteca() {
     pids+=("$pid_tar_telas")  # Registrar PID
     if _mostrar_progresso_backup "$pid_tar_telas" "Compactando $T_TELAS"; then
         ((contador++)) || true
-        _mensagec "${GREEN}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
+        _mensagec "${VERDE}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
         _linha
     else
-        _mensagec "${RED}" "Falha na compactacao de $T_TELAS"
+        _mensagec "${VERMELHO}" "Falha na compactacao de $T_TELAS"
         return 1
     fi
 
     # Comprimir o arquivo tar final com barra de progresso
     if [[ -f "${arquivo_backup_tar}" ]]; then
-        _mensagec "${YELLOW}" "Comprimindo os pacotes de backup..."
+        _mensagec "${AMARELO}" "Comprimindo os pacotes de backup..."
         {
             gzip -f "${arquivo_backup_tar}" >>"${LOG_ATU}" 2>&1
         } &
@@ -356,9 +356,9 @@ _executar_atualizacao_biblioteca() {
     for arquivo in "${arquivos_update[@]}"; do
         if [[ -n "${arquivo}" && -r "${arquivo}" ]]; then
             _linha
-            _mensagec "${YELLOW}" "Descompactando e atualizando: ${arquivo} [Etapa ${contador}/${total_arquivos}]"
+            _mensagec "${AMARELO}" "Descompactando e atualizando: ${arquivo} [Etapa ${contador}/${total_arquivos}]"
             _linha
-            _mensagec "${GREEN}" "Iniciando descompactacao..."
+            _mensagec "${VERDE}" "Iniciando descompactacao..."
 
             # Descompactar arquivo em background
             # Nota: Mantemos unzip aqui pois os arquivos de atualizacao recebidos ainda podem ser .zip
@@ -370,7 +370,7 @@ _executar_atualizacao_biblioteca() {
             pids+=("$pid_unzip")  # Registrar PID para trap
             _mostrar_progresso_backup "$pid_unzip" "Descompactando ${arquivo}"
             if wait "$pid_unzip"; then
-                _mensagec "${GREEN}" "Descompactacao de ${arquivo} concluida com sucesso"
+                _mensagec "${VERDE}" "Descompactacao de ${arquivo} concluida com sucesso"
                 ((contador++)) || true
             else
                 _erro "Ao descompactar ${arquivo} - Verifique o log ${LOG_ATU}"
@@ -385,7 +385,7 @@ _executar_atualizacao_biblioteca() {
 
     # Finalizar atualizacao
     _linha
-    _mensagec "${YELLOW}" "Atualizacao concluida com sucesso!"
+    _mensagec "${AMARELO}" "Atualizacao concluida com sucesso!"
     _linha
     
     # Ir para o diretorio de recebimento para renomear arquivos
@@ -407,13 +407,13 @@ _executar_atualizacao_biblioteca() {
         return 1
         }
     else
-        _mensagec "${YELLOW}" "Nenhum arquivo de backup para mover"
+        _mensagec "${AMARELO}" "Nenhum arquivo de backup para mover"
     fi
 
     # Atualizar mensagens finais
     _linha
-    _mensagec "${YELLOW}" "Alterando a extensao da atualizacao"
-    _mensagec "${YELLOW}" "De *.zip para *.bkp"
+    _mensagec "${AMARELO}" "Alterando a extensao da atualizacao"
+    _mensagec "${AMARELO}" "De *.zip para *.bkp"
     _aviso "Versao atualizada - ${VERSAO}"
     _linha
 
@@ -455,7 +455,7 @@ _reverter_biblioteca_completa() {
         return 1
     fi
 
-    _mensagec "${YELLOW}" "Voltando backup anterior (TAR)..."
+    _mensagec "${AMARELO}" "Voltando backup anterior (TAR)..."
     _linha
 
     # Verificar se o arquivo e tar.gz ou zip
@@ -492,7 +492,7 @@ _reverter_programa_especifico_biblioteca() {
         return 1
     fi
 
-    read -rp "${YELLOW}Informe o nome do programa em MAIÚSCULO: ${NORM}" programa_reverter
+    read -rp "${AMARELO}Informe o nome do programa em MAIÚSCULO: ${NORMAL}" programa_reverter
 
     if ! _validar_nome_programa "${programa_reverter}"; then
         _erro "Nome do programa invalido. Use apenas letras maiusculas e numeros."
@@ -501,7 +501,7 @@ _reverter_programa_especifico_biblioteca() {
     fi
 
     _linha
-    _mensagec "${YELLOW}" "Voltando versao anterior do programa ${programa_reverter} (TAR)..."
+    _mensagec "${AMARELO}" "Voltando versao anterior do programa ${programa_reverter} (TAR)..."
     _linha
 
     # Verificar se o arquivo e tar.gz ou zip
@@ -531,10 +531,10 @@ _reverter_programa_especifico_biblioteca() {
 _solicitar_versao_biblioteca() {
     declare -g VERSAO
     _linha
-    _mensagec "${YELLOW}" "Informe a versao da Biblioteca a ser atualizada:"
+    _mensagec "${AMARELO}" "Informe a versao da Biblioteca a ser atualizada:"
     _linha
     printf "\n"
-    read -rp "${GREEN}Informe somente o numeral da versao: ${NORM}" VERSAO
+    read -rp "${VERDE}Informe somente o numeral da versao: ${NORMAL}" VERSAO
     
     if [[ -z "${VERSAO}" ]]; then
         printf "\n"
