@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 08/07/2026-02
+# Versao: 10/07/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -16,6 +16,13 @@ set -euo pipefail
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
 umask 077  # Garante que arquivos criados sejam legíveis apenas pelo dono
+
+# Funcao de saida padronizada (definida cedo para early exits;
+# sera sobrescrita pela versao completa de config.sh quando carregada)
+_encerrar_programa() {
+    local status="${1:-0}"
+    exit "$status"
+}
 
 # =============================================================================
 # DIRETÓRIOS DO SCRIPT
@@ -30,7 +37,7 @@ LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"                           # Diret
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
 PERM_DIR_SECURE="${PERM_DIR_SECURE:-0755}"                               # Diretórios seguros (rwxr-xr-x)
 
-export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE                       
+export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 
 # =============================================================================
 # VERSAO DO SISTEMA
@@ -48,13 +55,13 @@ _criar_diretorio_seguro() {
     local caminho="${1:-}"
     local permissao="${2:-${PERM_DIR_SECURE}}"
     local log_dir="${3:-}"
-    
+
     # Validar caminho
     if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
         printf "ERRO: Caminho invalido ou inseguro: %s\n" "$caminho" >&2
         return 1
     fi
-    
+
     # Se ja existe, verificar se e diretorio
     if [[ -e "$caminho" ]]; then
         if [[ -d "$caminho" ]]; then
@@ -64,7 +71,7 @@ _criar_diretorio_seguro() {
             return 1
         fi
     fi
-    
+
     # Criar diretorio
     if mkdir -p "$caminho" 2>/dev/null; then
         # Ajustar permissoes
@@ -95,14 +102,14 @@ for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
     if [[ -z "${dir}" ]]; then
         printf "Erro: Variavel de diretorio nao definida.\n" >&2
-        exit 1
+        _encerrar_programa 1
     fi
 
     # Criar diretório caso não exista com permissões seguras
     if [[ ! -d "${dir}" ]]; then
         if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
                 printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
-            exit 1
+            _encerrar_programa 1
         fi
     fi
 
@@ -112,14 +119,14 @@ for dir in "${AUX_DIRS[@]}"; do
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
         printf "Execute como root ou sudo ...\n" >&2
-        exit 1
+        _encerrar_programa 1
     }
 
     # Verificar se o diretório existe após criação
     [[ -d "${dir}" ]] || {
         printf "Erro: O diretorio '%s' nao foi encontrado.\n" "${dir}" >&2
         printf "Certifique-se de que os arquivos/modulos correspondentes estao instalados corretamente.\n" >&2
-        exit 1
+        _encerrar_programa 1
     }
 done
 
@@ -242,7 +249,7 @@ _inicializar_sistema() {
     _executar_expurgador_diario
 
     # Configura acesso SSH se necessario
-    _validar_ssh 
+    _validar_ssh
 
     return 0
 }
@@ -261,13 +268,13 @@ _main() {
     # Inicializar sistema
     if ! _inicializar_sistema; then
         printf "ERRO: Falha na inicializacao do sistema. Saindo...\n" >&2
-        exit 1
+        _encerrar_programa 1
     fi
 
     # Autenticacao
     if ! _login; then
         printf "ERRO: Autenticacao falhou. Saindo...\n" >&2
-        exit 1
+        _encerrar_programa 1
     fi
 
     # Mostrar mensagem de entrada (se existe) e opcao para excluir
@@ -285,9 +292,9 @@ _main() {
         _principal
     else
         printf "ERRO: Menu principal nao encontrado.\n" >&2
-        exit 1
+        _encerrar_programa 1
     fi
-    
+
     # Finalizar sistema de variáveis (limpeza explícita)
     if command -v _finalizar_sistema >/dev/null 2>&1; then
         _finalizar_sistema

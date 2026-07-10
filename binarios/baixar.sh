@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/07/2026-01
+# Versao: 10/07/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -76,7 +76,7 @@ _atualizando() {
         return 1
     else
         _mensagec "${GREEN}" "Backup de $backup_sucesso arquivo(s) realizado com sucesso"
-        local data_zip 
+        local data_zip
         data_zip=$(date +"%d%m")
         local zip_nome="${data_zip}_backup.zip"
         if (cd "${DEFAULT_BACKUP_DIR}" && zip -jm "${zip_nome}" ./*.sh.bkp >>"$LOG_ATU" 2>&1); then
@@ -196,19 +196,14 @@ _atualizando() {
     _ok "Atualizacao concluida com sucesso!"
     _mensagec "${GREEN}" "Ao terminar, entre novamente no sistema"
     _linha
-
-    # Finalizar sistema de variáveis (limpeza explícita)
-    if command -v _finalizar_sistema >/dev/null 2>&1; then
-        _finalizar_sistema
-    fi
-    exit 0
+    _encerrar_programa 0
 }
 
 _atualizar_online() {
     local link="${GITHUB_UPDATE_URL}"
     local zipfile="atualiza.zip"
     _mensagec "${GREEN}" "Atualizando script via GitHub..."
-    
+
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     _erro "Ao criar diretorio de download"
     return 1
@@ -223,7 +218,7 @@ _atualizar_online() {
 _atualizar_offline() {
     local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
     local zipfile="atualiza.zip"
-    
+
     if [[ ! -f "${temp_dir}/${zipfile}" ]]; then
         _erro "Arquivo $zipfile nao encontrado em $temp_dir"
         return 1

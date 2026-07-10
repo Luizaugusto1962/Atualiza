@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
+# Funcao de saida padronizada (local, sem dependencia de modulos)
+_encerrar_programa() {
+    local status="${1:-0}"
+    exit "$status"
+}
+
+#
 # constantes.sh - Constantes do Sistema SAV
 # Centraliza valores hardcoded para facilitar manutencao
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/07/2026-01
+# Versao: 10/07/2026-01
 #
 # =============================================================================
 # Definir diretorio das bases extras
@@ -42,7 +49,7 @@ _carregar_config_seguro() {
 
         # Remover espacos iniciais
         linha="${linha#"${linha%%[![:space:]]*}"}"
-        
+
         # Ignorar linhas apos comentario inline
         if [[ "$linha" == *'#'* ]]; then
             linha="${linha%%#*}"
@@ -55,18 +62,18 @@ _carregar_config_seguro() {
         if [[ "$linha" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
             key="${BASH_REMATCH[1]}"
             value="${BASH_REMATCH[2]}"
-            
+
             # Remover aspas se presentes
             if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
                 value="${BASH_REMATCH[1]}"
             fi
-            
+
             # Validar que o valor nao contem comandos perigosos
             if [[ "$value" =~ [\$\`\;] ]]; then
                 _erro "Valor suspeito encontrado em %s, ignorando linha.\n" "$key" >&2
                 continue
             fi
-            
+
             # Declarar variavel de forma segura
             declare -g "$key=$value"
         fi
@@ -85,7 +92,7 @@ if [[ -z "${CFG_DIR:-}" ]]; then
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
-    exit 1
+    _encerrar_programa 1
 fi
 
 # =============================================================================
@@ -112,7 +119,7 @@ elif [[ ! -r "$CONFIG_FILE" ]]; then
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
-    exit 1
+    _encerrar_programa 1
 else
     if command -v _carregar_config_seguro >/dev/null 2>&1; then
         _carregar_config_seguro "$CONFIG_FILE"
@@ -121,19 +128,19 @@ else
         if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
             return 1
         fi
-        exit 1
+        _encerrar_programa 1
     fi
 fi
 
 
 # =============================================================================
-# CONFIGURACOES DIRETORIO DE BACKUP OFFLINE   
+# CONFIGURACOES DIRETORIO DE BACKUP OFFLINE
 # =============================================================================
 
 CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/Atualiza}"  # Diretorio do portal de atualizacao offline
 
 # =============================================================================
-# CONFIGURACOES DO SISTEMA (variaveis do .config)   
+# CONFIGURACOES DO SISTEMA (variaveis do .config)
 # =============================================================================
 CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-${verclass}}"                     # Versao da classe
 CFG_EMPRESA="${CFG_EMPRESA:-${empresa}}"                        # Nome da empresa
@@ -247,7 +254,7 @@ INI="${INI:-backup-${VERSAO}.zip}"
 
 # =============================================================================
 # CONFIGURACAO DE TIPO DE COMPILACAO
-# =============================================================================    
+# =============================================================================
 compilado="${compilado:-class}"  # Sufixo para arquivos compilados
 debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
+# Funcao de saida padronizada (local, sem dependencia de modulos)
+_encerrar_programa() {
+    local status="${1:-0}"
+    exit "$status"
+}
+
+#
 # setup.sh - Gerencia a configuracao do sistema
 # Este script gerencia a criacao e a edicao dos arquivos de configuracao
 # .config, que e essencial para o funcionamento do sistema.
@@ -11,7 +18,7 @@ set -euo pipefail
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/07/2026-01
+# Versao: 10/07/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -81,15 +88,15 @@ _edit_setup() {
     # Mover para o diretorio de configuracao
     cd "${CFG_DIR}" || {
         echo "Erro: Diretorio 'configuracoes' nao encontrado."
-        exit 1
+        _encerrar_programa 1
     }
 
     # Verificar se os arquivos de configuracao existem
     if [[ ! -f "${CFG_DIR}/.config" ]]; then
         echo "Arquivos de configuracao nao encontrados. Execute o setup inicial primeiro."
-        exit 1
+        _encerrar_programa 1
     fi
-    clear 
+    clear
     echo "=================================================="
     echo "Carregando parametros para edicao..."
     echo "=================================================="
@@ -99,7 +106,7 @@ _edit_setup() {
         _carregar_config_seguro ./.config
     else
         echo "ERRO: Parser seguro de configuracao nao disponivel. Carregamento bloqueado." >&2
-        exit 1
+        _encerrar_programa 1
     fi
 
     # Fazer backup
@@ -130,7 +137,7 @@ _edit_setup() {
 
     echo "$tracejada"
     read -rp "Pressione Enter para sair..."
-    exit 0
+    _encerrar_programa 0
 }
 
 #---------- FUNcoES DE SETUP INICIAL ----------#
@@ -156,7 +163,7 @@ _setup_iscobol() {
         *)
             echo "Alternativa incorreta, saindo!"
             sleep 1
-            exit 1
+            _encerrar_programa 1
             ;;
     esac
 
@@ -227,7 +234,7 @@ _setup_acesso_remoto() {
         echo "acessossh=n" >> .config
     fi
     echo ${tracejada}
-} 
+}
 _setup_chave_acesso() {
     echo "###      ( FACILITADOR DE CHAVE DE ACESSO REMOTO )         ###"
     while true; do
@@ -247,10 +254,10 @@ _setup_chave_acesso() {
     echo "${tracejada}"
 }
 
-_setup_offline() {    
+_setup_offline() {
     echo "###      ( Tipo de acesso        )         ###"
     while true; do
-        read -rp "Servidor OFF [S/N]: " -n1 opt 
+        read -rp "Servidor OFF [S/N]: " -n1 opt
         echo
         if [[ "${opt,,}" =~ ^[sn]$ ]]; then
             break
@@ -273,20 +280,20 @@ _setup_backup() {
         echo "###     Backup local sera criado na pasta do script ###"
         echo "###     O backup deve ser enviado manualmente para a SAV ###"
         echo "${tracejada}"
-        
+
         # Define automaticamente o caminho do backup offline na memória e no arquivo
         enviabackup=""
         echo "enviabackup=" >> .config
         echo "Diretorio de backup offline sera determinado pelo sistema."
-        
+
     else
         echo "###     ( Nome de pasta no servidor da SAV )                ###"
         echo "Informe o nome da pasta no servidor da SAV (somente o nome inicial do cliente)"
         echo "Exemplo: para o cliente 'Fulano', digite somente 'fulano'"
         echo "${tracejada}"
-        
+
         read -rp "Nome do diretorio sem a /: " enviabackup
-        
+
         # Monta o caminho completo esperado e salva
         enviabackup="/cliente/${enviabackup}_jisam"
         echo "enviabackup=${enviabackup}" >> .config
@@ -460,18 +467,18 @@ main() {
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
-cd "${SCRIPT_DIR}" || exit 1
+cd "${SCRIPT_DIR}" || _encerrar_programa 1
 
 # Verifica se o diretorio processos existe
     if [[ ! -d "${LIBS_DIR}" ]]; then
         echo "ERRO: Diretorio ${LIBS_DIR} nao encontrado."
-        exit 1
+        _encerrar_programa 1
     fi
 
 # Verifica se o diretorio configuracoes existe
     if [[ ! -d "${CFG_DIR}" ]]; then
         echo "ERRO: Diretorio ${CFG_DIR} nao encontrado."
-        exit 1
+        _encerrar_programa 1
     fi
 
     # Carregar modulos necessarios
@@ -479,7 +486,7 @@ cd "${SCRIPT_DIR}" || exit 1
         "." "${LIBS_DIR}/utils.sh"
     else
         echo "ERRO: utils.sh nao encontrado em ${LIBS_DIR}"
-        exit 1
+        _encerrar_programa 1
     fi
 
     # Verificar modo de operacao
@@ -488,7 +495,7 @@ cd "${SCRIPT_DIR}" || exit 1
     else
         # Verificar se os arquivos de configuracao ja existem
 
-        if [[ -f "${CFG_DIR}/.config" ]]; then  
+        if [[ -f "${CFG_DIR}/.config" ]]; then
             _limpa_tela
             echo "Arquivos de configuracao ja existem."
             while true; do
@@ -500,15 +507,15 @@ cd "${SCRIPT_DIR}" || exit 1
                 fi
             done
             if [[ "${choice,,}" == "s" ]]; then
-                cd configuracoes || exit 1
+                cd configuracoes || _encerrar_programa 1
                 _initial_setup
             else
                 echo "Operacao cancelada. Use './atualiza.sh --setup --edit' para modificar."
-                exit 0
+                _encerrar_programa 0
             fi
         else
             mkdir -p configuracoes
-            cd configuracoes || exit 1
+            cd configuracoes || _encerrar_programa 1
             _initial_setup
         fi
     fi

@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
+# Funcao de saida padronizada (local, sem dependencia de modulos)
+_encerrar_programa() {
+    local status="${1:-0}"
+    exit "$status"
+}
+
+#
 # cadastro.sh - Programa de Cadastro de Usuario
 # Permite cadastrar usuarios e senhas para o sistema SAV
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 0807/2026-01
+# Versao: 10/07/2026-01
 #
 # Uso:
 #   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
@@ -35,8 +42,8 @@ LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 
 # Carregar modulos necessarios
-"." "${LIBS_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; exit 1; }
-"." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; exit 1; }
+"." "${LIBS_DIR}/utils.sh" 2>/dev/null || { echo "Erro: utils.sh nao encontrado."; _encerrar_programa 1; }
+"." "${LIBS_DIR}/auth.sh" 2>/dev/null || { echo "Erro: auth.sh nao encontrado."; _encerrar_programa 1; }
 
 # Funcao principal
 main() {
@@ -51,7 +58,7 @@ main() {
         _mensagec "${YELLOW}" "2. Alterar senha de usuario"
         _mensagec "${YELLOW}" "0. Voltar"
         _linha "=" "${GREEN}"
-        _mensagec "${GREEN}" "Digite o numero da opcao desejada e pressione ENTER." 
+        _mensagec "${GREEN}" "Digite o numero da opcao desejada e pressione ENTER."
         read -rp "Escolha uma opcao: " opcao
 
         case "$opcao" in
@@ -70,7 +77,7 @@ main() {
             0)
                 _limpa_tela
                 printf '%s' "${NORM:-}"
-                exit 0
+                _encerrar_programa 0
                 ;;
             *)
                 _opinvalida

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/07/2026-01
+# Versao: 10/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -51,7 +51,7 @@ _ler_opcao_menu() {
             ;;
         "q"|"quit"|"sair"|"exit")
             printf '%s' "${GREEN}Saindo do sistema...${NORM}\n"
-            exit 0
+            _encerrar_programa 0
             ;;
     esac
 
