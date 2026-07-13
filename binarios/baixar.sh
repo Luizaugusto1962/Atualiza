@@ -185,9 +185,9 @@ _atualizando() {
         rm -rf "${temp_dir}" 2>/dev/null && _log "Diretorio temporario removido: ${temp_dir}"
     fi
 
-    # 4. Limpeza residual segura (apenas arquivos nomeados como 'atualiza*' no diretorio receber)
-  # Excluir arquivos de atualizacao (atualiza.zip, extracao temporaria) sem remover a pasta principal
-    if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -name "atualiza*" -exec rm -rf {} + 2>/dev/null; then
+    # 4. Limpeza residual segura (excluir TODOS os arquivos/diretorios restantes no diretorio receber, sem remover a pasta principal)
+    # Excluir todos os arquivos que ficaram no diretorio (atualiza.zip, extracao temporaria, etc.) sem remover a pasta principal
+    if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; then
         _mensagec "${VERDE}" "Diretorio limpo com sucesso."
     else
         _aviso "Alguns arquivos podem nao ter sido removidos."
