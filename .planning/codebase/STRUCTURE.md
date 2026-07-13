@@ -1,92 +1,123 @@
-# Structure: Atualiza
+# Codebase Structure
 
-**Last updated:** 2026-07-06
+**Analysis Date:** 2026-07-13
 
 ## Directory Layout
 
 ```
-D:\Projetos\Atualiza\
-├── atualiza.sh               # Entry point — CLI argument router
-├── AGENTS.md                 # AI development rules
-├── package.json              # Dev dependency manifest
-├── opencode.json             # OpenCode provider config (NaraRouter)
-├── opencode.jsonc            # OpenCode model config (Claude Sonnet 4.5)
-├── README.md                 # Project documentation
-├── cspell.json               # Spell check config
-├── .prettierrc               # Formatter config
-├── .gitignore                # Git ignore rules
-├── .gitattributes            # Git attributes
-│
-├── binarios/                 # Executable modules (source)
-│   ├── constantes.sh         # System constants and defaults
-│   ├── config.sh             # Config validation, variable registration
-│   ├── utils.sh              # Shared utilities
-│   ├── auth.sh               # Authentication
-│   ├── principal.sh          # Module loader and initializer
-│   ├── menus.sh              # Interactive menu system
-│   ├── programas.sh          # Program updates/reversions
-│   ├── biblioteca.sh         # Library updates/reversions
-│   ├── arquivos.sh           # File recovery and cleanup
-│   ├── backup.sh             # Backup/restore operations
-│   ├── vaievem.sh            # Network transfers (SFTP/SCP/rsync)
-│   ├── sistema.sh            # System information
-│   ├── baixar.sh             # Self-update mechanism
-│   ├── lembrete.sh           # Notes and reminders
-│   ├── help.sh               # Help system
-│   ├── variaveis.sh          # Variable query/display
-│   ├── setup.sh              # Initial setup and config editing
-│   ├── cadastro.sh           # Standalone user registration
-│   └── binarios03072.zip     # Archived previous version
-│
-├── configuracoes/            # Runtime configuration
-│   ├── .senhas               # SHA-256 password hashes (0600)
-│   ├── indexar               # Data file index for rebuild
-│   ├── limpetmp              # Temp file cleanup patterns
-│   ├── manual.txt            # Full system manual (2039 lines)
-│   └── variosarquivos        # Specific file list for recovery
-│
-├── .vscode/                  # IDE configuration
-│   ├── settings.json         # Editor settings
-│   ├── launch.json           # Debug profiles (bashdb)
-│   ├── sftp.json             # Remote connection config
-│   ├── .eslintrc.json        # ESLint config
-│   ├── .prettierignore       # Formatter ignore
-│   └── prettierrc.json       # Formatter options
-│
-└── .planning/                # GSD planning artifacts
-    └── codebase/             # Codebase mapping documents
+Atualiza/
+├── atualiza.sh          # CLI entry point / dispatcher
+├── package.json         # Node dev tooling (bats, prettier) + test scripts
+├── package-lock.json    # npm lockfile (dev-only)
+├── .prettierrc          # formatter config (near-empty)
+├── cspell.json          # spell-check config
+├── opencode.jsonc       # opencode config
+├── AGENTS.md            # Agent operating rules
+├── README.md            # Project overview
+├── relatorio_revisao_logica.md  # Logic review report
+├── binarios/            # All Bash modules (sourced by principal.sh)
+├── configuracoes/       # Config, credentials, manual, helper scripts
+├── tests/               # bats test suite (unit + integration + helpers + fixtures)
+├── docs/                # Developer/ops documentation (Markdown)
+├── node_modules/        # Dev dependencies (bats, prettier)
+├── logs/                # Runtime logs (created at runtime)
+├── backups/ biblioteca/ programas/ enviar/ receber/  # Runtime working dirs
+└── .planning/           # GSD planning artifacts (codebase maps, etc.)
 ```
+
+## Directory Purposes
+
+**`binarios/`:**
+- Purpose: Core application — every Bash module that implements features.
+- Contains: `*.sh` modules (constantes, config, utils, auth, lembrete, vaievem, sistema, baixar, arquivos, backup, programas, biblioteca, help, variaveis, menus, principal, setup, cadastro).
+- Key files: `principal.sh` (bootstrap), `constantes.sh` (constants/config parser).
+
+**`configuracoes/`:**
+- Purpose: Persisted configuration and credentials.
+- Contains: `.config` (system config), `.senhas` (sha256 user credentials), `manual.txt` (operator manual), `indexar`, `variosarquivos`, `limpetmp` (helper scripts/config).
+
+**`tests/`:**
+- Purpose: bats test suite.
+- Contains: `unit/*.bats` (auth, backup, config, constantes, help, programas, utils, vaivem, variaveis), `integration/*.bats` (atualiza, principal), `helpers/setup.bash`, `fixtures/`.
+
+**`docs/`:**
+- Purpose: Human documentation.
+- Contains: `ARCHITECTURE.md`, `CONFIGURATION.md`, `DEVELOPMENT.md`, `GETTING-STARTED.md`, `TESTING.md`.
 
 ## Key File Locations
 
-| Purpose | Path |
-|---|---|
-| Entry point | `atualiza.sh` |
-| Bootstrap | `binarios/principal.sh` |
-| Constants | `binarios/constantes.sh` |
-| Config system | `binarios/config.sh` |
-| Utilities | `binarios/utils.sh` |
-| Auth system | `binarios/auth.sh` |
-| Menu system | `binarios/menus.sh` |
-| Program updates | `binarios/programas.sh` |
-| Library updates | `binarios/biblioteca.sh` |
-| File operations | `binarios/arquivos.sh` |
-| Backup system | `binarios/backup.sh` |
-| Network transfers | `binarios/vaievem.sh` |
-| Self-update | `binarios/baixar.sh` |
-| Help system | `binarios/help.sh` |
-| Setup wizard | `binarios/setup.sh` |
-| User registration | `binarios/cadastro.sh` |
+**Entry Points:**
+- `atualiza.sh`: CLI dispatcher.
+- `binarios/principal.sh`: bootstrap / module orchestrator.
+
+**Configuration:**
+- `configuracoes/.config`: system settings (key=value).
+- `configuracoes/.senhas`: user credentials (sha256).
+- `package.json`: Node dev tooling + test scripts.
+
+**Core Logic:**
+- `binarios/constantes.sh`: constants + config parser.
+- `binarios/vaievem.sh`: remote sync (ssh/scp/sftp/rsync).
+- `binarios/backup.sh`, `binarios/programas.sh`, `binarios/biblioteca.sh`: feature logic.
+
+**Testing:**
+- `tests/unit/`, `tests/integration/`: bats specs.
+- `tests/helpers/setup.bash`: shared test setup.
 
 ## Naming Conventions
 
-- **Files:** Lowercase with `.sh` extension for executables
-- **Internal functions:** `_function_name()` (underscore-prefixed)
-- **Entry functions:** `function_name()` (no underscore)
-- **Globals:** UPPERCASE (`SCRIPT_DIR`, `RAIZ`, `CFG_PORTALSAV`)
-- **Module pattern:** Each `.sh` provides function-based API, sources dependencies
+**Files:**
+- Modules: lowercase descriptive names + `.sh` (e.g. `backup.sh`, `vaievem.sh`) in `binarios/`.
+- Tests: `<module>.bats` mirroring module name, in `tests/unit/`.
+- Hidden config: leading dot (`.config`, `.senhas`).
 
-## Change History
+**Functions:**
+- Internal/private helpers: leading underscore (`_carregar_modulos`, `_login`, `_validar_caminho_seguro`).
+- Exported/public constants: `UPPER_SNAKE_CASE` (`CFG_DIR`, `DEFAULT_IP_SERVER`, `HASH_ALGORITHM`).
 
-- Current version: `01/07/26-v.1` (defined in `principal.sh:25`)
-- Archived: `binarios03072.zip` contains previous module versions
+**Directories:**
+- Lowercase descriptive names (`binarios`, `configuracoes`, `backups`, `biblioteca`).
+
+## Where to Add New Code
+
+**New Feature (a command/action):**
+- Implementation: `binarios/<feature>.sh` following the module header convention (shebang, `set -euo pipefail`, `# SISTEMA SAV` block).
+- Register in load order: add to `modulos` array in `binarios/principal.sh:175-191`.
+- Wire into menu: `binarios/menus.sh` (`_principal`).
+
+**New Constant / Config Key:**
+- Add `export` in `binarios/constantes.sh` (with `${VAR:-default}` fallback).
+- If user-facing config, document in `configuracoes/.config` parsing expectations.
+
+**Utilities / Shared Helpers:**
+- Add to `binarios/utils.sh` (logging, validation, dependency checks).
+
+**Tests:**
+- Unit: `tests/unit/<module>.bats` (mirror module name).
+- Integration: `tests/integration/*.bats`.
+- Shared setup: `tests/helpers/setup.bash`.
+- Run: `npm test`, `npm run test:unit`, `npm run test:integration`.
+
+**Documentation:**
+- `docs/<TOPIC>.md`.
+
+## Special Directories
+
+**`node_modules/`:**
+- Purpose: Dev dependencies (bats, prettier).
+- Generated: Yes (npm install).
+- Committed: No (gitignored).
+
+**`logs/`, `backups/`, `biblioteca/`, `programas/`, `enviar/`, `receber/`:**
+- Purpose: Runtime working/data directories (created by `principal.sh` if missing).
+- Generated: Yes (runtime).
+- Committed: No.
+
+**`.planning/`:**
+- Purpose: GSD planning + codebase map outputs.
+- Generated: Yes (by mapper).
+- Committed: Per repo policy.
+
+---
+
+*Structure analysis: 2026-07-13*
