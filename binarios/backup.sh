@@ -6,15 +6,14 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 16/07/2026-01
 # Autor: Luiz Augusto
 #
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                      # Comando de compactacao (ex: zip) 
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                      # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
-
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {
@@ -145,7 +144,7 @@ _executar_backup() {
     _linha
     _mensagec "$AMARELO" "Criando Backup da pasta: ${base_trabalho}..."
     _linha
-    
+
     # Variavel para armazenar PID do processo em background
     local backup_pid
 
@@ -319,10 +318,17 @@ _executar_backup_completo() {
         return 1
     fi
 
-    if ! "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
-        _log_bkp "ERRO: Falha ao criar arquivo de backup"
-        rm -f "$arquivos_temp"
-        return 1
+    # Executar compactacao — ignorar erros de arquivo em uso (lock)
+    local resultado_zip=0
+    "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
+
+    if [[ $resultado_zip -ne 0 ]]; then
+        _log_bkp "AVISO: zip retornou erro $resultado_zip (possivel arquivo em uso), tentando forcar..."
+        "$DEFAULT_ZIP" -r -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
+    fi
+
+    if [[ $resultado_zip -ne 0 ]]; then
+        _log_bkp "AVISO: Falha parcial ao criar backup (alguns arquivos podem estar em uso): $arquivo_destino"
     fi
 
     rm -f "$arquivos_temp"
@@ -386,11 +392,17 @@ _executar_backup_incremental() {
         return 0
     fi
 
-    # Executar compactacao
-    if ! "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1; then
-        _log_bkp "ERRO: Falha ao compactar arquivos incrementais"
-        rm -f "$arquivos_temp"
-        return 1
+    # Executar compactacao — ignorar erros de arquivo em uso (lock)
+    local resultado_zip_inc=0
+    "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
+
+    if [[ $resultado_zip_inc -ne 0 ]]; then
+        _log_bkp "AVISO: zip retornou erro $resultado_zip_inc (possivel arquivo em uso), tentando forcar..."
+        "$DEFAULT_ZIP" -r -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
+    fi
+
+    if [[ $resultado_zip_inc -ne 0 ]]; then
+        _log_bkp "AVISO: Falha parcial ao compactar arquivos incrementais (alguns arquivos podem estar em uso): $arquivo_destino"
     fi
 
     # Validar backup criado
@@ -516,23 +528,23 @@ _selecionar_backup() {
 _restaurar_backup_completo() {
     local arquivo_backup="$1"
     local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
-    
+
     if [[ ! -f "$arquivo_backup" ]]; then
         _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
-    
+
     _linha
     _aviso "Restaurando todos os arquivos..."
     _linha
-    
+
     if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
         _erro "Erro na restauracao completa"
         _aguardar_tecla
         return 1
     fi
-    
+
     _ok "Restauracao completa concluida"
     _aguardar_tecla
 }
@@ -542,16 +554,16 @@ _restaurar_arquivo_especifico() {
     local arquivo_backup="$1"
     local nome_arquivo
     local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
-   
+
     if [[ ! -f "$arquivo_backup" ]]; then
         _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
-   
+
     while true; do
         read -rp "${AMARELO}Nome do arquivo (maiusculo, sem extensao): ${NORMAL}" nome_arquivo
-       
+
         if [[ -z "$nome_arquivo" ]]; then
             _mensagec "${VERMELHO}" "Nome nao informado"
             _aguardar_tecla
@@ -562,7 +574,7 @@ _restaurar_arquivo_especifico() {
             fi
             continue  # Volta ao loop para novo nome
         fi
-       
+
         if [[ ! "$nome_arquivo" =~ ^[A-Z0-9]+$ ]]; then
             _mensagec "${VERMELHO}" "Nome de arquivo invalido"
             _aguardar_tecla
@@ -573,11 +585,11 @@ _restaurar_arquivo_especifico() {
             fi
             continue  # Volta ao loop para novo nome
         fi
-       
+
         _linha
         _aviso "Restaurando ${nome_arquivo}..."
         _linha
-       
+
         if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
             _erro "Ao extrair ${nome_arquivo}"
             _aguardar_tecla
@@ -627,12 +639,12 @@ _enviar_backup_servidor() {
     _linha
     _mensagec "${AMARELO}" "Enviando backup via vaievem..."
     _linha
-    
+
     if _enviar_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
         _mensagec "${VERDE}" "Backup enviado com sucesso para \"${DESTINO_REMOTO}\""
         _linha
-        
+
         # Perguntar sobre manter backup local
         if _confirmar "Manter backup local?" "S"; then
             _mensagec "${AMARELO}" "Backup local mantido"
@@ -657,18 +669,18 @@ _enviar_backup_servidor() {
 # Move backup para diretorio offline
 _mover_backup_offline() {
     local nome_backup="$1"
-    
+
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
-    
+
     _linha
     _aviso "Movendo backup para diretorio offline..."
     _linha
-    
+
     if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
         _mensagec "${VERMELHO}" "Diretorio offline nao configurado"
         _aguardar_tecla
@@ -680,7 +692,7 @@ _mover_backup_offline() {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
-    
+
     if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$DEFAULT_RECEBE_DIR"; then
         _mensagec "${VERDE}" "Backup movido para: ${DEFAULT_RECEBE_DIR}"
         _aguardar_tecla
@@ -695,14 +707,14 @@ _mover_backup_offline() {
 _enviar_backup_rede() {
     local nome_backup="$1"
     local DESTINO_REMOTO
-    
+
     # Validar se arquivo existe
     if [[ ! -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         _erro "Arquivo de backup nao encontrado"
         _aguardar_tecla
         return 1
     fi
-    
+
     if [[ -n "${CFG_BACKUP_PATH}" ]]; then
         DESTINO_REMOTO="${CFG_BACKUP_PATH}"
     else
@@ -716,7 +728,7 @@ _enviar_backup_rede() {
     _linha
     _mensagec "${AMARELO}" "Enviando backup via vaievem..."
     _linha
-    
+
     if _enviar_rsync "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "${DESTINO_REMOTO}"; then
         _linha
         _mensagec "${VERDE}" "Backup enviado para \"${DESTINO_REMOTO}\" no servidor ${DEFAULT_IP_SERVER}"
@@ -736,9 +748,9 @@ _verificar_espaco_disco() {
     local diretorio="$1"
     local espaco_minimo=1048576  # 1GB em KB
     local espaco_disponivel
-    
+
     espaco_disponivel=$(df -k "$diretorio" 2>/dev/null | awk 'NR==2 {print $4}')
-    
+
     if [[ -z "$espaco_disponivel" ]] || (( espaco_disponivel < espaco_minimo )); then
         return 1
     fi
@@ -899,12 +911,18 @@ _executar_backup_multiplos_padroes() {
     _aviso "Criando backup com multiplos padroes..."
     _linha
 
-    # Executar compactação com os arquivos especificados
-    if ! "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1; then
-        _erro "Erro ao criar backup"
-        [[ -f "$caminho_backup" ]] && rm -f "$caminho_backup"
-        _aguardar 3
-        return 1
+    # Executar compactação com os arquivos especificados — ignorar erros de arquivo em uso
+    local resultado_zip_multi=0
+    "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1 || resultado_zip_multi=$?
+
+    if [[ $resultado_zip_multi -ne 0 ]]; then
+        _log_bkp "AVISO: zip multiplos retornou erro $resultado_zip_multi (possivel arquivo em uso), tentando forcar..."
+        # Tentativa de forca com -f
+        "$DEFAULT_ZIP" -r -f "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1 || resultado_zip_multi=$?
+    fi
+
+    if [[ $resultado_zip_multi -ne 0 ]]; then
+        _log_bkp "AVISO: Falha parcial ao criar backup multiplos (alguns arquivos podem estar em uso): $caminho_backup"
     fi
 
     # Verificar se o backup foi criado
@@ -936,7 +954,7 @@ _executar_backup_multiplos_padroes() {
 _finalizar_backup_sucesso() {
     local nome_backup="$1"
     local tamanho_backup
-    
+
     if [[ -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" ]]; then
         tamanho_backup=$(du -h "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" | cut -f1)
         _linha
