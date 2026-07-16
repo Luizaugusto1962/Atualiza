@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 16/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -83,7 +83,7 @@ _exibir_opcao_menu() {
     local numero="${1}"
     local descricao="${2}"
     local cor_opcao="${3:-${VERDE}}"
-    _mensageb "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
+    _mensagec "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
     printf "\n"
 }
 
@@ -95,7 +95,7 @@ _exibir_separador_menu() {
 # Exibe rodape de menu com opcao de saida
 _exibir_rodape_menu() {
     _exibir_separador_menu
-    _mensageb "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
+    _mensagec "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
 }
 
 # Processa selecao de opcao de menu com validacao
