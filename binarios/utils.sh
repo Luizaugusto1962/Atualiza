@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
-# utils.sh - Modulo de Utilitarios e Funcoes Auxiliares  
+# utils.sh - Modulo de Utilitarios e Funcoes Auxiliares
 # Funcoes basicas para formatacao, mensagens, validacao e controle de fluxo
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-02
+# Versao: 13/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -117,7 +117,7 @@ _exibir_mensagem_centralizada() {
 }
 
 # Exibe mensagem alinhada à direita
-# Parametros: $1=cor $2=mensagem  
+# Parametros: $1=cor $2=mensagem
 _exibir_mensagem_direita() {
     local cor="${1}"
     local mensagem="${2}"
@@ -254,7 +254,7 @@ _opinvalida() {
     local largura
     local tamanho_msg
     local espacos
-    
+
     # Obter largura do terminal com fallback seguro
     largura=$(_obter_colunas)
 
@@ -306,7 +306,7 @@ _confirmar() {
     local tentativas=0
     local max_tentativas=3
     local timeout="${DEFAULT_READ_TIMEOUT:-60}"
-    
+
     case "$padrao" in
         [Ss]) opcoes="[S/n]" ;;
         [Nn]) opcoes="[N/s]" ;;
@@ -474,16 +474,16 @@ _log() {
 _log_erro() {
     local erro="$1"
     local arquivo_log="${2:-$LOG_ATU}"
-    
+
     _log "ERRO: $erro" "$arquivo_log" || true
 }
 
-# Registra sucesso no log  
+# Registra sucesso no log
 # Parametros: $1=mensagem_sucesso $2=arquivo_log(opcional)
 _log_sucesso() {
     local sucesso="$1"
     local arquivo_log="${2:-$LOG_ATU}"
-    
+
     _log "SUCESSO: $sucesso" "$arquivo_log" || true
 }
 

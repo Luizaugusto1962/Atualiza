@@ -33,7 +33,7 @@ _selecionar_base_arquivos() {
         _aguardar_tecla
         return 1
     fi
-
+    
     if [[ ! -d "${base_trabalho}" ]]; then
         _erro "Diretorio ${base_trabalho} nao encontrado"
         _aguardar_tecla

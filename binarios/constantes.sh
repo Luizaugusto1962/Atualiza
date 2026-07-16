@@ -53,6 +53,7 @@ _carregar_config_seguro() {
         # Ignorar linhas apos comentario inline
         if [[ "$linha" == *'#'* ]]; then
             linha="${linha%%#*}"
+            linha="${linha%"${linha##*[![:space:]]}"}"
         fi
 
         # Ignorar se a linha ficou vazia apos remover comentario
