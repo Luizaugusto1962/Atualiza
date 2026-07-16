@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/07/2026-02
+# Versao: 16/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -64,37 +64,6 @@ _meio_da_tela() {
     # Usar tput para posicionar o cursor — consistente com o restante do arquivo
     tput clear 2>/dev/null || true
     tput cup $((linhas / 2)) 0 2>/dev/null || true
-}
-
-# Exibe mensagem centralizada com cor
-# Parametros: $1=cor $2=mensagem
-_mensageb() {
-#_exibir_bloco_centralizado() {
-    local cor="${1}"
-    local mensagem="${2}"
-    local largura_bloco="${3:-30}" # Largura do bloco (padrao 30)
-    local colunas
-    local margem_esquerda
-
-    # Garantir que NORM e cor estejam definidos (fallback seguro)
-    : "${NORMAL:=}"
-    : "${cor:=}"
-
-    # Obter largura do terminal
-    colunas=$(_obter_colunas)
-
-    # Calcular a margem para centralizar o BLOCO inteiro na tela
-    if [[ "$colunas" -le "$largura_bloco" ]]; then
-        margem_esquerda=0
-    else
-        margem_esquerda=$(( (colunas - largura_bloco) / 2 ))
-    fi
-
-    printf "%*s%s%-*s%s\n" \
-        "$margem_esquerda" "" \
-        "${cor}" \
-        "$largura_bloco" "${mensagem}" \
-        "${NORMAL}"
 }
 
 # Exibe mensagem centralizada com cor
