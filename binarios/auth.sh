@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 17/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -50,12 +50,12 @@ _usuario_existe() {
 _hash_senha() {
     local senha="$1"
     local algoritmo="${HASH_ALGORITHM:-sha256sum}"
-    
+
     if ! command -v "$algoritmo" >/dev/null 2>&1; then
         _erro "Algoritmo de hash '%s' nao encontrado.\n" "$algoritmo" >&2
         return 1
     fi
-    
+
     printf '%s' "$senha" | "$algoritmo" | cut -d' ' -f1
 }
 
@@ -111,6 +111,27 @@ _cadastrar_usuario() {
     _mensagec "${VERDE}" "Usuario cadastrado com sucesso."
 }
 
+# Mostrar tela de boas-vindas apos login bem-sucedido
+_mostrar_boas_vindas() {
+    local nome_usuario="$1"
+
+    printf "\n"
+    _linha "=" "${VERDE}"
+    _mensagec "${VERDE}" "Bem-vindo ao Sistema SAV"
+    _linha "=" "${VERDE}"
+    printf "\n"
+    _mensagec "${CIANO}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
+    _mensagec "${CIANO}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
+	_mensagec "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
+    _mensagec "${CIANO}" "Data: ${BRANCO}$(date '+%d/%m/%Y')${NORMAL}"
+    _mensagec "${CIANO}" "Hora: ${BRANCO}$(date '+%H:%M:%S')${NORMAL}"
+    printf "\n"
+    _linha "-" "${VERDE}"
+    printf "\n"
+
+    read -rp "${AMARELO}Pressione ENTER para continuar...${NORMAL}" -t 5 2>/dev/null || true
+}
+
 # Funcao para login
 _login() {
     local senha hash_senha stored_hash
@@ -119,9 +140,6 @@ _login() {
     # usuario is made global to be used in logging
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
     while [[ $tentativas -le $max_tentativas ]]; do
-        printf '%b\n' "${VERDE}" ".. Empresa: ${BRANCO}${CFG_EMPRESA}${VERDE} |-| Versao Iscobol: ${CIANO}${CFG_VERSAOCLASS}${VERDE}..${NORMAL}"
-        printf "\n"
-        _linha "-" "${CIANO}"
         _mensagec "${VERMELHO}" "Login no Sistema"
         _linha "=" "${VERDE}"
 
@@ -160,6 +178,7 @@ _login() {
                         if [[ "$hash_senha" == "$stored_hash" ]]; then
                             _mensagec "${VERDE}" "Login bem-sucedido."
                             export usuario
+                            _mostrar_boas_vindas "$usuario"
                             return 0
                         else
                             _mensagec "${VERMELHO}" "Senha incorreta."
@@ -175,7 +194,7 @@ _login() {
         if [[ $tentativas -ge $max_tentativas ]]; then
             return 1
         fi
-        
+
         read -rp "${AMARELO}Deseja tentar novamente? (s/N): ${NORMAL}" resposta
         if [[ ! "$resposta" =~ ^[sS]$ ]]; then
             return 1
@@ -184,7 +203,7 @@ _login() {
         printf "\n"
     done
     return 1
-}    
+}
 
 # Funcao para alterar senha
 _alterar_senha() {
