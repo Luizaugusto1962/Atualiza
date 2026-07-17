@@ -18,8 +18,7 @@ RAIZ="${RAIZ:-}"                                   # Diretorio RAIZ do sistema.
 _obter_colunas() {
     local colunas
     if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS:-80}}"
-#        colunas="${COLUNAS:-${DEFAULT_COLUMNS:-80}}"
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
     fi
     printf '%s' "$colunas"
 }
@@ -67,7 +66,7 @@ _meio_da_tela() {
     tput cup $((linhas / 2)) 0 2>/dev/null || true
 }
 
-# Exibe mensagem centralizada com cor
+# Exibe mensagem centralizada alinhada a esquerda com cor
 # Parametros: $1=cor $2=mensagem
 _mensageb() {
 #_exibir_bloco_centralizado() {
@@ -78,7 +77,7 @@ _mensageb() {
     local margem_esquerda
 
     # Garantir que NORM e cor estejam definidos (fallback seguro)
-    : "${NORM:=}"
+    : "${NORMAL:=}"
     : "${cor:=}"
 
     # Obter largura do terminal
@@ -95,7 +94,7 @@ _mensageb() {
         "$margem_esquerda" "" \
         "${cor}" \
         "$largura_bloco" "${mensagem}" \
-        "${NORM}"
+        "${NORMAL}"
 }
 
 # Exibe mensagem centralizada com cor
