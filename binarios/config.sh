@@ -99,13 +99,23 @@ _define_category_vars() {
 _inicializar_variaveis_sistema() {
     # Cores do terminal
     if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        VERMELHO=$(tput bold; tput setaf 1 2>/dev/null)
-        VERDE=$(tput bold; tput setaf 2 2>/dev/null)
-        AMARELO=$(tput bold; tput setaf 3 2>/dev/null)
-        AZUL=$(tput bold; tput setaf 4 2>/dev/null)
-        ROXO=$(tput bold; tput setaf 5 2>/dev/null)
-        CIANO=$(tput bold; tput setaf 6 2>/dev/null)
-        BRANCO=$(tput bold; tput setaf 7 2>/dev/null)
+        VERMELHO=$(tput setaf 9; tput bold 2>/dev/null)
+        VERDE=$(tput setaf 10; tput bold 2>/dev/null)
+        AMARELO=$(tput setaf 11; tput bold 2>/dev/null)
+        AZUL=$(tput setaf 12; tput bold 2>/dev/null)
+        ROXO=$(tput setaf 13; tput bold 2>/dev/null)
+        CIANO=$(tput setaf 14; tput bold 2>/dev/null)
+        BRANCO=$(tput setaf 15; tput bold 2>/dev/null)
+
+
+        VERMELHO_N=$(tput bold; tput setaf 1 2>/dev/null)
+        VERDE_N=$(tput bold; tput setaf 2 2>/dev/null)
+        AMARELO_N=$(tput bold; tput setaf 3 2>/dev/null)
+        AZUL_N=$(tput bold; tput setaf 4 2>/dev/null)
+        ROXO_N=$(tput bold; tput setaf 5 2>/dev/null)
+        CIANO_N=$(tput bold; tput setaf 6 2>/dev/null)
+        BRANCO_N=$(tput bold; tput setaf 7 2>/dev/null)
+
         NORMAL=$(tput sgr0 2>/dev/null)
         COLUNAS=$(tput cols)
         tput clear 2>/dev/null || true
@@ -122,7 +132,7 @@ _inicializar_variaveis_sistema() {
         NORMAL="\033[0m"
         COLUNAS="${COLUNAS:-80}"
     fi
-    export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO NORMAL COLUNAS
+    export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO VERMELHO_N VERDE_N AMARELO_N AZUL_N ROXO_N CIANO_N BRANCO_N NORMAL COLUNAS
 
     # Reinicializar arrays
     REGISTRO_VARIAVEIS=()
@@ -277,7 +287,7 @@ _configurar_variaveis_sistema() {
     E_EXEC="${E_EXEC:-${RAIZ}/classes}"
     T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"
     export E_EXEC T_TELAS
-    
+
     local verclass_sufixo="${CFG_VERSAOCLASS: -2}"
     compilado="-class${verclass_sufixo}"
     debugado="-mclass${verclass_sufixo}"
