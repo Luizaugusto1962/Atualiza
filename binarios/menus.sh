@@ -83,7 +83,7 @@ _exibir_opcao_menu() {
     local numero="${1}"
     local descricao="${2}"
     local cor_opcao="${3:-${VERDE}}"
-    _mensagec "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
+    _mensageb "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
     printf "\n"
 }
 
@@ -95,7 +95,7 @@ _exibir_separador_menu() {
 # Exibe rodape de menu com opcao de saida
 _exibir_rodape_menu() {
     _exibir_separador_menu
-    _mensagec "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
+    _mensageb "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
 }
 
 # Processa selecao de opcao de menu com validacao

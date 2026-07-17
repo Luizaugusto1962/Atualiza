@@ -18,7 +18,8 @@ RAIZ="${RAIZ:-}"                                   # Diretorio RAIZ do sistema.
 _obter_colunas() {
     local colunas
     if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUNAS:-${DEFAULT_COLUMNS:-80}}"
+        colunas="${COLUMNS:-${DEFAULT_COLUMNS:-80}}"
+#        colunas="${COLUNAS:-${DEFAULT_COLUMNS:-80}}"
     fi
     printf '%s' "$colunas"
 }
@@ -64,6 +65,37 @@ _meio_da_tela() {
     # Usar tput para posicionar o cursor — consistente com o restante do arquivo
     tput clear 2>/dev/null || true
     tput cup $((linhas / 2)) 0 2>/dev/null || true
+}
+
+# Exibe mensagem centralizada com cor
+# Parametros: $1=cor $2=mensagem
+_mensageb() {
+#_exibir_bloco_centralizado() {
+    local cor="${1}"
+    local mensagem="${2}"
+    local largura_bloco="${3:-30}" # Largura do bloco (padrao 30)
+    local colunas
+    local margem_esquerda
+
+    # Garantir que NORM e cor estejam definidos (fallback seguro)
+    : "${NORM:=}"
+    : "${cor:=}"
+
+    # Obter largura do terminal
+    colunas=$(_obter_colunas)
+
+    # Calcular a margem para centralizar o BLOCO inteiro na tela
+    if [[ "$colunas" -le "$largura_bloco" ]]; then
+        margem_esquerda=0
+    else
+        margem_esquerda=$(( (colunas - largura_bloco) / 2 ))
+    fi
+
+    printf "%*s%s%-*s%s\n" \
+        "$margem_esquerda" "" \
+        "${cor}" \
+        "$largura_bloco" "${mensagem}" \
+        "${NORM}"
 }
 
 # Exibe mensagem centralizada com cor
