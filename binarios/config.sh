@@ -99,6 +99,7 @@ _define_category_vars() {
 _inicializar_variaveis_sistema() {
     # Cores do terminal
     if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
+    # cor brilhante para melhor visibilidade
         VERMELHO=$(tput setaf 9; tput bold 2>/dev/null)
         VERDE=$(tput setaf 10; tput bold 2>/dev/null)
         AMARELO=$(tput setaf 11; tput bold 2>/dev/null)
@@ -106,8 +107,7 @@ _inicializar_variaveis_sistema() {
         ROXO=$(tput setaf 13; tput bold 2>/dev/null)
         CIANO=$(tput setaf 14; tput bold 2>/dev/null)
         BRANCO=$(tput setaf 15; tput bold 2>/dev/null)
-
-
+    # cor normal para mensagens de log
         VERMELHO_N=$(tput bold; tput setaf 1 2>/dev/null)
         VERDE_N=$(tput bold; tput setaf 2 2>/dev/null)
         AMARELO_N=$(tput bold; tput setaf 3 2>/dev/null)
