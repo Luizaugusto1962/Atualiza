@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/07/2026-02
+# Versao: 18/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -68,7 +68,7 @@ _meio_da_tela() {
 
 # Exibe mensagem centralizada alinhada a esquerda com cor
 # Parametros: $1=cor $2=mensagem
-_mensageb() {
+_exibir_mensagem_centralizada_a_esquerda() {
 #_exibir_bloco_centralizado() {
     local cor="${1}"
     local mensagem="${2}"
@@ -245,6 +245,7 @@ _aguardar_tecla() {
 # Manter compatibilidade com código existente durante transição
 
 # Aliases para funcoes renomeadas
+_mensageb() { _exibir_mensagem_centralizada_a_esquerda "$@"; }
 _mensagec() { _exibir_mensagem_centralizada "$@"; }
 _mensaged() { _exibir_mensagem_direita "$@"; }
 _mensagex() { _exibir_mensagem_corrida "$@"; }
