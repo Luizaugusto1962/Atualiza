@@ -59,7 +59,7 @@ _usar_chave_ssh() {
 # Uso: _adicionar_opcoes_chave _array_ref
 _adicionar_opcoes_chave() {
     local -n _opts_ref=$1
-    _opts_ref+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)")
+    _opts_ref+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 }
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
@@ -192,7 +192,7 @@ _receber_scp() {
         scp_cmd+=(
             -i "$CHAVE"
             -o BatchMode=yes
-            -o "StrictHostKeyChecking=$(_ssh_accept_new)"
+            -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
         )
     fi
 
@@ -250,7 +250,7 @@ _enviar_rsync() {
     local -a ssh_cmd_parts=("ssh" "-p" "${porta}")
 
     if _usar_chave_ssh; then
-        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)")
+        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
     fi
 
     local ssh_cmd
@@ -324,7 +324,7 @@ _baixar_biblioteca_sincroniza() {
                 local scp_cmd=("scp" "-P" "$porta")
 
                 if _usar_chave_ssh; then
-                    scp_cmd+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)" "-o" "BatchMode=yes")
+                    scp_cmd+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)" "-o" "BatchMode=yes")
                 fi
 
                 if "${scp_cmd[@]}" "$src" "."; then

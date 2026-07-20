@@ -99,15 +99,15 @@ _define_category_vars() {
 _inicializar_variaveis_sistema() {
     # Cores do terminal
     if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        VERMELHO=$(tput bold; tput setaf 1 2>/dev/null)
-        VERDE=$(tput bold; tput setaf 2 2>/dev/null)
-        AMARELO=$(tput bold; tput setaf 3 2>/dev/null)
-        AZUL=$(tput bold; tput setaf 4 2>/dev/null)
-        ROXO=$(tput bold; tput setaf 5 2>/dev/null)
-        CIANO=$(tput bold; tput setaf 6 2>/dev/null)
-        BRANCO=$(tput bold; tput setaf 7 2>/dev/null)
+        VERMELHO=$(tput bold 2>/dev/null; tput setaf 1 2>/dev/null)
+        VERDE=$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null)
+        AMARELO=$(tput bold 2>/dev/null; tput setaf 3 2>/dev/null)
+        AZUL=$(tput bold 2>/dev/null; tput setaf 4 2>/dev/null)
+        ROXO=$(tput bold 2>/dev/null; tput setaf 5 2>/dev/null)
+        CIANO=$(tput bold 2>/dev/null; tput setaf 6 2>/dev/null)
+        BRANCO=$(tput bold 2>/dev/null; tput setaf 7 2>/dev/null)
         NORMAL=$(tput sgr0 2>/dev/null)
-        COLUMNS=$(tput cols)        # Numero de colunas do terminal
+        COLUMNS=$(tput cols 2>/dev/null || echo 80)   # Numero de colunas do terminal
 
         # Limpar tela inicial
         tput clear 2>/dev/null || true
@@ -121,7 +121,9 @@ _inicializar_variaveis_sistema() {
         AZUL="\033[0;34m"
         ROXO="\033[0;35m"
         CIANO="\033[0;36m"
+        BRANCO="\033[1;37m"
         NORMAL="\033[0m"
+        COLUMNS=$(tput cols 2>/dev/null || echo 80)
         COLUMNS="${COLUMNS:-80}"
     fi
     export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO NORMAL COLUMNS
@@ -325,7 +327,7 @@ _validar_ssh() {
         ssh_user="root"
     fi
 
-    local ssh_opts=("-o" "ConnectTimeout=${ssh_timeout}" "-o" "StrictHostKeyChecking=$(_ssh_accept_new)")
+    local ssh_opts=("-o" "ConnectTimeout=${ssh_timeout}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if [[ -n "${ssh_port}" ]]; then
         ssh_opts+=("-p" "${ssh_port}")
@@ -621,6 +623,7 @@ _encerrar_programa() {
 }
 
 trap '_limpar_estado_variaveis' EXIT
-trap '_encerrar_programa' INT TERM
+trap '_encerrar_programa 130' INT
+trap '_encerrar_programa 143' TERM
 trap '_limpeza_emergencia' QUIT
 

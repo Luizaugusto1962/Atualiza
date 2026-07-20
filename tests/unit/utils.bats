@@ -106,8 +106,8 @@ setup() {
     [ "$output" = "1m 0s" ]
 }
 
-@test "_ssh_accept_new returns yes" {
-    run _ssh_accept_new
+@test "_ssh_aceitar_novo returns yes" {
+    run _ssh_aceitar_novo
     [ "$output" = "yes" ]
 }
 

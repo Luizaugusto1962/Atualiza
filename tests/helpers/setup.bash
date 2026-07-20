@@ -177,7 +177,7 @@ _opinvalida() { :; }
 _log() { :; }
 _log_erro() { :; }
 _log_sucesso() { :; }
-_ssh_accept_new() { printf 'yes'; }
+_ssh_aceitar_novo() { printf 'yes'; }
 _criar_diretorio_seguro() { mkdir -p "$1" 2>/dev/null || true; }
 _validar_caminho_seguro() { return 0; }
 _usar_chave_ssh() { return 1; }

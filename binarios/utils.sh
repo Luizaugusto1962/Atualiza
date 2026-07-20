@@ -690,7 +690,7 @@ _enviabackup_para_receber() {
 # Usamos 'yes' porque servers antigos (RHEL 6, CentOS 6) nao suportam 'accept-new'.
 # yes funciona em qualquer versao do SSH desde o OpenSSH 3.8.
 # NUNCA escreva StrictHostKeyChecking=aceitar diretamente — chame esta funcao.
-_ssh_accept_new() {
+_ssh_aceitar_novo() {
     printf 'yes'
 }
 
@@ -790,7 +790,7 @@ _testar_conexao() {
     _msg "Testando conexao sem senha..."
     if ssh -o BatchMode=yes \
         -o ConnectTimeout=10 \
-        -o "StrictHostKeyChecking=$(_ssh_accept_new)" \
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)" \
         -i "$CHAVE" \
         -p "$PORTA" \
         "${USUARIO}@${SERVIDOR}" \
