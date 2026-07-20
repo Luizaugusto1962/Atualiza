@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/07/2026-02
+# Versao: 20/07/2026-02
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -99,40 +99,32 @@ _define_category_vars() {
 _inicializar_variaveis_sistema() {
     # Cores do terminal
     if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-    # cor brilhante para melhor visibilidade
-        VERMELHO=$(tput setaf 9; tput bold 2>/dev/null)
-        VERDE=$(tput setaf 10; tput bold 2>/dev/null)
-        AMARELO=$(tput setaf 11; tput bold 2>/dev/null)
-        AZUL=$(tput setaf 12; tput bold 2>/dev/null)
-        ROXO=$(tput setaf 13; tput bold 2>/dev/null)
-        CIANO=$(tput setaf 14; tput bold 2>/dev/null)
-        BRANCO=$(tput setaf 15; tput bold 2>/dev/null)
-    # cor normal para mensagens de log
-        VERMELHO_N=$(tput bold; tput setaf 1 2>/dev/null)
-        VERDE_N=$(tput bold; tput setaf 2 2>/dev/null)
-        AMARELO_N=$(tput bold; tput setaf 3 2>/dev/null)
-        AZUL_N=$(tput bold; tput setaf 4 2>/dev/null)
-        ROXO_N=$(tput bold; tput setaf 5 2>/dev/null)
-        CIANO_N=$(tput bold; tput setaf 6 2>/dev/null)
-        BRANCO_N=$(tput bold; tput setaf 7 2>/dev/null)
-
+        VERMELHO=$(tput bold; tput setaf 1 2>/dev/null)
+        VERDE=$(tput bold; tput setaf 2 2>/dev/null)
+        AMARELO=$(tput bold; tput setaf 3 2>/dev/null)
+        AZUL=$(tput bold; tput setaf 4 2>/dev/null)
+        ROXO=$(tput bold; tput setaf 5 2>/dev/null)
+        CIANO=$(tput bold; tput setaf 6 2>/dev/null)
+        BRANCO=$(tput bold; tput setaf 7 2>/dev/null)
         NORMAL=$(tput sgr0 2>/dev/null)
-        COLUNAS=$(tput cols)
+        COLUMNS=$(tput cols)        # Numero de colunas do terminal
+
+        # Limpar tela inicial
         tput clear 2>/dev/null || true
         tput bold 2>/dev/null || true
         tput setaf 7 2>/dev/null || true
     else
+        # Terminal sem suporte a cores
         VERMELHO="\033[0;31m"
         VERDE="\033[0;32m"
         AMARELO="\033[0;33m"
         AZUL="\033[0;34m"
         ROXO="\033[0;35m"
         CIANO="\033[0;36m"
-        BRANCO="\033[0;37m"
         NORMAL="\033[0m"
-        COLUNAS="${COLUNAS:-80}"
+        COLUMNS="${COLUMNS:-80}"
     fi
-    export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO VERMELHO_N VERDE_N AMARELO_N AZUL_N ROXO_N CIANO_N BRANCO_N NORMAL COLUNAS
+    export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO NORMAL COLUMNS
 
     # Reinicializar arrays
     REGISTRO_VARIAVEIS=()

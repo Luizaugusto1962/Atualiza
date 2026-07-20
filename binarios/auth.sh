@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/07/2026-01
+# Versao: 20/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -117,19 +117,19 @@ _mostrar_boas_vindas() {
 
     printf "\n"
     _linha "=" "${VERDE}"
-    _mensagec "${AMARELO_N}" "Bem-vindo ao Sistema"
+    _mensagec "${AMARELO}" "Bem-vindo ao Sistema"
     _linha "=" "${VERDE}"
     printf "\n"
-    _mensageb "${CIANO_N}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
-    _mensageb "${CIANO_N}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
-	_mensageb "${CIANO_N}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
-    _mensageb "${CIANO_N}" "Data: ${BRANCO}$(date '+%d/%m/%Y')${NORMAL}"
-    _mensageb "${CIANO_N}" "Hora: ${BRANCO}$(date '+%H:%M:%S')${NORMAL}"
+    _mensageb "${CIANO}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
+    _mensageb "${CIANO}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
+	_mensageb "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
+    _mensageb "${CIANO}" "Data: ${BRANCO}$(date '+%d/%m/%Y')${NORMAL}"
+    _mensageb "${CIANO}" "Hora: ${BRANCO}$(date '+%H:%M:%S')${NORMAL}"
     printf "\n"
     _linha "-" "${VERDE}"
     printf "\n"
 
-    read -rp "${AMARELO_N}Pressione ENTER para continuar...${NORMAL}" -t 5 2>/dev/null || true
+    read -rp "${AMARELO}Pressione ENTER para continuar...${NORMAL}" -t 5 2>/dev/null || true
 }
 
 # Funcao para login
