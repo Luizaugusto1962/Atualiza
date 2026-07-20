@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/07/2026-01
+# Versao: 20/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -435,8 +435,7 @@ _menu_setups() {
         _exibir_separador_menu
         _exibir_opcao_menu "1" "Consulta de setup"
         _exibir_opcao_menu "2" "Manutencao de setup"
-        _exibir_opcao_menu "3" "Validar configuracao"
-        _exibir_opcao_menu "4" "Configurar Acesso SSH"
+        _exibir_opcao_menu "3" "Configurar Acesso SSH"
         _exibir_rodape_menu
         printf "\n"
         local opcao
@@ -458,8 +457,7 @@ _menu_setups() {
                     _aguardar 2
                 fi
                 ;;
-            3) _validar_configuracao || true ; _aguardar_tecla ;;
-            4) _menu_configurar_ssh || true ;;
+            3) _menu_configurar_ssh || true ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac

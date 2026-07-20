@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/07/2026-02
+# Versao: 20/07/2026-03
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -514,100 +514,6 @@ _configurar_ambiente() {
     if [[ ! -x "${REBUILD}" ]]; then
         _aviso "Aviso: jutil nao encontrado em ${REBUILD}"
     fi
-}
-
-# =============================================================================
-# VALIDACAO DE CONFIGURACAO
-# =============================================================================
-
-_validar_configuracao() {
-    _limpa_tela
-    _linha "=" "${VERDE}"
-    _mensagec "${VERMELHO}" "Validacao de Configuracao"
-    _linha
-
-    local erros=0 warnings=0
-
-    # Arquivo de configuracao
-    if [[ ! -f "${CFG_DIR}/.config" ]]; then
-        _erro "Arquivo .config nao encontrado!"
-        ((erros++)) || true
-    else
-        _mensagec "${VERDE}" "OK: Arquivo .config encontrado"
-    fi
-
-    # Variaveis essenciais
-    if [[ -z "${RAIZ}" ]]; then
-        _erro "Variavel 'RAIZ' nao definida!"
-        ((erros++)) || true
-    else
-        _mensagec "${VERDE}" "OK: Diretorio RAIZ definido"
-    fi
-
-    # Variaveis opcionais
-    local vars_opcionais=("CFG_ACESSO_SSH" "CFG_OFFLINE" "CFG_CHAVE_SSH")
-    local var
-    for var in "${vars_opcionais[@]}"; do
-        if [[ -z "${!var:-}" ]]; then
-            _mensagec "${AMARELO}" "Alerta: Variavel '${var}' nao definida"
-            ((warnings++)) || true
-        else
-            _mensagec "${VERDE}" "OK: Configuracao ${var} definida"
-        fi
-    done
-
-    # Diretorios essenciais
-    local -A _mapa_dirs=(
-        [biblioteca]="DEFAULT_BIBLIOTECA_DIR"
-        [olds]="DEFAULT_OLDS_DIR"
-        [logs]="DEFAULT_LOGS_DIR"
-        [configuracoes]="CFG_DIR"
-        [binarios]="LIBS_DIR"
-        [backup]="DEFAULT_BACKUP_DIR"
-        [bases_backup]="DEFAULT_BASEBACKUP_DIR"
-        [enviar]="DEFAULT_ENVIA_DIR"
-        [receber]="DEFAULT_RECEBE_DIR"
-        [E_EXEC]="E_EXEC"
-        [T_TELAS]="T_TELAS"
-    )
-    local dir dir_path var_name
-    local dirs_order=("biblioteca" "olds" "logs" "configuracoes" "binarios" "backup" "bases_backup" "enviar" "receber" "E_EXEC" "T_TELAS")
-    for dir in "${dirs_order[@]}"; do
-        var_name="${_mapa_dirs[$dir]}"
-        if [[ "$dir" == "E_EXEC" ]] || [[ "$dir" == "T_TELAS" ]]; then
-            dir_path="${!var_name:-}"
-        else
-            dir_path="${SCRIPT_DIR}${!var_name:-}"
-        fi
-
-        if [[ ! -d "${dir_path}" ]]; then
-            _mensagec "${AMARELO}" "Alerta: Diretorio ${dir} nao encontrado: ${dir_path}"
-            ((warnings++)) || true
-        fi
-    done
-
-    # Modo offline
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_OFFLINE}" == "n" ]]; then
-            _mensagec "${NORMAL}" "INFO: Servidor em modo On ..."
-        else
-            _mensagec "${VERDE}" "INFO: Servidor em modo Off ..."
-        fi
-    fi
-
-    # Resumo
-    _linha
-    printf "\n"
-    _msg "Resumo:"
-    _erro "Erros: ${erros}"
-    _aviso "Avisos: ${warnings}"
-
-    if (( erros == 0 )); then
-        _mensagec "${VERDE}" "Configuracao valida!"
-    else
-        _mensagec "${VERMELHO}" "Configuracao com erros!"
-    fi
-    _linha
 }
 
 # Navegar para o diretorio de ferramentas
