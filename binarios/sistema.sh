@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # sistema.sh - Modulo de Informacoes do Sistema
 # Responsavel por informacoes do IsCOBOL, Linux, parametros e atualizacoes
-# Padrões e regras de desenvolvimento: ver AGENTS.md
+# Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 21/07/2026-01
@@ -11,7 +11,7 @@ set -euo pipefail
 
 # Variaveis globais esperadas
 compilado="${compilado:-}"                      # Sufixo para arquivos compilados
-debugado="${debugado:-}"                        # Sufixo para arquivos em depuração
+debugado="${debugado:-}"                        # Sufixo para arquivos em depuracao
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Variavel do nome da base de dados principal.
 
 #---------- FUNCOES DE VERSAO ----------#
@@ -84,7 +84,7 @@ _mostrar_versao_linux() {
     local externalip="Nao disponivel"
     if [[ "${CFG_OFFLINE}" == "n" ]]; then
         if command -v curl >/dev/null 2>&1; then
-            externalip=$(curl -s ipecho.net/plain || printf "Nao disponivel")
+            externalip=$(curl -s --max-time 5 ipecho.net/plain || printf "Nao disponivel")
         else
             externalip="curl nao instalado"
         fi
@@ -96,24 +96,21 @@ _mostrar_versao_linux() {
     _limpa_tela
     _linha
 
-    # Checando os usuarios logados
-    who >"${LOG_TMP}who"
+    # Checando os usuarios logados — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Usuario Logado: ${NORMAL}"
-    cat "${LOG_TMP}who"
+    who
     printf "\n"
 
-    # Checando uso de memoria RAM e SWAP
-    free | grep -v + >"${LOG_TMP}ramcache"
+    # Checando uso de memoria RAM e SWAP — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Uso de Memoria Ram: ${NORMAL}"
-    grep -v "Swap" "${LOG_TMP}ramcache"
+    free | grep -v -E '^Swap'
     printf '%s\n' "${VERDE}Uso de Swap: ${NORMAL}"
-    grep -v "Mem" "${LOG_TMP}ramcache"
+    free | grep -E '^Swap'
     printf "\n"
 
-    # Checando uso de disco
-    df -h | grep -E 'Filesystem|^/dev/' >"${LOG_TMP}diskusage"
+    # Checando uso de disco — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Espaco em Disco: ${NORMAL}"
-    cat "${LOG_TMP}diskusage"
+    df -h | grep -E 'Filesystem|^/dev/'
     printf "\n"
 
     # Checando o Sistema Uptime
@@ -121,11 +118,6 @@ _mostrar_versao_linux() {
     tecuptime=$(uptime -p 2>/dev/null | cut -d " " -f2- || uptime | sed 's/.*up //' | sed 's/,.*//')
     printf '%s\n' "${VERDE}Sistema em uso Dias/(HH:MM): ${NORMAL}${tecuptime}${NORMAL}"
 
-    # Unset Variables
-    # as vars sao locais, entao unset nao e estritamente necessario, mas mantem a intencao de limpeza
-
-    # Removendo temporarios arquivos
-    rm -f "${LOG_TMP}osrelease" "${LOG_TMP}who" "${LOG_TMP}ramcache" "${LOG_TMP}diskusage"
     _linha
     _aguardar_tecla
 }
@@ -139,46 +131,45 @@ _mostrar_parametros() {
         "." "${CFG_DIR}/.versao"
     fi
     _limpa_tela
-    _linha "=" "${VERDE}"
-    printf "${VERDE}Diretorio RAIZ: ${NORMAL}${RAIZ}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio do atualiza.sh: ${NORMAL}${SCRIPT_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio da base principal: ${NORMAL}${RAIZ}${CFG_BASE_DIR}${NORMAL}%*s\n"
-    [[ -n "${CFG_BASE_DIR2}" ]] && printf "${VERDE}Diretorio da segunda base: ${NORMAL}${RAIZ}${CFG_BASE_DIR2}${NORMAL}%*s\n"
-    [[ -n "${CFG_BASE_DIR3}" ]] && printf "${VERDE}Diretorio da terceira base: ${NORMAL}${RAIZ}${CFG_BASE_DIR3}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio dos executaveis: ${NORMAL}${E_EXEC}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio das telas: ${NORMAL}${T_TELAS}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio dos logs: ${NORMAL}${DEFAULT_LOGS_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio dos olds: ${NORMAL}${DEFAULT_OLDS_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio dos progs: ${NORMAL}${DEFAULT_PROGS_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio do backup: ${NORMAL}${DEFAULT_BACKUP_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio de configuracoes: ${NORMAL}${CFG_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio de receber: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio de enviar: ${NORMAL}${DEFAULT_ENVIA_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Versao em uso: ${NORMAL}${CFG_VERSAOCLASS}${NORMAL}%*s\n"
-    printf "${VERDE}Biblioteca 1: ${NORMAL}${SAVATU1}${NORMAL}%*s\n"
-    printf "${VERDE}Biblioteca 2: ${NORMAL}${SAVATU2}${NORMAL}%*s\n"
-    printf "${VERDE}Biblioteca 3: ${NORMAL}${SAVATU3}${NORMAL}%*s\n"
-    _linha "=" "${VERDE}"
+    _linha "=" "${CIANO}"
+    printf '%b\n' "${VERDE}Diretorio RAIZ: ${NORMAL}${RAIZ}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio do atualiza.sh: ${NORMAL}${SCRIPT_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio da base principal: ${NORMAL}${RAIZ}${CFG_BASE_DIR}${NORMAL}"
+    [[ -n "${CFG_BASE_DIR2:-}" ]] && printf '%b\n' "${VERDE}Diretorio da segunda base: ${NORMAL}${RAIZ}${CFG_BASE_DIR2}${NORMAL}"
+    [[ -n "${CFG_BASE_DIR3:-}" ]] && printf '%b\n' "${VERDE}Diretorio da terceira base: ${NORMAL}${RAIZ}${CFG_BASE_DIR3}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio dos executaveis: ${NORMAL}${E_EXEC}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio das telas: ${NORMAL}${T_TELAS}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio dos logs: ${NORMAL}${DEFAULT_LOGS_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio dos olds: ${NORMAL}${DEFAULT_OLDS_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio dos progs: ${NORMAL}${DEFAULT_PROGS_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio do backup: ${NORMAL}${DEFAULT_BACKUP_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio de configuracoes: ${NORMAL}${CFG_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio de receber: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio de enviar: ${NORMAL}${DEFAULT_ENVIA_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Versao em uso: ${NORMAL}${CFG_VERSAOCLASS}${NORMAL}"
+    printf '%b\n' "${VERDE}Biblioteca 1: ${NORMAL}${SAVATU1}${NORMAL}"
+    printf '%b\n' "${VERDE}Biblioteca 2: ${NORMAL}${SAVATU2}${NORMAL}"
+    printf '%b\n' "${VERDE}Biblioteca 3: ${NORMAL}${SAVATU3}${NORMAL}"
+    _linha "=" "${CIANO}"
     _aguardar_tecla
     _limpa_tela
-    _linha "=" "${VERDE}"
-    printf "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio do backup da biblioteca anterior: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT}${NORMAL}%*s\n"
-    printf "${VERDE}Servidor OFF: ${NORMAL}${CFG_OFFLINE}${NORMAL}%*s\n"
-    printf "${VERDE}Acessa as chaves: ${NORMAL}${CFG_CHAVE_SSH}${NORMAL}%*s\n"
-    printf "${VERDE}Variavel do compilado: ${NORMAL}${compilado}${NORMAL}%*s\n"
-    printf "${VERDE}Variavel do debugado: ${NORMAL}${debugado}${NORMAL}%*s\n"
-    printf "${VERDE}Porta de conexao: ${NORMAL}${DEFAULT_SSH_PORTA}${NORMAL}%*s\n"
-    printf "${VERDE}Usuario de conexao: ${NORMAL}${DEFAULT_SSH_USER}${NORMAL}%*s\n"
-    printf "${VERDE}Servidor IP: ${NORMAL}${DEFAULT_IP_SERVER}${NORMAL}%*s\n"
-    _linha "=" "${VERDE}"
+    _linha "=" "${CIANO}"
+    printf '%b\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio do backup da biblioteca anterior: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT}${NORMAL}"
+    printf '%b\n' "${VERDE}Servidor OFF: ${NORMAL}${CFG_OFFLINE}${NORMAL}"
+    printf '%b\n' "${VERDE}Acessa as chaves: ${NORMAL}${CFG_CHAVE_SSH}${NORMAL}"
+    printf '%b\n' "${VERDE}Variavel do compilado: ${NORMAL}${compilado}${NORMAL}"
+    printf '%b\n' "${VERDE}Variavel do debugado: ${NORMAL}${debugado}${NORMAL}"
+    printf '%b\n' "${VERDE}Porta de conexao: ${NORMAL}${DEFAULT_SSH_PORTA}${NORMAL}"
+    printf '%b\n' "${VERDE}Usuario de conexao: ${NORMAL}${DEFAULT_SSH_USER}${NORMAL}"
+    printf '%b\n' "${VERDE}Servidor IP: ${NORMAL}${DEFAULT_IP_SERVER}${NORMAL}"
+    _linha "=" "${CIANO}"
     _aguardar_tecla
 }
-
 
 # Manutencao_setup - Delega para setup.sh --edit via atualiza.sh
 #===================================================================
