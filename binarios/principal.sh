@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 17/07/2026-01
+# Versao: 21/07/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -42,7 +42,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="20/07/26-v.1"
+declare -rx UPDATE="21/07/26-v.1"
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
@@ -221,7 +221,7 @@ _inicializar_sistema() {
 
     # Carregar módulos do sistema
     if ! _carregar_modulos; then
-        _erro "Falha ao carregar modulos.\n" >&2
+        _erro "Falha ao carregar modulos." >&2
         return 1
     fi
 
@@ -232,13 +232,13 @@ _inicializar_sistema() {
 
     # Carregar e validar configuracoes
     if ! _carregar_configuracoes; then
-        _erro "Falha ao carregar configuracoes.\n" >&2
+        _erro "Falha ao carregar configuracoes." >&2
         return 1
     fi
 
     # Verificar dependências (agora retorna erro ao inves de sair)
     if ! _check_instalado; then
-        _erro "Dependencias nao atendidas.\n" >&2
+        _erro "Dependencias nao atendidas." >&2
         return 1
     fi
 

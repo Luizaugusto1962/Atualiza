@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/07/2026-03
+# Versao: 21/07/2026-03
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -213,21 +213,6 @@ _inicializar_variaveis_sistema() {
         "LOG_LIMPA=${LOG_LIMPA:-}" \
         "LOG_TMP=${LOG_TMP:-}"
 }
-
-# =============================================================================
-# CRIACAO DE DIRETORIO DE CONFIGURACAO
-# =============================================================================
-if [[ -n "${CFG_DIR}" ]]; then
-    if [[ ! -d "${CFG_DIR}" ]]; then
-        mkdir -p "${CFG_DIR}" || {
-            _erro "Nao foi possivel criar o diretorio de configuracao '${CFG_DIR}'." >&2
-            return 1
-        }
-    fi
-    chmod "${PERM_DIR_SECURE}" "${CFG_DIR}" 2>/dev/null || {
-        _aviso "AVISO: Nao foi possivel ajustar permissao em '${CFG_DIR}'." >&2
-    }
-fi
 
 # =============================================================================
 # FUNCOES DE CONFIGURACAO
@@ -584,12 +569,6 @@ _limpeza_emergencia() {
     tput sgr0 2>/dev/null || true
 }
 
-# Configurar limpeza automatica ao sair
-_configurar_limpeza_automatica() {
-    trap '_limpar_estado_variaveis' EXIT INT TERM
-    trap '_limpeza_emergencia' QUIT
-}
-
 # Inicializar sistema de variaveis
 _inicializar_sistema_variaveis() {
     REGISTRO_VARIAVEIS=()
@@ -598,7 +577,6 @@ _inicializar_sistema_variaveis() {
     VAR_CONTADOR_REGISTRO=0
 
     _inicializar_variaveis_sistema
-    _configurar_limpeza_automatica
     _register_var "SISTEMA_VARIAVEIS_INICIALIZADO" "true" "SISTEMA"
 }
 

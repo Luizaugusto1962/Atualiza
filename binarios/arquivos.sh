@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 21/07/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -53,17 +53,17 @@ _selecionar_base_arquivos() {
 # Executa limpeza de arquivos temporarios
 _executar_limpeza_temporarios() {
 
-    # Excluir arquivos de lista antigos para evitar confusao
-    for lista in "atualizal" "atualizaj" "atualizaj2" "atualizat" "atualizat2" ".atualizac" ".atualizac.bkp" ".atualizac.bak"; do
-        local caminho_lista="${CFG_DIR}/${lista}"
-        if [[ -f "${caminho_lista}" ]]; then
-            if rm -f "${caminho_lista}"; then
-                _log "Lista temporaria removida: ${lista}"
-            else
-                _log "AVISO: Falha ao remover lista temporaria: ${lista}"
-            fi
-        fi
-    done
+#    # Excluir arquivos de lista antigos para evitar confusao
+#    for lista in "atualizal" "atualizaj" "atualizaj2" "atualizat" "atualizat2" ".atualizac" ".atualizac.bkp" ".atualizac.bak"; do
+#        local caminho_lista="${CFG_DIR}/${lista}"
+#        if [[ -f "${caminho_lista}" ]]; then
+#            if rm -f "${caminho_lista}"; then
+#                _log "Lista temporaria removida: ${lista}"
+#            else
+#                _log "AVISO: Falha ao remover lista temporaria: ${lista}"
+#            fi
+#        fi
+#    done
 
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
@@ -593,7 +593,12 @@ _executar_jutil() {
         _aviso "Arquivo linkado, pulando recuperacao: $(basename "$arquivo")"
         return 0
     fi
-    if [[ -x "${REBUILD}" ]]; then
+	if [[ -z "${REBUILD:-}" ]]; then
+        _erro "Variavel REBUILD nao configurada. Verifique o caminho do jutil em constantes.sh"
+        return 1
+    fi
+
+	if [[ -x "${REBUILD}}" ]]; then
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
             if "${REBUILD}" -rebuild "$arquivo" -a -f; then
                 _log_sucesso "Rebuild executado: $(basename "$arquivo")"

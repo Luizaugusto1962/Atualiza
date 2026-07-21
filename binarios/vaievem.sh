@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 21/07/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -406,6 +406,21 @@ _enviar_arquivo_multi() {
 
     if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
         _erro "Destino remoto nao especificado"
+        _aguardar 2
+        return 1
+    fi
+
+
+    # Validar DIRETORIO_ORIGEM para envio de arquivo unico
+    if [[ "$ARQUIVO_ENVIAR" != *"*"* && -z "${DIRETORIO_ORIGEM:-}" ]]; then
+        _erro "Diretorio de origem nao definido para envio de arquivo unico"
+        _aguardar 2
+        return 1
+    fi
+
+    # Garantir que arquivos_encontrados exista para envio multiplo
+    if [[ "$ARQUIVO_ENVIAR" == *"*"* && ${#arquivos_encontrados[@]} -eq 0 ]]; then
+        _erro "Nenhum arquivo encontrado para envio multiplo"
         _aguardar 2
         return 1
     fi

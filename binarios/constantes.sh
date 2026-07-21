@@ -13,13 +13,8 @@ _encerrar_programa() {
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 21/07/2026-01
 #
-# =============================================================================
-# Definir diretorio das bases extras
-# =============================================================================
-base2=""                     # Diretorio base secundario (vazio se nao definido)
-base3=""                     # Diretorio base terciario (vazio se nao definido)
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -32,6 +27,12 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 # Fallback: se SCRIPT_DIR for a raiz, RAIZ recebe o próprio SCRIPT_DIR
 RAIZ="${SCRIPT_DIR%/*}"
 [[ -z "$RAIZ" || "$RAIZ" == "$SCRIPT_DIR" ]] && RAIZ="${SCRIPT_DIR}"
+
+# =============================================================================
+# Definir diretorio das bases extras
+# =============================================================================
+base2=""                     # Diretorio base secundario (vazio se nao definido)
+base3=""                     # Diretorio base terciario (vazio se nao definido)
 
 # -----------------------------------------------------------------------------
 # Carrega configuracao de forma segura sem sourcing direto
@@ -71,7 +72,7 @@ _carregar_config_seguro() {
 
             # Validar que o valor nao contem comandos perigosos
             if [[ "$value" =~ [\$\`\;] ]]; then
-                _erro "Valor suspeito encontrado em %s, ignorando linha.\n" "$key" >&2
+                printf 'AVISO: Valor suspeito em variavel "%s", ignorando linha.\n' "$key" >&2
                 continue
             fi
 
@@ -89,7 +90,7 @@ _carregar_config_seguro() {
 
 # CFG_DIR deve ter sido definido por principal.sh antes deste sourcing
 if [[ -z "${CFG_DIR:-}" ]]; then
-    echo "ERRO: CFG_DIR nao esta definido. Certifique-se de carregar principal.sh primeiro." >&2
+    echo "ERRO: CFG_DIR nao esta definido. Carregue principal.sh primeiro." >&2
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
@@ -237,7 +238,7 @@ REBUILD="${SAVISC}${JUTIL}"
 ACESSO_OFF="${ACESSO_OFF:-${RAIZ}/portalsav/Atualiza}"
 
 # =============================================================================
-# CONFIGURACAO DE LOGS
+# CONFIGURACAO DE LOGS E DATA
 # =============================================================================
 LOG_ATU="${LOG_ATU:-${DEFAULT_LOGS_DIR}/atualiza.$(date +"%Y-%m-%d").log}"
 LOG_LIMPA="${LOG_LIMPA:-${DEFAULT_LOGS_DIR}/limpando.$(date +"%Y-%m-%d").log}"
@@ -263,7 +264,7 @@ debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 # EXPORTAR CONSTANTES
 # =============================================================================
 export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
-export CFG_VERSAOCLASS CFG_EMPRESA
+export CFG_PORTALSAV CFG_VERSAOCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
 export DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER GITHUB_UPDATE_URL DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 21/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -153,7 +153,7 @@ _mostrar_parametros() {
     printf "${VERDE}Diretorio do backup: ${NORMAL}${DEFAULT_BACKUP_DIR}${NORMAL}%*s\n"
     printf "${VERDE}Diretorio de configuracoes: ${NORMAL}${CFG_DIR}${NORMAL}%*s\n"
     printf "${VERDE}Diretorio de receber: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}%*s\n"
-    printf "${VERDE}Diretorio de enviar: ${NORMAL}${DEFAULT_ENVIA_DIR}${NORMAL}%*s\n"    
+    printf "${VERDE}Diretorio de enviar: ${NORMAL}${DEFAULT_ENVIA_DIR}${NORMAL}%*s\n"
     printf "${VERDE}Versao em uso: ${NORMAL}${CFG_VERSAOCLASS}${NORMAL}%*s\n"
     printf "${VERDE}Biblioteca 1: ${NORMAL}${SAVATU1}${NORMAL}%*s\n"
     printf "${VERDE}Biblioteca 2: ${NORMAL}${SAVATU2}${NORMAL}%*s\n"
@@ -192,5 +192,14 @@ _manutencao_setup() {
     fi
 
     "${atualiza}" --setup --edit
+
+    # Recarregar configuracoes na sessao atual apos edicao
+    if [[ -f "${CFG_DIR}/.config" ]] && command -v _carregar_config_seguro >/dev/null 2>&1; then
+        _carregar_config_seguro "${CFG_DIR}/.config" || true
+        _configurar_variaveis_sistema || true
+        _mensagec "${VERDE}" "Configuracoes recarregadas na sessao atual."
+        _aguardar 2
+    fi
 }
+
 

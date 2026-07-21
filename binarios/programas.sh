@@ -6,14 +6,14 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 21/07/2026-01
 #
 
 # Variaveis globais esperadas
 compilado="${compilado:-class}"                 # Sufixo para arquivos compilados
 debugado="${debugado:-mclass}"                  # Sufixo para arquivos em depuração
 DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Diretorio de recebimento de arquivos
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip) 
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
@@ -25,7 +25,7 @@ declare -a ARQUIVOS_PROGRAMA=()
 
 # Atualizacao de programas via conexao online
 _atualizar_programa_online() {
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then    
+    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
             _aviso "Parametro do servidor OFF ativo"
@@ -34,17 +34,17 @@ _atualizar_programa_online() {
             return 0
         fi
     fi
-    
+
     # Solicitar programas a serem atualizados
     _solicitar_programas_atualizacao
-    
+
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         _mensagec "${AMARELO}" "Nenhum programa selecionado"
         _linha
         _aguardar_tecla
         return 0
     fi
-    
+
     # Baixar programas via vaievem
     if ! _baixar_programas_vaievem; then
         _erro "Falha ao baixar programas"
@@ -52,7 +52,7 @@ _atualizar_programa_online() {
         _aguardar_tecla
         return 1
     fi
-    
+
     # Atualizar programas baixados
     if ! _processar_atualizacao_programas; then
         _erro "Falha ao processar atualizacao"
@@ -60,7 +60,7 @@ _atualizar_programa_online() {
         _aguardar_tecla
         return 1
     fi
-    
+
     _linha
     _aguardar_tecla
 }
@@ -68,12 +68,12 @@ _atualizar_programa_online() {
 # Atualizacao de programas via arquivos offline
 _atualizar_programa_offline() {
 
-    # Traz arquivos da pasta /portalsav/Atualiza para receber.    
+    # Traz arquivos da pasta /portalsav/Atualiza para receber.
     _enviabackup_para_receber || true
 
     # Solicitar programas a serem atualizados
     _solicitar_programas_atualizacao
-    
+
 
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         _mensagec "${AMARELO}" "Nenhum programa selecionado"
@@ -81,12 +81,12 @@ _atualizar_programa_offline() {
         _aguardar_tecla
         return 0
     fi
-    
+
     _linha
     _mensagec "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${DEFAULT_RECEBE_DIR}"
     _linha
     _aguardar 0
-    
+
 
     # Mover arquivos do servidor offline se configurado
     if ! _mover_arquivos_offline; then
@@ -95,7 +95,7 @@ _atualizar_programa_offline() {
         _aguardar_tecla
         return 1
     fi
-    
+
     # Atualizar programas
     if ! _processar_atualizacao_programas; then
         _erro "Falha ao processar atualizacao"
@@ -103,7 +103,7 @@ _atualizar_programa_offline() {
         _aguardar_tecla
         return 1
     fi
-    
+
     _linha
     _aguardar_tecla
 }
@@ -111,7 +111,7 @@ _atualizar_programa_offline() {
 # Atualizacao de programas em pacotes
 _atualizar_programa_pacote() {
 
-    # Traz arquivos da pasta /portalsav/Atualiza para receber.    
+    # Traz arquivos da pasta /portalsav/Atualiza para receber.
     _enviabackup_para_receber || true
 
     _solicitar_pacotes_atualizacao
@@ -688,11 +688,10 @@ _processar_atualizacao_pacotes() {
         fi
 
         # SEGURANCA: Validar integridade do backup antes de continuar
-        if [[ -f "${arquivo_backup}" ]]; then
-            if ! _validar_integridade_backup "${arquivo_backup}"; then
-                rm -rf "${temp_update}"
-                return 1
-            fi
+        if ! _validar_integridade_backup "${arquivo_backup}"; then
+		    _erro "CRITICO: Backup invalido ou ausente para ${progname}. Atualizacao abortada."
+            rm -rf "${temp_update}"
+            return 1
         fi
 
         # Mover novos arquivos
@@ -728,7 +727,7 @@ _processar_reversao_programas() {
     for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         local programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
         local arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
-        
+
         if [[ -f "$arquivo_anterior" ]]; then
             # SEGURANCA: Validar integridade do backup antes de reverter
             if ! _validar_integridade_backup "$arquivo_anterior"; then

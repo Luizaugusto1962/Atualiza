@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-02
+# Versao: 21/07/2026-02
 #
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -15,7 +15,7 @@ declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
 _limpar_interrupcao() {
     local sinal="$1"
     _log "Interrupcao detectada (sinal: $sinal). Limpando processos..."
-    
+
     # Matar todos os PIDs pendentes
     for pid in "${pids[@]}"; do
         if kill -0 "$pid" 2>/dev/null; then
@@ -24,19 +24,19 @@ _limpar_interrupcao() {
         fi
     done
     pids=()  # Limpar array
-    
+
     # Limpeza de temporarios (ex: zips parciais ou descompactados incompletos)
     _ir_para_tools
 
     if [[ -n "${VERSAO:-}" ]]; then
         for temp_file in *"${VERSAO}".zip *"${VERSAO}".tar *"${VERSAO}".tar.gz; do
             if [[ -f "$temp_file" ]]; then
-                rm -f "$temp_file" 
+                rm -f "$temp_file"
                 _log "Arquivo temporario removido: $temp_file"
             fi
         done
     fi
-        
+
     # Verificar se backup parcial existe e sugerir rollback
     shopt -s nullglob
     local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.zip "${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.tar.gz)
@@ -44,15 +44,11 @@ _limpar_interrupcao() {
     if (( ${#backups_parciais[@]} > 0 )); then
         _aviso "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
     fi
-    
+
     _log "Cleanup concluido. Saida forcada."
     _aguardar_tecla  # Pausa para o usuario ver a mensagem
     return 1
 }
-
-# Configurar traps (SIGINT=2 para Ctrl+C, SIGTERM=15 para kill)
-trap '_limpar_interrupcao' INT
-trap '_limpar_interrupcao' TERM
 
 #---------- FUNCOES PRINCIPAIS DE ATUALIZACAO ----------#
 
@@ -60,7 +56,7 @@ trap '_limpar_interrupcao' TERM
 _atualizar_transpc() {
     _limpa_tela
     _solicitar_versao_biblioteca
-    
+
     if [[ -z "${VERSAO}" ]]; then
         return 0
     fi
@@ -104,7 +100,7 @@ _atualizar_biblioteca_offline() {
        _linha
     _mensagec "${AMARELO}" "Diretorio de download: ${NORMAL}${DEFAULT_RECEBE_DIR}"
      _solicitar_versao_biblioteca
-    
+
     if [[ -z "${VERSAO}" ]]; then
         return 0
     fi
@@ -133,7 +129,7 @@ _reverter_biblioteca() {
     _meio_da_tela
     _mensagec "${VERMELHO}" "Informe a versao da biblioteca para reverter:"
     _linha
-    
+
     local versao_reverter
     read -rp "${AMARELO}Versao a reverter: ${NORMAL}" versao_reverter
     _linha
@@ -147,7 +143,7 @@ _reverter_biblioteca() {
 
     # Tentar encontrar o backup tanto em .tar.gz quanto em .zip (para retrocompatibilidade)
     local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
-    
+
     if [[ ! -r "${arquivo_backup}" ]]; then
         arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
     fi
@@ -177,7 +173,7 @@ _processar_biblioteca_offline() {
     cd "$DEFAULT_RECEBE_DIR" || return 1
 
     _definir_variaveis_biblioteca
-  
+
     local -a arquivos_update
     read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
 
@@ -235,13 +231,13 @@ _processar_atualizacao_biblioteca() {
     # Registrar trap local apenas durante o processamento
     trap '_limpar_interrupcao' INT
     trap '_limpar_interrupcao' TERM
-    
+
     local arquivo_backup_tar="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${VERSAO}.tar"
     local caminho_backup_final="${arquivo_backup_tar}.gz"
 
     # Inicializar contadores para progresso geral (opcional, para log final)
     local contador=0
-    local total_etapas=2 
+    local total_etapas=2
 
     # Exibir mensagem inicial
     _linha
@@ -312,7 +308,7 @@ _processar_atualizacao_biblioteca() {
         _aviso "Backup nao encontrado no diretorio ou dados nao informados"
         _linha
         _aguardar 2
-        
+
         if _confirmar "Deseja continuar a atualizacao?" "S"; then
             _aviso "Continuando a atualizacao..."
         else
@@ -335,9 +331,9 @@ _executar_atualizacao_biblioteca() {
 
     # Ir para o diretório onde estao os arquivos
     cd "${DEFAULT_RECEBE_DIR}" || return 1
-    
+
     _definir_variaveis_biblioteca
-     
+
     local -a arquivos_update
     read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
     # Contar arquivos a processar
@@ -387,16 +383,16 @@ _executar_atualizacao_biblioteca() {
     _linha
     _mensagec "${AMARELO}" "Atualizacao concluida com sucesso!"
     _linha
-    
+
     # Ir para o diretorio de recebimento para renomear arquivos
     cd "${DEFAULT_RECEBE_DIR}" || return 1
-    
+
     # Mover arquivos .zip para .bkp
     shopt -s nullglob
     for arquivo_zip in *_"${VERSAO}".zip; do
         mv -f "${arquivo_zip}" "${arquivo_zip%.zip}.bkp"
     done
-    
+
     # Mover backups para diretorio
     local arquivos=(*_"${VERSAO}".bkp)
     shopt -u nullglob
@@ -484,8 +480,8 @@ _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="$1"
     local programa_reverter
     local temp_restore="/"
-    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS) 
-    
+    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
+
     if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
         _erro "Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
         _aguardar 2
@@ -535,7 +531,7 @@ _solicitar_versao_biblioteca() {
     _linha
     printf "\n"
     read -rp "${VERDE}Informe somente o numeral da versao: ${NORMAL}" VERSAO
-    
+
     if [[ -z "${VERSAO}" ]]; then
         printf "\n"
         _linha
@@ -544,7 +540,7 @@ _solicitar_versao_biblioteca() {
         _aguardar_tecla
         return 0
     fi
-    
+
     return 0
 }
 

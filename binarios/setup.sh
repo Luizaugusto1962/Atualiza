@@ -12,7 +12,7 @@ set -euo pipefail
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 21/07/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -506,15 +506,15 @@ cd "${SCRIPT_DIR}" || _encerrar_programa 1
                 fi
             done
             if [[ "${choice,,}" == "s" ]]; then
-                cd configuracoes || _encerrar_programa 1
+                cd "${CFG_DIR}" || _encerrar_programa 1
                 _initial_setup
             else
                 echo "Operacao cancelada. Use './atualiza.sh --setup --edit' para modificar."
                 _encerrar_programa 0
             fi
         else
-            mkdir -p configuracoes
-            cd configuracoes || _encerrar_programa 1
+            mkdir -p "${CFG_DIR}"
+            cd "${CFG_DIR}" || _encerrar_programa 1
             _initial_setup
         fi
     fi
