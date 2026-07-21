@@ -598,7 +598,7 @@ _executar_jutil() {
         return 1
     fi
 
-	if [[ -x "${REBUILD}}" ]]; then
+	if [[ -x "${REBUILD}" ]]; then
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
             if "${REBUILD}" -rebuild "$arquivo" -a -f; then
                 _log_sucesso "Rebuild executado: $(basename "$arquivo")"
