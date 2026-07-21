@@ -102,9 +102,6 @@ fi
 # =============================================================================
 CONFIG_FILE="${CFG_DIR}/.config"
 
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "AVISO: Arquivo de configuracao $CONFIG_FILE nao encontrado." >&2
-
     # Definir valores padrao caso o arquivo nao exista
     verclass=""
     acessossh=""
@@ -116,6 +113,8 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     base2=""
     base3=""
 
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "AVISO: Arquivo de configuracao $CONFIG_FILE nao encontrado." >&2
 elif [[ ! -r "$CONFIG_FILE" ]]; then
     echo "ERRO: Arquivo $CONFIG_FILE sem permissao de leitura." >&2
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
@@ -263,7 +262,8 @@ debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 # =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
-export SCRIPT_DIR RAIZ LIBS_DIR CFG_DIR
+export SCRIPT_DIR RAIZ
+export CFG_DIR
 export CFG_PORTALSAV CFG_VERSAOCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
