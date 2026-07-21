@@ -183,6 +183,12 @@ _adicionar_arquivo_lixo() {
     read -rp "${AMARELO}Qual o arquivo -> ${NORMAL}" novo_arquivo
     _linha
 
+    if [[ -z "$novo_arquivo" ]]; then
+        _mensagec "${VERMELHO}" "Nome de arquivo nao informado"
+        _aguardar_tecla
+        return 1
+    fi
+
     if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._*-]+$ ]]; then
         _erro "Nome de arquivo invalido. Use apenas letras, numeros, pontos, hifens ou '*'."
         _aguardar_tecla
@@ -192,12 +198,6 @@ _adicionar_arquivo_lixo() {
 # Bloquear wildcards globais se não for intenção
     if [[ "$novo_arquivo" == *"*"* || "$novo_arquivo" == *"?"* ]]; then
         _mensagec "${VERMELHO}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
-        _aguardar_tecla
-        return 1
-    fi
-
-    if [[ -z "$novo_arquivo" ]]; then
-        _mensagec "${VERMELHO}" "Nome de arquivo nao informado"
         _aguardar_tecla
         return 1
     fi
@@ -797,7 +797,6 @@ _receber_arquivo_avulso() {
 _executar_expurgador() {
     _executar_expurgador_diario
 
-    local origem="${1:-principal}"
     _limpa_tela
 
     _linha
@@ -853,13 +852,7 @@ _executar_expurgador() {
     _linha
     _aguardar_tecla
     _ir_para_tools
-
-    # Retornar ao menu baseado na origem
-    if [[ "$origem" == "arquivos" ]]; then
-        return 0
-    else
-        _menu_arquivos
-    fi
+    return 0
 }
 
 # Lista os logs de atualizacao

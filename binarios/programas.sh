@@ -164,7 +164,7 @@ _selecionar_programas_reversao() {
     if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
         _erro "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     shopt -s nullglob
@@ -174,10 +174,11 @@ _selecionar_programas_reversao() {
     if (( ${#backups[@]} == 0 )); then
         _aviso "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
         _aguardar_tecla
-        return 0
+        return 1
     fi
 
     local programas=()
+    local arquivo
     for arquivo in "${backups[@]}"; do
         programas+=("$(basename "${arquivo}" "-anterior.zip")")
     done
@@ -187,6 +188,7 @@ _selecionar_programas_reversao() {
     _linha
 
     local idx=1
+    local programa
     for programa in "${programas[@]}"; do
         _mensagec "${VERDE}" "${idx}) ${programa}"
         ((idx++)) || true
@@ -213,6 +215,7 @@ _selecionar_programas_reversao() {
         local invalido=0
         # Omitimos as aspas intencionalmente aqui para permitir word splitting na variavel $escolha,
         # o que permite o usuario digitar multiplos numeros separados por espaco (ex: "1 2 3").
+        local token
         for token in ${escolha}; do
             if ! [[ "${token}" =~ ^[0-9]+$ ]]; then
                 invalido=1
@@ -313,9 +316,10 @@ _coletar_artefatos_atualizacao() {
         if [[ -z "${item}" ]]; then
             if (( ${#PROGRAMAS_SELECIONADOS[@]} > 0 )); then
                 _mensagec "${CIANO}" "Programas informados:"
+                local idx prog arq
                 for idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
-                    local prog="${PROGRAMAS_SELECIONADOS[$idx]}"
-                    local arq="${ARQUIVOS_PROGRAMA[$idx]}"
+                    prog="${PROGRAMAS_SELECIONADOS[$idx]}"
+                    arq="${ARQUIVOS_PROGRAMA[$idx]}"
                     if [[ "$arq" == *"${debugado}"* ]]; then
                         _mensagec "${VERDE}" "  -> ${prog} - Depuracao"
                     else
@@ -357,6 +361,7 @@ _coletar_artefatos_atualizacao() {
 
         if [[ -n "$mensagem_lista" ]]; then
             _mensagec "${AMARELO}" "$mensagem_lista"
+            local prog
             for prog in "${PROGRAMAS_SELECIONADOS[@]}"; do
                 _mensagec "${VERDE}" "  - $prog"
             done
@@ -398,6 +403,7 @@ _baixar_pacotes_vaievem() {
 # Move arquivos do servidor offline
 _mover_arquivos_offline() {
     local todos_encontrados=0
+    local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
             _mensagec "${VERDE}" "Arquivo encontrado: ${arquivo}"
@@ -430,6 +436,7 @@ _processar_atualizacao_programas() {
     fi
 
     # Verificar se arquivos existem no diretorio de recebimento
+    local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
             _erro "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
@@ -441,7 +448,7 @@ _processar_atualizacao_programas() {
     local temp_update
     temp_update="${DEFAULT_RECEBE_DIR}/tmp_update_$$"
     if ! _criar_diretorio_seguro "${temp_update}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Falha ao criar diretorio temporario %s\n" "${temp_update}" >&2
+        _erro "Falha ao criar diretorio temporario ${temp_update}" >&2
         return 1
     fi
 
@@ -528,16 +535,17 @@ _processar_atualizacao_programas() {
     # Descompactar e atualizar programas
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
-            _erro "ao descompactar ${arquivo}"
+            _erro "Erro ao descompactar ${arquivo}"
             rm -rf "${temp_update}"
             return 1
         fi
     done
 
     # Mover arquivos para diretorios corretos
+    local extensao arquivos_encontrados
     for extensao in ".class" ".int" ".TEL"; do
         shopt -s nullglob
-        local arquivos_encontrados=(*"${extensao}")
+        arquivos_encontrados=(*"${extensao}")
         shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} > 0 )); then
@@ -572,7 +580,7 @@ _processar_atualizacao_programas() {
     # Mover arquivos .zip para .bkp em DEFAULT_PROGS_DIR
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-            _erro "Falha ao criar diretorio de programas %s\n" "${DEFAULT_PROGS_DIR}" >&2
+            _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
             rm -rf "${temp_update}"
             return 1
         }
@@ -607,6 +615,7 @@ _processar_atualizacao_pacotes() {
     fi
 
     # Verificar se arquivos existem no diretorio de recebimento
+    local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
             _erro "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
@@ -618,7 +627,7 @@ _processar_atualizacao_pacotes() {
     local temp_update
     temp_update="${DEFAULT_RECEBE_DIR}/tmp_update_$$"
     if ! _criar_diretorio_seguro "${temp_update}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Falha ao criar diretorio temporario %s\n" "${temp_update}" >&2
+        _erro "Falha ao criar diretorio temporario ${temp_update}" >&2
         return 1
     fi
 
@@ -639,7 +648,7 @@ _processar_atualizacao_pacotes() {
     # Descompactar pacotes
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
-            _erro "ao descompactar ${arquivo}"
+            _erro "Erro ao descompactar ${arquivo}"
             rm -rf "${temp_update}"
             return 1
         fi
@@ -648,7 +657,7 @@ _processar_atualizacao_pacotes() {
     # Mover arquivos .zip para .bkp em DEFAULT_PROGS_DIR
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-            _erro "Falha ao criar diretorio de programas %s\n" "${DEFAULT_PROGS_DIR}" >&2
+            _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
             rm -rf "${temp_update}"
             return 1
         }
@@ -661,12 +670,11 @@ _processar_atualizacao_pacotes() {
     done
 
     # Processar arquivos .class encontrados
+    local classfile progname dir_path arquivo_backup tel_existing tel
     while IFS= read -r -d '' classfile; do
-        local progname
         progname="$(basename "$classfile" .class)"
-        local dir_path
         dir_path="$(dirname "$classfile")"
-        local arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
+        arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
 
         # Backup dos arquivos class antigos
         if ! "${DEFAULT_FIND}" "${E_EXEC}" -maxdepth 1 -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
@@ -677,7 +685,7 @@ _processar_atualizacao_pacotes() {
 
         # Backup de arquivos .TEL se existirem
         shopt -s nullglob
-        local tel_existing=("${T_TELAS}/${progname}"*.TEL)
+        tel_existing=("${T_TELAS}/${progname}"*.TEL)
         shopt -u nullglob
         if (( ${#tel_existing[@]} > 0 )); then
             if ! "${DEFAULT_FIND}" "${T_TELAS}" -maxdepth 1 -name "${progname}*.TEL" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
@@ -689,7 +697,7 @@ _processar_atualizacao_pacotes() {
 
         # SEGURANCA: Validar integridade do backup antes de continuar
         if ! _validar_integridade_backup "${arquivo_backup}"; then
-		    _erro "CRITICO: Backup invalido ou ausente para ${progname}. Atualizacao abortada."
+             _erro "CRITICO: Backup invalido ou ausente para ${progname}. Atualizacao abortada."
             rm -rf "${temp_update}"
             return 1
         fi
@@ -701,7 +709,7 @@ _processar_atualizacao_pacotes() {
             return 1
         fi
 
-        # Move TELs do mesmo diretório extraído
+        # Move TELs do mesmo diretorio extraido
         if [[ -d "${dir_path}" ]]; then
             shopt -s nullglob
             local tels=("${dir_path}/${progname}"*.TEL)
@@ -720,13 +728,14 @@ _processar_atualizacao_pacotes() {
 # Processa reversao de programas
 _processar_reversao_programas() {
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio de configuracao %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+        _erro "Erro ao criar diretorio de configuracao ${DEFAULT_RECEBE_DIR}" >&2
         return 1
     }
 
+    local programa_idx programa arquivo_anterior
     for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
-        local programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
-        local arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
+        programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
+        arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
 
         if [[ -f "$arquivo_anterior" ]]; then
             # SEGURANCA: Validar integridade do backup antes de reverter
@@ -757,9 +766,9 @@ _processar_reversao_programas() {
 
 # Valida e cria diretorio de backups se nao existir
 _validar_diretorio_backups() {
-        local caminho="${1:-${DEFAULT_OLDS_DIR}}"
+    local caminho="${1:-${DEFAULT_OLDS_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
+        _erro "Erro ao criar diretorio de configuracao ${caminho}" >&2
         return 1
     }
 }
