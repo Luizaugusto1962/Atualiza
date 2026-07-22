@@ -4,3 +4,12 @@
 *.json
 AGENTS.md
 *.zip
+.claude/
+.mimocode/
+.planning/
+.trunk/
+.vscode/
+docs/
+node_modules/
+pack*
+
