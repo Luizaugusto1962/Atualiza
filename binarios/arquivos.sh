@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-01
+# Versao: 22/07/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -83,9 +83,11 @@ _executar_limpeza_temporarios() {
     find "${DEFAULT_BACKUP_DIR}" -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
 
     # Processar cada base de dados configurada
+    local caminho_base
+    local base_dir
     for base_dir in "$CFG_BASE_DIR" "$CFG_BASE_DIR2" "$CFG_BASE_DIR3"; do
         if [[ -n "$base_dir" ]]; then
-            local caminho_base="${RAIZ}${base_dir}"
+            caminho_base="${RAIZ}${base_dir}"
             if [[ -d "$caminho_base" ]]; then
                 _limpar_base_especifica "$caminho_base" "$arquivo_lista"
                 # Processar limpetmp2 na sequencia, se existir
@@ -133,13 +135,15 @@ _limpar_base_especifica() {
     local zip_temporarios
     zip_temporarios="Temps-${UMADATA}.zip"
 
+    local qtd_padrao
+    local arquivos_zip=()
+
     for padrao_arquivo in "${arquivos_temp[@]}"; do
         [[ -n "$padrao_arquivo" ]] || continue
 
         # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
-        local arquivos_zip=()
         mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo" -mtime +0)
-        local qtd_padrao="${#arquivos_zip[@]}"
+        qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
         if [[ "$qtd_padrao" -eq 0 ]]; then
@@ -353,6 +357,7 @@ _recuperar_arquivo_individual() {
 
     local padrao_arquivo="${nome_arquivo}.*.dat"
     local arquivos_encontrados=0
+    local arquivo
 
     shopt -s nullglob
     for arquivo in ${base_trabalho}/${padrao_arquivo}; do
@@ -542,7 +547,7 @@ _recuperar_arquivos_principais() {
     }
 
     # Gerar lista de arquivos atuais
-    local var_ano var_ano4
+    local var_ano var_ano4 lista
     var_ano=$(date +%y)
     var_ano4=$(date +%Y)
 
@@ -574,10 +579,10 @@ _recuperar_arquivos_principais() {
 _processar_lista_arquivos() {
     local arquivo_lista="$1"
     local base_trabalho="$2"
-
+    local caminho_arquivo
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
-        local caminho_arquivo="${base_trabalho}/${listando}"
+        caminho_arquivo="${base_trabalho}/${listando}"
         if [[ -L "$caminho_arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${listando}"
         else
@@ -598,6 +603,7 @@ _executar_jutil() {
         return 1
     fi
 
+    local dir_arquivo base_arquivo arquivo_idx
 	if [[ -x "${REBUILD}" ]]; then
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
             if "${REBUILD}" -rebuild "$arquivo" -a -f; then
@@ -606,7 +612,7 @@ _executar_jutil() {
                 chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
                 _mensagec "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
                 # garantir permissões máximas nos arquivos .idx gerados pelo jutil
-                local dir_arquivo base_arquivo arquivo_idx
+
                 dir_arquivo="$(dirname "$arquivo")"
                 base_arquivo="$(basename "$arquivo" .dat)"
                 for arquivo_idx in "${dir_arquivo}/${base_arquivo}"*.idx; do
@@ -633,34 +639,34 @@ _executar_jutil() {
 # Envia arquivo avulso
 _enviar_arquivo_avulso() {
     _limpa_tela
-    local DIRETORIO_ORIGEM ARQUIVO_ENVIAR DESTINO_REMOTO
+    local diretorio_origem arquivo_enviar destino_remoto arquivos
 
     # Solicitar diretorio de origem
     _linha
     _mensagec "${AMARELO}" "1- Origem: Informe o diretorio onde esta o arquivo:"
-    read -rp "${AMARELO} -> ${NORMAL}" DIRETORIO_ORIGEM
+    read -rp "${AMARELO} -> ${NORMAL}" diretorio_origem
     _linha
 
-    if [[ -z "$DIRETORIO_ORIGEM" ]]; then
-        DIRETORIO_ORIGEM="${DEFAULT_ENVIA_DIR:-}"
-        if [[ -z "$DIRETORIO_ORIGEM" || ! -d "$DIRETORIO_ORIGEM" ]]; then
+    if [[ -z "$diretorio_origem" ]]; then
+        diretorio_origem="${DEFAULT_ENVIA_DIR:-}"
+        if [[ -z "$diretorio_origem" || ! -d "$diretorio_origem" ]]; then
             _mensagec "${VERMELHO}" "Diretorio de origem nao informado ou padrao nao definido"
             _aguardar_tecla
             return 1
         fi
         _linha
-        _mensagec "${AMARELO}" "Usando diretorio padrao: ${DIRETORIO_ORIGEM}"
+        _mensagec "${AMARELO}" "Usando diretorio padrao: ${diretorio_origem}"
         # Verificar se há arquivos no diretório
         shopt -s nullglob
-        local arquivos=("${DIRETORIO_ORIGEM}"/*)
+        arquivos=("${diretorio_origem}"/*)
         shopt -u nullglob
         if (( ${#arquivos[@]} == 0 )); then
             _mensagec "${AMARELO}" "Nenhum arquivo encontrado no diretorio"
             _aguardar_tecla
             return 1
         fi
-    elif [[ ! -d "$DIRETORIO_ORIGEM" ]]; then
-        _erro "Diretorio nao encontrado: ${DIRETORIO_ORIGEM}"
+    elif [[ ! -d "$diretorio_origem" ]]; then
+        _erro "Diretorio nao encontrado: ${diretorio_origem}"
         _aguardar_tecla
         return 1
     fi
@@ -670,26 +676,26 @@ _enviar_arquivo_avulso() {
     _mensagec "${CIANO}" "Informe o arquivo que deseja enviar"
     _mensagec "${CIANO}" "Use * para enviar todas as extensoes (ex: ARQUIVO*)"
     _linha
-    read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" ARQUIVO_ENVIAR
+    read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_enviar
 
-    if [[ -z "$ARQUIVO_ENVIAR" ]]; then
+    if [[ -z "$arquivo_enviar" ]]; then
         _mensagec "${VERMELHO}" "Nome do arquivo nao informado"
         _aguardar_tecla
         return 1
     fi
 
     # Verificar se o arquivo contém wildcard (*)
-    if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
+    if [[ "$arquivo_enviar" == *"*"* ]]; then
         # Listar arquivos que correspondem ao padrão
         shopt -s nullglob
         local arquivos_encontrados=()
         while IFS= read -r -d '' arquivo; do
             arquivos_encontrados+=("$arquivo")
-        done < <(find "${DIRETORIO_ORIGEM}" -maxdepth 1 -type f -name "${ARQUIVO_ENVIAR}" -print0)
+        done < <(find "${diretorio_origem}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
         shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then
-            _mensagec "${AMARELO}" "Nenhum arquivo encontrado com o padrao: ${ARQUIVO_ENVIAR}"
+            _mensagec "${AMARELO}" "Nenhum arquivo encontrado com o padrao: ${arquivo_enviar}"
             _aguardar_tecla
             return 1
         fi
@@ -714,8 +720,8 @@ _enviar_arquivo_avulso() {
         fi
     else
         # Verificação para arquivo único (sem wildcard)
-        if [[ ! -e "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" ]]; then
-            _mensagec "${AMARELO}" "${ARQUIVO_ENVIAR} nao encontrado em ${DIRETORIO_ORIGEM}"
+        if [[ ! -e "${diretorio_origem}/${arquivo_enviar}" ]]; then
+            _mensagec "${AMARELO}" "${arquivo_enviar} nao encontrado em ${diretorio_origem}"
             _aguardar_tecla
             return 1
         fi
@@ -725,10 +731,10 @@ _enviar_arquivo_avulso() {
     printf "\n"
     _linha
     _mensagec "${AMARELO}" "3- Destino: Informe o diretorio no servidor:"
-    read -rp "${AMARELO} -> ${NORMAL}" DESTINO_REMOTO
+    read -rp "${AMARELO} -> ${NORMAL}" destino_remoto
     _linha
 
-    if [[ -z "$DESTINO_REMOTO" ]]; then
+    if [[ -z "$destino_remoto" ]]; then
         _erro "Destino nao informado"
         _aguardar_tecla
         return 1
@@ -822,6 +828,7 @@ _executar_expurgador() {
 
 
     # Limpar arquivos antigos nos diretorios padrao
+    local diretorios_zip
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local arquivos_removidos
@@ -832,15 +839,15 @@ _executar_expurgador() {
         fi
     done
 
-    local diretorios_zip=(
+        diretorios_zip=(
         "${E_EXEC}/"
         "${T_TELAS}/"
     )
 
     # Limpar arquivos ZIP antigos especificos
+    local diretorio zips_removidos
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
-            local zips_removidos
             zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
             _mensagec "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
@@ -857,12 +864,13 @@ _executar_expurgador() {
 
 # Lista os logs de atualizacao
 _listar_logs_atualizacao() {
+    local logs=()
     _limpa_tela
     _linha
     _mensagec "${AMARELO}" "Logs de Atualizacao encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
 
-    local logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
+    logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
     if [[ ! -e "${logs[0]}" ]]; then
         _erro "Nenhum log de atualizacao encontrado."
         _aguardar_tecla
@@ -871,6 +879,7 @@ _listar_logs_atualizacao() {
 
     # Exibir lista numerada dos logs disponiveis
     local i=1
+    local log
     for log in "${logs[@]}"; do
         _mensagec "${CIANO}" "  ${i}) $(basename "$log")"
         (( i++ ))
@@ -879,7 +888,7 @@ _listar_logs_atualizacao() {
     _mensagec "${VERDE}" "  0) Visualizar todos"
     _linha
 
-    local opcao
+    local opcao log_selecionado
     read -rp "${AMARELO}Selecione o arquivo [0-$((i-1))]: ${NORMAL}" opcao
 
     # Validar entrada
@@ -915,7 +924,7 @@ _listar_logs_atualizacao() {
         done
     else
         # Visualizar log selecionado
-        local log_selecionado="${logs[$((opcao-1))]}"
+        log_selecionado="${logs[$((opcao-1))]}"
         _mensagec "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
         _linha
         if [[ -s "$log_selecionado" ]]; then
@@ -937,7 +946,9 @@ _listar_logs_limpeza() {
     _mensagec "${AMARELO}" "Logs de Limpeza encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
 
-    local logs=("${DEFAULT_LOGS_DIR}"/limpando.*)
+    local log_selecionado log logs
+
+    logs=("${DEFAULT_LOGS_DIR}"/limpando.*)
     if [[ ! -e "${logs[0]}" ]]; then
         _mensagec "${VERMELHO}" "Nenhum log de limpeza encontrado."
         _aguardar_tecla
@@ -990,7 +1001,7 @@ _listar_logs_limpeza() {
         done
     else
         # Visualizar log selecionado
-        local log_selecionado="${logs[$((opcao-1))]}"
+        log_selecionado="${logs[$((opcao-1))]}"
         _mensagec "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
         _linha
         if [[ -s "$log_selecionado" ]]; then

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/07/2026-01
+# Versao: 22/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -26,7 +26,8 @@ _limpar_backup() {
 
 # _log_bkp: log seguro para uso em subshell background.
 _log_bkp() {
-    local destino="${LOG_ATU:-/dev/null}"
+    local destino
+    destino="${LOG_ATU:-/dev/null}"
     [[ -z "$destino" ]] && destino="/dev/null"
     printf "%s\n" "$*" >> "$destino" 2>/dev/null || true
 }
@@ -36,6 +37,7 @@ _log_bkp() {
 # Parametros: $1=base_trabalho (por referencia, sera definida pela funcao)
 # Retorna: 0 se valido, 1 se erro
 _validar_pre_backup() {
+
     local -n _base_ref="$1"   # nameref para definir base_trabalho no chamador
 
     # Validar comando de compactacao
@@ -853,14 +855,14 @@ _executar_backup_multiplos_padroes() {
     fi
 
     local arquivos_encontrados=()
-    local padrao
+    local padrao qtd_encontrados arquivo
 
     _linha
     _mensagec "${CIANO}" "Procurando arquivos..."
     _linha
 
     for padrao in "${padroes[@]}"; do
-        local qtd_encontrados=0
+        qtd_encontrados=0
         # Buscar arquivos usando shopt para expansão
         shopt -s nullglob
         for arquivo in $padrao; do
@@ -904,7 +906,7 @@ _executar_backup_multiplos_padroes() {
     _linha
 
     # Gerar nome do arquivo
-    local nome_backup nome_base_dir
+    local nome_backup nome_base_dir resultado_zip_multi
     nome_base_dir=$(basename "$base_trabalho")
     nome_backup="${CFG_EMPRESA}_multiplos_${nome_base_dir}_$(date +%Y%m%d%H%M).zip"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
@@ -912,12 +914,11 @@ _executar_backup_multiplos_padroes() {
     _linha
 
     # Executar compactação com os arquivos especificados — ignorar erros de arquivo em uso
-    local resultado_zip_multi=0
+    resultado_zip_multi=0
     "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1 || resultado_zip_multi=$?
 
     if [[ $resultado_zip_multi -ne 0 ]]; then
         _log_bkp "AVISO: zip multiplos retornou erro $resultado_zip_multi (possivel arquivo em uso), tentando forcar..."
-        # Tentativa de forca com -f
         "$DEFAULT_ZIP" -r -f "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1 || resultado_zip_multi=$?
     fi
 
