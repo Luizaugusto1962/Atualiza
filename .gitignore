@@ -11,5 +11,6 @@ AGENTS.md
 .vscode/
 docs/
 node_modules/
+.atl/
 pack*
 
