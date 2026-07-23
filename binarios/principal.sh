@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 21/07/2026-01
+# Versao: 23/07/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -16,13 +16,6 @@ set -euo pipefail
 # -u: Trata variáveis não definidas como erro
 # -o pipefail: Faz o pipeline retornar o status do último comando que falhou
 umask 077  # Garante que arquivos criados sejam legíveis apenas pelo dono
-
-# Funcao de saida padronizada (definida cedo para early exits;
-# sera sobrescrita pela versao completa de config.sh quando carregada)
-_encerrar_programa() {
-    local status="${1:-0}"
-    exit "$status"
-}
 
 # =============================================================================
 # DIRETÓRIOS DO SCRIPT

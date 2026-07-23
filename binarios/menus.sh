@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/07/2026-01
+# Versao: 23/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -34,7 +34,9 @@ _ler_opcao_menu() {
     _linha "=" "${VERDE}"
 
     if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${AMARELO} Digite a opcao desejada -> ${NORMAL}" opcao; then
-        printf '\n%s\n' "Estouro o tempo de espera na entrada. Saindo...${NORMAL}"
+        printf '\n'
+        _linha "-" "${BRANCO}"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Estouro o tempo de espera na entrada. Saindo...${NORMAL}"
         _encerrar_programa 0
     fi
 
@@ -64,7 +66,7 @@ _ler_opcao_menu() {
 _exibir_cabecalho_menu() {
     local titulo="${1:-Menu}"
     _linha "=" "${VERDE}"
-    _mensagec "${VERMELHO}" "${titulo}"
+    _exibir_mensagem_centralizada "${VERMELHO}" "${titulo}"
     _linha "=" "${BRANCO}"
     printf "\n"
 }
@@ -74,7 +76,7 @@ _exibir_cabecalho_menu() {
 _exibir_titulo_secao() {
     local mensagem="${1}"
     local cor="${2:-${ROXO}}"
-    _mensagec "${cor}" "${mensagem}"
+    _exibir_mensagem_centralizada "${cor}" "${mensagem}"
 }
 
 # Exibe opcao de menu padronizada
@@ -83,7 +85,7 @@ _exibir_opcao_menu() {
     local numero="${1}"
     local descricao="${2}"
     local cor_opcao="${3:-${VERDE}}"
-    _mensageb "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
+    _exibir_mensagem_centralizada_a_esquerda "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
     printf "\n"
 }
 
@@ -95,7 +97,7 @@ _exibir_separador_menu() {
 # Exibe rodape de menu com opcao de saida
 _exibir_rodape_menu() {
     _exibir_separador_menu
-    _mensageb "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
+    _exibir_mensagem_centralizada_a_esquerda "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
 }
 
 # Processa selecao de opcao de menu com validacao
@@ -109,7 +111,7 @@ _processar_opcao_invalida() {
 #---------- MENU PRINCIPAL ----------#
 _principal() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu Principal"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -119,7 +121,7 @@ _principal() {
         _exibir_opcao_menu "4" "Ferramentas"
         _exibir_opcao_menu "0" "Sistema de Ajuda"
         _exibir_rodape_menu
-        _mensaged "${AZUL}" "${UPDATE:-}"
+        _exibir_mensagem_direita "${AZUL}" "${UPDATE:-}"
 
         local opcao
         if ! _ler_opcao_menu "principal"; then
@@ -133,7 +135,7 @@ _principal() {
             4) _menu_ferramentas ;;
             0) _menu_ajuda_principal ;;
             9)
-                _limpa_tela
+                clear
                 _encerrar_programa 0
                 ;;
             *) _processar_opcao_invalida ;;
@@ -144,7 +146,7 @@ _principal() {
 #---------- MENU DE PROGRAMAS ----------#
 _menu_programas() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Programas"
         _exibir_titulo_secao "Escolha o tipo de Atualizacao:"
         _exibir_separador_menu
@@ -179,7 +181,7 @@ _menu_programas() {
 #---------- MENU DE BIBLIOTECA ----------#
 _menu_biblioteca() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu da Biblioteca"
         _exibir_titulo_secao "Escolha o local da Biblioteca:"
         _exibir_separador_menu
@@ -198,7 +200,7 @@ _menu_biblioteca() {
 
         if [[ -n "${VERSAOANT:-}" ]]; then
             printf "\n"
-            _mensaged "${AZUL}" "Versao Anterior - ${VERSAOANT}"
+            _exibir_mensagem_direita "${AZUL}" "Versao Anterior - ${VERSAOANT}"
         fi
 
         local opcao
@@ -219,7 +221,7 @@ _menu_biblioteca() {
 #---------- MENU DE ARQUIVOS ----------#
 _menu_arquivos() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu Gerencial dos Arquivos"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -252,7 +254,7 @@ _menu_arquivos() {
 #---------- MENU DE FERRAMENTAS ----------#
 _menu_ferramentas() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu das Ferramentas"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -284,7 +286,7 @@ _menu_ferramentas() {
 #---------- MENU DE TEMPORARIOS ----------#
 _menu_temporarios() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Limpeza"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -312,7 +314,7 @@ _menu_temporarios() {
 #---------- MENU DE RECUPERACAO ----------#
 _menu_recuperar_arquivos() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Recuperacao de Arquivo(s)"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -343,7 +345,7 @@ _menu_recuperar_arquivos() {
 #---------- MENU DE BACKUP ----------#
 _menu_backup() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Backup(s)"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -374,7 +376,7 @@ _menu_backup() {
 #---------- MENU DE TRANSFERENCIA ----------#
 _menu_transferencia_arquivos() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Enviar e Receber Arquivo(s)"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -399,7 +401,7 @@ _menu_transferencia_arquivos() {
 #---------- MENU DE CONFIGURACOES ----------#
 _menu_configs() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu das Configuracoes"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -429,7 +431,7 @@ _menu_configs() {
 #---------- MENU DE SETUPS ----------#
 _menu_setups() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Setup do Sistema"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -453,7 +455,7 @@ _menu_setups() {
                     else
                         "." "${CFG_DIR}/.config" || true
                     fi
-                    _mensagec "${VERDE}" "Configuracoes recarregadas com sucesso!"
+                    _exibir_mensagem_centralizada "${VERDE}" "Configuracoes recarregadas com sucesso!"
                     _aguardar 2
                 fi
                 ;;
@@ -467,7 +469,7 @@ _menu_setups() {
 #---------- MENU DE LEMBRETES ----------#
 _menu_lembretes() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Bloco de Notas"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -489,7 +491,7 @@ _menu_lembretes() {
                 if [[ -f "${CFG_DIR}/lembrete" ]]; then
                     _visualizar_notas_arquivo "${CFG_DIR}/lembrete" || true
                 else
-                    _mensagec "${AMARELO}" "Arquivo de notas nao encontrado"
+                    _exibir_mensagem_centralizada "${AMARELO}" "Arquivo de notas nao encontrado"
                     _aguardar 1
                 fi
                 ;;
@@ -504,7 +506,7 @@ _menu_lembretes() {
 #---------- MENU DE AVISOS ----------#
 _menu_avisos() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Aviso(s)"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -532,7 +534,7 @@ _menu_avisos() {
 #---------- MENU DE LOGS ----------#
 _menu_logs() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu dos Logs"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -563,7 +565,7 @@ _menu_ajuda_principal() {
     fi
 
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "SISTEMA DE AJUDA"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
@@ -596,9 +598,9 @@ _menu_ajuda_principal() {
 
 #---------- MENU DE SELECAO DE CONTEXTO ----------#
 _menu_selecao_contexto() {
-    _limpa_tela
+    clear
     _linha "=" "${CIANO}"
-    _mensagec "${CIANO}" "SELECIONE O CONTEXTO"
+    _exibir_mensagem_centralizada "${CIANO}" "SELECIONE O CONTEXTO"
     _linha "=" "${CIANO}"
 
     printf "\n"
@@ -638,7 +640,7 @@ _menu_selecao_contexto() {
 #---------- MENU DE ESCOLHA DE BASE ----------#
 _menu_escolha_base() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Escolha a Base"
         _exibir_titulo_secao " Escolha a opcao:"
         printf "\n"
@@ -685,7 +687,7 @@ _menu_escolha_base() {
 #---------- MENU DE TIPO DE BACKUP ----------#
 _menu_tipo_backup() {
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Menu de Tipo de Backup(s)"
         _exibir_titulo_secao " Escolha a opcao:"
         printf "\n"
@@ -744,15 +746,15 @@ _definir_base_trabalho() {
         return 1
     fi
 
-    _mensagec "${VERDE}" "Base de trabalho definida: ${base_trabalho}"
+    _exibir_mensagem_centralizada "${VERDE}" "Base de trabalho definida: ${base_trabalho}"
     return 0
 }
 
 #---------- MENU DE CONFIGURACAO DE SSH ----------#
 _menu_configurar_ssh() {
-    _limpa_tela
+    clear
     _exibir_cabecalho_menu "Configuracao de Acesso SSH sem Senha"
-    _mensagec "${VERDE}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
+    _exibir_mensagem_centralizada "${VERDE}" "Servidor: ${DEFAULT_IP_SERVER}: ${DEFAULT_SSH_PORTA}"
     _linha
     printf "\n"
 
@@ -769,8 +771,8 @@ _menu_configurar_ssh() {
             ;;
         *)
             _linha
-            _mensagec "${AMARELO}" "Envio cancelado. Para enviar manualmente, execute:"
-            _mensagec "${AMARELO}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA}@${DEFAULT_IP_SERVER}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Envio cancelado. Para enviar manualmente, execute:"
+            _exibir_mensagem_centralizada "${AMARELO}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA}@${DEFAULT_IP_SERVER}"
             ;;
     esac
 
@@ -783,7 +785,7 @@ _menu_configurar_ssh() {
             ;;
     esac
 
-    _mensagec "${VERDE}" "Configuracao concluida."
+    _exibir_mensagem_centralizada "${VERDE}" "Configuracao concluida."
     _aguardar_tecla
     return 0
 }

@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
-# Funcao de saida padronizada (local, sem dependencia de modulos)
-_encerrar_programa() {
-    local status="${1:-0}"
-    exit "$status"
-}
-
-#
 # constantes.sh - Constantes do Sistema SAV
 # Centraliza valores hardcoded para facilitar manutencao
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-01
+# Versao: 23/07/2026-01
 #
 
 # =============================================================================
@@ -28,12 +21,6 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 RAIZ="${SCRIPT_DIR%/*}"
 [[ -z "$RAIZ" || "$RAIZ" == "$SCRIPT_DIR" ]] && RAIZ="${SCRIPT_DIR}"
 
-# =============================================================================
-# Definir diretorio das bases extras
-# =============================================================================
-base2=""                     # Diretorio base secundario (vazio se nao definido)
-base3=""                     # Diretorio base terciario (vazio se nao definido)
-
 # -----------------------------------------------------------------------------
 # Carrega configuracao de forma segura sem sourcing direto
 # Parametros: $1 - arquivo de configuracao
@@ -41,7 +28,7 @@ base3=""                     # Diretorio base terciario (vazio se nao definido)
 # -----------------------------------------------------------------------------
 _carregar_config_seguro() {
     local CONFIG_FILE="${1}"
-    local linha key value
+    local linha chave_analizada valor
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         # Pular linhas vazias e comentarios
@@ -62,27 +49,33 @@ _carregar_config_seguro() {
 
         # Extrair chave e valor de forma segura
         if [[ "$linha" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-            key="${BASH_REMATCH[1]}"
-            value="${BASH_REMATCH[2]}"
+            chave_analizada="${BASH_REMATCH[1]}"
+            valor="${BASH_REMATCH[2]}"
 
             # Remover aspas se presentes
-            if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
-                value="${BASH_REMATCH[1]}"
+            if [[ "$valor" =~ ^\"(.*)\"$ ]] || [[ "$valor" =~ ^\'(.*)\'$ ]]; then
+                valor="${BASH_REMATCH[1]}"
             fi
 
             # Validar que o valor nao contem comandos perigosos
-            if [[ "$value" =~ [\$\`\;] ]]; then
-                printf 'AVISO: Valor suspeito em variavel "%s", ignorando linha.\n' "$key" >&2
+            if [[ "$valor" =~ [\$\`\;] ]]; then
+                printf 'AVISO: Valor suspeito em variavel "%s", ignorando linha.\n' "$chave_analizada" >&2
                 continue
             fi
 
             # Declarar variavel de forma segura
-            declare -g "$key=$value"
+            declare -g "$chave_analizada=$valor"
         fi
     done < "$CONFIG_FILE"
 
     return 0
 }
+
+# =============================================================================
+# Definir diretorio das bases extras
+# =============================================================================
+base2=""                     # Diretorio base secundario (vazio se nao definido)
+base3=""                     # Diretorio base terciario (vazio se nao definido)
 
 # =============================================================================
 # VALIDACAO DE VARIAVEIS ESSENCIAIS
@@ -215,7 +208,6 @@ DEFAULT_UNZIP="${DEFAULT_UNZIP:-/usr/bin/unzip}"
 DEFAULT_ZIP="${DEFAULT_ZIP:-/usr/bin/zip}"
 DEFAULT_TAR="${DEFAULT_TAR:-tar}"
 DEFAULT_FIND="${DEFAULT_FIND:-/usr/bin/find}"
-DEFAULT_WHO="${DEFAULT_WHO:-/usr/bin/who}"
 
 # =============================================================================
 # DIRETORIOS DE DESTINO

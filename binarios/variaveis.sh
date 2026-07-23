@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-01
+# Versao: 23/07/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -55,27 +55,6 @@ _var_carregar_config() {
         return $?
     fi
     return 1
-}
-
-# =============================================================================
-# FUNCAO: Verificar dependencias basicas
-# =============================================================================
-_var_verificar_dependencias() {
-    local deps=("printf" "basename" "dirname" "cd" "pwd")
-    local missing=()
-
-    for dep in "${deps[@]}"; do
-        if ! command -v "$dep" >/dev/null 2>&1; then
-            missing+=("$dep")
-        fi
-    done
-
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Dependencias faltando: %s%s%s\n" "${VERMELHO}" "${missing[*]}" "${NORMAL}" >&2
-        return 1
-    fi
-
-    return 0
 }
 
 # =============================================================================
@@ -149,11 +128,6 @@ _var_exibir_tabular() {
 _consultar_variaveis() {
     local filtro=""
 
-    # Verificar dependencias
-    if ! _var_verificar_dependencias; then
-        return 1
-    fi
-
     # Garantir config carregada (silencioso se ja estiver)
     if ! _var_carregar_config "$CONFIG_FILE"; then
         : # Config ausente nao e fatal para a consulta
@@ -164,7 +138,7 @@ _consultar_variaveis() {
 
     # Se nao veio por argumento, perguntar interativamente
     if [[ -z "$filtro" && -t 0 ]]; then
-        _limpa_tela 2>/dev/null || true
+        clear 2>/dev/null || true
         _linha "=" "${VERDE}" 2>/dev/null || true
         printf '%s\n' "${VERMELHO}Consulta de Variaveis do Sistema${NORMAL}"
         _linha 2>/dev/null || true

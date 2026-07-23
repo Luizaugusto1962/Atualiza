@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-01
+# Versao: 23/07/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -352,12 +352,12 @@ _baixar_programas_vaievem() {
     fi
 
     _linha
-    _mensagec "${AMARELO}" "Realizando sincronizacao dos arquivos..."
+    _exibir_mensagem_centralizada "${AMARELO}" "Realizando sincronizacao dos arquivos..."
     (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
         for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
             _linha
-            _mensagec "${VERDE}" "Transferindo: $arquivo"
+            _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
             _linha
 
             if _usar_chave_ssh; then
@@ -388,7 +388,7 @@ _baixar_programas_vaievem() {
                 return 1
             fi
 
-            _mensagec "${VERDE}" "Download concluido: $arquivo"
+            _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
         done
     )
 }
@@ -443,7 +443,7 @@ _enviar_arquivo_multi() {
         done
 
         if (( falhas_envio == 0 )); then
-            _mensagec "${AMARELO}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
+            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
             _linha
             _aguardar 3
         else
@@ -453,7 +453,7 @@ _enviar_arquivo_multi() {
     else
         # Enviar arquivo unico usando _enviar_rsync
         if _enviar_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
-            _mensagec "${AMARELO}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
+            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
             _linha
             _aguardar 3
         else

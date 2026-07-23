@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/07/2026-01
+# Versao: 23/07/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -13,6 +13,7 @@ CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Caminho do diretorio da segund
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Caminho do diretorio da terceira base de dados.
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
+DATA_EXTENSIONS=()                              # Extensoes de arquivos de dados a processar
 #---------- FUNCOES DE LIMPEZA -----------------#
 
 # Resolve a base de trabalho ativa para operacoes de arquivos
@@ -151,7 +152,7 @@ _limpar_base_especifica() {
             continue
         fi
 
-        _mensagec "${VERDE}" "Processando padrao: ${AMARELO}${padrao_arquivo}${NORMAL} (${qtd_padrao} arquivo(s))"
+        _exibir_mensagem_centralizada "${VERDE}" "Processando padrao: ${AMARELO}${padrao_arquivo}${NORMAL} (${qtd_padrao} arquivo(s))"
         _aguardar 1
 
         # Compactar — $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
@@ -179,9 +180,9 @@ _limpar_base_especifica() {
 # Adiciona arquivo à lista de limpeza
 _adicionar_arquivo_lixo() {
 
-    _limpa_tela
+    clear
     _meio_da_tela
-    _mensagec "${CIANO}" "Informe o nome do arquivo a ser adicionado ao limpetmp2"
+    _exibir_mensagem_centralizada "${CIANO}" "Informe o nome do arquivo a ser adicionado ao limpetmp2"
     _linha
 
     local novo_arquivo
@@ -189,7 +190,7 @@ _adicionar_arquivo_lixo() {
     _linha
 
     if [[ -z "$novo_arquivo" ]]; then
-        _mensagec "${VERMELHO}" "Nome de arquivo nao informado"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nome de arquivo nao informado"
         _aguardar_tecla
         return 1
     fi
@@ -202,14 +203,14 @@ _adicionar_arquivo_lixo() {
 
 # Bloquear wildcards globais se não for intenção
     if [[ "$novo_arquivo" == *"*"* || "$novo_arquivo" == *"?"* ]]; then
-        _mensagec "${VERMELHO}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
         _aguardar_tecla
         return 1
     fi
 
     # Adicionar arquivo à lista
     echo "$novo_arquivo" >> "${CFG_DIR}/limpetmp2"
-    _mensagec "${CIANO}" "Arquivo '${novo_arquivo}' adicionado com sucesso ao 'limpetmp2'"
+    _exibir_mensagem_centralizada "${CIANO}" "Arquivo '${novo_arquivo}' adicionado com sucesso ao 'limpetmp2'"
     _linha
     _aguardar_tecla
 }
@@ -217,9 +218,9 @@ _adicionar_arquivo_lixo() {
 # Lista os arquivos no limpetmp e limpetmp2
 _lista_arquivos_lixo() {
 
-    _limpa_tela
+    clear
     _meio_da_tela
-    _mensagec "${CIANO}" "Lista de arquivos no limpetmp:"
+    _exibir_mensagem_centralizada "${CIANO}" "Lista de arquivos no limpetmp:"
     _linha
 
     if [[ -f "${CFG_DIR}/limpetmp" && -s "${CFG_DIR}/limpetmp" ]]; then
@@ -229,7 +230,7 @@ _lista_arquivos_lixo() {
     fi
 
     _linha
-    _mensagec "${CIANO}" "Lista de arquivos no limpetmp2:"
+    _exibir_mensagem_centralizada "${CIANO}" "Lista de arquivos no limpetmp2:"
     _linha
 
     if [[ -f "${CFG_DIR}/limpetmp2" && -s "${CFG_DIR}/limpetmp2" ]]; then
@@ -252,12 +253,12 @@ _recuperar_arquivo_especifico() {
         return 0
     fi
 
-    _limpa_tela
+    clear
 
     # Loop para permitir múltiplas recuperações
     while [[ "${continuar}" =~ ^[Ss]$ ]]; do
         _meio_da_tela
-        _mensagec "${CIANO}" "Informe o nome do arquivo a ser recuperado ou ENTER para todos:"
+        _exibir_mensagem_centralizada "${CIANO}" "Informe o nome do arquivo a ser recuperado ou ENTER para todos:"
         _linha
 
         local nome_arquivo
@@ -280,7 +281,7 @@ _recuperar_arquivo_especifico() {
                 _aviso "Todos os arquivos principais foram recuperados."
                 break
             else
-                _mensagec "${CIANO}" "Operacao cancelada."
+                _exibir_mensagem_centralizada "${CIANO}" "Operacao cancelada."
                 _linha
                 _aguardar 2
                 return 0
@@ -293,7 +294,7 @@ _recuperar_arquivo_especifico() {
         _linha
 
         # Só pergunta se quer continuar se foi um arquivo específico
-        _mensagec "${CIANO}" "Deseja recuperar mais arquivos?"
+        _exibir_mensagem_centralizada "${CIANO}" "Deseja recuperar mais arquivos?"
         read -rp "${AMARELO}[S/N]: ${NORMAL}" continuar
         continuar="${continuar#"${continuar%%[![:space:]]*}"}"
         continuar="${continuar%"${continuar##*[![:space:]]}"}"
@@ -302,16 +303,16 @@ _recuperar_arquivo_especifico() {
         # Se vazio, assumir "N"
         [[ -z "$continuar" ]] && continuar="N"
 
-    _limpa_tela
+    clear
     done
-    _ir_para_tools
+    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
 }
 
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
     local base_trabalho="$1"
     local -a extensoes=("${DATA_EXTENSIONS[@]:-*.dat}")
-    _mensagec "${VERMELHO}" "Recuperando todos os arquivos principais..."
+    _exibir_mensagem_centralizada "${VERMELHO}" "Recuperando todos os arquivos principais..."
     _linha "-" "${AMARELO}"
 
     if [[ -d "$base_trabalho" ]]; then
@@ -348,12 +349,12 @@ _recuperar_arquivo_individual() {
     nome_arquivo="${nome_arquivo//[[:space:]]/}"
 
     if [[ -z "$nome_arquivo" ]]; then
-        _mensagec "${VERMELHO}" "Nome de arquivo vazio apos normalizacao."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nome de arquivo vazio apos normalizacao."
         return 1
     fi
 
     if [[ ! "$nome_arquivo" =~ ^[A-Z0-9._-]+$ ]]; then
-        _mensagec "${VERMELHO}" "Nome de arquivo invalido. Use apenas letras, numeros, pontos e hifens."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nome de arquivo invalido. Use apenas letras, numeros, pontos e hifens."
         return 1
     fi
 
@@ -384,7 +385,7 @@ _executar_lista_arquivos() {
     local arquivo_lista="${CFG_DIR}/variosarquivos"
 
     if [[ ! -f "$arquivo_lista" ]]; then
-        _mensagec "${VERMELHO}" "A lista de arquivo, variosarquivos nao foi encontrado em ${CFG_DIR}"
+        _exibir_mensagem_centralizada "${VERMELHO}" "A lista de arquivo, variosarquivos nao foi encontrado em ${CFG_DIR}"
         _aguardar_tecla
         return 1
     fi
@@ -393,9 +394,9 @@ _executar_lista_arquivos() {
         return 0
     fi
 
-    _limpa_tela
+    clear
     _linha
-    _mensagec "${CIANO}" "Recuperando arquivos da lista 'variosarquivos'..."
+    _exibir_mensagem_centralizada "${CIANO}" "Recuperando arquivos da lista 'variosarquivos'..."
     _linha
 
     local total=0
@@ -414,7 +415,7 @@ _executar_lista_arquivos() {
     done < "$arquivo_lista"
 
     _linha
-    _mensagec "${VERDE}" "${total} arquivo(s) processados da lista."
+    _exibir_mensagem_centralizada "${VERDE}" "${total} arquivo(s) processados da lista."
     _aguardar_tecla
 }
 
@@ -430,7 +431,7 @@ _editar_lista_arquivos() {
     fi
 
     while true; do
-        _limpa_tela
+        clear
         _exibir_cabecalho_menu "Editar Lista de Arquivos (variosarquivos)"
         _exibir_titulo_secao " Conteudo atual:"
         _linha
@@ -573,7 +574,7 @@ _recuperar_arquivos_principais() {
         # Limpar arquivo temporario
         [[ -f "indexar2" ]] && rm -f "indexar2"
 
-        _mensagec "${AMARELO}" "Arquivos principais recuperados"
+        _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
 
     _aguardar_tecla
 }
@@ -613,7 +614,7 @@ _executar_jutil() {
                 _log_sucesso "Rebuild executado: $(basename "$arquivo")"
                 # garantir permissões máximas após o rebuild
                 chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
-                _mensagec "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
+                _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
                 # garantir permissões máximas nos arquivos .idx gerados pelo jutil
 
                 dir_arquivo="$(dirname "$arquivo")"
@@ -621,7 +622,7 @@ _executar_jutil() {
                 for arquivo_idx in "${dir_arquivo}/${base_arquivo}"*.idx; do
                     if [[ -f "$arquivo_idx" ]]; then
                         chmod "${PERM_FILE_EXEC}" "$arquivo_idx" 2>/dev/null || \
-                        _mensagec "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_idx"
+                        _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_idx"
                     fi
                 done
             else
@@ -629,7 +630,7 @@ _executar_jutil() {
             fi
             _linha "-" "${VERDE}"
         else
-            _mensagec "${AMARELO}" "Arquivo nao encontrado ou vazio: $(basename "$arquivo" 2>/dev/null || echo "$arquivo")"
+            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo nao encontrado ou vazio: $(basename "$arquivo" 2>/dev/null || echo "$arquivo")"
         fi
     else
         _erro "jutil nao encontrado em ${REBUILD}"
@@ -641,30 +642,30 @@ _executar_jutil() {
 
 # Envia arquivo avulso
 _enviar_arquivo_avulso() {
-    _limpa_tela
+    clear
     local diretorio_origem arquivo_enviar destino_remoto arquivos
 
     # Solicitar diretorio de origem
     _linha
-    _mensagec "${AMARELO}" "1- Origem: Informe o diretorio onde esta o arquivo:"
+    _exibir_mensagem_centralizada "${AMARELO}" "1- Origem: Informe o diretorio onde esta o arquivo:"
     read -rp "${AMARELO} -> ${NORMAL}" diretorio_origem
     _linha
 
     if [[ -z "$diretorio_origem" ]]; then
         diretorio_origem="${DEFAULT_ENVIA_DIR:-}"
         if [[ -z "$diretorio_origem" || ! -d "$diretorio_origem" ]]; then
-            _mensagec "${VERMELHO}" "Diretorio de origem nao informado ou padrao nao definido"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio de origem nao informado ou padrao nao definido"
             _aguardar_tecla
             return 1
         fi
         _linha
-        _mensagec "${AMARELO}" "Usando diretorio padrao: ${diretorio_origem}"
+        _exibir_mensagem_centralizada "${AMARELO}" "Usando diretorio padrao: ${diretorio_origem}"
         # Verificar se há arquivos no diretório
         shopt -s nullglob
         arquivos=("${diretorio_origem}"/*)
         shopt -u nullglob
         if (( ${#arquivos[@]} == 0 )); then
-            _mensagec "${AMARELO}" "Nenhum arquivo encontrado no diretorio"
+            _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo encontrado no diretorio"
             _aguardar_tecla
             return 1
         fi
@@ -676,13 +677,13 @@ _enviar_arquivo_avulso() {
 
     # Solicitar nome do arquivo
     _linha
-    _mensagec "${CIANO}" "Informe o arquivo que deseja enviar"
-    _mensagec "${CIANO}" "Use * para enviar todas as extensoes (ex: ARQUIVO*)"
+    _exibir_mensagem_centralizada "${CIANO}" "Informe o arquivo que deseja enviar"
+    _exibir_mensagem_centralizada "${CIANO}" "Use * para enviar todas as extensoes (ex: ARQUIVO*)"
     _linha
     read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_enviar
 
     if [[ -z "$arquivo_enviar" ]]; then
-        _mensagec "${VERMELHO}" "Nome do arquivo nao informado"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"
         _aguardar_tecla
         return 1
     fi
@@ -698,16 +699,16 @@ _enviar_arquivo_avulso() {
         shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then
-            _mensagec "${AMARELO}" "Nenhum arquivo encontrado com o padrao: ${arquivo_enviar}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo encontrado com o padrao: ${arquivo_enviar}"
             _aguardar_tecla
             return 1
         fi
 
         # Mostrar arquivos encontrados
         _linha
-        _mensagec "${CIANO}" "Arquivos encontrados (${#arquivos_encontrados[@]}):"
+        _exibir_mensagem_centralizada "${CIANO}" "Arquivos encontrados (${#arquivos_encontrados[@]}):"
         for arquivo in "${arquivos_encontrados[@]}"; do
-            _mensagec "${VERDE}" "  - $(basename "$arquivo")"
+            _exibir_mensagem_centralizada "${VERDE}" "  - $(basename "$arquivo")"
         done
         _linha
 
@@ -717,14 +718,14 @@ _enviar_arquivo_avulso() {
         confirmacao="${confirmacao^^}"
 
         if [[ "$confirmacao" != "S" ]]; then
-            _mensagec "${AMARELO}" "Envio cancelado pelo usuario"
+            _exibir_mensagem_centralizada "${AMARELO}" "Envio cancelado pelo usuario"
             _aguardar_tecla
             return 0
         fi
     else
         # Verificação para arquivo único (sem wildcard)
         if [[ ! -e "${diretorio_origem}/${arquivo_enviar}" ]]; then
-            _mensagec "${AMARELO}" "${arquivo_enviar} nao encontrado em ${diretorio_origem}"
+            _exibir_mensagem_centralizada "${AMARELO}" "${arquivo_enviar} nao encontrado em ${diretorio_origem}"
             _aguardar_tecla
             return 1
         fi
@@ -733,7 +734,7 @@ _enviar_arquivo_avulso() {
     # Solicitar destino remoto
     printf "\n"
     _linha
-    _mensagec "${AMARELO}" "3- Destino: Informe o diretorio no servidor:"
+    _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Informe o diretorio no servidor:"
     read -rp "${AMARELO} -> ${NORMAL}" destino_remoto
     _linha
 
@@ -745,36 +746,36 @@ _enviar_arquivo_avulso() {
 
     # Enviar arquivo(s)
     _linha
-    _mensagec "${AMARELO}" "Informe a senha para o usuario remoto:"
+    _exibir_mensagem_centralizada "${AMARELO}" "Informe a senha para o usuario remoto:"
     _linha
     _enviar_arquivo_multi
  }
 
 # Recebe arquivo avulso
 _receber_arquivo_avulso() {
-    _limpa_tela
+    clear
     local origem_remota arquivo_receber destino_local
 
     # Solicitar origem remota
     _linha
-    _mensagec "${AMARELO}" "1- Origem: Diretorio remoto do arquivo:"
+    _exibir_mensagem_centralizada "${AMARELO}" "1- Origem: Diretorio remoto do arquivo:"
     read -rp "${AMARELO} -> ${NORMAL}" origem_remota
     _linha
 
     # Solicitar nome do arquivo
-    _mensagec "${VERMELHO}" "Informe o arquivo que deseja RECEBER"
+    _exibir_mensagem_centralizada "${VERMELHO}" "Informe o arquivo que deseja RECEBER"
     _linha
     read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_receber
 
     if [[ -z "$arquivo_receber" ]]; then
-        _mensagec "${VERMELHO}" "Nome do arquivo nao informado"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"
         _aguardar_tecla
         return 1
     fi
 
     # Solicitar destino local
     _linha
-    _mensagec "${AMARELO}" "3- Destino: Diretorio local para receber:"
+    _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Diretorio local para receber:"
     read -rp "${AMARELO} -> ${NORMAL}" destino_local
 
     if [[ -z "$destino_local" ]]; then
@@ -782,17 +783,17 @@ _receber_arquivo_avulso() {
     fi
 
     if [[ ! -d "$destino_local" ]]; then
-        _mensagec "${VERMELHO}" "Diretorio de destino nao encontrado: ${destino_local}"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio de destino nao encontrado: ${destino_local}"
         _aguardar_tecla
         return 1
     fi
 
     # Receber arquivo
     _linha
-    _mensagec "${AMARELO}" "Informe a senha para o usuario remoto:"
+    _exibir_mensagem_centralizada "${AMARELO}" "Informe a senha para o usuario remoto:"
     _linha
     if _receber_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
-        _mensagec "${VERDE}" "Arquivo recebido com sucesso em \"${destino_local}\""
+        _exibir_mensagem_centralizada "${VERDE}" "Arquivo recebido com sucesso em \"${destino_local}\""
         _linha
         _aguardar 3
     else
@@ -806,10 +807,10 @@ _receber_arquivo_avulso() {
 _executar_expurgador() {
     _executar_expurgador_diario
 
-    _limpa_tela
+    clear
 
     _linha
-    _mensagec "${VERMELHO}" "Verificando e excluindo arquivos com mais de 30 dias"
+    _exibir_mensagem_centralizada "${VERMELHO}" "Verificando e excluindo arquivos com mais de 30 dias"
     _linha
     printf "\n"
 
@@ -836,9 +837,9 @@ _executar_expurgador() {
         if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             local arquivos_removidos
             arquivos_removidos=$(find "$diretorio" -mtime +30 -type f -print -delete 2>/dev/null | wc -l)
-            _mensagec "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
+            _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
         else
-            _mensagec "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
         fi
     done
 
@@ -852,25 +853,25 @@ _executar_expurgador() {
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
             zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
-            _mensagec "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
+            _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
-            _mensagec "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
         fi
     done
 
     printf "\n"
     _linha
     _aguardar_tecla
-    _ir_para_tools
+    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
     return 0
 }
 
 # Lista os logs de atualizacao
 _listar_logs_atualizacao() {
     local logs=()
-    _limpa_tela
+    clear
     _linha
-    _mensagec "${AMARELO}" "Logs de Atualizacao encontrados em ${DEFAULT_LOGS_DIR}:"
+    _exibir_mensagem_centralizada "${AMARELO}" "Logs de Atualizacao encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
 
     logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
@@ -884,11 +885,11 @@ _listar_logs_atualizacao() {
     local i=1
     local log
     for log in "${logs[@]}"; do
-        _mensagec "${CIANO}" "  ${i}) $(basename "$log")"
+        _exibir_mensagem_centralizada "${CIANO}" "  ${i}) $(basename "$log")"
         (( i++ ))
     done
     _linha
-    _mensagec "${VERDE}" "  0) Visualizar todos"
+    _exibir_mensagem_centralizada "${VERDE}" "  0) Visualizar todos"
     _linha
 
     local opcao log_selecionado
@@ -896,18 +897,18 @@ _listar_logs_atualizacao() {
 
     # Validar entrada
     if [[ -z "$opcao" ]]; then
-        _mensagec "${VERMELHO}" "Nenhuma opcao selecionada."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhuma opcao selecionada."
         _aguardar_tecla
         return 0
     fi
 
     if ! [[ "$opcao" =~ ^[0-9]+$ ]] || (( opcao < 0 || opcao >= i )); then
-        _mensagec "${VERMELHO}" "Opcao invalida."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Opcao invalida."
         _aguardar_tecla
         return 0
     fi
 
-    _limpa_tela
+    clear
     _linha
 
     if (( opcao == 0 )); then
@@ -915,12 +916,12 @@ _listar_logs_atualizacao() {
         _aviso "Exibindo todos os logs de atualizacao:"
         _linha
         for log in "${logs[@]}"; do
-            _mensagec "${CIANO}" ">>> Arquivo: $(basename "$log")"
+            _exibir_mensagem_centralizada "${CIANO}" ">>> Arquivo: $(basename "$log")"
             _linha
             if [[ -s "$log" ]]; then
                 cat "$log"
             else
-                _mensagec "${VERMELHO}" "Arquivo sem dados."
+                _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo sem dados."
             fi
             printf "\n"
             _linha
@@ -928,32 +929,32 @@ _listar_logs_atualizacao() {
     else
         # Visualizar log selecionado
         log_selecionado="${logs[$((opcao-1))]}"
-        _mensagec "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
+        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
         _linha
         if [[ -s "$log_selecionado" ]]; then
             cat "$log_selecionado"
         else
-            _mensagec "${VERMELHO}" "Arquivo sem dados."
+            _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo sem dados."
         fi
         printf "\n"
         _linha
     fi
-    _mensagec "${AMARELO}" "<< Pressione ENTER para voltar >>"
+    _exibir_mensagem_centralizada "${AMARELO}" "<< Pressione ENTER para voltar >>"
     read -r
 }
 
 # Lista os logs de limpeza
 _listar_logs_limpeza() {
-    _limpa_tela
+    clear
     _linha
-    _mensagec "${AMARELO}" "Logs de Limpeza encontrados em ${DEFAULT_LOGS_DIR}:"
+    _exibir_mensagem_centralizada "${AMARELO}" "Logs de Limpeza encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
 
     local log_selecionado log logs
 
     logs=("${DEFAULT_LOGS_DIR}"/limpando.*)
     if [[ ! -e "${logs[0]}" ]]; then
-        _mensagec "${VERMELHO}" "Nenhum log de limpeza encontrado."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum log de limpeza encontrado."
         _aguardar_tecla
         return 1
     fi
@@ -961,11 +962,11 @@ _listar_logs_limpeza() {
     # Exibir lista numerada dos logs disponiveis
     local i=1
     for log in "${logs[@]}"; do
-        _mensagec "${CIANO}" "  ${i}) $(basename "$log")"
+        _exibir_mensagem_centralizada "${CIANO}" "  ${i}) $(basename "$log")"
         (( i++ ))
     done
     _linha
-    _mensagec "${VERDE}" "  0) Visualizar todos"
+    _exibir_mensagem_centralizada "${VERDE}" "  0) Visualizar todos"
     _linha
 
     local opcao
@@ -973,31 +974,31 @@ _listar_logs_limpeza() {
 
     # Validar entrada
     if [[ -z "$opcao" ]]; then
-        _mensagec "${VERMELHO}" "Nenhuma opcao selecionada."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhuma opcao selecionada."
         _aguardar_tecla
         return 0
     fi
 
     if ! [[ "$opcao" =~ ^[0-9]+$ ]] || (( opcao < 0 || opcao >= i )); then
-        _mensagec "${VERMELHO}" "Opcao invalida."
+        _exibir_mensagem_centralizada "${VERMELHO}" "Opcao invalida."
         _aguardar_tecla
         return 0
     fi
 
-    _limpa_tela
+    clear
     _linha
 
     if (( opcao == 0 )); then
         # Visualizar todos os logs
-        _mensagec "${AMARELO}" "Exibindo todos os logs de limpeza:"
+        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo todos os logs de limpeza:"
         _linha
         for log in "${logs[@]}"; do
-            _mensagec "${CIANO}" ">>> Arquivo: $(basename "$log")"
+            _exibir_mensagem_centralizada "${CIANO}" ">>> Arquivo: $(basename "$log")"
             _linha
             if [[ -s "$log" ]]; then
                 cat "$log"
             else
-                _mensagec "${VERMELHO}" "Arquivo sem dados."
+                _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo sem dados."
             fi
             printf "\n"
             _linha
@@ -1005,16 +1006,16 @@ _listar_logs_limpeza() {
     else
         # Visualizar log selecionado
         log_selecionado="${logs[$((opcao-1))]}"
-        _mensagec "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
+        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
         _linha
         if [[ -s "$log_selecionado" ]]; then
             cat "$log_selecionado"
         else
-            _mensagec "${VERMELHO}" "Arquivo sem dados."
+            _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo sem dados."
         fi
         printf "\n"
         _linha
     fi
-    _mensagec "${AMARELO}" "<< Pressione ENTER para voltar >>"
+    _exibir_mensagem_centralizada "${AMARELO}" "<< Pressione ENTER para voltar >>"
     read -r
 }

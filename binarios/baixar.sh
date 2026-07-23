@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 23/07/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -47,7 +47,7 @@ _atualizando() {
 
     for arquivo in "${arquivos_sh[@]}"; do
         if cp -f "$arquivo" "${DEFAULT_BACKUP_DIR}/$(basename "$arquivo").bkp" 2>/dev/null; then
-            _mensagec "${VERDE}" "Backup do arquivo $(basename "$arquivo") feito com sucesso"
+            _exibir_mensagem_centralizada "${VERDE}" "Backup do arquivo $(basename "$arquivo") feito com sucesso"
             ((backup_sucesso++)) || true
         else
             _erro "Ao fazer backup de $(basename "$arquivo")"
@@ -58,7 +58,7 @@ _atualizando() {
 
     if [[ -n "${SCRIPT_DIR}" && -f "${SCRIPT_DIR}/atualiza.sh" ]]; then
         if cp -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
-            _mensagec "${VERDE}" "Backup do arquivo atualiza.sh feito com sucesso"
+            _exibir_mensagem_centralizada "${VERDE}" "Backup do arquivo atualiza.sh feito com sucesso"
             ((backup_sucesso++)) || true
         else
             _erro "Falha ao fazer backup de atualiza.sh"
@@ -75,12 +75,12 @@ _atualizando() {
         _aguardar 2
         return 1
     else
-        _mensagec "${VERDE}" "Backup de $backup_sucesso arquivo(s) realizado com sucesso"
+        _exibir_mensagem_centralizada "${VERDE}" "Backup de $backup_sucesso arquivo(s) realizado com sucesso"
         local data_zip
         data_zip=$(date +"%d%m")
         local zip_nome="${data_zip}_backup.zip"
         if (cd "${DEFAULT_BACKUP_DIR}" && zip -jm "${zip_nome}" ./*.sh.bkp >>"$LOG_ATU" 2>&1); then
-            _mensagec "${VERDE}" "Backup compactado com sucesso: ${DEFAULT_BACKUP_DIR}/${zip_nome}"
+            _exibir_mensagem_centralizada "${VERDE}" "Backup compactado com sucesso: ${DEFAULT_BACKUP_DIR}/${zip_nome}"
         else
             _aviso "Nao foi possivel compactar os arquivos de backup"
         fi
@@ -121,7 +121,7 @@ _atualizando() {
         if [[ ! -f "$configuracoes_arquivo" ]]; then continue; fi
         chmod +x "$configuracoes_arquivo" 2>/dev/null || true
         if mv -f "$configuracoes_arquivo" "${CFG_DIR}/"; then
-            _mensagec "${VERDE}" "Arquivo $configuracoes_arquivo instalado em ${CFG_DIR}"
+            _exibir_mensagem_centralizada "${VERDE}" "Arquivo $configuracoes_arquivo instalado em ${CFG_DIR}"
             ((arquivos_instalados++)) || true
         else
             ((arquivos_erro++)) || true
@@ -132,7 +132,7 @@ _atualizando() {
     if [[ -f ".senhas" ]]; then
         chmod 600 ".senhas" 2>/dev/null || true
         if mv -f ".senhas" "${CFG_DIR}/"; then
-            _mensagec "${VERDE}" "Arquivo .senhas instalado em ${CFG_DIR}"
+            _exibir_mensagem_centralizada "${VERDE}" "Arquivo .senhas instalado em ${CFG_DIR}"
             ((arquivos_instalados++)) || true
         else
             ((arquivos_erro++)) || true
@@ -147,7 +147,7 @@ _atualizando() {
         local sh_destino="${LIBS_DIR}"
         [[ "$arquivo" == "atualiza.sh" ]] && sh_destino="${SCRIPT_DIR}"
         if mv -f "$arquivo" "${sh_destino}/"; then
-            _mensagec "${VERDE}" "Instalando programa $arquivo em $sh_destino"
+            _exibir_mensagem_centralizada "${VERDE}" "Instalando programa $arquivo em $sh_destino"
             ((arquivos_instalados++)) || true
             ((sh_instalados++)) || true
         else
@@ -162,13 +162,13 @@ _atualizando() {
         _aviso "Nenhum arquivo foi instalado - verifique os arquivos no ZIP"
         return 1
     else
-        _mensagec "${VERDE}" "SUCESSO: $arquivos_instalados arquivo(s) instalado(s)"
+        _exibir_mensagem_centralizada "${VERDE}" "SUCESSO: $arquivos_instalados arquivo(s) instalado(s)"
     fi
 
     # =========================================================================
     # ROTINA DE LIMPEZA CORRIGIDA (SUBSTITUI A ANTIGA BASEADA EM cd + rm -rf ./*)
     # =========================================================================
-    _mensagec "${CIANO}" "Realizando limpeza dos arquivos de atualizacao..."
+    _exibir_mensagem_centralizada "${CIANO}" "Realizando limpeza dos arquivos de atualizacao..."
 
     # 1. Remover ZIP da raiz de receber (modo online)
     if [[ -f "${DEFAULT_RECEBE_DIR}/${zipfile}" ]]; then
@@ -188,13 +188,13 @@ _atualizando() {
     # 4. Limpeza residual segura (excluir TODOS os arquivos/diretorios restantes no diretorio receber, sem remover a pasta principal)
     # Excluir todos os arquivos que ficaram no diretorio (atualiza.zip, extracao temporaria, etc.) sem remover a pasta principal
     if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; then
-        _mensagec "${VERDE}" "Diretorio limpo com sucesso."
+        _exibir_mensagem_centralizada "${VERDE}" "Diretorio limpo com sucesso."
     else
         _aviso "Alguns arquivos podem nao ter sido removidos."
     fi
     _linha
     _ok "Atualizacao concluida com sucesso!"
-    _mensagec "${VERDE}" "Ao terminar, entre novamente no sistema"
+    _exibir_mensagem_centralizada "${VERDE}" "Ao terminar, entre novamente no sistema"
     _linha
     _encerrar_programa 0
 }
@@ -202,7 +202,7 @@ _atualizando() {
 _atualizar_online() {
     local link="${GITHUB_UPDATE_URL}"
     local zipfile="atualiza.zip"
-    _mensagec "${VERDE}" "Atualizando script via GitHub..."
+    _exibir_mensagem_centralizada "${VERDE}" "Atualizando script via GitHub..."
 
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     _erro "Ao criar diretorio de download"

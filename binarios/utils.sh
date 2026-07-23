@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/07/2026-02
+# Versao: 23/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -24,10 +24,10 @@ _obter_colunas() {
 }
 
 # Configuracao de alertas
-    _msg()   { _exibir_mensagem_centralizada "${BRANCO}" "[INFORMATIVO] $1"; }
-    _ok()    { _exibir_mensagem_centralizada "${VERDE}" "[OK] $1"; }
-    _aviso() { _exibir_mensagem_centralizada "${AMARELO}" "[AVISO] $1"; }
-    _erro()  { _exibir_mensagem_centralizada "${VERMELHO}" "[ERRO] $1"; }
+    _msg()   { _exibir_mensagem_centralizada "${BRANCO}" "[INFORMATIVO] > $1"; }
+    _ok()    { _exibir_mensagem_centralizada "${VERDE}" "[OK] > $1"; }
+    _aviso() { _exibir_mensagem_centralizada "${AMARELO}" "[AVISO] > $1"; }
+    _erro()  { _exibir_mensagem_centralizada "${VERMELHO}" "[ERRO] > $1"; }
 
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
@@ -48,22 +48,10 @@ _upper() {
     printf '%s' "${1^^}"
 }
 
-# Funcao para limpar tela
-_limpa_tela() {
-    clear
-}
-
 # Posiciona o cursor no meio da tela
 _meio_da_tela() {
-    local linhas
-    local colunas
-
-    linhas=$(tput lines 2>/dev/null || echo "${LINES:-${DEFAULT_LINES}}")
-    colunas=$(_obter_colunas)
-
-    # Usar tput para posicionar o cursor — consistente com o restante do arquivo
     tput clear 2>/dev/null || true
-    tput cup $((linhas / 2)) 0 2>/dev/null || true
+    tput cup $(( $(tput lines 2>/dev/null || echo "${LINES:-24}") / 2 )) 0 2>/dev/null || true
 }
 
 # Exibe mensagem centralizada alinhada a esquerda com cor
@@ -243,42 +231,12 @@ _aguardar_tecla() {
 
 #---------- ALIASES PARA COMPATIBILIDADE ----------#
 # Manter compatibilidade com código existente durante transição
-
-# Aliases para funcoes renomeadas
-_mensageb() { _exibir_mensagem_centralizada_a_esquerda "$@"; }
-_mensagec() { _exibir_mensagem_centralizada "$@"; }
-_mensaged() { _exibir_mensagem_direita "$@"; }
-_mensagex() { _exibir_mensagem_corrida "$@"; }
-
 _opinvalida() {
-    local mensagem="Opcao Invalida"
-    local largura
-    local tamanho_msg
-    local espacos
-
-    # Obter largura do terminal com fallback seguro
-    largura=$(_obter_colunas)
-
-    tamanho_msg=${#mensagem}
-    espacos=$(( (largura - tamanho_msg) / 2 ))
-
-    # Garantir que nao seja negativo
-    if (( espacos < 0 )); then
-        espacos=0
-    fi
-
-    _linha "-" "${AMARELO}"
-
-    # Imprimir espacos iniciais para centralizar
-    printf "%${espacos}s" ""
-
-    # Loop para imprimir cada letra com efeito de digitacao
-    for ((i=0; i<${#mensagem}; i++)); do
-        printf "%s" "${VERMELHO}${mensagem:$i:1}${NORMAL}"
-        _aguardar 0.05
-    done
-    printf "\n"
-    _linha "-" "${AMARELO}"
+    _linha "-" "${AMARELO:-}"
+    local espacos=$(( ($(_obter_colunas) - 18) / 2 ))
+    (( espacos < 0 )) && espacos=0
+    printf "%*s%s\n" "$espacos" "" "${VERMELHO}Opcao Invalida${NORMAL}"
+    _linha "-" "${AMARELO:-}"
 }
 
 #---------- FUNCOES DE VALIDACAO ----------#
@@ -317,7 +275,7 @@ _confirmar() {
     while (( tentativas < max_tentativas )); do
         if ! read -r -t "${timeout}" -p "${AMARELO}${mensagem} ${opcoes}: ${NORMAL}" resposta; then
             # Timeout ou erro de leitura — usar padrao
-            _mensagec "${AMARELO}" "Entrada expirada. Usando padrao: ${padrao}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Entrada expirada. Usando padrao: ${padrao}"
             resposta="$padrao"
         fi
 
@@ -378,11 +336,9 @@ _mostrar_progresso_backup() {
     local status_proc=0
 
     if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
-        _aviso "Aviso: PID nao informado ou processo ja terminado"
+        _aviso "PID nao informado ou processo ja terminado"
         return 0
     fi
-
-    : "${VERDE:=}" "${VERMELHO:-}" "${CIANO:=}" "${NORMAL:=}"
 
     # Ocultar cursor se suportado
     printf "\033[?25l" 2>/dev/null || true
@@ -405,7 +361,7 @@ _mostrar_progresso_backup() {
         printf -v msg_format "%-25s" "$msg"
         printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
 
-        printf "\r\033[K%s[INFO]%s %s |%s| %s" \
+        printf "\r\033[K%s[INFORMATIVO]%s %s |%s| %s" \
             "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
         printf "%s" "" >&3
 
@@ -424,7 +380,7 @@ _mostrar_progresso_backup() {
     printf -v msg_format "%-25s" "$msg"
     printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
 
-    printf "\r\033[K%s[ok]%s %s |%s| %s concluido\n" \
+    printf "\r\033[K%s[OK]%s %s |%s| %s concluido\n" \
         "${VERDE}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
 
     exec 3>&-
@@ -645,7 +601,7 @@ _enviabackup_para_receber() {
     fi
 
     _linha
-    _mensagec "${AMARELO}" "Processando arquivos de backup: ${source_dir} → ${dest_dir}"
+    _exibir_mensagem_centralizada "${AMARELO}" "Processando arquivos de backup: ${source_dir} → ${dest_dir}"
     _linha
 
     # Iterar sobre arquivos .zip com tratamento seguro
@@ -661,10 +617,10 @@ _enviabackup_para_receber() {
         # Tentar mover o arquivo
         if mv -f "${arquivo}" "${dest_dir}/" >> "${LOG_ATU}" 2>&1; then
             _ok "Arquivo movido: ${nome_arquivo}"
-            ((arquivos_copiados++))
+            ((arquivos_copiados++)) || true
         else
             _erro "Erro ao mover: ${nome_arquivo}"
-            ((arquivos_erro++))
+            ((arquivos_erro++)) || true
         fi
     done < <(find "${source_dir}" -maxdepth 1 -type f -name "*.zip" -print0)
 
@@ -673,7 +629,7 @@ _enviabackup_para_receber() {
     if (( arquivos_copiados == 0 && arquivos_erro == 0 )); then
         _aviso "Nenhum arquivo .zip encontrado em ${source_dir}"
     else
-        _mensagec "${VERDE}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
+        _exibir_mensagem_centralizada "${VERDE}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
         if (( arquivos_erro > 0 )); then
             _erro "Atencao: ${arquivos_erro} arquivo(s) com erro"
         fi

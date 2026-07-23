@@ -12,7 +12,7 @@ set -euo pipefail
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-01
+# Versao: 23/07/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -43,7 +43,7 @@ traco="#####################################################################"
 # Diretorio do servidor offline
 # Configuracao inicial do sistema
 _initial_setup() {
-    _limpa_tela
+    clear
     _carregar_constantes_setup
 
     # Header inicial
@@ -512,7 +512,7 @@ cd "${SCRIPT_DIR}" || _encerrar_programa 1
         # Verificar se os arquivos de configuracao ja existem
 
         if [[ -f "${CFG_DIR}/.config" ]]; then
-            _limpa_tela
+            clear
             echo "Arquivos de configuracao ja existem."
             local choice
             while true; do

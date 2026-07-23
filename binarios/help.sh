@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
+# Versao: 23/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -18,7 +18,7 @@ CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracoes
 MANUAL_FILE="${CFG_DIR}/manual.txt"
 
 # Exibe conteúdo com paginaçao automática
-# Parâmetros: 
+# Parâmetros:
 #   $1 = conteúdo para exibir
 #   $2 = linhas por página (opcional, padrao: 25)
 _exibir_paginado() {
@@ -26,38 +26,38 @@ _exibir_paginado() {
     local linhas_por_pagina="${2:-25}"
     local linha_atual=1
     local total_linhas
-    
+
     # Se conteúdo vazio, lê do stdin
     if [[ -z "$conteudo" ]]; then
         conteudo=$(cat)
     fi
-    
+
     total_linhas=$(echo "$conteudo" | wc -l)
-    
+
     # Se conteúdo cabe em uma página, exibe direto
     if [[ $total_linhas -le $linhas_por_pagina ]]; then
         echo "$conteudo"
         return 0
     fi
-    
+
     # Loop de paginaçao
     while [[ $linha_atual -le $total_linhas ]]; do
         # Exibe página atual
         echo "$conteudo" | sed -n "${linha_atual},$((linha_atual + linhas_por_pagina - 1))p"
-        
+
         linha_atual=$((linha_atual + linhas_por_pagina))
-        
+
         # Se ainda há mais conteúdo, solicita continuaçao
         if [[ $linha_atual -le $total_linhas ]]; then
             printf "\n"
             _linha "=" "${CIANO}"
             printf "%s" "${AMARELO}Pressione ENTER para continuar, 'q' para sair, 'a' para ver tudo: ${NORMAL}"
             read -rsn1 resposta
-            
+
             case "${resposta,,}" in
                 q)
                     echo ""
-                    _mensagec "${VERDE}" "Exibicao interrompida"
+                    _exibir_mensagem_centralizada "${VERDE}" "Exibicao interrompida"
                     return 0
                     ;;
                 a)
@@ -68,12 +68,12 @@ _exibir_paginado() {
                     ;;
                 *)
                     # ENTER ou qualquer outra tecla continua
-                    _limpa_tela
+                    clear
                     ;;
             esac
         fi
     done
-    
+
     return 0
 }
 
@@ -86,7 +86,7 @@ _ler_secao_manual() {
     local conteudo=""
     local linha_inicio
     local linha_fim
-    
+
     if [[ ! -f "$MANUAL_FILE" ]]; then
         _erro "Arquivo manual.txt nao encontrado!"
         return 1
@@ -99,18 +99,18 @@ _ler_secao_manual() {
 
     # Encontra linha de início da seçao
     linha_inicio=$(grep -n "^\[${secao}\]$" "$MANUAL_FILE" | cut -d: -f1)
-    
+
     if [[ -z "$linha_inicio" ]]; then
-        _mensagec "${AMARELO}" "Seçao [$secao] nao encontrada no manual."
+        _exibir_mensagem_centralizada "${AMARELO}" "Seçao [$secao] nao encontrada no manual."
         return 1
     fi
-    
+
     # Incrementa para pular a linha do marcador
     linha_inicio=$((linha_inicio + 1))
-    
+
     # Encontra a proxima seçao apos a linha de início
     linha_fim=$(tail -n +${linha_inicio} "$MANUAL_FILE" | grep -n "^\[.*\]$" | head -1 | cut -d: -f1)
-    
+
     if [[ -n "$linha_fim" ]]; then
         # Há outra seçao depois, lê até ela
         linha_fim=$((linha_inicio + linha_fim - 2))
@@ -119,7 +119,7 @@ _ler_secao_manual() {
         # É a última seçao, lê até o final
         conteudo=$(tail -n +${linha_inicio} "$MANUAL_FILE")
     fi
-    
+
     echo "$conteudo"
     return 0
 }
@@ -129,13 +129,13 @@ _ler_secao_manual() {
 # Exibe o manual completo
 _exibir_manual_completo() {
     if [[ ! -f "$MANUAL_FILE" ]]; then
-        _mensagec "${VERMELHO}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
-        _mensagec "${AMARELO}" "Crie o arquivo manual.txt no diretorio configuracoes/"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
+        _exibir_mensagem_centralizada "${AMARELO}" "Crie o arquivo manual.txt no diretorio configuracoes/"
         _aguardar_tecla
         return 1
     fi
 
-    _limpa_tela
+    clear
     # Reutiliza _exibir_paginado com o conteudo completo do manual
     _exibir_paginado "$(cat "$MANUAL_FILE")" 25
     return 0
@@ -148,22 +148,22 @@ _exibir_secao_manual() {
     local secao_nome="$2"
     local conteudo
 
-    _limpa_tela
+    clear
     _linha "=" "${CIANO}"
-    _mensagec "${CIANO}" "AJUDA - ${contexto^^}"
+    _exibir_mensagem_centralizada "${CIANO}" "AJUDA - ${contexto^^}"
     _linha "=" "${CIANO}"
     printf "\n"
 
     if conteudo=$(_ler_secao_manual "$secao_nome"); then
         _exibir_paginado "$conteudo" 25
     else
-        _mensagec "${AMARELO}" "Ajuda para '$contexto' nao disponivel no momento."
-        _mensagec "${AMARELO}" "Use 'M' para ver o manual completo."
+        _exibir_mensagem_centralizada "${AMARELO}" "Ajuda para '$contexto' nao disponivel no momento."
+        _exibir_mensagem_centralizada "${AMARELO}" "Use 'M' para ver o manual completo."
     fi
 
     printf "\n"
     _linha "-" "${VERDE}"
-    _mensagec "${AMARELO}" "Pressione qualquer tecla para voltar ou 'M' para manual completo"
+    _exibir_mensagem_centralizada "${AMARELO}" "Pressione qualquer tecla para voltar ou 'M' para manual completo"
     _linha "-" "${VERDE}"
 
     local resposta
@@ -216,12 +216,12 @@ _ajuda_no_geral() {
 _verificar_manual() {
     if [[ ! -f "$MANUAL_FILE" ]]; then
         _linha "=" "${AMARELO}"
-        _mensagec "${AMARELO}" "  AVISO: Arquivo manual.txt nao encontrado!"
+        _exibir_mensagem_centralizada "${AMARELO}" "  AVISO: Arquivo manual.txt nao encontrado!"
         _linha "=" "${AMARELO}"
         printf "\n"
-        _mensagec "${BRANCO}" "O arquivo manual.txt deve estar em: ${CIANO}$MANUAL_FILE${NORMAL}"
+        _exibir_mensagem_centralizada "${BRANCO}" "O arquivo manual.txt deve estar em: ${CIANO}$MANUAL_FILE${NORMAL}"
         printf "\n"
-        _mensagec "${BRANCO}" "Por favor, crie o arquivo manual.txt no diretorio configuracoes/"
+        _exibir_mensagem_centralizada "${BRANCO}" "Por favor, crie o arquivo manual.txt no diretorio configuracoes/"
         printf "\n"
         _linha "=" "${AMARELO}"
         return 1
@@ -234,33 +234,33 @@ _verificar_manual() {
 # Busca termo no manual
 _buscar_manual() {
     local termo=""
-    
+
     if ! _verificar_manual; then
         _aguardar_tecla
         return 1
     fi
-    
+
     read -rp "${AMARELO}Termo para buscar: ${NORMAL}" termo
-    
+
     if [[ -z "$termo" ]]; then
-        _mensagec "${VERMELHO}" "Nenhum termo informado"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum termo informado"
         return 1
     fi
-    
-    _limpa_tela
+
+    clear
     _linha "=" "${CIANO}"
-    _mensagec "${CIANO}" "RESULTADOS DA BUSCA: $termo"
+    _exibir_mensagem_centralizada "${CIANO}" "RESULTADOS DA BUSCA: $termo"
     _linha "=" "${CIANO}"
     printf "\n"
-    
+
     # Buscar e destacar resultados
     if grep -in --color=always "$termo" "$MANUAL_FILE"; then
         printf "\n"
-        _mensagec "${VERDE}" "Busca concluída"
+        _exibir_mensagem_centralizada "${VERDE}" "Busca concluída"
     else
-        _mensagec "${AMARELO}" "Nenhum resultado encontrado para: $termo"
+        _exibir_mensagem_centralizada "${AMARELO}" "Nenhum resultado encontrado para: $termo"
     fi
-    
+
     printf "\n"
     _aguardar_tecla
 }
@@ -270,19 +270,19 @@ _buscar_manual() {
 # Exporta manual para arquivo externo
 _exportar_manual() {
     local destino="${1:-$SCRIPT_DIR/manual_sav.txt}"
-    
+
     if ! _verificar_manual; then
         _aguardar_tecla
         return 1
     fi
-    
+
     if cp "$MANUAL_FILE" "$destino"; then
-        _mensagec "${VERDE}" "Manual exportado para: $destino"
+        _exibir_mensagem_centralizada "${VERDE}" "Manual exportado para: $destino"
     else
         _erro "ao exportar manual"
         _aguardar 2
         return 1
     fi
-    
+
     _aguardar_tecla
 }

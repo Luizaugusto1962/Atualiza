@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-03
+# Versao: 23/07/2026-03
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -78,140 +78,120 @@ _register_var() {
     return 0
 }
 
-# Define multiplas variaveis de uma categoria
-_define_category_vars() {
-    local category="$1"
-    shift
-    local var_def var_name var_value
+# =============================================================================
+# MAPA DECLARATIVO DE VARIAVEIS POR CATEGORIA
+# =============================================================================
+# Formato: _MAPA_VARIAVEIS["NOME_VARIAVEL"]="CATEGORIA"
+# Valores padrao ficam em constantes.sh; aqui apenas registramos para rastreamento/limpeza.
 
-    for var_def in "$@"; do
-        var_name="${var_def%%=*}"
-        var_value="${var_def#*=}"
-        _is_var_readonly "$var_name" && continue
-        _register_var "$var_name" "$var_value" "$category"
-    done
-}
+declare -gA _MAPA_VARIAVEIS=(
+    # ATUALIZACAO
+    ["CFG_VERSAOCLASS"]="ATUALIZACAO"
+    ["CFG_ACESSO_SSH"]="ATUALIZACAO"
+    ["CFG_OFFLINE"]="ATUALIZACAO"
+    ["CFG_BACKUP_PATH"]="ATUALIZACAO"
+    ["CFG_EMPRESA"]="ATUALIZACAO"
+    ["VERSAOANT"]="ATUALIZACAO"
+
+    # CAMINHOS
+    ["SCRIPT_DIR"]="CAMINHOS"
+    ["RAIZ"]="CAMINHOS"
+    ["CFG_DIR"]="CAMINHOS"
+    ["LIBS_DIR"]="CAMINHOS"
+    ["CFG_BASE_DIR"]="CAMINHOS"
+    ["CFG_BASE_DIR2"]="CAMINHOS"
+    ["CFG_BASE_DIR3"]="CAMINHOS"
+    ["DEFAULT_CONFIG_DIR"]="CAMINHOS"
+    ["DEFAULT_LIBS_DIR"]="CAMINHOS"
+    ["DEFAULT_LOGS_DIR"]="CAMINHOS"
+    ["DEFAULT_BACKUP_DIR"]="CAMINHOS"
+    ["DEFAULT_BASEBACKUP_DIR"]="CAMINHOS"
+    ["DEFAULT_BIBLIOTECA_ATUAL_DIR"]="CAMINHOS"
+    ["DEFAULT_BIBLIOTECA_DIR"]="CAMINHOS"
+    ["DEFAULT_PROGS_DIR"]="CAMINHOS"
+    ["DEFAULT_OLDS_DIR"]="CAMINHOS"
+    ["DEFAULT_ENVIA_DIR"]="CAMINHOS"
+    ["DEFAULT_RECEBE_DIR"]="CAMINHOS"
+    ["UMADATA"]="CAMINHOS"
+    ["E_EXEC"]="CAMINHOS"
+    ["T_TELAS"]="CAMINHOS"
+    ["X_XML"]="CAMINHOS"
+
+    # BIBLIOTECA
+    ["SAVATU"]="BIBLIOTECA"
+    ["SAVATU1"]="BIBLIOTECA"
+    ["SAVATU2"]="BIBLIOTECA"
+    ["SAVATU3"]="BIBLIOTECA"
+    ["SAVATU4"]="BIBLIOTECA"
+
+    # COMANDOS
+    ["DEFAULT_ZIP"]="COMANDOS"
+    ["DEFAULT_TAR"]="COMANDOS"
+    ["DEFAULT_FIND"]="COMANDOS"
+    ["DEFAULT_UNZIP"]="COMANDOS"
+    ["REBUILD"]="COMANDOS"
+    ["JUTIL"]="COMANDOS"
+    ["ISCCLIENT"]="COMANDOS"
+
+    # CONFIGURACOES
+    ["DEFAULT_SSH_PORTA"]="CONFIGURACOES"
+    ["DEFAULT_SSH_USER"]="CONFIGURACOES"
+    ["DEFAULT_IP_SERVER"]="CONFIGURACOES"
+    ["DEFAULT_CHAVE_SSH"]="CONFIGURACOES"
+    ["DEFAULT_CHAVE_SSH_PUB"]="CONFIGURACOES"
+    ["SSH_TIMEOUT"]="CONFIGURACOES"
+    ["DEFAULT_READ_TIMEOUT"]="CONFIGURACOES"
+    ["DEFAULT_PRESS_TIMEOUT"]="CONFIGURACOES"
+    ["CFG_CHAVE_SSH"]="CONFIGURACOES"
+    ["DESTINO_SERVER"]="CONFIGURACOES"
+    ["DESTINO_BIBLIOTECA"]="CONFIGURACOES"
+    ["VERSAO"]="CONFIGURACOES"
+    ["SAVISC"]="CONFIGURACOES"
+    ["base_trabalho"]="CONFIGURACOES"
+
+    # SEGURANCA
+    ["PERM_DIR_SECURE"]="SEGURANCA"
+    ["PERM_FILE_PRIVATE"]="SEGURANCA"
+    ["PERM_FILE_EXEC"]="SEGURANCA"
+
+    # LOGS
+    ["LOG_ATU"]="LOGS"
+    ["LOG_LIMPA"]="LOGS"
+    ["LOG_TMP"]="LOGS"
+)
 
 # =============================================================================
 # INICIALIZACAO DE VARIAVEIS DO SISTEMA
 # =============================================================================
 
 _inicializar_variaveis_sistema() {
-    # Cores do terminal
-    if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
-        VERMELHO=$(tput bold 2>/dev/null; tput setaf 1 2>/dev/null)
-        VERDE=$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null)
-        AMARELO=$(tput bold 2>/dev/null; tput setaf 3 2>/dev/null)
-        AZUL=$(tput bold 2>/dev/null; tput setaf 4 2>/dev/null)
-        ROXO=$(tput bold 2>/dev/null; tput setaf 5 2>/dev/null)
-        CIANO=$(tput bold 2>/dev/null; tput setaf 6 2>/dev/null)
-        BRANCO=$(tput bold 2>/dev/null; tput setaf 7 2>/dev/null)
-        NORMAL=$(tput sgr0 2>/dev/null)
-        COLUMNS=$(tput cols 2>/dev/null || echo 80)   # Numero de colunas do terminal
+    # Cores do terminal — tput com fallback seguro
+    VERMELHO=$(tput bold 2>/dev/null; tput setaf 1 2>/dev/null || printf "\033[1;31m")
+    VERDE=$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null || printf "\033[1;32m")
+    AMARELO=$(tput bold 2>/dev/null; tput setaf 3 2>/dev/null || printf "\033[1;33m")
+    AZUL=$(tput bold 2>/dev/null; tput setaf 4 2>/dev/null || printf "\033[1;34m")
+    ROXO=$(tput bold 2>/dev/null; tput setaf 5 2>/dev/null || printf "\033[1;35m")
+    CIANO=$(tput bold 2>/dev/null; tput setaf 6 2>/dev/null || printf "\033[1;36m")
+    BRANCO=$(tput bold 2>/dev/null; tput setaf 7 2>/dev/null || printf "\033[1;37m")
+    NORMAL=$(tput sgr0 2>/dev/null || printf "\033[0m")
+    COLUMNS=$(tput cols 2>/dev/null || printf 80)
 
-        # Limpar tela inicial
-        tput clear 2>/dev/null || true
-        tput bold 2>/dev/null || true
-        tput setaf 7 2>/dev/null || true
-    else
-        # Terminal sem suporte a cores
-        VERMELHO="\033[0;31m"
-        VERDE="\033[0;32m"
-        AMARELO="\033[0;33m"
-        AZUL="\033[0;34m"
-        ROXO="\033[0;35m"
-        CIANO="\033[0;36m"
-        BRANCO="\033[1;37m"
-        NORMAL="\033[0m"
-        COLUMNS=$(tput cols 2>/dev/null || echo 80)
-        COLUMNS="${COLUMNS:-80}"
-    fi
+    # Limpar tela inicial
+    tput clear 2>/dev/null || true
+    tput bold 2>/dev/null || true
+    tput setaf 7 2>/dev/null || true
     export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO NORMAL COLUMNS
 
     # Reinicializar arrays
     REGISTRO_VARIAVEIS=()
     _REGISTRO_MAPA=()
 
-    # ATUALIZACAO
-    _define_category_vars "ATUALIZACAO" \
-        "CFG_VERSAOCLASS=${CFG_VERSAOCLASS:-}" \
-        "CFG_ACESSO_SSH=${CFG_ACESSO_SSH:-}" \
-        "CFG_OFFLINE=${CFG_OFFLINE:-}" \
-        "CFG_BACKUP_PATH=${CFG_BACKUP_PATH:-}" \
-        "CFG_EMPRESA=${CFG_EMPRESA:-}" \
-        "VERSAOANT=${VERSAOANT:-}"
-
-    # CAMINHOS
-    _define_category_vars "CAMINHOS" \
-        "SCRIPT_DIR=${SCRIPT_DIR:-}" \
-        "RAIZ=${RAIZ:-}" \
-        "CFG_DIR=${CFG_DIR:-}" \
-        "LIBS_DIR=${LIBS_DIR:-}" \
-        "CFG_BASE_DIR=${CFG_BASE_DIR:-}" \
-        "CFG_BASE_DIR2=${CFG_BASE_DIR2:-}" \
-        "CFG_BASE_DIR3=${CFG_BASE_DIR3:-}" \
-        "DEFAULT_CONFIG_DIR=${DEFAULT_CONFIG_DIR:-}" \
-        "DEFAULT_LIBS_DIR=${DEFAULT_LIBS_DIR:-}" \
-        "DEFAULT_LOGS_DIR=${DEFAULT_LOGS_DIR:-}" \
-        "DEFAULT_BACKUP_DIR=${DEFAULT_BACKUP_DIR:-}" \
-        "DEFAULT_BASEBACKUP_DIR=${DEFAULT_BASEBACKUP_DIR:-}" \
-        "DEFAULT_BIBLIOTECA_ATUAL_DIR=${DEFAULT_BIBLIOTECA_ATUAL_DIR:-}" \
-        "DEFAULT_BIBLIOTECA_DIR=${DEFAULT_BIBLIOTECA_DIR:-}" \
-        "DEFAULT_PROGS_DIR=${DEFAULT_PROGS_DIR:-}" \
-        "DEFAULT_OLDS_DIR=${DEFAULT_OLDS_DIR:-}" \
-        "DEFAULT_ENVIA_DIR=${DEFAULT_ENVIA_DIR:-}" \
-        "DEFAULT_RECEBE_DIR=${DEFAULT_RECEBE_DIR:-}" \
-        "UMADATA=${UMADATA:-}" \
-        "E_EXEC=${E_EXEC:-}" \
-        "T_TELAS=${T_TELAS:-}" \
-        "X_XML=${X_XML:-}"
-
-    # BIBLIOTECA
-    _define_category_vars "BIBLIOTECA" \
-        "SAVATU=${SAVATU:-}" \
-        "SAVATU1=${SAVATU1:-}" \
-        "SAVATU2=${SAVATU2:-}" \
-        "SAVATU3=${SAVATU3:-}" \
-        "SAVATU4=${SAVATU4:-}"
-
-    # COMANDOS
-    _define_category_vars "COMANDOS" \
-        "DEFAULT_ZIP=${DEFAULT_ZIP:-}" \
-        "DEFAULT_TAR=${DEFAULT_TAR:-}" \
-        "DEFAULT_FIND=${DEFAULT_FIND:-}" \
-        "DEFAULT_UNZIP=${DEFAULT_UNZIP:-}" \
-        "REBUILD=${REBUILD:-}" \
-        "JUTIL=${JUTIL:-}" \
-        "ISCCLIENT=${ISCCLIENT:-}"
-
-    # CONFIGURACOES
-    _define_category_vars "CONFIGURACOES" \
-        "DEFAULT_SSH_PORTA=${DEFAULT_SSH_PORTA:-}" \
-        "DEFAULT_SSH_USER=${DEFAULT_SSH_USER:-}" \
-        "DEFAULT_IP_SERVER=${DEFAULT_IP_SERVER:-}" \
-        "DEFAULT_CHAVE_SSH=${DEFAULT_CHAVE_SSH:-}" \
-        "DEFAULT_CHAVE_SSH_PUB=${DEFAULT_CHAVE_SSH_PUB:-}" \
-        "SSH_TIMEOUT=${SSH_TIMEOUT:-}" \
-        "DEFAULT_READ_TIMEOUT=${DEFAULT_READ_TIMEOUT:-}" \
-        "DEFAULT_PRESS_TIMEOUT=${DEFAULT_PRESS_TIMEOUT:-}" \
-        "CFG_CHAVE_SSH=${CFG_CHAVE_SSH:-}" \
-        "DESTINO_SERVER=${DESTINO_SERVER:-}" \
-        "DESTINO_BIBLIOTECA=${DESTINO_BIBLIOTECA:-}" \
-        "VERSAO=${VERSAO:-}" \
-        "SAVISC=${SAVISC:-}" \
-        "base_trabalho=${base_trabalho:-}"
-
-    # SEGURANCA
-    _define_category_vars "SEGURANCA" \
-        "PERM_DIR_SECURE=${PERM_DIR_SECURE:-}" \
-        "PERM_FILE_PRIVATE=${PERM_FILE_PRIVATE:-}" \
-        "PERM_FILE_EXEC=${PERM_FILE_EXEC:-}"
-
-    # LOGS
-    _define_category_vars "LOGS" \
-        "LOG_ATU=${LOG_ATU:-}" \
-        "LOG_LIMPA=${LOG_LIMPA:-}" \
-        "LOG_TMP=${LOG_TMP:-}"
+    # Registrar todas as variaveis a partir do mapa declarativo
+    local var_name var_categoria
+    for var_name in "${!_MAPA_VARIAVEIS[@]}"; do
+        var_categoria="${_MAPA_VARIAVEIS[$var_name]}"
+        _register_var "$var_name" "${!var_name:-}" "$var_categoria"
+    done
 }
 
 # =============================================================================
@@ -238,8 +218,8 @@ _configurar_comandos() {
 # Configurar diretorios de trabalho
 _configurar_diretorios() {
     if [[ -z "${SCRIPT_DIR}" ]] || [[ ! -d "${SCRIPT_DIR}" ]]; then
-        if command -v _mensagec >/dev/null 2>&1; then
-            _mensagec "${CIANO}" "Diretorio principal nao encontrado: ${SCRIPT_DIR}"
+        if command -v _exibir_mensagem_centralizada >/dev/null 2>&1; then
+            _exibir_mensagem_centralizada "${CIANO}" "Diretorio principal nao encontrado: ${SCRIPT_DIR}"
         else
             _erro "Diretorio principal nao encontrado: %s\n" "${SCRIPT_DIR}" >&2
         fi
@@ -285,16 +265,16 @@ _configurar_variaveis_sistema() {
 # Validar acesso SSH
 _validar_ssh() {
     if [[ ! "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
-        _mensagec "${AMARELO}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
+        _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Variavel 'acesso_ssh' com valor desconhecido: ${CFG_ACESSO_SSH}"
         return 1
     fi
 
     if [[ "${CFG_ACESSO_SSH}" == "n" ]]; then
-        _mensagec "${AMARELO}" "Alerta: Acesso SSH desabilitado"
+        _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Acesso SSH desabilitado"
         return 0
     fi
 
-    _mensagec "${VERDE}" "OK: Acesso SSH habilitado"
+    _exibir_mensagem_centralizada "${VERDE}" "OK: Acesso SSH habilitado"
 
     local ssh_host="${DEFAULT_IP_SERVER}"
     local ssh_user="${DEFAULT_SSH_USER}"
@@ -308,7 +288,7 @@ _validar_ssh() {
     fi
 
     if [[ -z "${ssh_user}" ]]; then
-        _mensagec "${AMARELO}" "Alerta: Variavel DEFAULT_SSH_USER nao definida, usando 'root'"
+        _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Variavel DEFAULT_SSH_USER nao definida, usando 'root'"
         ssh_user="root"
     fi
 
@@ -322,7 +302,7 @@ _validar_ssh() {
         if [[ -f "${ssh_key}" ]]; then
             ssh_opts+=("-i" "${ssh_key}")
         else
-            _mensagec "${AMARELO}" "Alerta: Chave SSH nao encontrada: ${ssh_key}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Chave SSH nao encontrada: ${ssh_key}"
         fi
     fi
 
@@ -330,52 +310,52 @@ _validar_ssh() {
     ssh_output=$(ssh "${ssh_opts[@]}" "${ssh_user}@${ssh_host}" exit 2>&1) || ssh_exit=$?
 
     if (( ssh_exit == 0 )); then
-        _mensagec "${VERDE}" "Conexao SSH estabelecida com sucesso para ${ssh_user}@${ssh_host}"
+        _exibir_mensagem_centralizada "${VERDE}" "Conexao SSH estabelecida com sucesso para ${ssh_user}@${ssh_host}"
     else
-        _mensagec "${VERMELHO}" "Falha na conexao SSH para ${ssh_user}@${ssh_host}"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Falha na conexao SSH para ${ssh_user}@${ssh_host}"
         _linha "-" "${AMARELO}"
-        _mensagec "${AMARELO}" "Comando: ssh ${ssh_opts[*]} ${ssh_user}@${ssh_host} exit"
+        _exibir_mensagem_centralizada "${AMARELO}" "Comando: ssh ${ssh_opts[*]} ${ssh_user}@${ssh_host} exit"
         _linha "-" "${AMARELO}"
 
         if [[ "${ssh_output}" == *"Permission denied"* ]]; then
-            _mensagec "${VERMELHO}" "Motivo: Permissao negada (publickey,password)"
-            _mensagec "${AMARELO}" "Possiveis causas:"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Permissao negada (publickey,password)"
+            _exibir_mensagem_centralizada "${AMARELO}" "Possiveis causas:"
             if [[ -n "${ssh_key}" ]]; then
                 if [[ -f "${ssh_key}" ]]; then
                     local key_perm
                     key_perm=$(stat -c "%a" "${ssh_key}" 2>/dev/null || stat -f "%Lp" "${ssh_key}" 2>/dev/null || echo "?")
-                    _mensagec "${NORMAL}" "  - Chave usada: ${ssh_key} (perm: ${key_perm})"
-                    _mensagec "${NORMAL}" "  - A chave privada deve ter permissao 600"
-                    _mensagec "${NORMAL}" "  - Chave publica pode nao estar em /home/${ssh_user}/.ssh/authorized_keys"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave usada: ${ssh_key} (perm: ${key_perm})"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - A chave privada deve ter permissao 600"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave publica pode nao estar em /home/${ssh_user}/.ssh/authorized_keys"
                 else
-                    _mensagec "${NORMAL}" "  - Chave configurada nao existe: ${ssh_key}"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave configurada nao existe: ${ssh_key}"
                 fi
             else
-                _mensagec "${NORMAL}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
-                _mensagec "${NORMAL}" "  - O SSH procura padrao em: ~/.ssh/id_{rsa,ed25519,ecdsa}"
-                _mensagec "${NORMAL}" "  - Se a chave esta em /root/.ssh/, configure:"
-                _mensagec "${NORMAL}" "    CFG_CHAVE_SSH=/root/.ssh/id_rsa_atualiza"
-                _mensagec "${NORMAL}" "    Ou copie a chave para ~/.ssh/ do usuario atual"
-                _mensagec "${NORMAL}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
+                _exibir_mensagem_centralizada "${NORMAL}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
+                _exibir_mensagem_centralizada "${NORMAL}" "  - O SSH procura padrao em: ~/.ssh/id_{rsa,ed25519,ecdsa}"
+                _exibir_mensagem_centralizada "${NORMAL}" "  - Se a chave esta em /root/.ssh/, configure:"
+                _exibir_mensagem_centralizada "${NORMAL}" "    CFG_CHAVE_SSH=/root/.ssh/id_rsa_atualiza"
+                _exibir_mensagem_centralizada "${NORMAL}" "    Ou copie a chave para ~/.ssh/ do usuario atual"
+                _exibir_mensagem_centralizada "${NORMAL}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
             fi
-            _mensagec "${NORMAL}" "  - A chave publica pode nao estar cadastrada no servidor"
-            _mensagec "${NORMAL}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${ssh_user}@${ssh_host}"
-            _mensagec "${NORMAL}" "  - Usuario '${ssh_user}' pode estar incorreto"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - A chave publica pode nao estar cadastrada no servidor"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${ssh_user}@${ssh_host}"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - Usuario '${ssh_user}' pode estar incorreto"
         elif [[ "${ssh_output}" == *"Connection refused"* ]]; then
-            _mensagec "${VERMELHO}" "Motivo: Conexao recusada na porta ${ssh_port}"
-            _mensagec "${AMARELO}" "Verifique se o servidor SSH esta rodando e a porta correta"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao recusada na porta ${ssh_port}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o servidor SSH esta rodando e a porta correta"
         elif [[ "${ssh_output}" == *"Connection timed out"* ]]; then
-            _mensagec "${VERMELHO}" "Motivo: Conexao excedeu timeout de ${ssh_timeout}s"
-            _mensagec "${AMARELO}" "Verifique se o IP '${ssh_host}' esta correto e acessivel"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao excedeu timeout de ${ssh_timeout}s"
+            _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o IP '${ssh_host}' esta correto e acessivel"
         elif [[ "${ssh_output}" == *"Host key verification failed"* ]]; then
-            _mensagec "${VERMELHO}" "Motivo: Falha na verificacao da chave do host"
-            _mensagec "${AMARELO}" "Execute: ssh-keygen -R '${ssh_host}'"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Falha na verificacao da chave do host"
+            _exibir_mensagem_centralizada "${AMARELO}" "Execute: ssh-keygen -R '${ssh_host}'"
         else
-            _mensagec "${VERMELHO}" "Erro desconhecido:"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Erro desconhecido:"
             printf "%s\n" "${ssh_output}" >&2
         fi
         _linha "-" "${AMARELO}"
-        _mensagec "${AMARELO}" "Dica: execute 'ssh ${ssh_user}@${ssh_host}' manualmente para diagnosticar"
+        _exibir_mensagem_centralizada "${AMARELO}" "Dica: execute 'ssh ${ssh_user}@${ssh_host}' manualmente para diagnosticar"
     fi
     _linha "=" "${VERDE}"
 }
@@ -540,30 +520,20 @@ _limpar_estado_variaveis() {
     return 0
 }
 
-# Limpeza de emergencia (sem dependencias de arrays)
+# Limpeza de emergencia — gera lista a partir do registro + cores
 _limpeza_emergencia() {
-    local emergency_vars="VERMELHO VERDE AMARELO AZUL ROXO CIANO NORMAL"
-    emergency_vars+=" CFG_VERSAOCLASS CFG_ACESSO_SSH CFG_OFFLINE"
-    emergency_vars+=" CFG_BACKUP_PATH CFG_EMPRESA VERSAOANT SCRIPT_DIR"
-    emergency_vars+=" RAIZ CFG_DIR LIBS_DIR CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3"
-    emergency_vars+=" DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR DEFAULT_LOGS_DIR"
-    emergency_vars+=" DEFAULT_BACKUP_DIR DEFAULT_BASEBACKUP_DIR"
-    emergency_vars+=" DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BIBLIOTECA_DIR"
-    emergency_vars+=" DEFAULT_PROGS_DIR DEFAULT_OLDS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR"
-    emergency_vars+=" UMADATA E_EXEC T_TELAS X_XML"
-    emergency_vars+=" SAVATU SAVATU1 SAVATU2 SAVATU3 SAVATU4"
-    emergency_vars+=" DEFAULT_ZIP DEFAULT_TAR DEFAULT_FIND DEFAULT_UNZIP"
-    emergency_vars+=" REBUILD JUTIL ISCCLIENT"
-    emergency_vars+=" DEFAULT_SSH_PORTA DEFAULT_SSH_USER DEFAULT_IP_SERVER"
-    emergency_vars+=" DEFAULT_CHAVE_SSH DEFAULT_CHAVE_SSH_PUB SSH_TIMEOUT"
-    emergency_vars+=" DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT"
-    emergency_vars+=" CFG_CHAVE_SSH DESTINO_SERVER DESTINO_BIBLIOTECA"
-    emergency_vars+=" VERSAO SAVISC base_trabalho"
-    emergency_vars+=" PERM_DIR_SECURE PERM_FILE_PRIVATE PERM_FILE_EXEC"
-    emergency_vars+=" UPDATE LOG_ATU LOG_LIMPA LOG_TMP"
+    local vars_emergencia="VERMELHO VERDE AMARELO AZUL ROXO CIANO NORMAL UPDATE"
+
+    # Adicionar variaveis registradas no mapa
+    if [[ ${#_MAPA_VARIAVEIS[@]} -gt 0 ]]; then
+        local var_name
+        for var_name in "${!_MAPA_VARIAVEIS[@]}"; do
+            vars_emergencia+=" $var_name"
+        done
+    fi
 
     local var
-    for var in $emergency_vars; do
+    for var in $vars_emergencia; do
         unset -v "$var" 2>/dev/null || true
     done
     tput sgr0 2>/dev/null || true
@@ -589,8 +559,9 @@ _resetando() {
 # Finalizar o sistema
 _finalizar_sistema() {
     _limpar_estado_variaveis
-    trap - EXIT INT TERM QUIT
     tput sgr0 2>/dev/null || true
+    trap - EXIT INT TERM QUIT
+
 }
 
 # Encerrar programa com status
@@ -600,7 +571,6 @@ _encerrar_programa() {
     exit "$status"
 }
 
-trap '_limpar_estado_variaveis' EXIT
 trap '_encerrar_programa 130' INT
 trap '_encerrar_programa 143' TERM
 trap '_limpeza_emergencia' QUIT

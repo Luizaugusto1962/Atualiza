@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 #
+# cadastro.sh - Programa de Cadastro de Usuario
+# Permite cadastrar usuarios e senhas para o sistema SAV
+# Padrões e regras de desenvolvimento: ver AGENTS.md
+#
+# SISTEMA SAV - Script de Atualizacao Modular
+# Versao: 23/07/2026-01
+#
+# Uso:
+#   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
+#   ./cadastro.sh             - Chamada direta
+#
+
 # Funcao de saida padronizada (local, sem dependencia de modulos)
 _encerrar_programa() {
     local status="${1:-0}"
     exit "$status"
 }
 
-#
-# cadastro.sh - Programa de Cadastro de Usuario
-# Permite cadastrar usuarios e senhas para o sistema SAV
-# Padrões e regras de desenvolvimento: ver AGENTS.md
-#
-# SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/07/2026-01
-#
-# Uso:
-#   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
-#   ./cadastro.sh             - Chamada direta
-#
 
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
@@ -48,17 +48,17 @@ CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 # Funcao principal
 main() {
     while true; do
-        _limpa_tela
+        clear
         printf "\n"
         _linha "=" "${VERDE}"
-        _mensagec "${VERMELHO}" "Cadastro de Usuario - Sistema SAV"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Cadastro de Usuario - Sistema SAV"
         _linha "=" "${VERDE}"
         printf "\n"
-        _mensagec "${AMARELO}" "1. Cadastrar novo usuario"
-        _mensagec "${AMARELO}" "2. Alterar senha de usuario"
-        _mensagec "${AMARELO}" "0. Voltar"
+        _exibir_mensagem_centralizada "${AMARELO}" "1. Cadastrar novo usuario"
+        _exibir_mensagem_centralizada "${AMARELO}" "2. Alterar senha de usuario"
+        _exibir_mensagem_centralizada "${AMARELO}" "0. Voltar"
         _linha "=" "${VERDE}"
-        _mensagec "${VERDE}" "Digite o numero da opcao desejada e pressione ENTER."
+        _exibir_mensagem_centralizada "${VERDE}" "Digite o numero da opcao desejada e pressione ENTER."
         read -rp "Escolha uma opcao: " opcao
 
         case "$opcao" in
@@ -75,7 +75,7 @@ main() {
                 read -rp "Pressione ENTER para continuar..." -t 5
                 ;;
             0)
-                _limpa_tela
+                clear
                 printf '%s' "${NORMAL:-}"
                 _encerrar_programa 0
                 ;;

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/07/2026-01
+# Versao: 23/07/2026-01
 #
 
 # Variaveis globais esperadas
@@ -18,9 +18,9 @@ CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Variavel do nome da base de da
 # Mostra versao do IsCOBOL
 _mostrar_versao_iscobol() {
     if [[ -x "${SAVISC}${ISCCLIENT}" ]]; then
-        _limpa_tela
+        clear
         _linha "=" "${VERDE}"
-        _mensagec "${VERDE}" "Versao do IsCobol"
+        _exibir_mensagem_centralizada "${VERDE}" "Versao do IsCobol"
         _linha "=" "${VERDE}"
         "${SAVISC}${ISCCLIENT}" -v
         _linha "=" "${VERDE}"
@@ -36,12 +36,12 @@ _mostrar_versao_iscobol() {
 
 # Mostra informacoes do Linux
 _mostrar_versao_linux() {
-    _limpa_tela
+    clear
     printf "\n"
-    _mensagec "${VERDE}" "Vamos descobrir qual S.O. / Distro voce esta executando"
+    _exibir_mensagem_centralizada "${VERDE}" "Vamos descobrir qual S.O. / Distro voce esta executando"
     _linha
     printf "\n"
-    _mensagec "${AMARELO}" "A partir de algumas informacoes basicas do seu sistema, parece estar executando:"
+    _exibir_mensagem_centralizada "${AMARELO}" "A partir de algumas informacoes basicas do seu sistema, parece estar executando:"
     _linha
 
     # Checando se conecta com a internet ou nao
@@ -93,7 +93,7 @@ _mostrar_versao_linux() {
 
     _linha
     _aguardar_tecla
-    _limpa_tela
+    clear
     _linha
 
     # Checando os usuarios logados — direto, sem arquivo temporario
@@ -130,7 +130,7 @@ _mostrar_parametros() {
     if [[ -f "${CFG_DIR}/.versao" ]]; then
         "." "${CFG_DIR}/.versao"
     fi
-    _limpa_tela
+    clear
     _linha "=" "${CIANO}"
     printf '%b\n' "${VERDE}Diretorio RAIZ: ${NORMAL}${RAIZ}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do atualiza.sh: ${NORMAL}${SCRIPT_DIR}${NORMAL}"
@@ -152,7 +152,7 @@ _mostrar_parametros() {
     printf '%b\n' "${VERDE}Biblioteca 3: ${NORMAL}${SAVATU3}${NORMAL}"
     _linha "=" "${CIANO}"
     _aguardar_tecla
-    _limpa_tela
+    clear
     _linha "=" "${CIANO}"
     printf '%b\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}"
@@ -188,7 +188,7 @@ _manutencao_setup() {
     if [[ -f "${CFG_DIR}/.config" ]] && command -v _carregar_config_seguro >/dev/null 2>&1; then
         _carregar_config_seguro "${CFG_DIR}/.config" || true
         _configurar_variaveis_sistema || true
-        _mensagec "${VERDE}" "Configuracoes recarregadas na sessao atual."
+        _exibir_mensagem_centralizada "${VERDE}" "Configuracoes recarregadas na sessao atual."
         _aguardar 2
     fi
 }

@@ -4,16 +4,16 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 10/07/2026-01
+# Versao: 23/07/2026-01
 # Autor: Luiz Augusto
 #
 
 # Mostra menu de lembretes
 # Escreve nova nota
 _escrever_nova_nota() {
-    _limpa_tela
+    clear
     _linha
-    _mensagec "${AMARELO}" "Digite sua nota (pressione Ctrl+D para finalizar):"
+    _exibir_mensagem_centralizada "${AMARELO}" "Digite sua nota (pressione Ctrl+D para finalizar):"
     _linha
 
     local arquivo_notas="${CFG_DIR}/lembrete"
@@ -31,10 +31,10 @@ _escrever_nova_nota() {
 
         if [[ "$tamanho_depois" -gt "$tamanho_antes" ]]; then
             _linha
-            _mensagec "${VERDE}" "Nota gravada com sucesso!"
+            _exibir_mensagem_centralizada "${VERDE}" "Nota gravada com sucesso!"
         else
             _linha
-            _mensagec "${AMARELO}" "Nenhum conteudo foi digitado."
+            _exibir_mensagem_centralizada "${AMARELO}" "Nenhum conteudo foi digitado."
         fi
         _aguardar 2
     else
@@ -46,7 +46,7 @@ _escrever_nova_nota() {
 # Mostra notas iniciais se existirem
 _mostrar_notas_iniciais() {
     local nota_inicial="${CFG_DIR}/lembrete"
-    
+
     if [[ -f "$nota_inicial" && -s "$nota_inicial" ]]; then
         _visualizar_notas_arquivo "$nota_inicial"
     fi
@@ -55,9 +55,9 @@ _mostrar_notas_iniciais() {
 # ---------- MENSAGEM DE ENTRADA ----------
 # Gera ou edita a mensagem que sera exibida ao iniciar o programa
 _gerar_aviso_entrada() {
-    _limpa_tela
+    clear
     _linha
-    _mensagec "${AMARELO}" "Digite a mensagem de entrada (Ctrl+D para finalizar):"
+    _exibir_mensagem_centralizada "${AMARELO}" "Digite a mensagem de entrada (Ctrl+D para finalizar):"
     _linha
 
     local arquivo_msg="${CFG_DIR}/avisos"
@@ -68,11 +68,11 @@ _gerar_aviso_entrada() {
         if [[ -s "$arquivo_tmp" ]]; then
             mv -f "$arquivo_tmp" "$arquivo_msg"
             _linha
-            _mensagec "${VERDE}" "Mensagem gravada com sucesso!"
+            _exibir_mensagem_centralizada "${VERDE}" "Mensagem gravada com sucesso!"
         else
             rm -f "$arquivo_tmp"
             _linha
-            _mensagec "${AMARELO}" "Nenhum conteudo foi digitado. Mensagem nao alterada."
+            _exibir_mensagem_centralizada "${AMARELO}" "Nenhum conteudo foi digitado. Mensagem nao alterada."
         fi
         _aguardar 2
     else
@@ -85,15 +85,15 @@ _gerar_aviso_entrada() {
 # Edita nota existente
 _editar_aviso_existente() {
     local arquivo_avisos="${CFG_DIR}/avisos"
-    
-    _limpa_tela
+
+    clear
     if [[ -f "$arquivo_avisos" ]]; then
         if ! ${EDITOR:-nano} "$arquivo_avisos"; then
             _erro "ao abrir editor!"
             _aguardar 2
         fi
     else
-        _mensagec "${AMARELO}" "Nenhuma mensagem de aviso encontrada para editar!"
+        _exibir_mensagem_centralizada "${AMARELO}" "Nenhuma mensagem de aviso encontrada para editar!"
         _aguardar 2
     fi
 }
@@ -102,9 +102,9 @@ _editar_aviso_existente() {
 _mostrar_aviso() {
     local arquivo_msg="${CFG_DIR}/avisos"
     if [[ -f "$arquivo_msg" ]] && grep -q '[^[:space:]]' "$arquivo_msg"; then
-        _limpa_tela
+        clear
         _linha "=" "${CIANO}"
-        _mensagec "${AMARELO}" "MENSAGEM DE ENTRADA"
+        _exibir_mensagem_centralizada "${AMARELO}" "MENSAGEM DE ENTRADA"
         _linha "=" "${CIANO}"
         printf "\n"
         # exibicao simples, respeitando largura do terminal
@@ -128,14 +128,14 @@ _apagar_arquivo_configuracoes() {
     local descricao="$2"
 
     if [[ ! -f "$arquivo" ]]; then
-        _mensagec "${AMARELO}" "Nenhuma ${descricao} encontrada para excluir!"
+        _exibir_mensagem_centralizada "${AMARELO}" "Nenhuma ${descricao} encontrada para excluir!"
         _aguardar 2
         return
     fi
 
     if _confirmar "Tem certeza que deseja apagar ${descricao}?" "N"; then
         if rm -f "$arquivo"; then
-            _mensagec "${VERMELHO}" "${descricao^} excluida com sucesso!"
+            _exibir_mensagem_centralizada "${VERMELHO}" "${descricao^} excluida com sucesso!"
         else
             _erro "Erro ao excluir ${descricao}"
         fi
@@ -172,9 +172,9 @@ _visualizar_notas_arquivo() {
         return 1
     fi
 
-    _limpa_tela
+    clear
     _linha "=" "${CIANO}"
-    _mensagec "${AMARELO}" "LEMBRETES E NOTAS"
+    _exibir_mensagem_centralizada "${AMARELO}" "LEMBRETES E NOTAS"
     _linha "=" "${CIANO}"
     printf "\n"
 
@@ -200,8 +200,8 @@ _visualizar_notas_arquivo() {
 # Edita nota existente
 _editar_nota_existente() {
     local arquivo_notas="${CFG_DIR}/lembrete"
-    
-    _limpa_tela
+
+    clear
     if [[ -f "$arquivo_notas" ]]; then
         if ! ${EDITOR:-nano} "$arquivo_notas"; then
             _erro "ao abrir editor!"
