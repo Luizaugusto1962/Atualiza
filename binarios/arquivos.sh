@@ -108,6 +108,7 @@ _limpar_base_especifica() {
     local caminho_base="$1"
     local arquivo_lista="$2"
     local arquivos_temp=()
+    local padrao_arquivo
 
     # Validar parâmetros
     if [[ -z "$caminho_base" || -z "$arquivo_lista" ]]; then
@@ -245,6 +246,7 @@ _lista_arquivos_lixo() {
 # Recupera arquivo especifico ou todos
 _recuperar_arquivo_especifico() {
     local continuar="S"
+    local confirmar_todos
 
     if ! _selecionar_base_arquivos; then
         return 0
@@ -419,6 +421,7 @@ _executar_lista_arquivos() {
 # Edita a lista de arquivos (variosarquivos): visualiza, adiciona, altera ou remove linhas
 _editar_lista_arquivos() {
     local arquivo_lista="${CFG_DIR}/variosarquivos"
+    local novo num conf
 
     if [[ ! -f "$arquivo_lista" ]]; then
         _erro "Arquivo ${arquivo_lista} nao encontrado"

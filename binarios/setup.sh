@@ -34,9 +34,8 @@ if [[ -f "${LIBS_DIR}/constantes.sh" ]]; then
 fi
 }
 
-# Variáveis globais
-declare -l base base2 base3 enviabackup
-declare -u empresa
+# Variaveis globais usadas pelas funcoes de setup
+# (normalizacao de caso e feita explicitamente nas funcoes)
 
 tracejada="#-------------------------------------------------------------------#"
 traco="#####################################################################"
@@ -143,6 +142,7 @@ _edit_setup() {
 
 # Configuracao para IsCobol
 _setup_iscobol() {
+    local VERSAO
     echo "$tracejada"
     echo "Escolha a versao do Iscobol:"
     echo "1) Versao 2020"
@@ -207,12 +207,15 @@ _setup_diretorios() {
     echo "###     ( Nome de pasta no servidor )              ###"
     read -rp "Nome da pasta da base de dados principal (Ex: /dados_jisam): " base
     base="${base:-/dados_jisam}"
+    base="${base,,}"  # Normalizar para minusculo
     echo "base=${base}" >> .config
     echo ${tracejada}
     read -rp "Nome da pasta da segunda base de dados (Opcional): " base2
+    base2="${base2,,}"  # Normalizar para minusculo
     [[ -n "$base2" ]] && echo "base2=${base2}" >> .config || echo "#base2=" >> .config
     echo ${tracejada}
     read -rp "Nome da pasta da terceira base de dados (Opcional): " base3
+    base3="${base3,,}"  # Normalizar para minusculo
     [[ -n "$base3" ]] && echo "base3=${base3}" >> .config || echo "#base3=" >> .config
     echo ${tracejada}
 }
@@ -254,6 +257,7 @@ _setup_chave_acesso() {
 }
 
 _setup_offline() {
+    local opt
     echo "###      ( Tipo de acesso        )         ###"
     while true; do
         read -rp "Servidor OFF [S/N]: " -n1 opt
@@ -294,6 +298,7 @@ _setup_backup() {
         read -rp "Nome do diretorio sem a /: " enviabackup
 
         # Monta o caminho completo esperado e salva
+        enviabackup="${enviabackup,,}"  # Normalizar para minusculo
         enviabackup="/cliente/${enviabackup}_jisam"
         echo "enviabackup=${enviabackup}" >> .config
     fi
@@ -305,6 +310,7 @@ _setup_empresa() {
     echo "###   Nao pode conter espacos entre os nomes    ###"
     echo ${tracejada}
     read -rp "Nome da Empresa (sem espacos): " empresa
+    empresa="${empresa^^}"  # Normalizar para maiusculo
     echo "empresa=${empresa}" >> .config
     _configure_ssh_access
 }
@@ -317,6 +323,7 @@ _editar_variavel() {
     local nome="$1"
     local valor_atual="${!nome}"
     local tracejada="#-------------------------------------------------------------------#"
+    local alterar opt novo_valor
 
     while true; do
         read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
@@ -342,6 +349,15 @@ _editar_variavel() {
                 ;;
             *)
                 read -rp "Novo valor para ${nome}: " novo_valor
+                # Aplicar normalizacao de caso conforme a variavel
+                case "$nome" in
+                    "base"|"base2"|"base3"|"enviabackup")
+                        novo_valor="${novo_valor,,}"  # Normalizar para minusculo
+                        ;;
+                    "empresa")
+                        novo_valor="${novo_valor^^}"  # Normalizar para maiusculo
+                        ;;
+                esac
                 declare -g "$nome"="$novo_valor"
                 ;;
         esac
@@ -453,6 +469,7 @@ main() {
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
 # Quando chamado diretamente de /binarios, sobe um nivel para o diretorio do atualiza.sh
     if [[ -z "${SCRIPT_DIR:-}" ]]; then
+        local _self_dir
         _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         if [[ "$(basename "${_self_dir}")" == "binarios" ]]; then
             SCRIPT_DIR="$(dirname "${_self_dir}")"
@@ -497,6 +514,7 @@ cd "${SCRIPT_DIR}" || _encerrar_programa 1
         if [[ -f "${CFG_DIR}/.config" ]]; then
             _limpa_tela
             echo "Arquivos de configuracao ja existem."
+            local choice
             while true; do
                 read -rp "Deseja sobrescrevê-los com a configuracao inicial? [s/N]: " choice
                 if [[ "${choice,,}" =~ ^[sn]$ ]]; then

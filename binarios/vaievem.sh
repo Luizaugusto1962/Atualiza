@@ -227,9 +227,9 @@ _receber_scp() {
 # NOTA: $2 sobrescreve CFG_BACKUP_PATH para uso nesta chamada. Se omitido, usa CFG_BACKUP_PATH global.
 _enviar_rsync() {
     local arquivo_local="${1:-}"
-    local CFG_BACKUP_PATH="${2:-${CFG_BACKUP_PATH:-}}"
+    local destino_remoto="${2:-${CFG_BACKUP_PATH:-}}"
 
-    if [[ -z "$arquivo_local" || -z "$CFG_BACKUP_PATH" ]]; then
+    if [[ -z "$arquivo_local" || -z "$destino_remoto" ]]; then
         _log_erro "Parametros obrigatorios nao informados para upload RSYNC"
         return 1
     fi
@@ -243,7 +243,7 @@ _enviar_rsync() {
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local rem_user="${5:-$DEFAULT_SSH_USER}"
     _log "Iniciando upload RSYNC: ${arquivo_local}"
-    local destino_completo="${rem_user}@${servidor}:${CFG_BACKUP_PATH}"
+    local destino_completo="${rem_user}@${servidor}:${destino_remoto}"
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     local rsync_base=("rsync" "-avzP")

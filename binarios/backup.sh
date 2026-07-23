@@ -906,7 +906,7 @@ _executar_backup_multiplos_padroes() {
     _linha
 
     # Gerar nome do arquivo
-    local nome_backup nome_base_dir resultado_zip_multi
+    local nome_backup nome_base_dir resultado_zip_multi caminho_backup
     nome_base_dir=$(basename "$base_trabalho")
     nome_backup="${CFG_EMPRESA}_multiplos_${nome_base_dir}_$(date +%Y%m%d%H%M).zip"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"

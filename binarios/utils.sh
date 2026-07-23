@@ -747,6 +747,7 @@ _verificar_ou_criar_chave() {
 
     _aviso "Chave SSH nao encontrada em $CHAVE"
     printf "\nDeseja criar uma nova chave SSH agora? [s/N] "
+    local RESPOSTA
     read -r RESPOSTA
 
     case "$RESPOSTA" in

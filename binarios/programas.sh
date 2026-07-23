@@ -466,7 +466,6 @@ _processar_atualizacao_programas() {
         return 1
     }
 
-    local arquivo
     local programa_idx=0
 
     # Criar backup dos programas antigos

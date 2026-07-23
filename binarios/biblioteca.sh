@@ -343,10 +343,8 @@ _executar_atualizacao_biblioteca() {
     done
     local contador=1
 
-# Definir diretorio de configuracao usando variaveis locais
-    local RAIZ_LOCAL="${RAIZ}"
-    local principal_local
-    principal_local="${RAIZ_LOCAL%/*}"
+    # Definir diretorio de configuracao usando variaveis locais
+    local principal_local="${RAIZ%/*}"
 
     # Processar cada arquivo de atualizacao
     for arquivo in "${arquivos_update[@]}"; do
