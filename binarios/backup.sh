@@ -320,7 +320,7 @@ _executar_backup_completo() {
 
     if [[ $resultado_zip -ne 0 ]]; then
         printf "%s\n" "AVISO: zip retornou erro $resultado_zip (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -r -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
+        "$DEFAULT_ZIP" -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
     fi
 
     if [[ $resultado_zip -ne 0 ]]; then
@@ -394,7 +394,7 @@ _executar_backup_incremental() {
 
     if [[ $resultado_zip_inc -ne 0 ]]; then
         printf "%s\n" "AVISO: zip retornou erro $resultado_zip_inc (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -r -u "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
+        "$DEFAULT_ZIP" -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
     fi
 
     if [[ $resultado_zip_inc -ne 0 ]]; then
