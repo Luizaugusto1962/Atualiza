@@ -6,9 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
-# Autor: Luiz Augusto
-#
+# Versao: 30/07/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -329,6 +327,9 @@ _executar_backup_completo() {
 
     rm -f "$arquivos_temp"
 
+    # Definir permissao do arquivo backup (apos todas as operacoes de zip)
+    chmod "$PERM_FILE_CREATE" "$arquivo_destino" 2>/dev/null || true
+
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
         return 1
@@ -416,6 +417,9 @@ _executar_backup_incremental() {
 
     # Limpar arquivo temporario
     rm -f "$arquivos_temp"
+
+    # Definir permissao do arquivo backup
+    chmod "$PERM_FILE_CREATE" "$arquivo_destino" 2>/dev/null || true
 
     printf "%s\n" "SUCESSO: Backup incremental criado: $arquivo_destino" >> "${LOG_ATU:-/dev/null}" 2>/dev/null || true
     return 0
@@ -912,6 +916,9 @@ _executar_backup_multiplos_padroes() {
     if [[ $resultado_zip_multi -ne 0 ]]; then
         printf "%s\n" "AVISO: Falha parcial ao criar backup multiplos (alguns arquivos podem estar em uso): $caminho_backup"
     fi
+
+    # Definir permissao do arquivo backup
+    chmod "$PERM_FILE_CREATE" "$caminho_backup" 2>/dev/null || true
 
     # Verificar se o backup foi criado
     if [[ ! -f "$caminho_backup" ]]; then

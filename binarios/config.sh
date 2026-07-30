@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-03
+# Versao: 30/07/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -231,7 +231,7 @@ _configurar_diretorios() {
         return 1
     }
 
-    local dirs=("${DEFAULT_BIBLIOTECA_ATUAL_DIR}" "${DEFAULT_BIBLIOTECA_DIR}" "${DEFAULT_BASEBACKUP_DIR}" "${DEFAULT_OLDS_DIR}" "${DEFAULT_PROGS_DIR}" "${DEFAULT_LOGS_DIR}" "${DEFAULT_ENVIA_DIR}" "${DEFAULT_RECEBE_DIR}" "${DEFAULT_BACKUP_DIR}")
+    local dirs=("${DEFAULT_BIBLIOTECA_ATUAL_DIR}" "${DEFAULT_BIBLIOTECA_DIR}" "${DEFAULT_BASEBACKUP_DIR}" "${DEFAULT_OLDS_DIR}" "${DEFAULT_PROGS_DIR}" "${DEFAULT_ENVIA_DIR}" "${DEFAULT_RECEBE_DIR}" "${DEFAULT_BACKUP_DIR}")
     local dir
     for dir in "${dirs[@]}"; do
         _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
@@ -275,6 +275,13 @@ _validar_ssh() {
     fi
 
     _exibir_mensagem_centralizada "${VERDE}" "OK: Acesso SSH habilitado"
+
+    if ping -c 1 -W 2 "${DEFAULT_IP_SERVER}" &>/dev/null; then
+        _exibir_mensagem_centralizada "${VERDE}" "Servidor ${DEFAULT_IP_SERVER} respondeu ping"
+    else
+        _exibir_mensagem_centralizada "${AMARELO}" "Servidor ${DEFAULT_IP_SERVER} sem resposta ao ping — pulando validacao SSH"
+        return 0
+    fi
 
     local ssh_host="${DEFAULT_IP_SERVER}"
     local ssh_user="${DEFAULT_SSH_USER}"
