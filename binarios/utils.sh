@@ -6,21 +6,68 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-02
+# Versao: 30/07/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
 # =============================================================================
-RAIZ="${RAIZ:-}"                                   # Diretorio RAIZ do sistema.
+RAIZ="${RAIZ:-}"                                # Diretorio RAIZ do sistema.
 
+# ===== CONFIGURACAO DE TERMINAL =====
+# Exportar variáveis de terminal para subshells e garantir atualizações automáticas
+export LINES COLUMNS
+shopt -s checkwinsize 2>/dev/null || true  # Bash 4+: atualizar LINES/COLUMNS automaticamente
+
+# Valor padrão para largura do terminal (fallback final)
+DEFAULT_COLUMNS="${DEFAULT_COLUMNS:-80}"
+DEFAULT_LINES="${DEFAULT_LINES:-24}"
+
+# Inicializar COLUMNS na primeira execução se em terminal interativo
+if [[ -t 1 || -t 0 ]]; then
+    # Se COLUMNS não está definido, tentar obter do terminal
+    if [[ -z "${COLUMNS:-}" ]] && command -v stty >/dev/null 2>&1; then
+        COLUMNS=$(stty size 2>/dev/null | awk '{print $2}' 2>/dev/null)
+        LINES=$(stty size 2>/dev/null | awk '{print $1}' 2>/dev/null)
+        export COLUMNS LINES
+    fi
+fi
+
+# Garantir que COLUMNS tenha um valor válido
+COLUMNS="${COLUMNS:-$DEFAULT_COLUMNS}"
+LINES="${LINES:-$DEFAULT_LINES}"
+export COLUMNS LINES
+
+# =============================================================================
+# Funcoes de Utilitarios Basicos
+# =============================================================================
 # Obtem largura do terminal com fallback seguro
 # Retorna: numero de colunas
+# Obtem largura do terminal usando variavel de ambiente COLUMNS
+# Estrategia: COLUMNS (já definida) > Fallback padrão
+# Esta funcao garante que sempre retorna um valor válido
+# Retorna: numero de colunas (garantido ser positivo)
 _obter_colunas() {
-    local colunas
-    if ! colunas=$(tput cols 2>/dev/null); then
-        colunas="${COLUMNS:-${DEFAULT_COLUMNS}}"
+    local colunas="${COLUMNS:-}"
+
+    # Se COLUMNS está definido e é um numero positivo, usar
+    if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
+        printf '%s' "$colunas"
+        return 0
     fi
-    printf '%s' "$colunas"
+
+    # Fallback: tentar atualizar COLUMNS via stty se disponível
+    if [[ -t 1 ]] && command -v stty >/dev/null 2>&1; then
+        colunas=$(stty size 2>/dev/null | awk '{print $2}' 2>/dev/null)
+        if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
+            export COLUMNS="$colunas"
+            printf '%s' "$colunas"
+            return 0
+        fi
+    fi
+
+    # Ultima alternativa: usar valor padrão
+    printf '%s' "$DEFAULT_COLUMNS"
+    return 0
 }
 
 # Configuracao de alertas
@@ -48,25 +95,34 @@ _upper() {
     printf '%s' "${1^^}"
 }
 
+# Atualiza as variaveis LINES e COLUMNS baseado no terminal atual
+# Chame esta funcao se o terminal for redimensionado (ex: dentro de _meio_da_tela)
+_atualizar_tamanho_terminal() {
+    if [[ -t 1 ]] && command -v stty >/dev/null 2>&1; then
+        local tamanho
+        tamanho=$(stty size 2>/dev/null)
+        if [[ -n "$tamanho" ]]; then
+            LINES=$(echo "$tamanho" | awk '{print $1}')
+            COLUMNS=$(echo "$tamanho" | awk '{print $2}')
+            export LINES COLUMNS
+        fi
+    fi
+}
 # Posiciona o cursor no meio da tela
 _meio_da_tela() {
+    _atualizar_tamanho_terminal  # Atualizar tamanho antes de usar
     tput clear 2>/dev/null || true
-    tput cup $(( $(tput lines 2>/dev/null || echo "${LINES:-24}") / 2 )) 0 2>/dev/null || true
+    tput cup $(( LINES / 2 )) 0 2>/dev/null || true
 }
 
 # Exibe mensagem centralizada alinhada a esquerda com cor
 # Parametros: $1=cor $2=mensagem
 _exibir_mensagem_centralizada_a_esquerda() {
-#_exibir_bloco_centralizado() {
     local cor="${1}"
     local mensagem="${2}"
     local largura_bloco="${3:-30}" # Largura do bloco (padrao 30)
     local colunas
     local margem_esquerda
-
-    # Garantir que NORMAL e cor estejam definidos (fallback seguro)
-    : "${NORMAL:=}"
-    : "${cor:=}"
 
     # Obter largura do terminal
     colunas=$(_obter_colunas)
