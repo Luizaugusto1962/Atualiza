@@ -276,13 +276,6 @@ _validar_ssh() {
 
     _exibir_mensagem_centralizada "${VERDE}" "OK: Acesso SSH habilitado"
 
-    if ping -c 1 -W 2 "${DEFAULT_IP_SERVER}" &>/dev/null; then
-        _exibir_mensagem_centralizada "${VERDE}" "Servidor ${DEFAULT_IP_SERVER} respondeu ping"
-    else
-        _exibir_mensagem_centralizada "${AMARELO}" "Servidor ${DEFAULT_IP_SERVER} sem resposta ao ping — pulando validacao SSH"
-        return 0
-    fi
-
     local ssh_host="${DEFAULT_IP_SERVER}"
     local ssh_user="${DEFAULT_SSH_USER}"
     local ssh_port="${DEFAULT_SSH_PORTA:-22}"
