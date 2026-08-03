@@ -698,12 +698,25 @@ _enviabackup_para_receber() {
 
 
 # ---------- COMPATIBILIDADE SSH ----------
-# Retorna opcao compativel para StrictHostKeyChecking.
-# Usamos 'yes' porque servers antigos (RHEL 6, CentOS 6) nao suportam 'accept-new'.
-# yes funciona em qualquer versao do SSH desde o OpenSSH 3.8.
+# Retorna opcao para StrictHostKeyChecking que aceita automaticamente chaves
+# novas, evitando que a primeira conexao trave pedindo confirmacao interativa
+# (ou falhe com "host key verification failed").
+# - 'accept-new' (OpenSSH >= 7.6): aceita chave nova sem prompt.
+# - 'no' em clientes antigos (RHEL 6/CentOS 6, OpenSSH 5.x) que nao reconhecem
+#   'accept-new' — tambem aceita chaves novas sem interromper o fluxo.
 # NUNCA escreva StrictHostKeyChecking=aceitar diretamente — chame esta funcao.
 _ssh_aceitar_novo() {
-    printf 'yes'
+    local versao
+    versao="$(ssh -V 2>&1 || true)"
+    if [[ "${versao}" =~ OpenSSH_([0-9]+)\.([0-9]+) ]]; then
+        local maior="${BASH_REMATCH[1]}"
+        local menor="${BASH_REMATCH[2]}"
+        if (( maior > 7 )) || (( maior == 7 && menor >= 6 )); then
+            printf 'accept-new'
+            return 0
+        fi
+    fi
+    printf 'no'
 }
 
 #---------- FUNCOES DE CHAVES SSH ----------#

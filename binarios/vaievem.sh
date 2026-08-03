@@ -102,7 +102,7 @@ _receber_sftp_ssh() {
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
 
     # Construir opções SFTP com controle de acesso por chave
-    local sftp_opts=("-P" "$porta_ssh")
+    local sftp_opts=("-P" "$porta_ssh" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
     if _usar_chave_ssh; then
         _adicionar_opcoes_chave sftp_opts
     fi
@@ -186,6 +186,7 @@ _receber_scp() {
         -o ConnectTimeout=30
         -o ServerAliveInterval=15
         -o ServerAliveCountMax=3
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
     )
 
     if _usar_chave_ssh; then
@@ -247,7 +248,7 @@ _enviar_rsync() {
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     local rsync_base=("rsync" "-avzP")
-    local -a ssh_cmd_parts=("ssh" "-p" "${porta}")
+    local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if _usar_chave_ssh; then
         ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
@@ -321,7 +322,7 @@ _baixar_biblioteca_sincroniza() {
                 fi
 
                 local src="${rem_user}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
-                local scp_cmd=("scp" "-P" "$porta")
+                local scp_cmd=("scp" "-P" "$porta" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
                 if _usar_chave_ssh; then
                     scp_cmd+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)" "-o" "BatchMode=yes")
