@@ -830,7 +830,6 @@ _executar_expurgador() {
         "${RAIZ}/savisc/viewvix/tmp/"
     )
 
-
     # Limpar arquivos antigos nos diretorios padrao
     local diretorios_zip
     for diretorio in "${diretorios_limpeza[@]}"; do

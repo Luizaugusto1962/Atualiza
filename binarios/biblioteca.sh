@@ -523,7 +523,6 @@ _reverter_programa_especifico_biblioteca() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
-
 # Solicita versao da biblioteca
 _solicitar_versao_biblioteca() {
     declare -g VERSAO

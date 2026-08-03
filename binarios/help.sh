@@ -266,7 +266,6 @@ _buscar_manual() {
 }
 
 #---------- EXPORTAR MANUAL ----------#
-
 # Exporta manual para arquivo externo
 _exportar_manual() {
     local destino="${1:-$SCRIPT_DIR/manual_sav.txt}"

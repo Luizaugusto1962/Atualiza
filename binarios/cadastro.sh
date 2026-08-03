@@ -19,7 +19,6 @@ _encerrar_programa() {
     exit "$status"
 }
 
-
 # Variaveis globais esperadas
 CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
 LIBS_DIR="${LIBS_DIR:-}"                 # Diretorio de modulos de biblioteca

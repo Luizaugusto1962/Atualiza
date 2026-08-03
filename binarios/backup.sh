@@ -22,7 +22,6 @@ _limpar_backup() {
     fi
 }
 
-
 #---------- FUNCOES PRINCIPAIS DE backup ----------#
 # Valida pre-requisitos comuns antes de executar qualquer backup
 # Parametros: $1=base_trabalho (por referencia, sera definida pela funcao)
@@ -236,7 +235,6 @@ _restaurar_backup() {
     fi
 }
 
-
 _enviar_backup_avulso() {
     # Seleciona o backup usando a rotina unica
     if ! _selecionar_backup; then
@@ -265,7 +263,6 @@ _enviar_backup_avulso() {
 }
 
 #---------- FUNCOES DE EXECUCAO DE BACKUP ----------#
-
 # Valida se o backup foi criado corretamente
 _validar_backup_criado() {
     local arquivo_destino="$1"
@@ -523,7 +520,6 @@ _selecionar_backup() {
 }
 
 #---------- FUNCOES DE RESTAURACAO ----------#
-
 # Restaura backup completo
 _restaurar_backup_completo() {
     local arquivo_backup="$1"
@@ -610,9 +606,7 @@ _restaurar_arquivo_especifico() {
     done
 }
 
-
 #---------- FUNCOES DE ENVIO ----------#
-
 # Envia backup para servidor
 _enviar_backup_servidor() {
     local nome_backup="$1"
@@ -742,7 +736,6 @@ _enviar_backup_rede() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
-
 _verificar_espaco_disco() {
     local diretorio="$1" espaco_minimo="${2:-1048576}"
     local espaco_disponivel

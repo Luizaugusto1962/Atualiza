@@ -123,7 +123,6 @@ for dir in "${AUX_DIRS[@]}"; do
     }
 done
 
-
 # =============================================================================
 # CARREGAMENTO DE MÓDULOS
 # Carrega um módulo com verificação de segurança
