@@ -270,10 +270,10 @@ _aguardar() {
 }
 
 
-# Aguarda pressionar qualquer tecla com timeout
+# Aguarda pressionar qualquer tecla com tempo_limite
 _aguardar_tecla() {
     local mensagem="${1:-... Pressione qualquer tecla para continuar ...}"
-    local timeout="${2:-${DEFAULT_PRESS_TIMEOUT}}"
+    local tempo_limite="${2:-${DEFAULT_PRESS_TIMEOUT}}"
     local colunas
 
     colunas=$(_obter_colunas)
@@ -281,7 +281,7 @@ _aguardar_tecla() {
     printf "%s" "${AMARELO}"
     printf "%*s\n" $(((36 + colunas) / 2)) "<< $mensagem >>"
     printf "%s" "${NORMAL}"
-    read -rt "$timeout" || :
+    read -rt "$tempo_limite" || :
     tput sgr0 2>/dev/null || true
 }
 
@@ -320,7 +320,7 @@ _confirmar() {
     local resposta
     local tentativas=0
     local max_tentativas=3
-    local timeout="${DEFAULT_READ_TIMEOUT:-60}"
+    local tempo_limite="${DEFAULT_READ_TIMEOUT:-60}"
 
     case "$padrao" in
         [Ss]) opcoes="[S/n]" ;;
@@ -329,7 +329,7 @@ _confirmar() {
     esac
 
     while (( tentativas < max_tentativas )); do
-        if ! read -r -t "${timeout}" -p "${AMARELO}${mensagem} ${opcoes}: ${NORMAL}" resposta; then
+        if ! read -r -t "${tempo_limite}" -p "${AMARELO}${mensagem} ${opcoes}: ${NORMAL}" resposta; then
             # Timeout ou erro de leitura — usar padrao
             _exibir_mensagem_centralizada "${AMARELO}" "Entrada expirada. Usando padrao: ${padrao}"
             resposta="$padrao"
@@ -363,12 +363,12 @@ _confirmar() {
 # FUNCOES DE PROGRESSO
 # =============================================================================
 # Formata tempo decorrido em segundos para exibicao
-# Parametros: $1=elapsed seconds
+# Parametros: $1=decorrido seconds
 # Retorna: string formatada (ex: "2m 30s" ou "45s")
 _formatar_tempo() {
-    local elapsed="$1"
-    local min=$(( elapsed / 60 ))
-    local seg=$(( elapsed % 60 ))
+    local decorrido="$1"
+    local min=$(( decorrido / 60 ))
+    local seg=$(( decorrido % 60 ))
     local tempo_str=""
     (( min > 0 )) && tempo_str="${min}m "
     tempo_str+="${seg}s"
@@ -383,13 +383,13 @@ _formatar_tempo() {
 _mostrar_progresso_backup() {
     local pid="${1:-}"
     local msg="${2:-Processando}"
-    local elapsed=0
+    local decorrido=0
     local anim_pos=0
     local texto_base="Aguarde..."
     local texto_len=${#texto_base}
     local barra=""
     local barra_format=""
-    local status_proc=0
+    local status_processo=0
 
     if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
         _aviso "PID nao informado ou processo ja terminado"
@@ -403,10 +403,10 @@ _mostrar_progresso_backup() {
     exec 3>&1
 
     while kill -0 "$pid" 2>/dev/null; do
-        elapsed=$((elapsed + 1))
+        decorrido=$((decorrido + 1))
 
         # Animacao: mostrar letras do texto base progressivamente e preencher com pontos
-        anim_pos=$(( (elapsed - 1) % texto_len ))
+        anim_pos=$(( (decorrido - 1) % texto_len ))
         barra="${texto_base:0:anim_pos + 1}"
         local dots_needed=$((texto_len - ${#barra}))
         printf -v barra_format "%s%${dots_needed}s" "$barra" ""
@@ -415,7 +415,7 @@ _mostrar_progresso_backup() {
         # Formatar campos com tamanho fixo para que \r sobrescreva corretamente
         local msg_format tempo_format
         printf -v msg_format "%-25s" "$msg"
-        printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
+        printf -v tempo_format "%8s" "$(_formatar_tempo "$decorrido")"
 
         printf "\r\033[K%s[INFORMATIVO]%s %s |%s| %s" \
             "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
@@ -426,7 +426,7 @@ _mostrar_progresso_backup() {
 
     # Coletar status de saida
     barra=" Concluido "
-    wait "$pid" 2>/dev/null && status_proc=0 || status_proc=$?
+    wait "$pid" 2>/dev/null && status_processo=0 || status_processo=$?
 
     # Restaurar cursor
     printf "\033[?25h" 2>/dev/null || true
@@ -434,14 +434,14 @@ _mostrar_progresso_backup() {
     # Formatar e exibir resultado final
     local msg_format tempo_format
     printf -v msg_format "%-25s" "$msg"
-    printf -v tempo_format "%8s" "$(_formatar_tempo "$elapsed")"
+    printf -v tempo_format "%8s" "$(_formatar_tempo "$decorrido")"
 
     printf "\r\033[K%s[OK]%s %s |%s| %s concluido\n" \
         "${VERDE}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
 
     exec 3>&-
 
-    return $status_proc
+    return $status_processo
 }
 
 #---------- FUNCOES DE LOG ----------#
@@ -600,7 +600,7 @@ _check_instalado() {
     local apps=("$@")
     [[ ${#apps[@]} -eq 0 ]] && apps=(zip unzip rsync wget)
 
-    local missing=()
+    local faltand=()
     local install_cmd=""
 
     # Detectar gerenciador de pacotes
@@ -620,44 +620,44 @@ _check_instalado() {
 
     for app in "${apps[@]}"; do
         if ! command -v "$app" >/dev/null 2>&1; then
-            missing+=("$app")
+            faltand+=("$app")
         fi
     done
 
-    if [[ ${#missing[@]} -gt 0 ]]; then
+    if [[ ${#faltand[@]} -gt 0 ]]; then
         _erro "Programas nao encontrados"
-        _aviso "Programas ausentes: ${missing[*]}"
-        _aviso "Sugestao: ${install_cmd} ${missing[*]}"
+        _aviso "Programas ausentes: ${faltand[*]}"
+        _aviso "Sugestao: ${install_cmd} ${faltand[*]}"
         _aviso "Instale os programas ausentes e tente novamente."
         return 1
     fi
 }
 
 _enviabackup_para_receber() {
-    local source_dir="${CFG_PORTALSAV}"
-    local dest_dir="${DEFAULT_RECEBE_DIR}"
+    local dir_origem="${CFG_PORTALSAV}"
+    local dir_destino="${DEFAULT_RECEBE_DIR}"
     local arquivo
     local arquivos_copiados=0
     local arquivos_erro=0
 
     # Validar diretórios de origem e destino
-    if [[ ! -d "${source_dir}" ]]; then
-        _aviso "Diretorio de origem nao existe: ${source_dir}"
+    if [[ ! -d "${dir_origem}" ]]; then
+        _aviso "Diretorio de origem nao existe: ${dir_origem}"
         return 1
     fi
 
-    if [[ ! -d "${dest_dir}" ]]; then
-        _erro "Diretorio de destino nao existe: ${dest_dir}"
+    if [[ ! -d "${dir_destino}" ]]; then
+        _erro "Diretorio de destino nao existe: ${dir_destino}"
         return 2
     fi
 
-    if [[ ! -w "${dest_dir}" ]]; then
-        _erro "Sem permissao de escrita em: ${dest_dir}"
+    if [[ ! -w "${dir_destino}" ]]; then
+        _erro "Sem permissao de escrita em: ${dir_destino}"
         return 3
     fi
 
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Processando arquivos de backup: ${source_dir} → ${dest_dir}"
+    _exibir_mensagem_centralizada "${AMARELO}" "Processando arquivos de backup: ${dir_origem} → ${dir_destino}"
     _linha
 
     # Iterar sobre arquivos .zip com tratamento seguro
@@ -666,24 +666,24 @@ _enviabackup_para_receber() {
         nome_arquivo="$(basename "${arquivo}")"
 
         # Verificar se o arquivo já existe no destino
-        if [[ -e "${dest_dir}/${nome_arquivo}" ]]; then
+        if [[ -e "${dir_destino}/${nome_arquivo}" ]]; then
             _aviso "Arquivo ja existe (sobrescrevendo): ${nome_arquivo}"
         fi
 
         # Tentar mover o arquivo
-        if mv -f "${arquivo}" "${dest_dir}/" >> "${LOG_ATU}" 2>&1; then
+        if mv -f "${arquivo}" "${dir_destino}/" >> "${LOG_ATU}" 2>&1; then
             _ok "Arquivo movido: ${nome_arquivo}"
             ((arquivos_copiados++)) || true
         else
             _erro "Erro ao mover: ${nome_arquivo}"
             ((arquivos_erro++)) || true
         fi
-    done < <(find "${source_dir}" -maxdepth 1 -type f -name "*.zip" -print0)
+    done < <(find "${dir_origem}" -maxdepth 1 -type f -name "*.zip" -print0)
 
     # Resumo da operação
     _linha
     if (( arquivos_copiados == 0 && arquivos_erro == 0 )); then
-        _aviso "Nenhum arquivo .zip encontrado em ${source_dir}"
+        _aviso "Nenhum arquivo .zip encontrado em ${dir_origem}"
     else
         _exibir_mensagem_centralizada "${VERDE}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
         if (( arquivos_erro > 0 )); then

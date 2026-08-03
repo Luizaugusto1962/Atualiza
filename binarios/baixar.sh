@@ -24,7 +24,7 @@ _executar_update() {
 
 # Atualizacao online via GitHub
 _atualizando() {
-    local zipfile="atualiza.zip"
+    local arquivo_zip="atualiza.zip"
     _configurar_diretorios
     local caminho="${CFG_DIR}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
@@ -78,9 +78,9 @@ _atualizando() {
         _exibir_mensagem_centralizada "${VERDE}" "Backup de $backup_sucesso arquivo(s) realizado com sucesso"
         local data_zip
         data_zip=$(date +"%d%m")
-        local zip_nome="${data_zip}_backup.zip"
-        if (cd "${DEFAULT_BACKUP_DIR}" && zip -jm "${zip_nome}" ./*.sh.bkp >>"$LOG_ATU" 2>&1); then
-            _exibir_mensagem_centralizada "${VERDE}" "Backup compactado com sucesso: ${DEFAULT_BACKUP_DIR}/${zip_nome}"
+        local nome_do_zip="${data_zip}_backup.zip"
+        if (cd "${DEFAULT_BACKUP_DIR}" && zip -jm "${nome_do_zip}" ./*.sh.bkp >>"$LOG_ATU" 2>&1); then
+            _exibir_mensagem_centralizada "${VERDE}" "Backup compactado com sucesso: ${DEFAULT_BACKUP_DIR}/${nome_do_zip}"
         else
             _aviso "Nao foi possivel compactar os arquivos de backup"
         fi
@@ -89,15 +89,15 @@ _atualizando() {
     # =========================================================================
     # CORRECAO CRITICA: Localizar origem do ZIP e preparar ambiente
     # =========================================================================
-    local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
+    local temp_dir="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao/"
     local origem_zip=""
 
-    if [[ -f "${temp_dir}/${zipfile}" ]]; then
-        origem_zip="${temp_dir}/${zipfile}"
-    elif [[ -f "${DEFAULT_RECEBE_DIR}/${zipfile}" ]]; then
-        origem_zip="${DEFAULT_RECEBE_DIR}/${zipfile}"
+    if [[ -f "${temp_dir}/${arquivo_zip}" ]]; then
+        origem_zip="${temp_dir}/${arquivo_zip}"
+    elif [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" ]]; then
+        origem_zip="${DEFAULT_RECEBE_DIR}/${arquivo_zip}"
     else
-        _erro "Arquivo ${zipfile} nao encontrado para descompactacao."
+        _erro "Arquivo ${arquivo_zip} nao encontrado para descompactacao."
         return 1
     fi
 
@@ -116,8 +116,8 @@ _atualizando() {
     #---------- INSTALAR ARQUIVOS DE CONFIGURAÇÃO ----------#
     local arquivos_instalados=0
     local arquivos_erro=0
-    local -a configuracoes_files=("manual.txt" "avisos" "indexar" "limpetmp" "variosarquivos")
-    for configuracoes_arquivo in "${configuracoes_files[@]}"; do
+    local -a arquivos_configuracoes=("manual.txt" "avisos" "indexar" "limpetmp" "variosarquivos")
+    for configuracoes_arquivo in "${arquivos_configuracoes[@]}"; do
         if [[ ! -f "$configuracoes_arquivo" ]]; then continue; fi
         chmod +x "$configuracoes_arquivo" 2>/dev/null || true
         if mv -f "$configuracoes_arquivo" "${CFG_DIR}/"; then
@@ -171,16 +171,16 @@ _atualizando() {
     _exibir_mensagem_centralizada "${CIANO}" "Realizando limpeza dos arquivos de atualizacao..."
 
     # 1. Remover ZIP da raiz de receber (modo online)
-    if [[ -f "${DEFAULT_RECEBE_DIR}/${zipfile}" ]]; then
-        rm -f "${DEFAULT_RECEBE_DIR}/${zipfile}" 2>/dev/null && _log "ZIP original removido: ${DEFAULT_RECEBE_DIR}/${zipfile}"
+    if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" ]]; then
+        rm -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" 2>/dev/null && _log "ZIP original removido: ${DEFAULT_RECEBE_DIR}/${arquivo_zip}"
     fi
 
-    # 2. Remover ZIP do temp_update (modo offline)
-    if [[ -f "${temp_dir}/${zipfile}" ]]; then
-        rm -f "${temp_dir}/${zipfile}" 2>/dev/null && _log "ZIP temporario removido: ${temp_dir}/${zipfile}"
+    # 2. Remover ZIP do dir_temp_atualizacao (modo offline)
+    if [[ -f "${temp_dir}/${arquivo_zip}" ]]; then
+        rm -f "${temp_dir}/${arquivo_zip}" 2>/dev/null && _log "ZIP temporario removido: ${temp_dir}/${arquivo_zip}"
     fi
 
-    # 3. Remover diretorio temp_update completamente (contem apenas restos da extracao)
+    # 3. Remover diretorio dir_temp_atualizacao completamente (contem apenas restos da extracao)
     if [[ -d "${temp_dir}" ]]; then
         rm -rf "${temp_dir}" 2>/dev/null && _log "Diretorio temporario removido: ${temp_dir}"
     fi
@@ -201,14 +201,14 @@ _atualizando() {
 
 _atualizar_online() {
     local link="${GITHUB_UPDATE_URL}"
-    local zipfile="atualiza.zip"
+    local arquivo_zip="atualiza.zip"
     _exibir_mensagem_centralizada "${VERDE}" "Atualizando script via GitHub..."
 
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     _erro "Ao criar diretorio de download"
     return 1
     }
-    if ! wget -q -c "$link" -O "${DEFAULT_RECEBE_DIR}/${zipfile}"; then
+    if ! wget -q -c "$link" -O "${DEFAULT_RECEBE_DIR}/${arquivo_zip}"; then
         _erro "Ao baixar arquivo de atualizacao. Verifique a conexao."
         return 1
     fi
@@ -216,11 +216,11 @@ _atualizar_online() {
 }
 
 _atualizar_offline() {
-    local temp_dir="${DEFAULT_RECEBE_DIR}/temp_update/"
-    local zipfile="atualiza.zip"
+    local temp_dir="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao/"
+    local arquivo_zip="atualiza.zip"
 
-    if [[ ! -f "${temp_dir}/${zipfile}" ]]; then
-        _erro "Arquivo $zipfile nao encontrado em $temp_dir"
+    if [[ ! -f "${temp_dir}/${arquivo_zip}" ]]; then
+        _erro "Arquivo $arquivo_zip nao encontrado em $temp_dir"
         return 1
     fi
     _atualizando

@@ -17,7 +17,7 @@ DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zi
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
-declare -g ARQUIVO_COMPILADO_ATUAL=""
+declare -g arquivo_compilado_atual=""
 declare -a PROGRAMAS_SELECIONADOS=()
 declare -a ARQUIVOS_PROGRAMA=()
 
@@ -187,11 +187,11 @@ _selecionar_programas_reversao() {
     _exibir_mensagem_centralizada "${CIANO}" "Backups disponiveis para reversao:"
     _linha
 
-    local idx=1
+    local indice=1
     local programa
     for programa in "${programas[@]}"; do
-        _exibir_mensagem_centralizada "${VERDE}" "${idx}) ${programa}"
-        ((idx++)) || true
+        _exibir_mensagem_centralizada "${VERDE}" "${indice}) ${programa}"
+        ((indice++)) || true
     done
 
     _linha
@@ -284,9 +284,9 @@ _resolver_arquivo_compilado() {
     printf "\n"
 
     if [[ "$tipo_compilacao" == "1" ]]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${compilado}.zip"
+        arquivo_compilado_atual="${nome_item}${compilado}.zip"
     elif [[ "$tipo_compilacao" == "2" ]]; then
-        ARQUIVO_COMPILADO_ATUAL="${nome_item}${debugado}.zip"
+        arquivo_compilado_atual="${nome_item}${debugado}.zip"
     else
         return 1
     fi
@@ -318,10 +318,10 @@ _coletar_artefatos_atualizacao() {
         if [[ -z "${item}" ]]; then
             if (( ${#PROGRAMAS_SELECIONADOS[@]} > 0 )); then
                 _exibir_mensagem_centralizada "${CIANO}" "Programas informados:"
-                local idx prog arq
-                for idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
-                    prog="${PROGRAMAS_SELECIONADOS[$idx]}"
-                    arq="${ARQUIVOS_PROGRAMA[$idx]}"
+                local indice prog arq
+                for indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
+                    prog="${PROGRAMAS_SELECIONADOS[$indice]}"
+                    arq="${ARQUIVOS_PROGRAMA[$indice]}"
                     if [[ "$arq" == *"${debugado}"* ]]; then
                         _exibir_mensagem_centralizada "${VERDE}" "  -> ${prog} - Depuracao"
                     else
@@ -352,7 +352,7 @@ _coletar_artefatos_atualizacao() {
             continue
         fi
 
-        arquivo_compilado="${ARQUIVO_COMPILADO_ATUAL}"
+        arquivo_compilado="${arquivo_compilado_atual}"
         PROGRAMAS_SELECIONADOS+=("$item")
         ARQUIVOS_PROGRAMA+=("$arquivo_compilado")
 
@@ -447,32 +447,32 @@ _processar_atualizacao_programas() {
     done
 
     # Criar diretorio temporario isolado para extracao
-    local temp_update
-    temp_update="${DEFAULT_RECEBE_DIR}/tmp_update_$$"
-    if ! _criar_diretorio_seguro "${temp_update}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Falha ao criar diretorio temporario ${temp_update}" >&2
+    local dir_temp_atualizacao
+    dir_temp_atualizacao="${DEFAULT_RECEBE_DIR}/tmp_update_$$"
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
         return 1
     fi
 
     # Mover arquivos para o diretorio temporario e acessa-lo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${temp_update}/"; then
+        if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
-            rm -rf "${temp_update}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
 
-    cd "${temp_update}" || {
-        rm -rf "${temp_update}"
+    cd "${dir_temp_atualizacao}" || {
+        rm -rf "${dir_temp_atualizacao}"
         return 1
     }
 
-    local programa_idx=0
+    local programa_indice=0
 
     # Criar backup dos programas antigos
-    for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
-        local programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
+    for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
+        local programa="${PROGRAMAS_SELECIONADOS[$programa_indice]}"
         local arquivo_backup="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
         local backup_criado=0
 
@@ -482,7 +482,7 @@ _processar_atualizacao_programas() {
             timestamp=$(date +"%Y%m%d_%H%M%S")
             if ! mv -f "$arquivo_backup" "${DEFAULT_OLDS_DIR}/${timestamp}-${programa}-anterior.zip"; then
                 _erro "ERRO: Falha ao arquivar backup anterior de ${programa}"
-                rm -rf "${temp_update}"
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
@@ -498,7 +498,7 @@ _processar_atualizacao_programas() {
                 backup_criado=1
             else
                 _erro "Falha ao fazer backup dos arquivos .class de ${programa}"
-                rm -rf "${temp_update}"
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
@@ -512,7 +512,7 @@ _processar_atualizacao_programas() {
                 backup_criado=1
             else
                 _erro "Falha ao fazer backup dos arquivos .TEL de ${programa}"
-                rm -rf "${temp_update}"
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
@@ -521,7 +521,7 @@ _processar_atualizacao_programas() {
         if (( backup_criado )); then
             if ! _validar_integridade_backup "$arquivo_backup"; then
                 _erro "CRITICO: Backup criado mas invalido para ${programa}"
-                rm -rf "${temp_update}"
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
             _exibir_mensagem_centralizada "${VERDE}" "Backup validado com sucesso: ${programa}"
@@ -537,7 +537,7 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            rm -rf "${temp_update}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -582,7 +582,7 @@ _processar_atualizacao_programas() {
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
             _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
-            rm -rf "${temp_update}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         }
     fi
@@ -595,7 +595,7 @@ _processar_atualizacao_programas() {
 
     # Limpar diretorio temporario
     cd "${DEFAULT_RECEBE_DIR}" || true
-    rm -rf "${temp_update}"
+    rm -rf "${dir_temp_atualizacao}"
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha
@@ -625,24 +625,24 @@ _processar_atualizacao_pacotes() {
     done
 
     # Criar diretorio temporario isolado para extracao
-    local temp_update
-    temp_update="${DEFAULT_RECEBE_DIR}/tmp_update_$$"
-    if ! _criar_diretorio_seguro "${temp_update}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Falha ao criar diretorio temporario ${temp_update}" >&2
+    local dir_temp_atualizacao
+    dir_temp_atualizacao="${DEFAULT_RECEBE_DIR}/tmp_update_$$"
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
         return 1
     fi
 
     # Mover pacotes para o diretorio temporario e acessa-lo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${temp_update}/"; then
+        if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "Falha ao mover ${arquivo} para diretorio temporario"
-            rm -rf "${temp_update}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
 
-    cd "${temp_update}" || {
-        rm -rf "${temp_update}"
+    cd "${dir_temp_atualizacao}" || {
+        rm -rf "${dir_temp_atualizacao}"
         return 1
     }
 
@@ -650,7 +650,7 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            rm -rf "${temp_update}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -659,7 +659,7 @@ _processar_atualizacao_pacotes() {
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
             _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
-            rm -rf "${temp_update}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         }
     fi
@@ -671,49 +671,49 @@ _processar_atualizacao_pacotes() {
     done
 
     # Processar arquivos .class encontrados
-    local classfile progname dir_path arquivo_backup tel_existing tel
-    while IFS= read -r -d '' classfile; do
-        progname="$(basename "$classfile" .class)"
-        dir_path="$(dirname "$classfile")"
-        arquivo_backup="${DEFAULT_OLDS_DIR}/${progname}-anterior.zip"
+    local arquivos_class nome_prog caminho_dir arquivo_backup telas_existentes tel
+    while IFS= read -r -d '' arquivos_class; do
+        nome_prog="$(basename "$arquivos_class" .class)"
+        caminho_dir="$(dirname "$arquivos_class")"
+        arquivo_backup="${DEFAULT_OLDS_DIR}/${nome_prog}-anterior.zip"
 
         # Backup dos arquivos class antigos
-        if ! "${DEFAULT_FIND}" "${E_EXEC}" -maxdepth 1 -name "${progname}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
-            _log_erro "Falha ao fazer backup de ${progname}*.class"
-            rm -rf "${temp_update}"
+        if ! "${DEFAULT_FIND}" "${E_EXEC}" -maxdepth 1 -name "${nome_prog}*.class" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+            _log_erro "Falha ao fazer backup de ${nome_prog}*.class"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
 
         # Backup de arquivos .TEL se existirem
         shopt -s nullglob
-        tel_existing=("${T_TELAS}/${progname}"*.TEL)
+        telas_existentes=("${T_TELAS}/${nome_prog}"*.TEL)
         shopt -u nullglob
-        if (( ${#tel_existing[@]} > 0 )); then
-            if ! "${DEFAULT_FIND}" "${T_TELAS}" -maxdepth 1 -name "${progname}*.TEL" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
-                _log_erro "Falha ao fazer backup de ${progname}*.TEL"
-                rm -rf "${temp_update}"
+        if (( ${#telas_existentes[@]} > 0 )); then
+            if ! "${DEFAULT_FIND}" "${T_TELAS}" -maxdepth 1 -name "${nome_prog}*.TEL" -exec "${DEFAULT_ZIP}" -j "${arquivo_backup}" {} + 2>>"${LOG_ATU}"; then
+                _log_erro "Falha ao fazer backup de ${nome_prog}*.TEL"
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
 
         # SEGURANCA: Validar integridade do backup antes de continuar
         if ! _validar_integridade_backup "${arquivo_backup}"; then
-             _erro "CRITICO: Backup invalido ou ausente para ${progname}. Atualizacao abortada."
-            rm -rf "${temp_update}"
+             _erro "CRITICO: Backup invalido ou ausente para ${nome_prog}. Atualizacao abortada."
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
 
         # Mover novos arquivos
-        if ! mv -f "${classfile}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-            _log_erro "Falha ao mover ${classfile} para ${E_EXEC}"
-            rm -rf "${temp_update}"
+        if ! mv -f "${arquivos_class}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
+            _log_erro "Falha ao mover ${arquivos_class} para ${E_EXEC}"
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
 
         # Move TELs do mesmo diretorio extraido
-        if [[ -d "${dir_path}" ]]; then
+        if [[ -d "${caminho_dir}" ]]; then
             shopt -s nullglob
-            local tels=("${dir_path}/${progname}"*.TEL)
+            local tels=("${caminho_dir}/${nome_prog}"*.TEL)
             shopt -u nullglob
             for tel in "${tels[@]}"; do
                 mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
@@ -723,7 +723,7 @@ _processar_atualizacao_pacotes() {
 
     # Limpar diretorio temporario
     cd "${DEFAULT_RECEBE_DIR}" || true
-    rm -rf "${temp_update}"
+    rm -rf "${dir_temp_atualizacao}"
 }
 
 # Processa reversao de programas
@@ -733,9 +733,9 @@ _processar_reversao_programas() {
         return 1
     }
 
-    local programa_idx programa arquivo_anterior
-    for programa_idx in "${!PROGRAMAS_SELECIONADOS[@]}"; do
-        programa="${PROGRAMAS_SELECIONADOS[$programa_idx]}"
+    local programa_indice programa arquivo_anterior
+    for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
+        programa="${PROGRAMAS_SELECIONADOS[$programa_indice]}"
         arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
 
         if [[ -f "$arquivo_anterior" ]]; then

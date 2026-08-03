@@ -69,26 +69,26 @@ _mostrar_versao_linux() {
     printf "\n"
 
     # Checando hostname
-    local nameservers
-    nameservers=$(hostname)
-    printf '%s\n' "${VERDE}Nome do Servidor: ${NORMAL}${nameservers}${NORMAL}"
+    local servidores_nome
+    servidores_nome=$(hostname)
+    printf '%s\n' "${VERDE}Nome do Servidor: ${NORMAL}${servidores_nome}${NORMAL}"
     printf "\n"
 
     # Checando Interno IP
-    local internalip
-    internalip=$(ip route get 1 | awk '{print $7;exit}')
-    printf '%s\n' "${VERDE}IP Interno: ${NORMAL}${internalip}${NORMAL}"
+    local ip_interno
+    ip_interno=$(ip route get 1 | awk '{print $7;exit}')
+    printf '%s\n' "${VERDE}IP Interno: ${NORMAL}${ip_interno}${NORMAL}"
     printf "\n"
 
     # Checando Externo IP
-    local externalip="Nao disponivel"
+    local ip_externo="Nao disponivel"
     if [[ "${CFG_OFFLINE}" == "n" ]]; then
         if command -v curl >/dev/null 2>&1; then
-            externalip=$(curl -s --max-time 5 ipecho.net/plain || printf "Nao disponivel")
+            ip_externo=$(curl -s --max-time 5 ipecho.net/plain || printf "Nao disponivel")
         else
-            externalip="curl nao instalado"
+            ip_externo="curl nao instalado"
         fi
-        printf '%s\n' "${VERDE}IP Externo: ${NORMAL}${externalip}${NORMAL}"
+        printf '%s\n' "${VERDE}IP Externo: ${NORMAL}${ip_externo}${NORMAL}"
     fi
 
     _linha

@@ -35,44 +35,44 @@ _var_ja_registrada() {
 
 # Verifica se uma variavel e readonly
 _is_var_readonly() {
-    local var_name="$1"
-    local decl_output
-    decl_output=$(declare -p "$var_name" 2>/dev/null) || return 1
-    [[ "$decl_output" == *"declare -r"* ]] || [[ "$decl_output" == *"declare -ir"* ]]
+    local nome_var="$1"
+    local saida_declarada
+    saida_declarada=$(declare -p "$nome_var" 2>/dev/null) || return 1
+    [[ "$saida_declarada" == *"declare -r"* ]] || [[ "$saida_declarada" == *"declare -ir"* ]]
 }
 
 # Registra uma variavel no sistema
 _register_var() {
-    local var_name="$1"
-    local var_value="$2"
-    local var_category="${3:-OUTROS}"
+    local nome_var="$1"
+    local valor_var="$2"
+    local categoria_var="${3:-OUTROS}"
 
-    if [[ -z "$var_name" ]]; then
+    if [[ -z "$nome_var" ]]; then
         _aviso "Nome de variavel vazio, ignorando registro." >&2
         return 1
     fi
 
     # Pular variaveis readonly ou nao modificaveis
-    if [[ "$var_name" == "UPDATE" ]] || _is_var_readonly "$var_name"; then
+    if [[ "$nome_var" == "UPDATE" ]] || _is_var_readonly "$nome_var"; then
         return 0
     fi
 
     # Se ja esta registrada, atualizar valor
-    if _var_ja_registrada "$var_name"; then
-        declare -g "$var_name"="$var_value" 2>/dev/null || true
+    if _var_ja_registrada "$nome_var"; then
+        declare -g "$nome_var"="$valor_var" 2>/dev/null || true
         return 0
     fi
 
     # Definir a variavel como global
-    declare -g "$var_name"="$var_value" 2>/dev/null || {
-        _aviso "Nao foi possivel definir variavel %s (pode ser readonly)" "$var_name" >&2
+    declare -g "$nome_var"="$valor_var" 2>/dev/null || {
+        _aviso "Nao foi possivel definir variavel %s (pode ser readonly)" "$nome_var" >&2
         return 0
     }
 
     # Registrar para limpeza posterior
-    REGISTRO_VARIAVEIS+=("$var_name")
-    _REGISTRO_MAPA["$var_name"]=1
-    REGISTRO_CATEGORIAS["$var_category"]+=" $var_name"
+    REGISTRO_VARIAVEIS+=("$nome_var")
+    _REGISTRO_MAPA["$nome_var"]=1
+    REGISTRO_CATEGORIAS["$categoria_var"]+=" $nome_var"
     ((VAR_CONTADOR_REGISTRO++)) || true
 
     return 0
@@ -187,10 +187,10 @@ _inicializar_variaveis_sistema() {
     _REGISTRO_MAPA=()
 
     # Registrar todas as variaveis a partir do mapa declarativo
-    local var_name var_categoria
-    for var_name in "${!_MAPA_VARIAVEIS[@]}"; do
-        var_categoria="${_MAPA_VARIAVEIS[$var_name]}"
-        _register_var "$var_name" "${!var_name:-}" "$var_categoria"
+    local nome_var var_categoria
+    for nome_var in "${!_MAPA_VARIAVEIS[@]}"; do
+        var_categoria="${_MAPA_VARIAVEIS[$nome_var]}"
+        _register_var "$nome_var" "${!nome_var:-}" "$var_categoria"
     done
 }
 
@@ -201,14 +201,14 @@ _inicializar_variaveis_sistema() {
 # Configurar comandos do sistema
 _configurar_comandos() {
     local cmds=("$DEFAULT_ZIP" "$DEFAULT_UNZIP" "$DEFAULT_TAR" "$DEFAULT_FIND")
-    local cmd missing=()
+    local cmd faltand=()
 
     for cmd in "${cmds[@]}"; do
-        command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+        command -v "$cmd" >/dev/null 2>&1 || faltand+=("$cmd")
     done
 
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        _erro "Comandos nao encontrados: " "${missing[*]}" >&2
+    if [[ ${#faltand[@]} -gt 0 ]]; then
+        _erro "Comandos nao encontrados: " "${faltand[*]}" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi
@@ -276,59 +276,59 @@ _validar_ssh() {
 
     _exibir_mensagem_centralizada "${VERDE}" "OK: Acesso SSH habilitado"
 
-    local ssh_host="${DEFAULT_IP_SERVER}"
-    local ssh_user="${DEFAULT_SSH_USER}"
-    local ssh_port="${DEFAULT_SSH_PORTA:-22}"
-    local ssh_key="${DEFAULT_CHAVE_SSH:-}"
-    local ssh_timeout="${SSH_TIMEOUT:-10}"
+    local servidor_ssh="${DEFAULT_IP_SERVER}"
+    local usuario_ssh="${DEFAULT_SSH_USER}"
+    local porta_ssh="${DEFAULT_SSH_PORTA:-22}"
+    local chave_ssh="${DEFAULT_CHAVE_SSH:-}"
+    local tempo_limite_ssh="${SSH_TIMEOUT:-10}"
 
-    if [[ -z "${ssh_host}" ]]; then
+    if [[ -z "${servidor_ssh}" ]]; then
         _erro "Variavel DEFAULT_IP_SERVER nao definida"
         return 1
     fi
 
-    if [[ -z "${ssh_user}" ]]; then
+    if [[ -z "${usuario_ssh}" ]]; then
         _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Variavel DEFAULT_SSH_USER nao definida, usando 'root'"
-        ssh_user="root"
+        usuario_ssh="root"
     fi
 
-    local ssh_opts=("-o" "ConnectTimeout=${ssh_timeout}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+    local ssh_opts=("-o" "ConnectTimeout=${tempo_limite_ssh}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
-    if [[ -n "${ssh_port}" ]]; then
-        ssh_opts+=("-p" "${ssh_port}")
+    if [[ -n "${porta_ssh}" ]]; then
+        ssh_opts+=("-p" "${porta_ssh}")
     fi
 
-    if [[ -n "${ssh_key}" ]]; then
-        if [[ -f "${ssh_key}" ]]; then
-            ssh_opts+=("-i" "${ssh_key}")
+    if [[ -n "${chave_ssh}" ]]; then
+        if [[ -f "${chave_ssh}" ]]; then
+            ssh_opts+=("-i" "${chave_ssh}")
         else
-            _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Chave SSH nao encontrada: ${ssh_key}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Alerta: Chave SSH nao encontrada: ${chave_ssh}"
         fi
     fi
 
     local ssh_output ssh_exit=0
-    ssh_output=$(ssh "${ssh_opts[@]}" "${ssh_user}@${ssh_host}" exit 2>&1) || ssh_exit=$?
+    ssh_output=$(ssh "${ssh_opts[@]}" "${usuario_ssh}@${servidor_ssh}" exit 2>&1) || ssh_exit=$?
 
     if (( ssh_exit == 0 )); then
-        _exibir_mensagem_centralizada "${VERDE}" "Conexao SSH estabelecida com sucesso para ${ssh_user}@${ssh_host}"
+        _exibir_mensagem_centralizada "${VERDE}" "Conexao SSH estabelecida com sucesso para ${usuario_ssh}@${servidor_ssh}"
     else
-        _exibir_mensagem_centralizada "${VERMELHO}" "Falha na conexao SSH para ${ssh_user}@${ssh_host}"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Falha na conexao SSH para ${usuario_ssh}@${servidor_ssh}"
         _linha "-" "${AMARELO}"
-        _exibir_mensagem_centralizada "${AMARELO}" "Comando: ssh ${ssh_opts[*]} ${ssh_user}@${ssh_host} exit"
+        _exibir_mensagem_centralizada "${AMARELO}" "Comando: ssh ${ssh_opts[*]} ${usuario_ssh}@${servidor_ssh} exit"
         _linha "-" "${AMARELO}"
 
         if [[ "${ssh_output}" == *"Permission denied"* ]]; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Permissao negada (publickey,password)"
             _exibir_mensagem_centralizada "${AMARELO}" "Possiveis causas:"
-            if [[ -n "${ssh_key}" ]]; then
-                if [[ -f "${ssh_key}" ]]; then
+            if [[ -n "${chave_ssh}" ]]; then
+                if [[ -f "${chave_ssh}" ]]; then
                     local key_perm
-                    key_perm=$(stat -c "%a" "${ssh_key}" 2>/dev/null || stat -f "%Lp" "${ssh_key}" 2>/dev/null || echo "?")
-                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave usada: ${ssh_key} (perm: ${key_perm})"
+                    key_perm=$(stat -c "%a" "${chave_ssh}" 2>/dev/null || stat -f "%Lp" "${chave_ssh}" 2>/dev/null || echo "?")
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave usada: ${chave_ssh} (perm: ${key_perm})"
                     _exibir_mensagem_centralizada "${NORMAL}" "  - A chave privada deve ter permissao 600"
-                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave publica pode nao estar em /home/${ssh_user}/.ssh/authorized_keys"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave publica pode nao estar em /home/${usuario_ssh}/.ssh/authorized_keys"
                 else
-                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave configurada nao existe: ${ssh_key}"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave configurada nao existe: ${chave_ssh}"
                 fi
             else
                 _exibir_mensagem_centralizada "${NORMAL}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
@@ -339,23 +339,23 @@ _validar_ssh() {
                 _exibir_mensagem_centralizada "${NORMAL}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
             fi
             _exibir_mensagem_centralizada "${NORMAL}" "  - A chave publica pode nao estar cadastrada no servidor"
-            _exibir_mensagem_centralizada "${NORMAL}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${ssh_user}@${ssh_host}"
-            _exibir_mensagem_centralizada "${NORMAL}" "  - Usuario '${ssh_user}' pode estar incorreto"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${usuario_ssh}@${servidor_ssh}"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - Usuario '${usuario_ssh}' pode estar incorreto"
         elif [[ "${ssh_output}" == *"Connection refused"* ]]; then
-            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao recusada na porta ${ssh_port}"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao recusada na porta ${porta_ssh}"
             _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o servidor SSH esta rodando e a porta correta"
         elif [[ "${ssh_output}" == *"Connection timed out"* ]]; then
-            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao excedeu timeout de ${ssh_timeout}s"
-            _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o IP '${ssh_host}' esta correto e acessivel"
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao excedeu tempo_limite de ${tempo_limite_ssh}s"
+            _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o IP '${servidor_ssh}' esta correto e acessivel"
         elif [[ "${ssh_output}" == *"Host key verification failed"* ]]; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Falha na verificacao da chave do host"
-            _exibir_mensagem_centralizada "${AMARELO}" "Execute: ssh-keygen -R '${ssh_host}'"
+            _exibir_mensagem_centralizada "${AMARELO}" "Execute: ssh-keygen -R '${servidor_ssh}'"
         else
             _exibir_mensagem_centralizada "${VERMELHO}" "Erro desconhecido:"
             printf "%s\n" "${ssh_output}" >&2
         fi
         _linha "-" "${AMARELO}"
-        _exibir_mensagem_centralizada "${AMARELO}" "Dica: execute 'ssh ${ssh_user}@${ssh_host}' manualmente para diagnosticar"
+        _exibir_mensagem_centralizada "${AMARELO}" "Dica: execute 'ssh ${usuario_ssh}@${servidor_ssh}' manualmente para diagnosticar"
     fi
     _linha "=" "${VERDE}"
 }
@@ -526,9 +526,9 @@ _limpeza_emergencia() {
 
     # Adicionar variaveis registradas no mapa
     if [[ ${#_MAPA_VARIAVEIS[@]} -gt 0 ]]; then
-        local var_name
-        for var_name in "${!_MAPA_VARIAVEIS[@]}"; do
-            vars_emergencia+=" $var_name"
+        local nome_var
+        for nome_var in "${!_MAPA_VARIAVEIS[@]}"; do
+            vars_emergencia+=" $nome_var"
         done
     fi
 

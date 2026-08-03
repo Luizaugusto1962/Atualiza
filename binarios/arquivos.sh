@@ -442,11 +442,11 @@ _editar_lista_arquivos() {
         if [[ ${#linhas[@]} -eq 0 ]]; then
             _aviso "Lista vazia"
         else
-            local idx=1
+            local indice=1
             for linha in "${linhas[@]}"; do
                 [[ -n "$linha" ]] || continue
-                printf '%b' "${VERDE}${idx}${NORMAL} - ${linha}\n"
-                ((idx++))
+                printf '%b' "${VERDE}${indice}${NORMAL} - ${linha}\n"
+                ((indice++))
             done
         fi
 
@@ -607,7 +607,7 @@ _executar_jutil() {
         return 1
     fi
 
-    local dir_arquivo base_arquivo arquivo_idx
+    local dir_arquivo base_arquivo arquivo_indice
 	if [[ -x "${REBUILD}" ]]; then
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
             if "${REBUILD}" -rebuild "$arquivo" -a -f; then
@@ -615,14 +615,14 @@ _executar_jutil() {
                 # garantir permissões máximas após o rebuild
                 chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
                 _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
-                # garantir permissões máximas nos arquivos .idx gerados pelo jutil
+                # garantir permissões máximas nos arquivos .indice gerados pelo jutil
 
                 dir_arquivo="$(dirname "$arquivo")"
                 base_arquivo="$(basename "$arquivo" .dat)"
-                for arquivo_idx in "${dir_arquivo}/${base_arquivo}"*.idx; do
-                    if [[ -f "$arquivo_idx" ]]; then
-                        chmod "${PERM_FILE_EXEC}" "$arquivo_idx" 2>/dev/null || \
-                        _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_idx"
+                for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.indice; do
+                    if [[ -f "$arquivo_indice" ]]; then
+                        chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null || \
+                        _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_indice"
                     fi
                 done
             else

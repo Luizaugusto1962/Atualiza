@@ -29,10 +29,10 @@ _limpar_interrupcao() {
     cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
 
     if [[ -n "${VERSAO:-}" ]]; then
-        for temp_file in *"${VERSAO}".zip *"${VERSAO}".tar *"${VERSAO}".tar.gz; do
-            if [[ -f "$temp_file" ]]; then
-                rm -f "$temp_file"
-                _log "Arquivo temporario removido: $temp_file"
+        for arquivo_temp in *"${VERSAO}".zip *"${VERSAO}".tar *"${VERSAO}".tar.gz; do
+            if [[ -f "$arquivo_temp" ]]; then
+                rm -f "$arquivo_temp"
+                _log "Arquivo temporario removido: $arquivo_temp"
             fi
         done
     fi

@@ -503,10 +503,10 @@ _selecionar_backup() {
             fi
 
             # Agora o indice corresponde corretamente à lista exibida
-            local idx
-            idx=$((REPLY - 1))
-            if (( idx >= 0 && idx < ${#arquivos_backup[@]} )); then
-                backup_selecionado="${arquivos_backup[$idx]}"
+            local indice
+            indice=$((REPLY - 1))
+            if (( indice >= 0 && indice < ${#arquivos_backup[@]} )); then
+                backup_selecionado="${arquivos_backup[$indice]}"
                 break
             else
                 _erro "Numero invalido. Use 1 a ${#arquivos_backup[@]} ou 0 para cancelar."
@@ -808,9 +808,9 @@ _executar_backup_multiplos_padroes() {
         fi
 
         # Verificar se o arquivo existe e expandir para incluir todos com mesmo nome e extensao
-        # Suporta extensao simples (nome.dat) e dupla (nome.dat.idx)
+        # Suporta extensao simples (nome.dat) e dupla (nome.dat.indice)
         local nome_base extensao padrao_expandido
-        # Remover extensoes: se tiver extensao dupla (ex: .dat.idx), remove as duas
+        # Remover extensoes: se tiver extensao dupla (ex: .dat.indice), remove as duas
         if [[ "${padrao_entrada}" =~ ^(.+)(\.[^.]+\.[^.]+)$ ]]; then
             nome_base="${BASH_REMATCH[1]}"
             extensao="${BASH_REMATCH[2]}"

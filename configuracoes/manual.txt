@@ -1,6 +1,6 @@
 ---------------------------------------------------------------
-                    MANUAL DO SISTEMA SAV                      
-              Sistema de Atualizacao e Manutencao              
+                    MANUAL DO SISTEMA SAV
+              Sistema de Atualizacao e Manutencao
 ---------------------------------------------------------------
 
 INDICE:
@@ -31,12 +31,12 @@ OPCOES DISPONIVEIS:
 
 1 - ATUALIZAR PROGRAMA(S)
     Permite baixar e instalar programas individuais ou em pacote.
-    
+
     * Use esta opcao quando precisar atualizar programas especificos
     * Suporta atualizacoes online (via servidor) ou offline (via arquivo)
     * Permite compilacao normal ou em modo de depuracao
     * Cria backup automatico antes de atualizar
-    
+
     QUANDO USAR:
     - Correcao de bugs em programas especificos
     - Instalacao de novos recursos
@@ -44,11 +44,11 @@ OPCOES DISPONIVEIS:
 
 2 - ATUALIZAR BIBLIOTECA
     Atualiza o conjunto completo de bibliotecas do sistema.
-    
+
     * Transpc: Biblioteca do diretorio /u/varejo/transpc
     * Modo Offline: Para ambientes sem conexao os arquivos .zip devem estar
       no diretorio configurado para offline (geralmente /portalsav/Atualiza)
-    
+
     QUANDO USAR:
     - Atualizacao em massa de programas
     - Mudanca de versao do sistema
@@ -60,7 +60,7 @@ OPCOES DISPONIVEIS:
 
 3- GERENCIAR ARQUIVOS
     Acesso ao menu de controle de arquivos.
-    
+
     * Limpeza de arquivos temporarios
     * Recuperacao de arquivos de dados
     * Rotinas de backup
@@ -75,14 +75,14 @@ OPCOES DISPONIVEIS:
     * Atualizacao do sistema
     * Sistema de lembretes e notas
 
-0 - Sistema de Ajuda    
+0 - Sistema de Ajuda
     1. Manual Completo
     2. Ajuda Rapida
     3. Ajuda no Geral
     4. Buscar no Manual
     5. Exportar Manual
     6. Ajuda por Contexto
- 
+
 9 - SAIR DO SISTEMA
     Encerra o sistema SAV de forma segura.
 
@@ -111,7 +111,7 @@ OPCOES DISPONIVEIS:
 
 1 - PROGRAMA(S) ON-LINE
     Baixa e instala programas diretamente do servidor.
-    
+
     PROCESSO:
     1. Informe o nome do programa (em MAIUSCULAS)
     2. Escolha o tipo de compilacao:
@@ -134,7 +134,7 @@ OPCOES DISPONIVEIS:
 
 2 - PROGRAMA(S) OFF-LINE
     Instala programas a partir de arquivos locais.
-    
+
     QUANDO USAR:
     - Servidor sem acesso a internet
     - Instalacao em ambiente isolado
@@ -143,10 +143,10 @@ OPCOES DISPONIVEIS:
     <<  PRE-REQUISITO: >>
     Os arquivos .zip dos programas devem estar no diretorio
     configurado para modo offline (geralmente /portalsav/Atualiza)
-    
+
 3 - PROGRAMA(S) EM PACOTE
     Instala multiplos programas de uma vez atraves de pacotes.
-    
+
     VANTAGENS:
     * Mais rapido para multiplas atualizacoes
     * Garante compatibilidade entre programas relacionados
@@ -157,7 +157,7 @@ OPCOES DISPONIVEIS:
 
 4 - VOLTAR PROGRAMA ATUALIZADO
     Reverte programa para versao anterior.
-    
+
     PROCESSO:
     1. Informe o nome do programa a reverter
     2. Sistema busca backup automatico
@@ -217,11 +217,11 @@ OPCOES DISPONIVEIS:
 
 1 - ATUALIZACAO DO TRANSPC
     Atualiza a biblioteca de TRANSPC.
-    
+
     O QUE E:
     Biblioteca responsavel pela atualizacao programas
     entre diferentes modulos do sistema.
-    
+
     CONTEUDO:
     * Programas de interface
     * Rotinas de conversao
@@ -244,18 +244,18 @@ OPCOES DISPONIVEIS:
 
 2 - ATUALIZACAO OFF-LINE
     Instala biblioteca a partir de arquivos locais.
-    
+
     PROCESSO:
     1. Copie os arquivos de atualizacao para o diretorio offline
     2. Informe a versao da biblioteca
     3. Sistema localiza e instala os arquivos
-    
+
     ARQUIVOS NECESSARIOS (IsCOBOL):
     * tempSAV_IS[ANO]_CLASSA_[VERSAO].zip
     * tempSAV_IS[ANO]_CLASSB_[VERSAO].zip
     * tempSAV_IS[ANO]_tel_isc_[VERSAO].zip
     * tempSAV_IS[ANO]_xml_[VERSAO].zip
-    
+
     EXEMPLO:
     * tempSAV_IS2024_CLASSA_5280.zip
     * tempSAV_IS2024_CLASSB_5280.zip
@@ -264,14 +264,14 @@ OPCOES DISPONIVEIS:
 
 3 - VOLTAR PROGRAMA(S) DA BIBLIOTECA
     Reverte biblioteca para versao anterior.
-    
+
     PROCESSO:
     1. Informe a versao a reverter
     2. Sistema busca backup dessa versao
     3. Escolha entre:
        * Reverter todos os programas
        * Reverter programa especifico
-    
+
     BACKUP DA BIBLIOTECA:
     * Local: tools/back_programas/backups-[VERSAO].zip
     * Criado automaticamente antes de atualizar
@@ -374,26 +374,26 @@ manutencao e gestao dos arquivos do sistema SAV.
 
 1 - RECUPERAR ARQUIVOS
     Executa rebuild em arquivos de dados.
-    
+
     O QUE FAZ:
     Reconstroi indices e reorganiza arquivos de dados,
     corrigindo possiveis inconsistencias.
-    
+
     QUANDO USAR:
     - Apos queda de sistema
     - Erros de "arquivo corrompido"
     - Performance degradada
     - Manutencao preventiva
-    
+
     DISPONIVEL APENAS PARA: Sistemas IsCOBOL
 
 2 - ROTINAS DE BACKUP
     Gerencia backups da base de dados.
-    
+
     TIPOS:
     * Completo: Todos os arquivos
     * Incremental: Apenas alteracoes
-    
+
     OPCOES:
     - Criar novo backup
     - Restaurar backup
@@ -401,22 +401,22 @@ manutencao e gestao dos arquivos do sistema SAV.
 
 3 - ENVIAR E RECEBER ARQUIVOS
     Transfere arquivos entre cliente e servidor.
-    
+
     USOS:
     * Envio de relatorios
      * Transferencia de logs
-    
+
     PROTOCOLOS: SFTP, RSYNC
 
 
 4 - TEMPORARIOS
     Gerencia arquivos temporarios do sistema.
-    
+
     FUNCOES:
     * Limpeza automatica de arquivos antigos
     * Compactacao antes de remover
     * Manutencao da lista de temporarios
-    
+
     BENEFICIOS:
     - Libera espaco em disco
     - Melhora performance
@@ -424,14 +424,14 @@ manutencao e gestao dos arquivos do sistema SAV.
 
 5 - EXPURGADOR DE ARQUIVOS
     Remove automaticamente arquivos antigos.
-    
+
     DIRETORIOS LIMPOS:
     * Backups (>30 dias)
     * Logs (>30 dias)
     * Programas antigos (>30 dias)
     * Erros IsCOBOL (>30 dias)
     * Arquivos ZIP (>15 dias)
-    
+
     EXECUCAO:
     * Manual: Via menu
     * Automatica: Diaria (primeira execucao)
@@ -450,33 +450,33 @@ OPCOES DISPONIVEIS:
 
 1 - CONFIGURACOES DOS SISTEMAS
     Exibe informacoes sobre as versoes instalada.
-    
-    * Mostra os paramentros do sistema 
+
+    * Mostra os paramentros do sistema
     * Versao usado do IsCobol
     * Versao do linux do servidor
 
 2 - UPDATE
     Atualiza o proprio sistema de atualizacao.
-    
+
     O QUE ATUALIZA:
     * Scripts do atualiza.sh
     * Modulos de biblioteca
     * Arquivos de configuracao
     * Sistema de ajuda
-    
+
     FONTES:
     * Online: Via o GitHub
     * Offline: Arquivo "atualiza.zip deve ser salvo em /portalsav/Atualiza
 
 3 - LEMBRETES
     Sistema de notas e lembretes.
-    
+
     FUNCOES:
     * Criar novas notas
     * Visualizar notas
     * Editar notas existentes
     * Apagar notas
-    
+
     USO:
     - Registrar pendencias
     - Anotacoes de manutencao
@@ -484,12 +484,12 @@ OPCOES DISPONIVEIS:
 
 4 - AVISO
     Sistema de avisos.
-    
+
     FUNCOES:
     * Criar novas notas
     * Editar notas existentes
     * Apagar notas
-    
+
     USO:
     - Registrar alerta para o sistema
     - Anotacoes de manutencao
@@ -497,11 +497,11 @@ OPCOES DISPONIVEIS:
 
 5 - LOGS
     Mostra os logs do sistema.
-    
+
     FUNCOES:
     * Exibir logs de atualizacao
     * Exibir logs de limpeza
-    
+
     USO:
     - Verificar atualizacao
     - Verificar limpeza
@@ -511,7 +511,7 @@ DICAS DE USO:
 
 MANUTENCAO REGULAR:
 1. Consulta dos parametro do progrma
-2. Atualizacao do sistema 
+2. Atualizacao do sistema
 3. Cadastro no lembretes
 4. Cadastro de Avisos
 5. Logs do sistema
@@ -536,7 +536,7 @@ OPCOES DISPONIVEIS:
 
 1 - PARAMETROS DO SISTEMA
     Visualiza e edita configuracoes do sistema.
-    
+
     ACESSO:
     * Consulta: Visualizacao apenas
     * Manutencao: Edicao de valores
@@ -544,16 +544,16 @@ OPCOES DISPONIVEIS:
 
 2 - VERSAO DO ISCOBOL
     Exibe informacoes sobre a versao do IsCOBOL instalada.
-    
+
     * Mostra numero da versao
     * Exibe data de compilacao
     * Lista recursos disponiveis
-    
+
     Nota: Disponivel apenas para sistemas IsCOBOL.
 
 3- VERSAO DO LINUX
     Mostra informacoes detalhadas do sistema operacional.
-    
+
     INFORMACOES EXIBIDAS:
     * Distribuicao e versao do Linux
     * Hostname do servidor
@@ -576,42 +576,42 @@ OPCOES DISPONIVEIS:
 
 1 - LIMPEZA DOS ARQUIVOS TEMPORARIOS
     Remove arquivos temporarios de todas as bases.
-    
+
     PROCESSO:
     1. Le lista de padroes (arquivo limpetmp)
     2. Busca arquivos correspondentes
     3. Compacta arquivos encontrados
     4. Move para backup
     5. Remove originais
-    
+
     ARQUIVOS PROCESSADOS:
     * Relatorios temporarios
     * Arquivos de trabalho
     * Impressoes antigas
     * Cache de sistema
-    
+
     DESTINO:
     Arquivos sao compactados em:
     tools/backups/Temps-[DATA].zip
 
 2 - ADICIONAR ARQUIVOS NO LIMPETMP
     Adiciona novo padrao a lista de limpeza.
-    
+
     COMO USAR:
     1. Informe o nome/padrao do arquivo
     2. Use * para coringas
-    
+
     EXEMPLOS:
     * REL*.TMP = Todos arquivos REL com extensao .TMP
     * TEMP* = Todos arquivos comecando com TEMP
     * *.bkp = Todos arquivos .bkp
-    
+
     ARQUIVO:
     Padroes sao salvos em: configuracoes/limpetmp
 
 3 - LISTAR ARQUIVOS DO limpetmp
     Exibe lista de padroes configurados.
-    
+
     VISUALIZACAO:
     * Numerada para referencia
     * Um padrao por linha
@@ -677,20 +677,20 @@ OPCOES DISPONIVEIS:
 
 1 - UM ARQUIVO OU TODOS
     Recupera arquivo especifico ou todos.
-    
+
     PROCESSO:
     * Nome especifico: Digite nome do arquivo (ex: CADCLI)
     * Todos: Pressione ENTER sem digitar nada
-    
+
     ARQUIVOS PROCESSADOS (todos):
     * *.ARQ.dat - Arquivos de dados
     * *.DAT.dat - Arquivos de dados
     * *.LOG.dat - Logs do sistema
     * *.PAN.dat - Paineis/Telas
-    
+
     COMANDO UTILIZADO:
     jutil -rebuild [ARQUIVO] -a -f
-    
+
     PARAMETROS:
     * -rebuild: Reconstroi arquivo
     * -a: Modo automatico
@@ -698,12 +698,12 @@ OPCOES DISPONIVEIS:
 
 2 - ARQUIVOS PRINCIPAIS
     Recupera conjunto de arquivos principais.
-    
+
     CRITERIOS:
     * Arquivos do ano atual (ATE[AA]*.dat)
     * Notas fiscais eletrônicas do ano (NFE?[AAAA].*.dat)
     * Arquivos da lista indexar
-    
+
     LISTA indexar:
     Local: configuracoes/indexar
     Contem: Nomes de arquivos criticos do sistema
@@ -811,7 +811,7 @@ tools/logs/atualiza.[DATA].log
 SOLUCAO DE PROBLEMAS:
 ---------------------------------------------------------------
 
-PROBLEMA: "jutil not found"
+PROBLEMA: "jutil not encontrado"
 SOLUCAO: Verificar instalacao IsCOBOL
 
 PROBLEMA: "File is locked"
@@ -838,54 +838,54 @@ OPCOES DISPONIVEIS:
 
 1 - BACKUP DA BASE DE DADOS
     Cria backup completo ou incremental.
-    
+
     TIPOS:
-    
+
     COMPLETO:
     * Todos os arquivos da base
     * Exclui: *.zip, *.tar, *.tar.gz
     * Formato: [empresa]_completo_[DATA_HORA].zip
-    
+
     INCREMENTAL:
     * Apenas arquivos modificados
     * Baseado em data de referencia
     * Formato: [empresa]_incremental_[DATA_HORA].zip
-    
+
     PROCESSO:
     1. Escolher base (se multiplas)
     2. Escolher tipo de backup
     3. Verificar backups recentes
     4. Criar backup com progresso
     5. Opcionalmente enviar para servidor
-    
+
     DESTINO:
     tools/backups/
 
 2 - RESTAURAR BASE DE DADOS
     Restaura backup anterior.
-    
+
     OPCOES:
     * Restauracao completa (todos arquivos)
     * Restauracao especifica (um arquivo)
-    
+
     PROCESSO COMPLETO:
     1. Listar backups disponiveis
     2. Selecionar backup
     3. Confirmar operacao
     4. Descompactar para base
-    
+
     PROCESSO ESPECIFICO:
     1. Listar backups disponiveis
     2. Selecionar backup
     3. Informar nome do arquivo
     4. Extrair apenas esse arquivo
-    
+
     IMPORTANTE:
     Restauracao sobrescreve arquivos existentes!
 
 3 - ENVIAR BACKUP
     Envia backup para servidor remoto.
-    
+
     PROCESSO:
     1. Listar backups locais
     2. Selecionar backup
@@ -898,7 +898,7 @@ BACKUP COMPLETO:
 
 O QUE INCLUI:
 * Todos arquivos de dados (.dat)
-* Arquivos de indice (.idx, .key)
+* Arquivos de indice (.indice, .key)
 * Arquivos de configuracao (.configuracoes)
 * Logs importantes
 
@@ -1061,27 +1061,27 @@ OPCOES DISPONIVEIS:
 
 1 - ENVIAR ARQUIVO(S)
     Envia arquivo para servidor remoto.
-    
+
     PROCESSO:
     1. Informar diretorio de origem
        * Caminho completo ou
        * ENTER para usar padrao (tools/enviar)
-    
+
     2. Informar nome do arquivo
        * Nome completo com extensao
        * Ex: relatorio.pdf
-    
+
     3. Informar diretorio destino no servidor
        * Caminho completo no servidor
        * Ex: /home/usuario/documentos
-    
+
     4. Fornecer senha do usuario remoto
-    
+
     5. Transferencia via rsync
        * Mostra progresso
        * Mantem permissoes
        * Compressao automatica
-    
+
     PROTOCOLOS:
     * RSYNC: Transferencia eficiente
     * SSH: Seguranca na conexao
@@ -1089,26 +1089,26 @@ OPCOES DISPONIVEIS:
 
 2 - RECEBER ARQUIVO(S)
     Baixa arquivo do servidor.
-    
+
     PROCESSO:
     1. Informar diretorio de origem (servidor)
        * Caminho completo no servidor
        * Ex: /home/usuario/backups
-    
+
     2. Informar nome do arquivo
        * Nome completo com extensao
        * Ex: dados.zip
-    
+
     3. Informar diretorio destino (local)
        * Caminho completo ou
        * ENTER para usar padrao (tools/receber)
-    
+
     4. Fornecer senha do usuario remoto
-    
+
     5. Transferencia via sftp
        * Mostra progresso
        * Verifica integridade
-    
+
     PROTOCOLOS:
     * SFTP: Protocolo seguro
     * SSH: Criptografia
@@ -1242,7 +1242,7 @@ OPCOES DISPONIVEIS:
 
 1 - CONSULTA DE SETUP
     Visualiza todas as configuracoes atuais.
-    
+
     INFORMACOES EXIBIDAS:
     * Sistema e versao
     * Diretorios configurados
@@ -1250,7 +1250,7 @@ OPCOES DISPONIVEIS:
     * Conexao de rede
     * Modo online/offline
     * Parametros de backup
-    
+
     USO:
     * Verificar configuracao atual
     * Documentar instalacao
@@ -1259,7 +1259,7 @@ OPCOES DISPONIVEIS:
 
 2 - MANUTENCAO DE SETUP
     Permite editar configuracoes existentes.
-    
+
     PARAMETROS EDITAVEIS:
     * verclass: Versao do IsCOBOL
     * acessossh: Modo facilitado (s/n)
@@ -1267,7 +1267,7 @@ OPCOES DISPONIVEIS:
     * enviabackup: Diretorio backup servidor
     * empresa: Nome da empresa
     * base, base2, base3: Diretorios dados
-    
+
     PROCESSO:
     1. Sistema carrega valores atuais
     2. Para cada parametro:
@@ -1276,25 +1276,25 @@ OPCOES DISPONIVEIS:
        * Solicita novo valor
     3. Recria arquivos de configuracao
     4. Recarrega configuracoes
-    
+
     BACKUP AUTOMATICO:
     Sistema cria .config.bkp antes de editar
 
 3 - VALIDAR CONFIGURACAO
     Testa todas as configuracoes.
-    
+
     VALIDACOES:
     * Arquivos de configuracao existem
     * Variaveis obrigatorias definidas
     * Diretorios existem e acessiveis
     * Comandos disponiveis
     * Conectividade (modo online)
-    
+
     RESULTADO:
     * Erros: Problemas criticos
     * Avisos: Problemas nao criticos
     * OK: Tudo correto
-    
+
     RECOMENDACAO:
     Execute apos alteracoes ou problemas
 
@@ -1429,16 +1429,16 @@ OPCOES DISPONIVEIS:
 
 1 - ESCREVER NOVA NOTA
     Cria nova anotacao.
-    
+
     PROCESSO:
     1. Digite o conteudo da nota
     2. Pode ser multiplas linhas
     3. Pressione Ctrl+D para finalizar
     4. Nota e salva automaticamente
-    
+
     FORMATO:
     Texto livre, sem formatacao especial
-    
+
     EXEMPLO:
     Atualizar sistema dia 15/01
     Pendente: Testar modulo vendas
@@ -1446,28 +1446,28 @@ OPCOES DISPONIVEIS:
 
 2 - VISUALIZAR NOTA
     Exibe notas salvas.
-    
+
     APRESENTACAO:
     * Moldura ao redor do texto
     * Formatacao preservada
     * Facil leitura
-    
+
     USO:
     Consultar anotacoes e lembretes
 
 3 - EDITAR NOTA
     Modifica nota existente.
-    
+
     EDITOR:
     * nano (padrao)
     * ou editor definido em $EDITOR
-    
+
     COMANDOS NANO:
     * Ctrl+O = Salvar
     * Ctrl+X = Sair
     * Ctrl+K = Recortar linha
     * Ctrl+U = Colar
-    
+
     MODIFICACAO:
     * Adicionar linhas
     * Remover linhas
@@ -1475,12 +1475,12 @@ OPCOES DISPONIVEIS:
 
 4 - APAGAR NOTA
     Remove todas as notas.
-    
+
     PROCESSO:
     1. Sistema solicita confirmacao
     2. Se confirmar (S), apaga tudo
     3. Se negar (N), cancela
-    
+
     IMPORTANTE:
     Acao irreversivel! Notas sao perdidas.
 
@@ -1504,7 +1504,7 @@ CASOS DE USO:
 -------------------------------------------------------------------
 
 HISTORICO DE MANUTENCAO:
-10/01 - Atualizado programa ADV000 
+10/01 - Atualizado programa ADV000
 11/01 - Backup completo realizado
 12/01 - Limpeza de temporarios
 
@@ -1593,16 +1593,16 @@ OPCOES DISPONIVEIS:
 
 1 - ESCREVER NOVO AVISO
     Cria um novo aviso ao entrar no sistema.
-    
+
     PROCESSO:
     1. Digite o conteudo do aviso
     2. Pode ser multiplas linhas
     3. Pressione Ctrl+D para finalizar
     4. Nota e salva automaticamente
-    
+
     FORMATO:
     Texto livre, sem formatacao especial
-    
+
     EXEMPLO:
     Atualizar sistema dia 15/01
     Pendente: Testar modulo vendas
@@ -1610,28 +1610,28 @@ OPCOES DISPONIVEIS:
 
 2 - VISUALIZAR AVISO
     Exibe aviso salvo.
-    
+
     APRESENTACAO:
     * Moldura ao redor do texto
     * Formatacao preservada
     * Facil leitura
-    
+
     USO:
     Consultar avisos
 
 3 - EDITAR AVISO
     Modifica avisos existente.
-    
+
     EDITOR:
     * nano (padrao)
     * ou editor definido em $EDITOR
-    
+
     COMANDOS NANO:
     * Ctrl+O = Salvar
     * Ctrl+X = Sair
     * Ctrl+K = Recortar linha
     * Ctrl+U = Colar
-    
+
     MODIFICACAO:
     * Adicionar linhas
     * Remover linhas
@@ -1639,12 +1639,12 @@ OPCOES DISPONIVEIS:
 
 4 - APAGAR NOTA
     Remove todas as notas.
-    
+
     PROCESSO:
     1. Sistema solicita confirmacao
     2. Se confirmar (S), apaga tudo
     3. Se negar (N), cancela
-    
+
     IMPORTANTE:
     Acao irreversivel! Notas sao perdidas.
 
@@ -1740,7 +1740,7 @@ LIMPEZA:
 Remova informacoes antigas periodicamente
 -------------------------------------------------------------------
 [MENU_LOGS]
-MENU DE LOGS 
+MENU DE LOGS
 -------------------------------------------------------------------
 Mostra os logs do sistema de atualizacao
 Mostra os logs do sistema de limpeza
@@ -1789,7 +1789,7 @@ DIRETORIOS PRINCIPAIS:
   tel_isc/      - Telas do sistema
   xml/          - Configuracoes XML
   dados_jisam/  - Base de dados
-  
+
 tools/
   binarios/         - Bibliotecas do atualiza
   configuracoes/    - Configuracoes

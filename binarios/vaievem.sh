@@ -91,30 +91,30 @@ _receber_sftp_ssh() {
     _log "Iniciando download SFTP com chave SSH: ${arquivo_remoto}"
 
     # Captura stdout e stderr para inspecionar mensagens de erro do sftp
-    local sftp_output
-    local host_ssh="${CFG_SSH_HOST:-sav_servidor}"
+    local saida_sftp
+    local servidor_ssh="${CFG_SSH_HOST:-sav_servidor}"
 
     # SEGURANCA: Tornar conexão explícita (usuário e porta) para evitar dependência de ~/.ssh/config
-    local user_ssh="${DEFAULT_SSH_USER:-}"
+    local usuario_ssh="${DEFAULT_SSH_USER:-}"
     local porta_ssh="${DEFAULT_SSH_PORTA:-}"
 
     # Construir destino de forma segura
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
 
     # Construir opções SFTP com controle de acesso por chave
-    local sftp_opts=("-P" "$porta_ssh" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+    local opcoes_sftp=("-P" "$porta_ssh" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
     if _usar_chave_ssh; then
-        _adicionar_opcoes_chave sftp_opts
+        _adicionar_opcoes_chave opcoes_sftp
     fi
 
-    sftp_output=$(sftp "${sftp_opts[@]}" "${user_ssh}@${host_ssh}" <<EOF 2>&1
+    saida_sftp=$(sftp "${opcoes_sftp[@]}" "${usuario_ssh}@${servidor_ssh}" <<EOF 2>&1
 get "${arquivo_remoto}" "${destino_seguro}"
 quit
 EOF
 )
     local padroes_erro=(
         "no such file"
-        "not found"
+        "not encontrado"
         "no such directory"
         "does not exist"
         "error"
@@ -131,11 +131,11 @@ EOF
         "abandoned"
     )
     local IFS='|'
-    local regex_erro="${padroes_erro[*]}"
+    local padrao_erro="${padroes_erro[*]}"
 
-    if echo "$sftp_output" | grep -qiE "$regex_erro"; then
+    if echo "$saida_sftp" | grep -qiE "$padrao_erro"; then
         _log_erro "Falha no download SFTP SSH: ${arquivo_remoto}"
-        _log_erro "Saida sftp: ${sftp_output}"
+        _log_erro "Saida sftp: ${saida_sftp}"
         return 1
     fi
 
@@ -156,7 +156,7 @@ _receber_scp() {
     local destino_local="${2:-.}"
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${5:-$DEFAULT_SSH_USER}"
+    local usuario_remoto="${5:-$DEFAULT_SSH_USER}"
 
     [[ -z "$arquivo_remoto" ]] && {
         _log_erro "Arquivo remoto nao especificado para SCP"
@@ -180,7 +180,7 @@ _receber_scp() {
 
     _log "Iniciando download SCP: $arquivo_remoto"
 
-    local -a scp_cmd=(
+    local -a cmd_scp=(
         scp
         -P "$porta"
         -o ConnectTimeout=30
@@ -190,16 +190,16 @@ _receber_scp() {
     )
 
     if _usar_chave_ssh; then
-        scp_cmd+=(
+        cmd_scp+=(
             -i "$CHAVE"
             -o BatchMode=yes
             -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
         )
     fi
 
-    local src="${rem_user}@${servidor}:${arquivo_remoto}"
+    local origem="${usuario_remoto}@${servidor}:${arquivo_remoto}"
 
-    if ! "${scp_cmd[@]}" "$src" "$destino_local"; then
+    if ! "${cmd_scp[@]}" "$origem" "$destino_local"; then
         _log_erro "Falha no download SCP: $arquivo_remoto"
         return 1
     fi
@@ -242,24 +242,24 @@ _enviar_rsync() {
 
     local servidor="${3:-$DEFAULT_IP_SERVER}"
     local porta="${4:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${5:-$DEFAULT_SSH_USER}"
+    local usuario_remoto="${5:-$DEFAULT_SSH_USER}"
     _log "Iniciando upload RSYNC: ${arquivo_local}"
-    local destino_completo="${rem_user}@${servidor}:${destino_remoto}"
+    local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
 
     # SEGURANCA: Construir opções de forma segura usando arrays
-    local rsync_base=("rsync" "-avzP")
+    local base_rsync=("rsync" "-avzP")
     local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if _usar_chave_ssh; then
         ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
     fi
 
-    local ssh_cmd
-    printf -v ssh_cmd '%s ' "${ssh_cmd_parts[@]}"
-    ssh_cmd="${ssh_cmd% }"
+    local cmd_ssh
+    printf -v cmd_ssh '%s ' "${ssh_cmd_parts[@]}"
+    cmd_ssh="${cmd_ssh% }"
 
     # Executa o upload (única chamada)
-    if "${rsync_base[@]}" -e "${ssh_cmd}" "$arquivo_local" "$destino_completo"; then
+    if "${base_rsync[@]}" -e "${cmd_ssh}" "$arquivo_local" "$destino_completo"; then
         _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
          return 0
     else
@@ -275,7 +275,7 @@ _baixar_biblioteca_sincroniza() {
 
     local servidor="${1:-$DEFAULT_IP_SERVER}"
     local porta="${2:-$DEFAULT_SSH_PORTA}"
-    local rem_user="${3:-$DEFAULT_SSH_USER}"
+    local usuario_remoto="${3:-$DEFAULT_SSH_USER}"
 
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     (
@@ -297,9 +297,9 @@ _baixar_biblioteca_sincroniza() {
             fi
             local sftp_lib_opts=("-P" "$porta")
             _adicionar_opcoes_chave sftp_lib_opts
-            local src="${rem_user}@${servidor}:${arquivo_biblioteca}"
+            local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
-            if sftp "${sftp_lib_opts[@]}" "${src}" .; then
+            if sftp "${sftp_lib_opts[@]}" "${origem}" .; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
             else
@@ -321,14 +321,14 @@ _baixar_biblioteca_sincroniza() {
                     return 1
                 fi
 
-                local src="${rem_user}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
-                local scp_cmd=("scp" "-P" "$porta" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+                local origem="${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
+                local cmd_scp=("scp" "-P" "$porta" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
                 if _usar_chave_ssh; then
-                    scp_cmd+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)" "-o" "BatchMode=yes")
+                    cmd_scp+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)" "-o" "BatchMode=yes")
                 fi
 
-                if "${scp_cmd[@]}" "$src" "."; then
+                if "${cmd_scp[@]}" "$origem" "."; then
                     _log_sucesso "Download concluido: ${arquivo}"
                 else
                     _log_erro "Falha no download: ${arquivo}"

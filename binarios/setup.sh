@@ -396,9 +396,9 @@ _configure_ssh_access() {
     local ip_server="${DEFAULT_IP_SERVER}"
     local porta_ssh="${DEFAULT_SSH_PORTA}"
     local user_ssh="${DEFAULT_SSH_USER}"
-    local SSH_DIR="${HOME}/.ssh"
-    local SSH_CONFIG_FILE="${SSH_DIR}/config"
-    local CONTROL_PATH_BASE="${SSH_DIR}/control"
+    local dir_ssh="${HOME}/.ssh"
+    local arquivo_confg_ssh="${dir_ssh}/config"
+    local base_caminho="${dir_ssh}/control"
 
     # Validacao das variaveis obrigatorias
     if [[ -z "${ip_server}" ]]; then
@@ -407,13 +407,13 @@ _configure_ssh_access() {
     fi
 
     # Cria os diretorios padrao
-    mkdir -p "${SSH_DIR}" "${CONTROL_PATH_BASE}"
-    chmod "${PERM_DIR_SECURE}" "${SSH_DIR}" "${CONTROL_PATH_BASE}"
+    mkdir -p "${dir_ssh}" "${base_caminho}"
+    chmod "${PERM_DIR_SECURE}" "${dir_ssh}" "${base_caminho}"
 
     # ====================== CRIA NOVO ARQUIVO ~/.ssh/config ======================
-    echo "Criando novo arquivo de configuracao SSH em ${SSH_CONFIG_FILE}..."
+    echo "Criando novo arquivo de configuracao SSH em ${arquivo_confg_ssh}..."
 
-    cat > "${SSH_CONFIG_FILE}" << EOF
+    cat > "${arquivo_confg_ssh}" << EOF
 # ================================================
 # Configuracao SAV - Gerada automaticamente
 # Data: $(date '+%d/%m/%Y %H:%M:%S')
@@ -424,14 +424,14 @@ Host sav_servidor
     Port ${porta_ssh}
     User ${user_ssh}
     ControlMaster auto
-    ControlPath ${CONTROL_PATH_BASE}/%r@%h:%p
+    ControlPath ${base_caminho}/%r@%h:%p
     ControlPersist 10m
     ServerAliveInterval ${SSH_ALIVE_INTERVAL}
     ServerAliveCountMax ${SSH_ALIVE_COUNT}
     ConnectTimeout ${SSH_TIMEOUT}
 EOF
 
-    chmod "${PERM_FILE_PRIVATE}" "${SSH_CONFIG_FILE}"
+    chmod "${PERM_FILE_PRIVATE}" "${arquivo_confg_ssh}"
     echo "Novo arquivo ~/.ssh/config criado com sucesso!"
 
     # ====================== TESTE DE CONEXAO ======================

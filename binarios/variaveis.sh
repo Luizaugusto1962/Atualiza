@@ -61,11 +61,11 @@ _var_carregar_config() {
 # FUNCAO: Obter valor de uma variavel com fallback
 # =============================================================================
 _var_obter_valor() {
-    local var_name="$1"
+    local nome_var="$1"
     local valor
 
     # Indirecao para obter o valor da variavel
-    valor="${!var_name:-}"
+    valor="${!nome_var:-}"
 
     if [[ -z "$valor" ]]; then
         echo "NAO DEFINIDO"
@@ -103,9 +103,9 @@ _var_exibir_tabular() {
     for categoria in "${!_VAR_CATEGORIAS[@]}"; do
         # Se ha filtro, verificar se a categoria corresponde (case-insensitive)
         if [[ -n "$filtro" ]]; then
-            local cat_lower="${categoria,,}"
-            local filtro_lower="${filtro,,}"
-            if [[ ! "$cat_lower" =~ $filtro_lower ]]; then
+            local cat_minusculo="${categoria,,}"
+            local filtro_minusculo="${filtro,,}"
+            if [[ ! "$cat_minusculo" =~ $filtro_minusculo ]]; then
                 continue
             fi
         fi

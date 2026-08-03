@@ -14,11 +14,11 @@ set -euo pipefail
 CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
 
 # Arquivo de senhas oculto — avaliado sob demanda em vez de tempo de source
-SENHA_FILE="${CFG_DIR:-}/.senhas"
+arquivo_senhas="${CFG_DIR:-}/.senhas"
 
 # Garantir que o arquivo de senhas tenha permissoes restritas
-if [[ -f "$SENHA_FILE" ]]; then
-    chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || true
+if [[ -f "$arquivo_senhas" ]]; then
+    chmod "${PERM_FILE_PRIVATE}" "$arquivo_senhas" 2>/dev/null || true
 fi
 
 # Variavel global para armazenar o nome do usuario autenticado
@@ -34,16 +34,16 @@ _usuario_valido() {
 _obter_hash_usuario() {
     local usuario="$1"
     awk -F: -v u="$usuario" '
-        $1 == u {print $2; found=1; exit}
-        END {exit !found}
-    ' "$SENHA_FILE"
+        $1 == u {print $2; encontrado=1; exit}
+        END {exit !encontrado}
+    ' "$arquivo_senhas"
 }
 
 # Verificar se o usuario existe no arquivo de senhas
 _usuario_existe() {
     local usuario="$1"
     [[ -z "$usuario" ]] && return 1
-    awk -F: -v u="$usuario" '$1 == u {found=1; exit} END {exit !found}' "$SENHA_FILE" 2>/dev/null
+    awk -F: -v u="$usuario" '$1 == u {encontrado=1; exit} END {exit !encontrado}' "$arquivo_senhas" 2>/dev/null
 }
 
 # Funcao para hash da senha usando algoritmo configuravel
@@ -61,7 +61,7 @@ _hash_senha() {
 
 # Funcao para cadastrar usuario
 _cadastrar_usuario() {
-    local usuario senha senha_confirm hash_senha
+    local usuario senha senha_confirm resumo_senha
 
     _exibir_mensagem_centralizada "${VERMELHO}" "Cadastro de Usuario"
     _meia_linha "=" "${VERMELHO}"
@@ -99,13 +99,13 @@ _cadastrar_usuario() {
         return 1
     fi
 
-    hash_senha=$(_hash_senha "$senha")
-    printf '%s:%s\n' "${usuario}" "${hash_senha}" >> "$SENHA_FILE"
+    resumo_senha=$(_hash_senha "$senha")
+    printf '%s:%s\n' "${usuario}" "${resumo_senha}" >> "$arquivo_senhas"
 
     # Restringir permissoes do arquivo de senhas (somente dono: rw)
-    chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || {
-        _exibir_mensagem_centralizada "${AMARELO}" "AVISO: Nao foi possivel restringir permissoes de ${SENHA_FILE}"
-        _log "AVISO: Permissoes de ${SENHA_FILE} nao alteradas"
+    chmod "${PERM_FILE_PRIVATE}" "$arquivo_senhas" 2>/dev/null || {
+        _exibir_mensagem_centralizada "${AMARELO}" "AVISO: Nao foi possivel restringir permissoes de ${arquivo_senhas}"
+        _log "AVISO: Permissoes de ${arquivo_senhas} nao alteradas"
     }
 
     _exibir_mensagem_centralizada "${VERDE}" "Usuario cadastrado com sucesso."
@@ -134,7 +134,7 @@ _mostrar_boas_vindas() {
 
 # Funcao para login
 _login() {
-    local senha hash_senha stored_hash
+    local senha resumo_senha hash_armazenado
     local tentativas=1
     local resposta
     # usuario is made global to be used in logging
@@ -151,10 +151,10 @@ _login() {
         elif ! _usuario_valido "$usuario"; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         else
-            if [[ ! -f "$SENHA_FILE" ]]; then
+            if [[ ! -f "$arquivo_senhas" ]]; then
                 _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum usuario cadastrado. Execute o programa de cadastro primeiro."
                 return 1
-            elif [[ ! -s "$SENHA_FILE" ]]; then
+            elif [[ ! -s "$arquivo_senhas" ]]; then
                 _exibir_mensagem_centralizada "${VERMELHO}" "ALERTA: Arquivo de senhas esta vazio. Nenhum usuario cadastrado no sistema."
                 _exibir_mensagem_centralizada "${AMARELO}" "Execute o programa de cadastro primeiro."
                 _linha "-" "${VERMELHO}"
@@ -169,13 +169,13 @@ _login() {
                 if [[ -z "$senha" ]]; then
                     _exibir_mensagem_centralizada "${VERMELHO}" "Senha nao pode ser vazia."
                 else
-                    stored_hash=$(_obter_hash_usuario "$usuario")
-                    if [[ -z "$stored_hash" ]]; then
+                    hash_armazenado=$(_obter_hash_usuario "$usuario")
+                    if [[ -z "$hash_armazenado" ]]; then
                         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao encontrado."
                         _linha "-" "${VERMELHO}"
                     else
-                        hash_senha=$(_hash_senha "$senha")
-                        if [[ "$hash_senha" == "$stored_hash" ]]; then
+                        resumo_senha=$(_hash_senha "$senha")
+                        if [[ "$resumo_senha" == "$hash_armazenado" ]]; then
                             _exibir_mensagem_centralizada "${VERDE}" "Login bem-sucedido."
                             export usuario
                             _mostrar_boas_vindas "$usuario"
@@ -207,7 +207,7 @@ _login() {
 
 # Funcao para alterar senha
 _alterar_senha() {
-    local senha_atual nova_senha confirm_senha hash_atual hash_nova stored_hash
+    local senha_atual nova_senha confirm_senha hash_atual hash_nova hash_armazenado
 
     # Usar o usuario ja autenticado globalmente
     if [[ -z "$usuario" ]]; then
@@ -222,15 +222,15 @@ _alterar_senha() {
     printf "\n"
 
     # Verificar senha atual
-    stored_hash=$(_obter_hash_usuario "$usuario")
-    if [[ -z "$stored_hash" ]]; then
+    hash_armazenado=$(_obter_hash_usuario "$usuario")
+    if [[ -z "$hash_armazenado" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao encontrado."
         _linha "-" "${VERMELHO}"
         return 1
     fi
 
     hash_atual=$(_hash_senha "$senha_atual")
-    if [[ "$hash_atual" != "$stored_hash" ]]; then
+    if [[ "$hash_atual" != "$hash_armazenado" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Senha atual incorreta."
         _linha "-" "${VERMELHO}"
         return 1
@@ -266,10 +266,10 @@ _alterar_senha() {
         else
             printf '%s\n' "$linha"
         fi
-    done < "$SENHA_FILE" > "$tmp_senhas"
+    done < "$arquivo_senhas" > "$tmp_senhas"
 
-    if mv -f "$tmp_senhas" "$SENHA_FILE"; then
-        chmod "${PERM_FILE_PRIVATE}" "$SENHA_FILE" 2>/dev/null || true
+    if mv -f "$tmp_senhas" "$arquivo_senhas"; then
+        chmod "${PERM_FILE_PRIVATE}" "$arquivo_senhas" 2>/dev/null || true
         _exibir_mensagem_centralizada "${VERDE}" "Senha alterada com sucesso."
     else
         rm -f "$tmp_senhas"

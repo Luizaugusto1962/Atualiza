@@ -15,7 +15,7 @@ CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracoes
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
 
 # Arquivo de manual principal
-MANUAL_FILE="${CFG_DIR}/manual.txt"
+arquivo_manual="${CFG_DIR}/manual.txt"
 
 # Exibe conteúdo com paginaçao automática
 # Parâmetros:
@@ -87,18 +87,18 @@ _ler_secao_manual() {
     local linha_inicio
     local linha_fim
 
-    if [[ ! -f "$MANUAL_FILE" ]]; then
+    if [[ ! -f "$arquivo_manual" ]]; then
         _erro "Arquivo manual.txt nao encontrado!"
         return 1
     fi
 
-    if [[ ! -r "$MANUAL_FILE" ]]; then
+    if [[ ! -r "$arquivo_manual" ]]; then
         _erro "Arquivo manual.txt sem permissao de leitura!"
         return 1
     fi
 
     # Encontra linha de início da seçao
-    linha_inicio=$(grep -n "^\[${secao}\]$" "$MANUAL_FILE" | cut -d: -f1)
+    linha_inicio=$(grep -n "^\[${secao}\]$" "$arquivo_manual" | cut -d: -f1)
 
     if [[ -z "$linha_inicio" ]]; then
         _exibir_mensagem_centralizada "${AMARELO}" "Seçao [$secao] nao encontrada no manual."
@@ -109,15 +109,15 @@ _ler_secao_manual() {
     linha_inicio=$((linha_inicio + 1))
 
     # Encontra a proxima seçao apos a linha de início
-    linha_fim=$(tail -n +${linha_inicio} "$MANUAL_FILE" | grep -n "^\[.*\]$" | head -1 | cut -d: -f1)
+    linha_fim=$(tail -n +${linha_inicio} "$arquivo_manual" | grep -n "^\[.*\]$" | head -1 | cut -d: -f1)
 
     if [[ -n "$linha_fim" ]]; then
         # Há outra seçao depois, lê até ela
         linha_fim=$((linha_inicio + linha_fim - 2))
-        conteudo=$(sed -n "${linha_inicio},${linha_fim}p" "$MANUAL_FILE")
+        conteudo=$(sed -n "${linha_inicio},${linha_fim}p" "$arquivo_manual")
     else
         # É a última seçao, lê até o final
-        conteudo=$(tail -n +${linha_inicio} "$MANUAL_FILE")
+        conteudo=$(tail -n +${linha_inicio} "$arquivo_manual")
     fi
 
     echo "$conteudo"
@@ -128,8 +128,8 @@ _ler_secao_manual() {
 
 # Exibe o manual completo
 _exibir_manual_completo() {
-    if [[ ! -f "$MANUAL_FILE" ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo manual.txt nao encontrado em: $MANUAL_FILE"
+    if [[ ! -f "$arquivo_manual" ]]; then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo manual.txt nao encontrado em: $arquivo_manual"
         _exibir_mensagem_centralizada "${AMARELO}" "Crie o arquivo manual.txt no diretorio configuracoes/"
         _aguardar_tecla
         return 1
@@ -137,7 +137,7 @@ _exibir_manual_completo() {
 
     clear
     # Reutiliza _exibir_paginado com o conteudo completo do manual
-    _exibir_paginado "$(cat "$MANUAL_FILE")" 25
+    _exibir_paginado "$(cat "$arquivo_manual")" 25
     return 0
 }
 
@@ -145,7 +145,7 @@ _exibir_manual_completo() {
 # Parametros: $1=contexto (chave do menu) $2=nome_secao (chave no manual.txt)
 _exibir_secao_manual() {
     local contexto="$1"
-    local secao_nome="$2"
+    local nome_secao="$2"
     local conteudo
 
     clear
@@ -154,7 +154,7 @@ _exibir_secao_manual() {
     _linha "=" "${CIANO}"
     printf "\n"
 
-    if conteudo=$(_ler_secao_manual "$secao_nome"); then
+    if conteudo=$(_ler_secao_manual "$nome_secao"); then
         _exibir_paginado "$conteudo" 25
     else
         _exibir_mensagem_centralizada "${AMARELO}" "Ajuda para '$contexto' nao disponivel no momento."
@@ -177,27 +177,27 @@ _exibir_secao_manual() {
 # Parametros: $1=contexto (principal, programas, biblioteca, etc)
 _exibir_ajuda_contextual() {
     local contexto="${1:-principal}"
-    local secao_nome
+    local nome_secao
 
     case "$contexto" in
-        principal)     secao_nome="MENU_PRINCIPAL" ;;
-        programas)     secao_nome="MENU_PROGRAMAS" ;;
-        biblioteca)    secao_nome="MENU_BIBLIOTECA" ;;
-        arquivos)      secao_nome="MENU_ARQUIVOS" ;;
-        ferramentas)   secao_nome="MENU_FERRAMENTAS" ;;
-        temporarios)   secao_nome="MENU_TEMPORARIOS" ;;
-        recuperacao)   secao_nome="MENU_RECUPERACAO" ;;
-        backup)        secao_nome="MENU_BACKUP" ;;
-        transferencia) secao_nome="MENU_TRANSFERENCIA" ;;
-        configs)       secao_nome="MENU_CONFIGS" ;;
-        setups)        secao_nome="MENU_SETUPS" ;;
-        lembretes)     secao_nome="MENU_LEMBRETES" ;;
-        aviso)         secao_nome="MENU_AVISO" ;;
-        logs)          secao_nome="MENU_LOGS" ;;
-        *)             secao_nome="MENU_PRINCIPAL" ;;
+        principal)     nome_secao="MENU_PRINCIPAL" ;;
+        programas)     nome_secao="MENU_PROGRAMAS" ;;
+        biblioteca)    nome_secao="MENU_BIBLIOTECA" ;;
+        arquivos)      nome_secao="MENU_ARQUIVOS" ;;
+        ferramentas)   nome_secao="MENU_FERRAMENTAS" ;;
+        temporarios)   nome_secao="MENU_TEMPORARIOS" ;;
+        recuperacao)   nome_secao="MENU_RECUPERACAO" ;;
+        backup)        nome_secao="MENU_BACKUP" ;;
+        transferencia) nome_secao="MENU_TRANSFERENCIA" ;;
+        configs)       nome_secao="MENU_CONFIGS" ;;
+        setups)        nome_secao="MENU_SETUPS" ;;
+        lembretes)     nome_secao="MENU_LEMBRETES" ;;
+        aviso)         nome_secao="MENU_AVISO" ;;
+        logs)          nome_secao="MENU_LOGS" ;;
+        *)             nome_secao="MENU_PRINCIPAL" ;;
     esac
 
-    _exibir_secao_manual "$contexto" "$secao_nome"
+    _exibir_secao_manual "$contexto" "$nome_secao"
 }
 
 # Exibe menu rapido de ajuda
@@ -214,12 +214,12 @@ _ajuda_no_geral() {
 
 # Verifica se manual.txt existe, se nao, avisa o usuario
 _verificar_manual() {
-    if [[ ! -f "$MANUAL_FILE" ]]; then
+    if [[ ! -f "$arquivo_manual" ]]; then
         _linha "=" "${AMARELO}"
         _exibir_mensagem_centralizada "${AMARELO}" "  AVISO: Arquivo manual.txt nao encontrado!"
         _linha "=" "${AMARELO}"
         printf "\n"
-        _exibir_mensagem_centralizada "${BRANCO}" "O arquivo manual.txt deve estar em: ${CIANO}$MANUAL_FILE${NORMAL}"
+        _exibir_mensagem_centralizada "${BRANCO}" "O arquivo manual.txt deve estar em: ${CIANO}$arquivo_manual${NORMAL}"
         printf "\n"
         _exibir_mensagem_centralizada "${BRANCO}" "Por favor, crie o arquivo manual.txt no diretorio configuracoes/"
         printf "\n"
@@ -254,7 +254,7 @@ _buscar_manual() {
     printf "\n"
 
     # Buscar e destacar resultados
-    if grep -in --color=always "$termo" "$MANUAL_FILE"; then
+    if grep -in --color=always "$termo" "$arquivo_manual"; then
         printf "\n"
         _exibir_mensagem_centralizada "${VERDE}" "Busca concluída"
     else
@@ -276,7 +276,7 @@ _exportar_manual() {
         return 1
     fi
 
-    if cp "$MANUAL_FILE" "$destino"; then
+    if cp "$arquivo_manual" "$destino"; then
         _exibir_mensagem_centralizada "${VERDE}" "Manual exportado para: $destino"
     else
         _erro "ao exportar manual"
