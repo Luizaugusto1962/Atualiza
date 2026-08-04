@@ -24,6 +24,11 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # Diretorio do script atual
 
+# Rotina: se existir o programa instalar.sh no diretorio, exclua-o
+if [[ -f "${SCRIPT_DIR}/instalar.sh" ]]; then
+    rm -f "${SCRIPT_DIR}/instalar.sh"
+fi
+
 # Diretorio do script SCRIPT_DIR
 PLIBS_DIR="${SCRIPT_DIR}/binarios" # Diretorio das bibliotecas usadas pelo script
 
