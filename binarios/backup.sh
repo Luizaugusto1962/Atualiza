@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/07/2026-01
+# Versao: 04/08/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -200,7 +200,7 @@ _executar_backup() {
 
     # Mostrar barra de progresso e capturar resultado (wait ja feito internamente)
     local resultado=0
-    _mostrar_progresso_backup "$backup_pid" "Backup em andamento" || resultado=$?
+    _mostrar_progresso_backup "$backup_pid" "Backup em andamento"|| resultado=$?
 
     if [[ $resultado -eq 0 ]] && [[ -f "$caminho_backup" ]]; then
         _finalizar_backup_sucesso "$nome_backup"
