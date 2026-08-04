@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 23/07/2026-01
+# Versao: 04/08/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -153,8 +153,7 @@ _caminho_modulo() {
     fi
 
     # Carregar o módulo
-    # shellcheck disable=SC1090
-    if ! . "${caminho}"; then
+    if ! "." "${caminho}"; then
         printf "ERRO: Falha ao carregar modulo '%s'\n" "${modulo}" >&2
         return 1
     fi

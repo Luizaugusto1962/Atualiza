@@ -6,12 +6,13 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/07/2026-01
+# Versao:04/08/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
 # =============================================================================
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"
+DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"
 RAIZ="${RAIZ:-}"
 CFG_DIR="${CFG_DIR:-}"
 REBUILD="${REBUILD:-}"
@@ -230,8 +231,19 @@ _configurar_diretorios() {
         _erro "Ao criar diretorio de configuracao %s\n" "${CFG_DIR}" >&2
         return 1
     }
+#  Lista de diretorios a serem criados com seguranca
+    local dirs=(
+               "${DEFAULT_LOGS_DIR}"
+               "${DEFAULT_BACKUP_DIR}"
+               "${DEFAULT_BASEBACKUP_DIR}"
+               "${DEFAULT_BIBLIOTECA_ATUAL_DIR}"
+               "${DEFAULT_BIBLIOTECA_DIR}"
+               "${DEFAULT_PROGS_DIR}"
+               "${DEFAULT_OLDS_DIR}"
+               "${DEFAULT_ENVIA_DIR}"
+               "${DEFAULT_RECEBE_DIR}"
+    )
 
-    local dirs=("${DEFAULT_BIBLIOTECA_ATUAL_DIR}" "${DEFAULT_BIBLIOTECA_DIR}" "${DEFAULT_BASEBACKUP_DIR}" "${DEFAULT_OLDS_DIR}" "${DEFAULT_PROGS_DIR}" "${DEFAULT_ENVIA_DIR}" "${DEFAULT_RECEBE_DIR}" "${DEFAULT_BACKUP_DIR}")
     local dir
     for dir in "${dirs[@]}"; do
         _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
