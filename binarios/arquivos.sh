@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
+# Versao: 06/08/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -626,7 +626,7 @@ _executar_jutil() {
                     fi
                 done
             else
-                _erro "no rebuild: $(basename "$arquivo")"
+                _erro "Nao recuperou: $(basename "$arquivo")"
             fi
             _linha "-" "${VERDE}"
         else
