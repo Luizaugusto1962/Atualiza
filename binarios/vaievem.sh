@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
+# Versao: 07/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -101,8 +101,14 @@ _receber_sftp_ssh() {
     # Construir destino de forma segura
     local destino_seguro="${destino_local%/}/${nome_arquivo}"
 
-    # Construir opções SFTP com controle de acesso por chave
-    local opcoes_sftp=("-P" "$porta_ssh" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+    # Construir opções SFTP com controle de acesso por chave e timeouts
+    local opcoes_sftp=(
+        "-P" "$porta_ssh"
+        "-o" "ConnectTimeout=${SSH_TIMEOUT}"
+        "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
+        "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
+        "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
+    )
     if _usar_chave_ssh; then
         _adicionar_opcoes_chave opcoes_sftp
     fi
@@ -295,7 +301,12 @@ _baixar_biblioteca_sincroniza() {
                 _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
-            local sftp_lib_opts=("-P" "$porta")
+            local sftp_lib_opts=(
+                "-P" "$porta"
+                "-o" "ConnectTimeout=${SSH_TIMEOUT}"
+                "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
+                "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
+            )
             _adicionar_opcoes_chave sftp_lib_opts
             local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
@@ -322,7 +333,14 @@ _baixar_biblioteca_sincroniza() {
                 fi
 
                 local origem="${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
-                local cmd_scp=("scp" "-P" "$porta" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+                local cmd_scp=(
+                    "scp"
+                    "-P" "$porta"
+                    "-o" "ConnectTimeout=${SSH_TIMEOUT}"
+                    "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
+                    "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
+                    "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
+                )
 
                 if _usar_chave_ssh; then
                     cmd_scp+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)" "-o" "BatchMode=yes")
