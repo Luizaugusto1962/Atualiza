@@ -64,12 +64,12 @@ _adicionar_opcoes_chave() {
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
-# Download via SFTP com chave SSH configurada
+# Download via SSH com chave configurada (usa SCP para melhor controle de timeout)
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
 _receber_sftp_ssh() {
     local arquivo_remoto="${1:-}"
     if [[ -z "$arquivo_remoto" ]]; then
-        _log_erro "Arquivo remoto nao especificado para SFTP SSH"
+        _log_erro "Arquivo remoto nao especificado para download SSH"
         return 1
     fi
 
@@ -88,70 +88,40 @@ _receber_sftp_ssh() {
     fi
 
     local nome_arquivo="${arquivo_remoto##*/}"
-    _log "Iniciando download SFTP com chave SSH: ${arquivo_remoto}"
+    _log "Iniciando download SSH com chave: ${arquivo_remoto}"
 
-    # Captura stdout e stderr para inspecionar mensagens de erro do sftp
-    local saida_sftp
     local servidor_ssh="${CFG_SSH_HOST:-sav_servidor}"
-
-    # SEGURANCA: Tornar conexão explícita (usuário e porta) para evitar dependência de ~/.ssh/config
     local usuario_ssh="${DEFAULT_SSH_USER:-}"
     local porta_ssh="${DEFAULT_SSH_PORTA:-}"
 
-    # Construir destino de forma segura
-    local destino_seguro="${destino_local%/}/${nome_arquivo}"
-
-    # Construir opções SFTP com controle de acesso por chave e timeouts
-    local opcoes_sftp=(
-        "-P" "$porta_ssh"
-        "-o" "ConnectTimeout=${SSH_TIMEOUT}"
-        "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
-        "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
-        "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
+    # Usar SCP em vez de SFTP para melhor controle de timeout
+    local -a cmd_scp=(
+        scp
+        -P "$porta_ssh"
+        -o "ConnectTimeout=${SSH_TIMEOUT}"
+        -o "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
+        -o "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
     )
+
     if _usar_chave_ssh; then
-        _adicionar_opcoes_chave opcoes_sftp
+        cmd_scp+=(-i "$CHAVE" -o "BatchMode=yes")
     fi
 
-    saida_sftp=$(sftp "${opcoes_sftp[@]}" "${usuario_ssh}@${servidor_ssh}" <<EOF 2>&1
-get "${arquivo_remoto}" "${destino_seguro}"
-quit
-EOF
-)
-    local padroes_erro=(
-        "no such file"
-        "not encontrado"
-        "no such directory"
-        "does not exist"
-        "error"
-        "failed"
-        "failure"
-        "permission denied"
-        "connection refused"
-        "connection timed out"
-        "host key verification failed"
-        "authentication failed"
-        "couldn't read"
-        "couldn't open"
-        "transfer failed"
-        "abandoned"
-    )
-    local IFS='|'
-    local padrao_erro="${padroes_erro[*]}"
+    local origem="${usuario_ssh}@${servidor_ssh}:${arquivo_remoto}"
 
-    if echo "$saida_sftp" | grep -qiE "$padrao_erro"; then
-        _log_erro "Falha no download SFTP SSH: ${arquivo_remoto}"
-        _log_erro "Saida sftp: ${saida_sftp}"
+    if ! "${cmd_scp[@]}" "$origem" "$destino_local"; then
+        _log_erro "Falha no download SSH: ${arquivo_remoto}"
         return 1
     fi
 
-    # 3ª verificacao: confirma que o arquivo existe e nao esta vazio no destino
-    if [[ ! -f "$destino_seguro" || ! -s "$destino_seguro" ]]; then
-        _log_erro "Falha no download SFTP SSH: arquivo ausente apos transferencia: ${destino_seguro}"
+    # Verificar se arquivo foi transferido
+    if [[ ! -f "${destino_local}/${nome_arquivo}" ]]; then
+        _log_erro "Falha no download SSH: arquivo ausente apos transferencia: ${destino_local}/${nome_arquivo}"
         return 1
     fi
 
-    _log_sucesso "Download SFTP SSH concluido: ${arquivo_remoto}"
+    _log "Download SSH concluido: ${arquivo_remoto}"
     return 0
 }
 
@@ -301,16 +271,20 @@ _baixar_biblioteca_sincroniza() {
                 _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
-            local sftp_lib_opts=(
+            local cmd_scp_lib=(
+                "scp"
                 "-P" "$porta"
                 "-o" "ConnectTimeout=${SSH_TIMEOUT}"
                 "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
                 "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
+                "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
             )
-            _adicionar_opcoes_chave sftp_lib_opts
+            if _usar_chave_ssh; then
+                cmd_scp_lib+=("-i" "$CHAVE" "-o" "BatchMode=yes")
+            fi
             local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
-            if sftp "${sftp_lib_opts[@]}" "${origem}" .; then
+            if "${cmd_scp_lib[@]}" "$origem" "."; then
                 _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
                 return 0
             else
