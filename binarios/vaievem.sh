@@ -391,7 +391,7 @@ _baixar_programas_vaievem() {
 # Enviar arquivo(s) via RSYNC. Pode lidar com arquivos unicos ou multiplos usando wildcard.
 _enviar_arquivo_multi() {
     # Validar variaveis globais necessarias
-    if [[ -z "$ARQUIVO_ENVIAR" ]]; then
+    if [[ -z "${ARQUIVO_ENVIAR:-}" ]]; then
         _erro "Nenhum arquivo especificado para envio"
         _aguardar 2
         return 1
