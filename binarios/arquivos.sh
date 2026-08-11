@@ -649,6 +649,8 @@ _enviar_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "1- Origem: Informe o diretorio onde esta o arquivo:"
     read -rp "${AMARELO} -> ${NORMAL}" diretorio_origem
+    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
+    diretorio_origem="$(printf '%s' "$diretorio_origem" | LC_ALL=C tr -cd ' -~')"
     _linha
 
     if [[ -z "$diretorio_origem" ]]; then
@@ -681,6 +683,8 @@ _enviar_arquivo_avulso() {
     _exibir_mensagem_centralizada "${CIANO}" "Use * para enviar todas as extensoes (ex: ARQUIVO*)"
     _linha
     read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_enviar
+    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
+    arquivo_enviar="$(printf '%s' "$arquivo_enviar" | LC_ALL=C tr -cd ' -~')"
 
     if [[ -z "$arquivo_enviar" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"
@@ -736,6 +740,8 @@ _enviar_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Informe o diretorio no servidor:"
     read -rp "${AMARELO} -> ${NORMAL}" destino_remoto
+    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
+    destino_remoto="$(printf '%s' "$destino_remoto" | LC_ALL=C tr -cd ' -~')"
     _linha
 
     if [[ -z "$destino_remoto" ]]; then
