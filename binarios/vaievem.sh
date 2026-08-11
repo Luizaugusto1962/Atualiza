@@ -6,12 +6,10 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 07/08/2026-01
+# Versao: 11/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
-# Variaveis globais esperadas
-arquivos_encontrados=()                        # Array para armazenar arquivos encontrados para envio
 
 # =============================================================================
 # VALIDACAO DE SEGURANCA (AGENTS.md: Validate and sanitize user input)
@@ -90,7 +88,7 @@ _receber_sftp_ssh() {
     local nome_arquivo="${arquivo_remoto##*/}"
     _log "Iniciando download SSH com chave: ${arquivo_remoto}"
 
-    local servidor_ssh="${CFG_SSH_HOST:-sav_servidor}"
+    local servidor_ssh="${CFG_SSH_HOST:-${DEFAULT_IP_SERVER}}"
     local usuario_ssh="${DEFAULT_SSH_USER:-}"
     local porta_ssh="${DEFAULT_SSH_PORTA:-}"
 
@@ -389,54 +387,64 @@ _baixar_programas_vaievem() {
 #---------- FUNCOES DE UPLOAD/ENVIO (ALTO NIVEL) ----------#
 
 # Enviar arquivo(s) via RSYNC. Pode lidar com arquivos unicos ou multiplos usando wildcard.
+# Uso: _enviar_arquivo_multi <diretorio_origem> <arquivo|padrao> [destino_remoto]
 _enviar_arquivo_multi() {
-    # Validar variaveis globais necessarias
-    if [[ -z "${ARQUIVO_ENVIAR:-}" ]]; then
+    local diretorio_origem="${1:-}"
+    local arquivo_enviar="${2:-}"
+    local destino_remoto="${3:-${CFG_BACKUP_PATH:-}}"
+
+    if [[ -z "$arquivo_enviar" ]]; then
         _erro "Nenhum arquivo especificado para envio"
         _aguardar 2
         return 1
     fi
 
-    if [[ -z "${CFG_BACKUP_PATH:-}" ]]; then
+    if [[ -z "$destino_remoto" ]]; then
         _erro "Destino remoto nao especificado"
         _aguardar 2
         return 1
     fi
 
-
-    # Validar DIRETORIO_ORIGEM para envio de arquivo unico
-    if [[ "$ARQUIVO_ENVIAR" != *"*"* && -z "${DIRETORIO_ORIGEM:-}" ]]; then
+    # Validar diretorio de origem para envio de arquivo unico
+    if [[ "$arquivo_enviar" != *"*"* && -z "$diretorio_origem" ]]; then
         _erro "Diretorio de origem nao definido para envio de arquivo unico"
         _aguardar 2
         return 1
     fi
 
-    # Garantir que arquivos_encontrados exista para envio multiplo
-    if [[ "$ARQUIVO_ENVIAR" == *"*"* && ${#arquivos_encontrados[@]} -eq 0 ]]; then
-        _erro "Nenhum arquivo encontrado para envio multiplo"
-        _aguardar 2
-        return 1
-    fi
-
     # SEGURANCA: Validar caminhos contra traversal e injeção
-    if ! _validar_caminho_seguro "${DIRETORIO_ORIGEM:-.}" || ! _validar_caminho_seguro "${CFG_BACKUP_PATH:-}"; then
+    if ! _validar_caminho_seguro "${diretorio_origem:-.}" || ! _validar_caminho_seguro "${destino_remoto}"; then
         _erro "Caminhos contem caracteres invalidos ou tentativas de traversal."
         _aguardar 2
         return 1
     fi
 
     # Verificar se esta enviando multiplos arquivos ou apenas um
-    if [[ "$ARQUIVO_ENVIAR" == *"*"* ]]; then
+    if [[ "$arquivo_enviar" == *"*"* ]]; then
+        # Localizar arquivos que correspondem ao padrao
+        shopt -s nullglob
+        local -a arquivos_encontrados=()
+        while IFS= read -r -d '' arquivo_item; do
+            arquivos_encontrados+=("$arquivo_item")
+        done < <(find "${diretorio_origem}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
+        shopt -u nullglob
+
+        if (( ${#arquivos_encontrados[@]} == 0 )); then
+            _erro "Nenhum arquivo encontrado para envio multiplo"
+            _aguardar 2
+            return 1
+        fi
+
         # Enviar multiplos arquivos usando _enviar_rsync
         local falhas_envio=0
         for arquivo_item in "${arquivos_encontrados[@]}"; do
-            if ! _enviar_rsync "$arquivo_item" "${CFG_BACKUP_PATH}"; then
+            if ! _enviar_rsync "$arquivo_item" "${destino_remoto}"; then
                 ((falhas_envio++)) || true
             fi
         done
 
         if (( falhas_envio == 0 )); then
-            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo(s) enviado(s) para \"${CFG_BACKUP_PATH}\""
+            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo(s) enviado(s) para \"${destino_remoto}\""
             _linha
             _aguardar 3
         else
@@ -445,8 +453,8 @@ _enviar_arquivo_multi() {
         fi
     else
         # Enviar arquivo unico usando _enviar_rsync
-        if _enviar_rsync "${DIRETORIO_ORIGEM}/${ARQUIVO_ENVIAR}" "${CFG_BACKUP_PATH}"; then
-            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo enviado para \"${CFG_BACKUP_PATH}\""
+        if _enviar_rsync "${diretorio_origem}/${arquivo_enviar}" "${destino_remoto}"; then
+            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo enviado para \"${destino_remoto}\""
             _linha
             _aguardar 3
         else
