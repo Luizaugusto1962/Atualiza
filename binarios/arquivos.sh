@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/08/2026-01
+# Versao: /08/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -760,12 +760,16 @@ _receber_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "1- Origem: Diretorio remoto do arquivo:"
     read -rp "${AMARELO} -> ${NORMAL}" origem_remota
+    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
+    origem_remota="$(printf '%s' "$origem_remota" | LC_ALL=C tr -cd ' -~')"
     _linha
 
     # Solicitar nome do arquivo
     _exibir_mensagem_centralizada "${VERMELHO}" "Informe o arquivo que deseja RECEBER"
     _linha
     read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_receber
+    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
+    arquivo_receber="$(printf '%s' "$arquivo_receber" | LC_ALL=C tr -cd ' -~')"
 
     if [[ -z "$arquivo_receber" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"

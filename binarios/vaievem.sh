@@ -63,8 +63,8 @@ _adicionar_opcoes_chave() {
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
 # Download via SSH com chave configurada (usa SCP para melhor controle de timeout)
-# Parametros: $1=arquivo_remoto $2=destino_local(opcional, padrao=.)
-_receber_sftp_ssh() {
+# Parametros: $1=arquivo_remoto $2=destino_local(opcional)
+_receber_scp2() {
     local arquivo_remoto="${1:-}"
     if [[ -z "$arquivo_remoto" ]]; then
         _log_erro "Arquivo remoto nao especificado para download SSH"
@@ -221,7 +221,9 @@ _enviar_rsync() {
     local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
 
     # SEGURANCA: Construir opções de forma segura usando arrays
-    local base_rsync=("rsync" "-avzP")
+    # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
+    # (ex: SMB) rejeitam chmod com "Operation not permitted"
+    local base_rsync=("rsync" "-rtzP")
     local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if _usar_chave_ssh; then
@@ -352,11 +354,6 @@ _baixar_programas_vaievem() {
             _linha
 
             if _usar_chave_ssh; then
-                if ! _receber_sftp_ssh "${DESTINO_SERVER}${arquivo}" "."; then
-                    _erro "Falha no download: $arquivo"
-                    return 1
-                fi
-            else
                 if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
                     _erro "Falha no download: $arquivo"
                     return 1
