@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 11/08/2026-01
+# Versao: 12/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -30,6 +30,12 @@ _validar_caminho_seguro() {
 _usar_chave_ssh() {
     local acessochave="${CFG_CHAVE_SSH:-}"
     local chave="${CHAVE:-}"
+
+    # Se a variavel chavessh (configuracao do .config) for "n",
+    # pular o controle de acesso a chave e continuar pedindo senha
+    if [[ "${chave,,}" == "n" ]]; then
+        return 1
+    fi
 
     if [[ "${acessochave,,}" != "s" ]]; then
         return 1
@@ -353,11 +359,9 @@ _baixar_programas_vaievem() {
             _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
             _linha
 
-            if _usar_chave_ssh; then
-                if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
-                    _erro "Falha no download: $arquivo"
-                    return 1
-                fi
+            if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
+                _erro "Falha no download: $arquivo"
+                return 1
             fi
 
             _linha
