@@ -250,6 +250,142 @@ _atualizando() {
     _encerrar_programa 0
 }
 
+# Restaura os scripts .sh anteriores a partir do backup feito em _atualizando
+# O backup pode estar em arquivos .sh.bkp avulsos ou em um zip ddmm_backup.zip
+_voltar_sh_anterior() {
+    _configurar_diretorios
+
+    # SEGURANCA: validar diretorios antes de operar
+    if ! _validar_diretorio_operacao "${DEFAULT_BACKUP_DIR}"; then
+        _erro "Diretorio de backup invalido ou inseguro: ${DEFAULT_BACKUP_DIR}"
+        _aguardar 2
+        return 1
+    fi
+    if ! _validar_diretorio_operacao "${LIBS_DIR}"; then
+        _erro "Diretorio de bibliotecas invalido ou inseguro: ${LIBS_DIR}"
+        _aguardar 2
+        return 1
+    fi
+    if [[ -n "${SCRIPT_DIR}" ]] && ! _validar_diretorio_operacao "${SCRIPT_DIR}"; then
+        _erro "Diretorio do script principal invalido ou inseguro: ${SCRIPT_DIR}"
+        _aguardar 2
+        return 1
+    fi
+
+    # Localizar os backups .sh.bkp (avulsos ou dentro de um zip de backup)
+    local dir_restauracao="${DEFAULT_BACKUP_DIR}"
+    shopt -s nullglob
+    local backups_sh=("${DEFAULT_BACKUP_DIR}"/*.sh.bkp)
+    shopt -u nullglob
+
+    if (( ${#backups_sh[@]} == 0 )); then
+        shopt -s nullglob
+        local zips_backup=("${DEFAULT_BACKUP_DIR}"/*_backup.zip)
+        shopt -u nullglob
+        if (( ${#zips_backup[@]} == 0 )); then
+            _erro "Nenhum backup anterior encontrado em ${DEFAULT_BACKUP_DIR}"
+            _aguardar 2
+            return 1
+        fi
+
+        # Unico backup: restaura automaticamente; varios backups: lista e deixa selecionar
+        local zip_backup="${zips_backup[0]}"
+        if (( ${#zips_backup[@]} > 1 )); then
+            _linha
+            _exibir_mensagem_centralizada "${CIANO}" "Backups disponiveis para restauracao:"
+            _linha
+            local indice_zip=1
+            local zip_opcao
+            for zip_opcao in "${zips_backup[@]}"; do
+                _exibir_mensagem_centralizada "${VERDE}" "${indice_zip}) $(basename "$zip_opcao")"
+                ((indice_zip++)) || true
+            done
+            _linha
+            _exibir_mensagem_centralizada "${AMARELO}" "Informe o numero do backup desejado ou 0 para sair:"
+            local zip_escolha=""
+            while true; do
+                read -rp "${AMARELO}Opcao -> ${NORMAL}" zip_escolha
+                _linha
+                if [[ -z "${zip_escolha}" || "${zip_escolha}" == "0" ]]; then
+                    _aviso "Operacao cancelada"
+                    return 1
+                fi
+                if [[ "${zip_escolha}" =~ ^[0-9]+$ ]] \
+                    && (( zip_escolha >= 1 && zip_escolha <= ${#zips_backup[@]} )); then
+                    zip_backup="${zips_backup[$((zip_escolha - 1))]}"
+                    break
+                fi
+                _erro "Opcao invalida. Informe um numero entre 1 e ${#zips_backup[@]}."
+            done
+        fi
+
+        dir_restauracao="${DEFAULT_BACKUP_DIR}/dir_restaurar_sh"
+        if ! _criar_diretorio_seguro "${dir_restauracao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+            _erro "Ao criar diretorio temporario de restauracao: ${dir_restauracao}"
+            return 1
+        fi
+        if ! "${DEFAULT_UNZIP}" -o -j "${zip_backup}" -d "${dir_restauracao}" >>"$LOG_ATU" 2>&1; then
+            _erro "Ao descompactar backup: ${zip_backup}"
+            return 1
+        fi
+        shopt -s nullglob
+        backups_sh=("${dir_restauracao}"/*.sh.bkp)
+        shopt -u nullglob
+    fi
+
+    if (( ${#backups_sh[@]} == 0 )); then
+        _erro "Nenhum arquivo de backup .sh.bkp encontrado para restauracao"
+        _aguardar 2
+        return 1
+    fi
+
+    if ! _confirmar "Restaurar ${#backups_sh[@]} script(s) do backup anterior?" "N"; then
+        _aviso "Restauracao cancelada"
+        _aguardar_tecla
+        return 0
+    fi
+
+    local restaurados=0 erros=0 arquivo_backup nome_script destino
+    for arquivo_backup in "${backups_sh[@]}"; do
+        nome_script="$(basename "$arquivo_backup")"
+        [[ "$nome_script" == *.sh.bkp ]] || continue
+        nome_script="${nome_script%.bkp}"
+        destino="${LIBS_DIR}"
+        if [[ "$nome_script" == "atualiza.sh" && -n "${SCRIPT_DIR}" ]]; then
+            destino="${SCRIPT_DIR}"
+        fi
+        if cp -f "$arquivo_backup" "${destino}/${nome_script}" 2>/dev/null; then
+            chmod +x "${destino}/${nome_script}" 2>/dev/null || true
+            _exibir_mensagem_centralizada "${VERDE}" "Restaurado ${nome_script} em ${destino}"
+            ((restaurados++)) || true
+        else
+            _erro "Ao restaurar ${nome_script}"
+            ((erros++)) || true
+        fi
+    done
+
+    # Limpeza do diretorio temporario de restauracao
+    if [[ "${dir_restauracao}" != "${DEFAULT_BACKUP_DIR}" && -d "${dir_restauracao}" ]]; then
+        rm -rf "${dir_restauracao}" 2>/dev/null || true
+    fi
+
+    if [[ $erros -gt 0 ]]; then
+        _erro "Falha na restauracao de $erros arquivo(s)"
+        _aguardar 2
+        return 1
+    elif [[ $restaurados -eq 0 ]]; then
+        _aviso "Nenhum arquivo foi restaurado"
+        _aguardar 2
+        return 1
+    fi
+
+    _linha
+    _ok "Restauracao concluida: $restaurados script(s) restaurado(s)"
+    _exibir_mensagem_centralizada "${VERDE}" "Ao terminar, entre novamente no sistema"
+    _linha
+    _aguardar_tecla
+}
+
 _atualizar_online() {
     local link="${GITHUB_UPDATE_URL}"
     local arquivo_zip="atualiza.zip"

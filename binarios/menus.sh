@@ -263,6 +263,7 @@ _menu_ferramentas() {
         _exibir_opcao_menu "3" "Lembretes"
         _exibir_opcao_menu "4" "Avisos iniciais"
         _exibir_opcao_menu "5" "Logs do sistema"
+        _exibir_opcao_menu "6" "Volta .sh anterior"
         _exibir_rodape_menu
         printf "\n"
 
@@ -277,6 +278,7 @@ _menu_ferramentas() {
             3) _menu_lembretes || true ;;
             4) _menu_avisos || true ;;
             5) _menu_logs || true ;;
+            6) _voltar_sh_anterior || true ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
