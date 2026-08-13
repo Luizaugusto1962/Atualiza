@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: /08/2026-01
+# Versao: 13/08/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -31,6 +31,13 @@ _selecionar_base_arquivos() {
     # Validar antes de prosseguir
     if [[ -z "${base_trabalho}" ]]; then
         _erro "Diretorio de trabalho nao foi definido"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # SEGURANCA: bloquear path traversal e caracteres perigosos na base de trabalho
+    if ! _validar_caminho_seguro "${base_trabalho}"; then
+        _erro "Caminho da base invalido ou malicioso: ${base_trabalho}"
         _aguardar_tecla
         return 1
     fi
@@ -80,8 +87,14 @@ _executar_limpeza_temporarios() {
 
     local arquivo_lista2="${CFG_DIR}/limpetmp2"
 
-    # Limpar temporarios antigos do backup
-    find "${DEFAULT_BACKUP_DIR}" -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
+    # Limpar temporarios antigos do backup (com guarda de seguranca contra diretorio invalido/raiz)
+    if [[ -z "${DEFAULT_BACKUP_DIR:-}" || "${DEFAULT_BACKUP_DIR}" == "/" || "${DEFAULT_BACKUP_DIR}" == "//" ]] \
+        || ! _validar_caminho_seguro "${DEFAULT_BACKUP_DIR}"; then
+        _aviso "Diretorio de backup invalido ou inseguro para limpeza, pulando: ${DEFAULT_BACKUP_DIR:-vazio}"
+        _aguardar 2
+    else
+        find "${DEFAULT_BACKUP_DIR}" -maxdepth 1 -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
+    fi
 
     # Processar cada base de dados configurada
     local caminho_base
@@ -102,6 +115,29 @@ _executar_limpeza_temporarios() {
         fi
     done
     _aguardar_tecla
+}
+
+# Valida padrao de nome de arquivo usado nas listas de limpeza (limpetmp/limpetmp2)
+# Retorna: 0=valido 1=invalido (vazio, com caminho, traversal ou amplo demais)
+_validar_padrao_limpeza() {
+    local padrao="$1"
+
+    # Rejeitar vazio, separador de caminho ou traversal
+    if [[ -z "$padrao" || "$padrao" == *"/"* || "$padrao" == *".."* ]]; then
+        return 1
+    fi
+
+    # Rejeitar caracteres fora do conjunto permitido (glob seguro)
+    if [[ ! "$padrao" =~ ^[A-Za-z0-9._*?-]+$ ]]; then
+        return 1
+    fi
+
+    # Rejeitar padroes amplos demais que varreriam toda a base
+    case "$padrao" in
+        '*'|'**'|'*.*'|'**.*'|'*.**'|'.') return 1 ;;
+    esac
+
+    return 0
 }
 
 # Limpa arquivos da base especifica
@@ -143,8 +179,15 @@ _limpar_base_especifica() {
     for padrao_arquivo in "${arquivos_temp[@]}"; do
         [[ -n "$padrao_arquivo" ]] || continue
 
+        # SEGURANCA: validar padrao antes de usá-lo no find/zip/rm
+        if ! _validar_padrao_limpeza "$padrao_arquivo"; then
+            _log "AVISO: padrao de limpeza invalido ignorado: ${padrao_arquivo}" "${LOG_LIMPA}"
+            continue
+        fi
+
         # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
-        mapfile -t arquivos_zip < <(find "$caminho_base" -type f -iname "$padrao_arquivo" -mtime +0)
+        # -maxdepth 1: restringe a busca ao diretorio da base (evita varredura recursiva)
+        mapfile -t arquivos_zip < <(find "$caminho_base" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0)
         qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
@@ -469,8 +512,12 @@ _editar_lista_arquivos() {
                 read -rp "${AMARELO}Nome do arquivo a adicionar: ${NORMAL}" novo
                 novo=$(_trim "$novo")
                 if [[ -n "$novo" ]]; then
-                    echo "$novo" >> "$arquivo_lista"
-                    _ok "'${novo}' adicionado a lista"
+                    if [[ ! "$novo" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                        _aviso "Nome invalido. Use apenas letras, numeros, pontos e hifens."
+                    else
+                        echo "$novo" >> "$arquivo_lista"
+                        _ok "'${novo}' adicionado a lista"
+                    fi
                 else
                     _aviso "Nenhum nome informado"
                 fi
@@ -482,16 +529,20 @@ _editar_lista_arquivos() {
                     read -rp "${AMARELO}Novo valor: ${NORMAL}" novo
                     novo=$(_trim "$novo")
                     if [[ -n "$novo" ]]; then
-                        local tmp_lista=()
-                        for i in "${!linhas[@]}"; do
-                            if (( i + 1 == num )); then
-                                tmp_lista+=("$novo")
-                            else
-                                tmp_lista+=("${linhas[$i]}")
-                            fi
-                        done
-                        printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
-                        _ok "Linha ${num} alterada"
+                        if [[ ! "$novo" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                            _aviso "Nome invalido. Use apenas letras, numeros, pontos e hifens."
+                        else
+                            local tmp_lista=()
+                            for i in "${!linhas[@]}"; do
+                                if (( i + 1 == num )); then
+                                    tmp_lista+=("$novo")
+                                else
+                                    tmp_lista+=("${linhas[$i]}")
+                                fi
+                            done
+                            printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
+                            _ok "Linha ${num} alterada"
+                        fi
                     else
                         _aviso "Valor vazio, operacao cancelada"
                     fi
@@ -555,10 +606,17 @@ _recuperar_arquivos_principais() {
     var_ano=$(date +%y)
     var_ano4=$(date +%Y)
 
-    # Criar lista temporaria
+    # Criar lista temporaria (glob seguro em vez de ls — evita quebra por nomes com espacos/glob)
     {
-        ls ATE"${var_ano}"*.dat 2>/dev/null || true
-        ls NFE?"${var_ano4}".*.dat 2>/dev/null || true
+        shopt -s nullglob
+        local arquivo_ate arquivo_nfe
+        for arquivo_ate in ATE"${var_ano}"*.dat; do
+            printf '%s\n' "${arquivo_ate##*/}"
+        done
+        for arquivo_nfe in NFE?"${var_ano4}".*.dat; do
+            printf '%s\n' "${arquivo_nfe##*/}"
+        done
+        shopt -u nullglob
     } > "${CFG_DIR}/indexar2"
 
     cd "${CFG_DIR}" || return 1
@@ -586,6 +644,13 @@ _processar_lista_arquivos() {
     local caminho_arquivo
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
+
+        # SEGURANCA: aceitar apenas nomes simples de arquivo .dat (sem caminho/glob/traversal)
+        if [[ "$listando" != *.dat || ! "$listando" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            _aviso "Entrada invalida ignorada na lista: ${listando}"
+            continue
+        fi
+
         caminho_arquivo="${base_trabalho}/${listando}"
         if [[ -L "$caminho_arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${listando}"
@@ -752,7 +817,7 @@ _enviar_arquivo_avulso() {
 
     # Enviar arquivo(s)
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Informe a senha para o usuario remoto:"
+    _exibir_mensagem_centralizada "${AMARELO}" "A senha do usuario remoto sera solicitada pelo ssh/rsync (sem eco)."
     _linha
     _enviar_arquivo_multi "${diretorio_origem}" "${arquivo_enviar}" "${destino_remoto}"
  }
@@ -787,9 +852,18 @@ _receber_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Diretorio local para receber:"
     read -rp "${AMARELO} -> ${NORMAL}" destino_local
+    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
+    destino_local="$(printf '%s' "$destino_local" | LC_ALL=C tr -cd ' -~')"
 
     if [[ -z "$destino_local" ]]; then
         destino_local="${DEFAULT_RECEBE_DIR:-}"
+    fi
+
+    # SEGURANCA: bloquear path traversal e caracteres perigosos no destino
+    if [[ -z "$destino_local" ]] || ! _validar_caminho_seguro "$destino_local"; then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio de destino invalido ou malicioso: ${destino_local}"
+        _aguardar_tecla
+        return 1
     fi
 
     if [[ ! -d "$destino_local" ]]; then
@@ -800,7 +874,7 @@ _receber_arquivo_avulso() {
 
     # Receber arquivo
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Informe a senha para o usuario remoto:"
+    _exibir_mensagem_centralizada "${AMARELO}" "A senha do usuario remoto sera solicitada pelo scp (sem eco)."
     _linha
     if _receber_scp "${origem_remota}/${arquivo_receber}" "${destino_local}/"; then
         _exibir_mensagem_centralizada "${VERDE}" "Arquivo recebido com sucesso em \"${destino_local}\""
@@ -813,6 +887,18 @@ _receber_arquivo_avulso() {
 }
 
 #---------- FUNCOES DE EXPURGO ----------#
+
+# Valida se um diretorio pode ser alvo de expurgo (nao vazio, nao raiz, caminho seguro)
+# Retorna: 0=seguro 1=inseguro
+_validar_diretorio_expurgavel() {
+    local diretorio="$1"
+
+    if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
+        return 1
+    fi
+    _validar_caminho_seguro "$diretorio"
+}
+
 # Executa expurgador de arquivos antigos
 _executar_expurgador() {
     _executar_expurgador_diario
@@ -841,14 +927,17 @@ _executar_expurgador() {
     )
 
     # Limpar arquivos antigos nos diretorios padrao
+    # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.indice)
     local diretorios_zip
     for diretorio in "${diretorios_limpeza[@]}"; do
-        if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
+        if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
             local arquivos_removidos
-            arquivos_removidos=$(find "$diretorio" -mtime +30 -type f -print -delete 2>/dev/null | wc -l)
+            arquivos_removidos=$(find "$diretorio" -type f -mtime +30 \
+                ! -iname "*.dat" ! -iname "*.indice" -print -delete 2>/dev/null | wc -l)
+            _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
         else
-            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado ou inseguro: ${diretorio}"
         fi
     done
 
@@ -860,11 +949,12 @@ _executar_expurgador() {
     # Limpar arquivos ZIP antigos especificos
     local diretorio zips_removidos
     for diretorio in "${diretorios_zip[@]}"; do
-        if [[ -d "$diretorio" && "$diretorio" != "/" && "$diretorio" != "//" ]]; then
+        if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
             zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
+            _log "Expurgo: ${zips_removidos} arquivo(s) .zip removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
-            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado ou inseguro: ${diretorio}"
         fi
     done
 
