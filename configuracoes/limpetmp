@@ -1,3 +1,13 @@
+0*.dat
+0*.idx
+1*.dat
+1*.idx
+2*.dat
+2*.idx
+*.A04
+*.A02
+*.ads.log
+*.csv
 *.err
 *.NFC.*
 *.R
@@ -20,6 +30,8 @@ CnsNFe*
 CNFe*.TXT
 Contingencia*
 Err*.txt
+FMINV*.ARQ.dat
+FMINV*.ARQ.idx
 FimFech*.txt
 hs-sav*.*
 IniFech*.txt
@@ -32,13 +44,14 @@ LIB0*.*
 LIB1*.*
 logadc*.txt
 M?????.001
+MSG*.*
 MVE0*.*
 MVE1*.*
 NFCe*.TXT
 NFe*.TXT
 O?????.001
 O?????.002
-O?????.A04
+PAF*.???
 PAF*.???.*
 PRINT*
 PRINT*.*
@@ -77,6 +90,8 @@ TT?????.???
 TTY*
 TTY*.*
 TXT*.TXT
+TXT.ARQ
+TEFTRB*
 VENDA*.LOG
 VIEW*.*
 WDIA*.*
@@ -91,5 +106,6 @@ zi*
 tmpcmdo*
 tmp???
 trbtab*.*
-*MF.*
 arqidx.sh
+
+
