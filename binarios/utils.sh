@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/07/2026-02
+# Versao: 12/08/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -297,7 +297,7 @@ _opinvalida() {
 
 #---------- FUNCOES DE VALIDACAO ----------#
 
-# Valida nome de programa (letras maiúsculas e números)
+# Valida nome de programa (letras maiúsculas, números e underscore)
 # Parametros: $1=nome_programa
 # Retorna: 0=valido 1=invalido
 _validar_nome_programa() {
@@ -307,7 +307,7 @@ _validar_nome_programa() {
         return 1
     fi
 
-    [[ "$programa" =~ ^[A-Z0-9]+$ ]]
+    [[ "$programa" =~ ^[A-Z0-9_]+$ ]]
 }
 
 # Solicita confirmacao S/N

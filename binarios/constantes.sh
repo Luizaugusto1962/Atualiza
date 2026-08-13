@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/07/2026-01
+# Versao: 12/08/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -251,6 +251,14 @@ compilado="${compilado:-class}"  # Sufixo para arquivos compilados
 debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 
 # =============================================================================
+# CONFIGURACOES DE ATUALIZACAO DE PROGRAMAS
+# =============================================================================
+MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
+EXTENSAO_CLASS="${EXTENSAO_CLASS:-class}"                      # Extensao de arquivos compilados
+EXTENSAO_INT="${EXTENSAO_INT:-int}"                            # Extensao de arquivos intermediarios
+EXTENSAO_TELAS="${EXTENSAO_TELAS:-TEL}"                        # Extensao de arquivos de tela
+
+# =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
 export SCRIPT_DIR RAIZ
@@ -271,3 +279,4 @@ export DEFAULT_TAR
 export SAVISC ISCCLIENT JUTIL REBUILD
 export ACESSO_OFF
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA INI compilado debugado
+export MAX_PROGRAMAS_SELECIONADOS EXTENSAO_CLASS EXTENSAO_INT EXTENSAO_TELAS
