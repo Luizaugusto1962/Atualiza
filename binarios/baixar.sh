@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
+# Versao: 13/08/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -22,6 +22,17 @@ _executar_update() {
     _aguardar_tecla
 }
 
+# Valida se um diretorio pode ser alvo de operacoes de escrita/remocao (nao vazio, nao raiz, caminho seguro)
+# Retorna: 0=seguro 1=inseguro
+_validar_diretorio_operacao() {
+    local diretorio="$1"
+
+    if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
+        return 1
+    fi
+    _validar_caminho_seguro "$diretorio"
+}
+
 # Atualizacao online via GitHub
 _atualizando() {
     local arquivo_zip="atualiza.zip"
@@ -31,6 +42,20 @@ _atualizando() {
         _erro "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
+
+    # SEGURANCA: validar diretorio de bibliotecas antes de operar
+    if ! _validar_diretorio_operacao "${LIBS_DIR}"; then
+        _erro "Diretorio de bibliotecas invalido ou inseguro: ${LIBS_DIR}"
+        _aguardar 2
+        return 1
+    fi
+
+    # SEGURANCA: validar diretorio de backup antes de copiar arquivos
+    if ! _validar_diretorio_operacao "${DEFAULT_BACKUP_DIR}"; then
+        _erro "Diretorio de backup invalido ou inseguro: ${DEFAULT_BACKUP_DIR}"
+        _aguardar 2
+        return 1
+    fi
 
     # Fazer backup dos arquivos atuais
     local backup_sucesso=0
@@ -55,6 +80,12 @@ _atualizando() {
             _aguardar 2
         fi
     done
+
+    if [[ -n "${SCRIPT_DIR}" ]] && ! _validar_diretorio_operacao "${SCRIPT_DIR}"; then
+        _erro "Diretorio do script principal invalido ou inseguro: ${SCRIPT_DIR}"
+        _aguardar 2
+        return 1
+    fi
 
     if [[ -n "${SCRIPT_DIR}" && -f "${SCRIPT_DIR}/atualiza.sh" ]]; then
         if cp -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh.bkp"; then
@@ -119,6 +150,11 @@ _atualizando() {
     local -a arquivos_configuracoes=("manual.txt" "avisos" "indexar" "limpetmp" "variosarquivos")
     for configuracoes_arquivo in "${arquivos_configuracoes[@]}"; do
         if [[ ! -f "$configuracoes_arquivo" ]]; then continue; fi
+        # SEGURANCA: aceitar apenas nomes simples (sem caminho/traversal)
+        if [[ ! "$configuracoes_arquivo" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            _log "AVISO: arquivo de configuracao com nome invalido ignorado: ${configuracoes_arquivo}" "${LOG_ATU}"
+            continue
+        fi
         chmod +x "$configuracoes_arquivo" 2>/dev/null || true
         if mv -f "$configuracoes_arquivo" "${CFG_DIR}/"; then
             _exibir_mensagem_centralizada "${VERDE}" "Arquivo $configuracoes_arquivo instalado em ${CFG_DIR}"
@@ -143,6 +179,11 @@ _atualizando() {
     local sh_instalados=0
     for arquivo in *.sh; do
         [[ -f "$arquivo" ]] || continue
+        # SEGURANCA: aceitar apenas nomes simples de script (sem caminho/traversal)
+        if [[ ! "$arquivo" =~ ^[A-Za-z0-9._-]+\.sh$ ]]; then
+            _log "AVISO: script com nome invalido ignorado: ${arquivo}" "${LOG_ATU}"
+            continue
+        fi
         chmod +x "$arquivo" 2>/dev/null || true
         local sh_destino="${LIBS_DIR}"
         [[ "$arquivo" == "atualiza.sh" ]] && sh_destino="${SCRIPT_DIR}"
@@ -169,6 +210,16 @@ _atualizando() {
     # ROTINA DE LIMPEZA CORRIGIDA (SUBSTITUI A ANTIGA BASEADA EM cd + rm -rf ./*)
     # =========================================================================
     _exibir_mensagem_centralizada "${CIANO}" "Realizando limpeza dos arquivos de atualizacao..."
+
+    # SEGURANCA: validar diretorios antes de qualquer remocao
+    if ! _validar_diretorio_operacao "${DEFAULT_RECEBE_DIR}"; then
+        _erro "Diretorio de recepcao invalido ou inseguro para limpeza: ${DEFAULT_RECEBE_DIR}"
+        return 1
+    fi
+    if ! _validar_diretorio_operacao "${temp_dir}"; then
+        _erro "Diretorio temporario invalido ou inseguro para limpeza: ${temp_dir}"
+        return 1
+    fi
 
     # 1. Remover ZIP da raiz de receber (modo online)
     if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" ]]; then
@@ -204,6 +255,18 @@ _atualizar_online() {
     local arquivo_zip="atualiza.zip"
     _exibir_mensagem_centralizada "${VERDE}" "Atualizando script via GitHub..."
 
+    # SEGURANCA: permitir apenas URLs http(s) para download
+    if [[ ! "${link}" =~ ^https?:// ]]; then
+        _erro "URL de atualizacao invalida: ${link}"
+        return 1
+    fi
+
+    # SEGURANCA: validar diretorio de download antes de usar wget
+    if ! _validar_diretorio_operacao "${DEFAULT_RECEBE_DIR}"; then
+        _erro "Diretorio de download invalido ou inseguro: ${DEFAULT_RECEBE_DIR}"
+        return 1
+    fi
+
     _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     _erro "Ao criar diretorio de download"
     return 1
@@ -218,6 +281,12 @@ _atualizar_online() {
 _atualizar_offline() {
     local temp_dir="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao/"
     local arquivo_zip="atualiza.zip"
+
+    # SEGURANCA: validar diretorio temporario antes de operar
+    if ! _validar_diretorio_operacao "${temp_dir}"; then
+        _erro "Diretorio temporario invalido ou inseguro: ${temp_dir}"
+        return 1
+    fi
 
     if [[ ! -f "${temp_dir}/${arquivo_zip}" ]]; then
         _erro "Arquivo $arquivo_zip nao encontrado em $temp_dir"
