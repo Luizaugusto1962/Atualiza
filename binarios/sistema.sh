@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
+# Versao: 14/08/2026-01
 #
 
 # Variaveis globais esperadas
@@ -64,7 +64,7 @@ _mostrar_versao_linux() {
         printf '%s' "${VERDE}OS Versao: ${NORMAL}"
         grep -v "NAME" "${LOG_TMP}osrelease" | cut -f2 -d\"
     else
-        printf '%s\n' "${VERMELHO}Arquivo /etc/os-release nao encontrado.${NORMAL}"
+        _aviso "Arquivo /etc/os-release nao encontrado."
     fi
     printf "\n"
 

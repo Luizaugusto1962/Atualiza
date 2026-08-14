@@ -683,8 +683,8 @@ _executar_jutil() {
                 # garantir permissões máximas nos arquivos .indice gerados pelo jutil
 
                 dir_arquivo="$(dirname "$arquivo")"
-                base_arquivo="$(basename "$arquivo" .dat)"
-                for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.indice; do
+                base_arquivo="$(basename "$arquivo".dat)"
+                for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
                     if [[ -f "$arquivo_indice" ]]; then
                         chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null || \
                         _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_indice"
@@ -927,13 +927,15 @@ _executar_expurgador() {
     )
 
     # Limpar arquivos antigos nos diretorios padrao
-    # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.indice)
+    # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.idx)
     local diretorios_zip
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
             local arquivos_removidos
             arquivos_removidos=$(find "$diretorio" -type f -mtime +30 \
-                ! -iname "*.dat" ! -iname "*.indice" -print -delete 2>/dev/null | wc -l)
+                ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>/dev/null | wc -l)
+
+
             _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
         else

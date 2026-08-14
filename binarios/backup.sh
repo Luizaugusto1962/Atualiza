@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 04/08/2026-01
+# Versao: 14/08/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -157,7 +157,7 @@ _executar_backup() {
         # Validar entrada
         if ! [[ "$mes" =~ ^(0[1-9]|1[0-2])$ ]] || ! [[ "$ano" =~ ^[0-9]{4}$ ]]; then
             trap - INT TERM
-            _erro "$VERMELHO" "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
+            _erro "Mes ou ano invalido. Use formato MM (01-12) e YYYY."
             _aguardar 2
             return 0
         fi
@@ -269,7 +269,7 @@ _validar_backup_criado() {
 
     # Validar se o backup foi criado e tamanho mínimo
     if [[ ! -f "$arquivo_destino" ]] || (( $(wc -c < "$arquivo_destino" 2>/dev/null || echo 0) < 100 )); then
-        printf "%s\n" "ERRO: Backup criado mas vazio ou muito pequeno: $arquivo_destino" >> "${LOG_ATU:-/dev/null}" 2>/dev/null || true
+        _log_erro "Backup criado mas vazio ou muito pequeno: $arquivo_destino"
         rm -f "$arquivo_destino"
         return 1
     fi
@@ -280,52 +280,48 @@ _validar_backup_criado() {
 # Executa backup completo
 _executar_backup_completo() {
     local arquivo_destino="$1"
-    local arquivos_temp
+    local -a arquivos_para_zip=()
+    local arquivo_atual
 
     # Validar parâmetro
     if [[ -z "$arquivo_destino" ]]; then
-        printf "%s\n" "ERRO: Caminho do backup nao foi informado" >> "${LOG_ATU:-/dev/null}" 2>/dev/null || true
+        _log_erro "Caminho do backup nao foi informado"
         return 1
     fi
 
     # Validar diretório de trabalho
     if ! _diretorio_trabalho; then
-        printf "%s\n" "ERRO: Falha ao acessar diretorio de trabalho"
+        _erro "Falha ao acessar diretorio de trabalho"
         return 1
     fi
 
-    arquivos_temp=$(mktemp) || {
-        printf "%s\n" "ERRO: Falha ao criar arquivo temporario" >> "${LOG_ATU:-/dev/null}" 2>/dev/null || true
-        return 1
-    }
-
-    find . -type f \
+    # Listar arquivos (NUL separado preserva nomes com quebras de linha)
+    while IFS= read -r -d '' arquivo_atual; do
+        arquivos_para_zip+=("$arquivo_atual")
+    done < <(find . -type f \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-         -print > "$arquivos_temp"
+         -print0)
 
-    if [[ ! -s "$arquivos_temp" ]]; then
-        printf "%s\n" "Nenhum arquivo encontrado para backup completo"
-        rm -f "$arquivos_temp"
+    if ((${#arquivos_para_zip[@]} == 0)); then
+        _aviso "Nenhum arquivo encontrado para backup completo"
         return 1
     fi
 
     # Executar compactacao — ignorar erros de arquivo em uso (lock)
     local resultado_zip=0
-    "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
+    "$DEFAULT_ZIP" "$arquivo_destino" "${arquivos_para_zip[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
 
     if [[ $resultado_zip -ne 0 ]]; then
-        printf "%s\n" "AVISO: zip retornou erro $resultado_zip (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
+        _aviso "zip retornou erro $resultado_zip (possivel arquivo em uso), tentando forcar..."
+        "$DEFAULT_ZIP" -f "$arquivo_destino" "${arquivos_para_zip[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
     fi
 
     if [[ $resultado_zip -ne 0 ]]; then
-        printf "%s\n" "AVISO: Falha parcial ao criar backup (alguns arquivos podem estar em uso): $arquivo_destino"
+        _aviso "Falha parcial ao criar backup (alguns arquivos podem estar em uso): $arquivo_destino"
     fi
-
-    rm -f "$arquivos_temp"
 
     # Definir permissao do arquivo backup (apos todas as operacoes de zip)
-    chmod "$PERM_FILE_CREATE" "$arquivo_destino" 2>/dev/null || true
+    chmod "$PERM_FILE_PRIVATE" "$arquivo_destino" 2>/dev/null || true
 
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
@@ -334,12 +330,12 @@ _executar_backup_completo() {
 
     # Validar integridade do zip
     if ! _validar_integridade_backup "$arquivo_destino"; then
-        printf "%s\n" "ERRO: Backup completo corrompido (falhou no teste de integridade)"
+        _erro "Backup completo corrompido (falhou no teste de integridade)"
         rm -f "$arquivo_destino"
         return 1
     fi
 
-    printf "%s\n" "SUCESSO: Backup completo criado: $arquivo_destino" >> "${LOG_ATU:-/dev/null}" 2>/dev/null || true
+    _log_sucesso "Backup completo criado: $arquivo_destino"
     return 0
 }
 
@@ -347,78 +343,69 @@ _executar_backup_completo() {
 _executar_backup_incremental() {
     local arquivo_destino="$1"
     local data_referencia="$2"
-    local arquivos_temp
-    local resultado
+    local -a arquivos_para_zip=()
+    local arquivo_atual
 
     # Validar parâmetros
     if [[ -z "$arquivo_destino" || -z "$data_referencia" ]]; then
-        printf "%s\n" "ERRO: Parametros invalidos para backup incremental"
+        _erro "Parametros invalidos para backup incremental"
         return 1
     fi
 
     # Validar data
     if ! date -d "$data_referencia" >/dev/null 2>&1; then
-        printf "%s\n" "ERRO: Data invalida: $data_referencia"
+        _erro "Data invalida: $data_referencia"
         return 1
     fi
 
     # Validar diretório de trabalho
     if ! _diretorio_trabalho; then
-        printf "%s\n" "ERRO: Falha ao acessar diretorio de trabalho"
+        _erro "Falha ao acessar diretorio de trabalho"
         return 1
     fi
 
-    # Criar arquivo temporario para lista de arquivos
-    arquivos_temp=$(mktemp) || {
-        printf "%s\n" "ERRO: Falha ao criar arquivo temporario"
-        return 1
-    }
-
-    # Buscar arquivos modificados
-    find . -type f -newermt "$data_referencia" \
+    # Buscar arquivos modificados (NUL separado preserva nomes com quebras de linha)
+    while IFS= read -r -d '' arquivo_atual; do
+        arquivos_para_zip+=("$arquivo_atual")
+    done < <(find . -type f -newermt "$data_referencia" \
          ! -name "*.zip" ! -name "*.tar" ! -name "*.log" ! -name "*.tmp" ! -name "*.gz" ! -name "*.old" \
-         -print > "$arquivos_temp"
+         -print0)
 
     # Validar se encontrou arquivos (sem erro, apenas informativo)
-    if [[ ! -s "$arquivos_temp" ]]; then
-        printf "%s\n" "Nenhum arquivo modificado desde $data_referencia"
-        rm -f "$arquivos_temp"
+    if ((${#arquivos_para_zip[@]} == 0)); then
+        _msg "Nenhum arquivo modificado desde $data_referencia"
         return 0
     fi
 
     # Executar compactacao — ignorar erros de arquivo em uso (lock)
     local resultado_zip_inc=0
-    "$DEFAULT_ZIP" "$arquivo_destino" -@ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
+    "$DEFAULT_ZIP" "$arquivo_destino" "${arquivos_para_zip[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
 
     if [[ $resultado_zip_inc -ne 0 ]]; then
-        printf "%s\n" "AVISO: zip retornou erro $resultado_zip_inc (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -f "$arquivo_destino" @ < "$arquivos_temp" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
+        _aviso "zip retornou erro $resultado_zip_inc (possivel arquivo em uso), tentando forcar..."
+        "$DEFAULT_ZIP" -f "$arquivo_destino" "${arquivos_para_zip[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_inc=$?
     fi
 
     if [[ $resultado_zip_inc -ne 0 ]]; then
-        printf "%s\n" "AVISO: Falha parcial ao compactar arquivos incrementais (alguns arquivos podem estar em uso): $arquivo_destino"
+        _aviso "Falha parcial ao compactar arquivos incrementais (alguns arquivos podem estar em uso): $arquivo_destino"
     fi
 
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
-        rm -f "$arquivos_temp"
         return 1
     fi
 
     # Validar integridade do zip
     if ! _validar_integridade_backup "$arquivo_destino"; then
-        printf "%s\n" "ERRO: Backup incremental corrompido (falhou no teste de integridade)"
-        rm -f "$arquivos_temp" "$arquivo_destino"
+        _erro "Backup incremental corrompido (falhou no teste de integridade)"
+        rm -f "$arquivo_destino"
         return 1
     fi
 
-    # Limpar arquivo temporario
-    rm -f "$arquivos_temp"
-
     # Definir permissao do arquivo backup
-    chmod "$PERM_FILE_CREATE" "$arquivo_destino" 2>/dev/null || true
+    chmod "$PERM_FILE_PRIVATE" "$arquivo_destino" 2>/dev/null || true
 
-    printf "%s\n" "SUCESSO: Backup incremental criado: $arquivo_destino" >> "${LOG_ATU:-/dev/null}" 2>/dev/null || true
+    _log_sucesso "Backup incremental criado: $arquivo_destino"
     return 0
 }
 
@@ -428,12 +415,12 @@ _diretorio_trabalho() {
     local base_trabalho="${BASE_TRABALHO:-${RAIZ}${CFG_BASE_DIR}}"
 
     if [[ ! -d "$base_trabalho" ]]; then
-        printf "%s\n" "ERRO: Diretorio ${base_trabalho} nao encontrado"
+        _erro "Diretorio ${base_trabalho} nao encontrado"
         return 1
     fi
 
     cd "$base_trabalho" || {
-        printf "%s\n" "ERRO: Nao foi possivel acessar ${base_trabalho}"
+        _erro "Nao foi possivel acessar ${base_trabalho}"
         return 1
     }
 
@@ -441,14 +428,22 @@ _diretorio_trabalho() {
 }
 
 #---------- ROTINA UNICA DE SELECAO DE BACKUP ----------#
+# Escapa metacaracteres de glob (* ? [ ]) para uso literal em padroes de busca
+_escapar_glob() {
+    local valor="$1"
+    printf '%s' "$valor" | sed 's/[][?*]/\\&/g'
+}
+
 # Função centralizada para listar e selecionar backups
 # Define as variaveis globais: backup_selecionado e nome_backup
 _selecionar_backup() {
     local arquivos_backup=()
+    local padrao_empresa
+    padrao_empresa=$(_escapar_glob "$CFG_EMPRESA")
 
     # Carrega todos os .zip disponiveis
     shopt -s nullglob
-    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip)
+    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}"/${padrao_empresa}_*.zip)
     shopt -u nullglob  # Restaurar imediatamente para nao afetar outros globos
 
     if ((${#arquivos_backup[@]} == 0)); then
@@ -520,13 +515,60 @@ _selecionar_backup() {
 }
 
 #---------- FUNCOES DE RESTAURACAO ----------#
+# SEGURANCA: Valida entradas do zip contra path traversal (Zip Slip)
+_validar_zip_entradas_seguras() {
+    local arquivo_zip="$1"
+    local lista_entradas
+
+    lista_entradas=$("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_zip" 2>/dev/null) || return 1
+
+    if grep -qE '(^|/)\.\.(/|$)|^/|^[A-Za-z]:[\\/]' <<<"$lista_entradas"; then
+        _erro "Backup contem entradas inseguras (path traversal)."
+        return 1
+    fi
+    return 0
+}
+
+# Resolve o diretorio base de destino a partir do nome do arquivo de backup
+# Formato do nome: ${CFG_EMPRESA}_${tipo}_${base_dir}_${data}.zip
+_resolver_base_restauracao() {
+    local arquivo_backup="$1"
+    local nome_arquivo resto sufixo base_dir_name base_var base
+
+    nome_arquivo=$(basename "$arquivo_backup")
+    resto="${nome_arquivo#"${CFG_EMPRESA}_"}"
+    sufixo="${resto##*_}"
+    sufixo="${sufixo%.zip}"
+    base_dir_name="${resto%_${sufixo}}"
+    base_dir_name="${base_dir_name#*_}"
+
+    for base_var in "CFG_BASE_DIR" "CFG_BASE_DIR2" "CFG_BASE_DIR3"; do
+        base="${!base_var}"
+        if [[ -n "$base" && "$(basename "$base")" == "${base_dir_name}" ]]; then
+            printf '%s\n' "${RAIZ}${base}"
+            return 0
+        fi
+    done
+
+    printf '%s\n' "${RAIZ}${CFG_BASE_DIR}"
+    return 0
+}
+
 # Restaura backup completo
 _restaurar_backup_completo() {
     local arquivo_backup="$1"
-    local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
+    local base_trabalho
+    base_trabalho=$(_resolver_base_restauracao "$arquivo_backup")
 
     if [[ ! -f "$arquivo_backup" ]]; then
         _erro "Arquivo de backup nao encontrado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # SEGURANCA: Bloquear restauracao se o backup contiver caminhos inseguros
+    if ! _validar_zip_entradas_seguras "$arquivo_backup"; then
+        _erro "Restauracao bloqueada: backup contem caminhos inseguros"
         _aguardar_tecla
         return 1
     fi
@@ -535,7 +577,7 @@ _restaurar_backup_completo() {
     _aviso "Restaurando todos os arquivos..."
     _linha
 
-    if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+    if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
         _erro "Erro na restauracao completa"
         _aguardar_tecla
         return 1
@@ -549,10 +591,18 @@ _restaurar_backup_completo() {
 _restaurar_arquivo_especifico() {
     local arquivo_backup="$1"
     local nome_arquivo
-    local base_trabalho="${RAIZ}${CFG_BASE_DIR}"
+    local base_trabalho
+    base_trabalho=$(_resolver_base_restauracao "$arquivo_backup")
 
     if [[ ! -f "$arquivo_backup" ]]; then
         _erro "Arquivo de backup nao encontrado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # SEGURANCA: Bloquear restauracao se o backup contiver caminhos inseguros
+    if ! _validar_zip_entradas_seguras "$arquivo_backup"; then
+        _erro "Restauracao bloqueada: backup contem caminhos inseguros"
         _aguardar_tecla
         return 1
     fi
@@ -586,7 +636,7 @@ _restaurar_arquivo_especifico() {
         _aviso "Restaurando ${nome_arquivo}..."
         _linha
 
-        if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU}" 2>&1; then
+        if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
             _erro "Ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else
@@ -628,6 +678,13 @@ _enviar_backup_servidor() {
             _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio nao pode estar vazio"
             read -rp "${AMARELO}Diretorio de destino: ${NORMAL}" DESTINO_REMOTO
         done
+    fi
+
+    # SEGURANCA: Validar destino remoto contra injeção e traversal
+    if ! _validar_caminho_seguro "${DESTINO_REMOTO}"; then
+        _erro "Diretorio de destino invalido ou malicioso"
+        _aguardar 3
+        return 1
     fi
 
     _linha
@@ -719,6 +776,13 @@ _enviar_backup_rede() {
         done
     fi
 
+    # SEGURANCA: Validar destino remoto contra injeção e traversal
+    if ! _validar_caminho_seguro "${DESTINO_REMOTO}"; then
+        _erro "Diretorio remoto invalido ou malicioso"
+        _aguardar_tecla
+        return 1
+    fi
+
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Enviando backup via vaievem..."
     _linha
@@ -745,11 +809,14 @@ _verificar_espaco_disco() {
 
 # Verifica backups recentes (ultimos 2 dias)
 _verificar_backups_recentes() {
-    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${CFG_EMPRESA}*zip" -print -quit | grep -q .; then
+    local padrao_empresa
+    padrao_empresa=$(_escapar_glob "$CFG_EMPRESA")
+
+    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -ctime -2 -name "${padrao_empresa}*zip" -print -quit | grep -q .; then
         _linha
         _exibir_mensagem_centralizada "${CIANO}" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
-        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}/${CFG_EMPRESA}"_*.zip 2>/dev/null
+        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}"/${padrao_empresa}_*.zip 2>/dev/null
         _linha
         return 0
     fi
@@ -801,9 +868,9 @@ _executar_backup_multiplos_padroes() {
         fi
 
         # Verificar se o arquivo existe e expandir para incluir todos com mesmo nome e extensao
-        # Suporta extensao simples (nome.dat) e dupla (nome.dat.indice)
+        # Suporta extensao simples (nome.dat) e dupla (nome.dat.idx)
         local nome_base extensao padrao_expandido
-        # Remover extensoes: se tiver extensao dupla (ex: .dat.indice), remove as duas
+        # Remover extensoes: se tiver extensao dupla (ex: .dat.idx), remove as duas
         if [[ "${padrao_entrada}" =~ ^(.+)(\.[^.]+\.[^.]+)$ ]]; then
             nome_base="${BASH_REMATCH[1]}"
             extensao="${BASH_REMATCH[2]}"
@@ -899,19 +966,19 @@ _executar_backup_multiplos_padroes() {
 
     # Executar compactação com os arquivos especificados — ignorar erros de arquivo em uso
     resultado_zip_multi=0
-    "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1 || resultado_zip_multi=$?
+    "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_multi=$?
 
     if [[ $resultado_zip_multi -ne 0 ]]; then
-        printf "%s\n" "AVISO: zip multiplos retornou erro $resultado_zip_multi (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -r -f "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU}" 2>&1 || resultado_zip_multi=$?
+        _aviso "zip multiplos retornou erro $resultado_zip_multi (possivel arquivo em uso), tentando forcar..."
+        "$DEFAULT_ZIP" -r -f "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_multi=$?
     fi
 
     if [[ $resultado_zip_multi -ne 0 ]]; then
-        printf "%s\n" "AVISO: Falha parcial ao criar backup multiplos (alguns arquivos podem estar em uso): $caminho_backup"
+        _aviso "Falha parcial ao criar backup multiplos (alguns arquivos podem estar em uso): $caminho_backup"
     fi
 
     # Definir permissao do arquivo backup
-    chmod "$PERM_FILE_CREATE" "$caminho_backup" 2>/dev/null || true
+    chmod "$PERM_FILE_PRIVATE" "$caminho_backup" 2>/dev/null || true
 
     # Verificar se o backup foi criado
     if [[ ! -f "$caminho_backup" ]]; then

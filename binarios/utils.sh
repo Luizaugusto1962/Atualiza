@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/08/2026-02
+# Versao: 14/08/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -467,7 +467,7 @@ _log() {
     fi
 
     if [[ ! -w "$log_dir" ]]; then
-        printf "Aviso: Sem permissao de escrita no diretorio de log: %s\n" "$log_dir" >&2
+        _aviso "Sem permissao de escrita no diretorio de log: $log_dir"
         return 1
     fi
 
@@ -524,7 +524,8 @@ _limpar_arquivos_antigos() {
     fi
 
     # Monta lista de arquivos para exclusão
-    mapfile -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
+    mapfile -d '' -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print0 2>/dev/null)
+#    mapfile -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
     count=${#arquivos[@]}
 
     if ((count > 0)); then

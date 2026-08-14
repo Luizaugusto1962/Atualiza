@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/08/2026-01
+# Versao: 14/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -217,6 +217,12 @@ _enviar_rsync() {
 
     if [[ ! -f "$arquivo_local" ]]; then
         _erro "Arquivo local nao encontrado: ${arquivo_local}"
+        return 1
+    fi
+
+    # SEGURANCA: Validar destino remoto contra injecao e traversal (interpretado pelo shell remoto)
+    if ! _validar_caminho_seguro "$destino_remoto"; then
+        _log_erro "Destino remoto invalido ou malicioso: ${destino_remoto}"
         return 1
     fi
 
