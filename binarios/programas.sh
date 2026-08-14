@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/08/2026-01
+# Versao: 14/08/2026-01
 #
 
 # Variaveis globais esperadas
@@ -457,12 +457,6 @@ _verificar_arquivos_offline() {
     return "${erros_encontrados}"
 }
 
-# Declaracao global para limpeza garantida do diretorio temporario
-declare -g DIR_TEMP_ATUALIZACAO=""
-declare -g TRAP_EXIT_ORIGINAL=""
-declare -g TRAP_INT_ORIGINAL=""
-declare -g TRAP_TERM_ORIGINAL=""
-
 # Valida pre-requisitos comuns antes de qualquer atualizacao
 # Retorna: 0 se valido, 1 se erro
 _validar_pre_requisitos_atualizacao() {
@@ -508,68 +502,6 @@ _validar_pre_requisitos_atualizacao() {
     return 0
 }
 
-# Cria diretorio temporario unico e seguro para extracao
-# Define a variavel global DIR_TEMP_ATUALIZACAO
-# Retorna: imprime o caminho e retorna 0, ou retorna 1 em erro
-_preparar_diretorio_temporario() {
-    local dir_temp
-    dir_temp="$(mktemp -d "${DEFAULT_RECEBE_DIR}/tmp_update_XXXXXX" 2>/dev/null)" || {
-        _erro "Falha ao criar diretorio temporario" >&2
-        return 1
-    }
-    DIR_TEMP_ATUALIZACAO="${dir_temp}"
-    printf '%s' "${dir_temp}"
-    return 0
-}
-
-# Remove diretorio temporario de atualizacao (idempotente e seguro)
-_limpar_dir_temporario() {
-    if [[ -n "${DIR_TEMP_ATUALIZACAO:-}" && "${DIR_TEMP_ATUALIZACAO}" != "/" && "${DIR_TEMP_ATUALIZACAO}" != "${DEFAULT_RECEBE_DIR}" ]]; then
-        rm -rf "${DIR_TEMP_ATUALIZACAO}" 2>/dev/null || true
-    fi
-    DIR_TEMP_ATUALIZACAO=""
-}
-
-# Registra limpeza automatica do diretorio temporario (seguranca em caso de interrupcao)
-# Preserva os traps originais para restauracao posterior
-_registrar_limpeza_temporaria() {
-    TRAP_EXIT_ORIGINAL="$(trap -p EXIT || true)"
-    TRAP_INT_ORIGINAL="$(trap -p INT || true)"
-    TRAP_TERM_ORIGINAL="$(trap -p TERM || true)"
-    trap '_limpar_dir_temporario' EXIT
-    trap '_limpar_dir_temporario; eval "${TRAP_INT_ORIGINAL}"; kill -INT $$' INT
-    trap '_limpar_dir_temporario; eval "${TRAP_TERM_ORIGINAL}"; kill -TERM $$' TERM
-}
-
-# Restaura os traps originais apos o processamento
-_restaurar_limpeza_temporaria() {
-    if [[ -n "${TRAP_EXIT_ORIGINAL:-}" ]]; then
-        eval "${TRAP_EXIT_ORIGINAL}"
-    else
-        trap - EXIT
-    fi
-    if [[ -n "${TRAP_INT_ORIGINAL:-}" ]]; then
-        eval "${TRAP_INT_ORIGINAL}"
-    else
-        trap - INT
-    fi
-    if [[ -n "${TRAP_TERM_ORIGINAL:-}" ]]; then
-        eval "${TRAP_TERM_ORIGINAL}"
-    else
-        trap - TERM
-    fi
-    TRAP_EXIT_ORIGINAL=""
-    TRAP_INT_ORIGINAL=""
-    TRAP_TERM_ORIGINAL=""
-}
-
-# Finaliza processamento com falha: limpa temporarios e restaura traps
-# Uso: _finalizar_falha_atualizacao; return 1
-_finalizar_falha_atualizacao() {
-    _limpar_dir_temporario
-    _restaurar_limpeza_temporaria
-}
-
 # Processa atualizacao dos programas
 _processar_atualizacao_programas() {
     # Validar pre-requisitos comuns (diretorios, backups, arquivos, espaco em disco)
@@ -577,26 +509,27 @@ _processar_atualizacao_programas() {
         return 1
     fi
 
-    # Criar diretorio temporario unico para extracao
-    local dir_temp_atualizacao
-    dir_temp_atualizacao="$(_preparar_diretorio_temporario)" || return 1
-
-    # Registra limpeza garantida em caso de interrupcao (Ctrl-C / SIGTERM)
-    _registrar_limpeza_temporaria
+    # Criar diretorio temporario para extracao
+    local dir_temp_atualizacao="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao"
+    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
+        return 1
+    fi
 
     # Mover arquivos para o diretorio temporario e acessa-lo
     local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
 
     if ! cd "${dir_temp_atualizacao}"; then
         _erro "ERRO: Falha ao acessar diretorio temporario"
-        _finalizar_falha_atualizacao
+        rm -rf "${dir_temp_atualizacao}"
         return 1
     fi
 
@@ -614,7 +547,7 @@ _processar_atualizacao_programas() {
             timestamp=$(date +"%Y%m%d_%H%M%S")
             if ! mv -f "$arquivo_backup" "${DEFAULT_OLDS_DIR}/${timestamp}-${programa}-anterior.zip"; then
                 _erro "ERRO: Falha ao arquivar backup anterior de ${programa}"
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
@@ -622,29 +555,37 @@ _processar_atualizacao_programas() {
         _exibir_mensagem_centralizada "${AMARELO}" "Salvando programa antigo: ${programa}"
 
         # Backup de arquivos .class (nome exato ou variante com underscore)
+        local class_files=()
+        if [[ -f "${E_EXEC}/${programa}.${EXTENSAO_CLASS}" ]]; then
+            class_files+=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}")
+        fi
         shopt -s nullglob
-        local class_files=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}" "${E_EXEC}/${programa}_"*.${EXTENSAO_CLASS})
+        class_files+=("${E_EXEC}/${programa}_"*.${EXTENSAO_CLASS})
         shopt -u nullglob
         if (( ${#class_files[@]} > 0 )); then
             if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
                 _erro "Falha ao fazer backup dos arquivos .${EXTENSAO_CLASS} de ${programa}"
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
 
         # Backup de arquivos .TEL (nome exato ou variante com underscore)
+        local tel_files=()
+        if [[ -f "${T_TELAS}/${programa}.${EXTENSAO_TELAS}" ]]; then
+            tel_files+=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}")
+        fi
         shopt -s nullglob
-        local tel_files=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}" "${T_TELAS}/${programa}_"*.${EXTENSAO_TELAS})
+        tel_files+=("${T_TELAS}/${programa}_"*.${EXTENSAO_TELAS})
         shopt -u nullglob
         if (( ${#tel_files[@]} > 0 )); then
             if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
                 backup_criado=1
             else
                 _erro "Falha ao fazer backup dos arquivos .${EXTENSAO_TELAS} de ${programa}"
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         fi
@@ -653,7 +594,7 @@ _processar_atualizacao_programas() {
         if (( backup_criado )); then
             if ! _validar_integridade_backup "$arquivo_backup"; then
                 _erro "CRITICO: Backup criado mas invalido para ${programa}"
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
             _exibir_mensagem_centralizada "${VERDE}" "Backup validado com sucesso: ${programa}"
@@ -671,7 +612,7 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -684,7 +625,7 @@ _processar_atualizacao_programas() {
         shopt -u nullglob
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -702,7 +643,7 @@ _processar_atualizacao_programas() {
                     if ! mv -f "${arquivo}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
                         _log_erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
                         _erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
-                        _finalizar_falha_atualizacao
+                        rm -rf "${dir_temp_atualizacao}"
                         return 1
                     else
                         _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
@@ -713,7 +654,7 @@ _processar_atualizacao_programas() {
                         _erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
                         _exibir_mensagem_centralizada "${AMARELO}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
                         _exibir_mensagem_centralizada "${AMARELO}" "Use a opcao 4 de reversao para restaurar o programa anterior."
-                        _finalizar_falha_atualizacao
+                        rm -rf "${dir_temp_atualizacao}"
                         return 1
                     else
                         _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
@@ -733,7 +674,7 @@ _processar_atualizacao_programas() {
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
             _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         }
     fi
@@ -745,9 +686,9 @@ _processar_atualizacao_programas() {
         fi
     done
 
-    # Limpar diretorio temporario e restaurar traps
+    # Limpar diretorio temporario
     cd "${DEFAULT_RECEBE_DIR}" || true
-    _finalizar_falha_atualizacao
+    rm -rf "${dir_temp_atualizacao}"
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha
@@ -777,25 +718,26 @@ _processar_atualizacao_pacotes() {
         fi
     done
 
-    # Criar diretorio temporario unico para extracao
-    local dir_temp_atualizacao
-    dir_temp_atualizacao="$(_preparar_diretorio_temporario)" || return 1
-
-    # Registra limpeza garantida em caso de interrupcao (Ctrl-C / SIGTERM)
-    _registrar_limpeza_temporaria
+    # Criar diretorio temporario para extracao
+    local dir_temp_atualizacao="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao"
+    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
+        return 1
+    fi
 
     # Mover pacotes para o diretorio temporario e acessa-lo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "Falha ao mover ${arquivo} para diretorio temporario"
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
 
     if ! cd "${dir_temp_atualizacao}"; then
         _erro "Falha ao acessar diretorio temporario"
-        _finalizar_falha_atualizacao
+        rm -rf "${dir_temp_atualizacao}"
         return 1
     fi
 
@@ -803,7 +745,7 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -812,7 +754,7 @@ _processar_atualizacao_pacotes() {
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
             _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         }
     fi
@@ -835,28 +777,38 @@ _processar_atualizacao_pacotes() {
         # Backup dos arquivos class antigos (nome exato ou variante com underscore)
         local arquivos_antigos
         arquivos_antigos=()
+        if [[ -f "${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}" ]]; then
+            arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}")
+        fi
+        if [[ -f "${E_EXEC}/${nome_prog}.${EXTENSAO_INT}" ]]; then
+            arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_INT}")
+        fi
         shopt -s nullglob
-        arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}" "${E_EXEC}/${nome_prog}_"*.${EXTENSAO_CLASS} "${E_EXEC}/${nome_prog}.${EXTENSAO_INT}" "${E_EXEC}/${nome_prog}_"*.${EXTENSAO_INT})
+        arquivos_antigos+=("${E_EXEC}/${nome_prog}_"*.${EXTENSAO_CLASS} "${E_EXEC}/${nome_prog}_"*.${EXTENSAO_INT})
         shopt -u nullglob
 
         local backup_criado=0
         if (( ${#arquivos_antigos[@]} > 0 )); then
             if ! "${DEFAULT_ZIP}" -j "${arquivo_backup}" "${arquivos_antigos[@]}" >>"${LOG_ATU}" 2>&1; then
                 _log_erro "Falha ao fazer backup dos arquivos de ${nome_prog}"
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
             backup_criado=1
         fi
 
         # Backup de arquivos .TEL se existirem (nome exato ou variante com underscore)
+        telas_existentes=()
+        if [[ -f "${T_TELAS}/${nome_prog}.${EXTENSAO_TELAS}" ]]; then
+            telas_existentes+=("${T_TELAS}/${nome_prog}.${EXTENSAO_TELAS}")
+        fi
         shopt -s nullglob
-        telas_existentes=("${T_TELAS}/${nome_prog}.${EXTENSAO_TELAS}" "${T_TELAS}/${nome_prog}_"*.${EXTENSAO_TELAS})
+        telas_existentes+=("${T_TELAS}/${nome_prog}_"*.${EXTENSAO_TELAS})
         shopt -u nullglob
         if (( ${#telas_existentes[@]} > 0 )); then
             if ! "${DEFAULT_ZIP}" -j "${arquivo_backup}" "${telas_existentes[@]}" >>"${LOG_ATU}" 2>&1; then
                 _log_erro "Falha ao fazer backup das telas de ${nome_prog}"
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
             backup_criado=1
@@ -867,7 +819,7 @@ _processar_atualizacao_pacotes() {
         if (( backup_criado )); then
             if ! _validar_integridade_backup "${arquivo_backup}"; then
                 _erro "CRITICO: Backup invalido ou ausente para ${nome_prog}. Atualizacao abortada."
-                _finalizar_falha_atualizacao
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         else
@@ -877,14 +829,18 @@ _processar_atualizacao_pacotes() {
         # Mover novo arquivo
         if ! mv -f "${arquivo_binario}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
             _log_erro "Falha ao mover ${arquivo_binario} para ${E_EXEC}"
-            _finalizar_falha_atualizacao
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
 
         # Move TELs do mesmo diretorio extraido (nome exato ou variante com underscore)
         if [[ -d "${caminho_dir}" ]]; then
             shopt -s nullglob
-            local tels=("${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}" "${caminho_dir}/${nome_prog}_"*.${EXTENSAO_TELAS})
+            local tels=()
+            if [[ -f "${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}" ]]; then
+                tels+=("${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}")
+            fi
+            tels+=("${caminho_dir}/${nome_prog}_"*.${EXTENSAO_TELAS})
             shopt -u nullglob
             for tel in "${tels[@]}"; do
                 mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
@@ -892,9 +848,9 @@ _processar_atualizacao_pacotes() {
         fi
     done < <("${DEFAULT_FIND}" . -type f \( -name "*.class" -o -name "*.int" \) -print0)
 
-    # Limpar diretorio temporario e restaurar traps
+    # Limpar diretorio temporario
     cd "${DEFAULT_RECEBE_DIR}" || true
-    _finalizar_falha_atualizacao
+    rm -rf "${dir_temp_atualizacao}"
 }
 
 # Processa reversao de programas
