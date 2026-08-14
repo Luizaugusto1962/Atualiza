@@ -184,7 +184,7 @@ TIPOS DE COMPILACAO:
 
 BACKUP AUTOMATICO:
 * Criado antes de cada atualizacao
-* Inclui: .CLASS, .int, .TEL
+* Inclui: .CLASS, .TEL
 * Localizacao: tools/back_programas/
 * Formato: [PROGRAMA]-anterior.zip
 
@@ -228,7 +228,6 @@ OPCOES DISPONIVEIS:
     * CLASSes compiladas (.CLASS)
     * Telas de interface (.TEL)
     * Arquivos XML de configuracao
-    * Programas para o sistema em MicroFocus (.int)
 
     VERSOES DISPONIVEIS:
     * IsCOBOL 2018, 2020, 2023, 2024
@@ -294,7 +293,6 @@ Sistema cria backup completo:
 * CLASSes (.CLASS)
 * Telas (.TEL)
 * XML (.xml)
-* MicroFocus (.int)
 
 PASSO 4: DOWNLOAD (modo online)
 Baixa arquivos do servidor:
@@ -1815,7 +1813,7 @@ CONCEITOS IMPORTANTES:
 -------------------------------------------------------------------
 
 PROGRAMA:
-Arquivo executavel individual (.CLASS ou .int)
+Arquivo executavel individual (.CLASS)
 
 BIBLIOTECA:
 Conjunto completo de programas do sistema

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-02
+# Versao: 14/08/2026-02
 #
 declare -g pids=()                     # Array global para rastrear PIDs de background
 declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -249,7 +249,7 @@ _processar_atualizacao_biblioteca() {
 
     # Compactacao em E_EXEC
     {
-        "${DEFAULT_FIND}" "${E_EXEC}/" -type f \( -iname "*.class" -o -iname "*.int" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
+        "${DEFAULT_FIND}" "${E_EXEC}/" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
     } &
     local pid_tar_exec=$!
     pids+=("$pid_tar_exec")  # Registrar PID para trap

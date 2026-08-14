@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-01
+# Versao: 14/08/2026-02
 #
 
 # Variaveis globais esperadas
@@ -560,7 +560,9 @@ _processar_atualizacao_programas() {
             class_files+=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}")
         fi
         shopt -s nullglob
-        class_files+=("${E_EXEC}/${programa}_"*.${EXTENSAO_CLASS})
+        for f in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
+            class_files+=("$f")
+        done
         shopt -u nullglob
         if (( ${#class_files[@]} > 0 )); then
             if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
@@ -578,7 +580,9 @@ _processar_atualizacao_programas() {
             tel_files+=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}")
         fi
         shopt -s nullglob
-        tel_files+=("${T_TELAS}/${programa}_"*.${EXTENSAO_TELAS})
+        for f in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
+            tel_files+=("$f")
+        done
         shopt -u nullglob
         if (( ${#tel_files[@]} > 0 )); then
             if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
@@ -621,7 +625,16 @@ _processar_atualizacao_programas() {
     local programa_verif
     for programa_verif in "${PROGRAMAS_SELECIONADOS[@]}"; do
         shopt -s nullglob
-        local arquivos_programa=("${programa_verif}"*.${EXTENSAO_CLASS} "${programa_verif}"*.${EXTENSAO_INT} "${programa_verif}"*.${EXTENSAO_TELAS})
+        local arquivos_programa=()
+        for f in "${programa_verif}"*."${EXTENSAO_CLASS}"; do
+            arquivos_programa+=("$f")
+        done
+        for f in "${programa_verif}"*."${EXTENSAO_INT}"; do
+            arquivos_programa+=("$f")
+        done
+        for f in "${programa_verif}"*."${EXTENSAO_TELAS}"; do
+            arquivos_programa+=("$f")
+        done
         shopt -u nullglob
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
@@ -632,7 +645,7 @@ _processar_atualizacao_programas() {
 
     # Mover arquivos para diretorios corretos
     local extensao arquivos_encontrados
-    for extensao in ".${EXTENSAO_CLASS}" ".${EXTENSAO_INT}" ".${EXTENSAO_TELAS}"; do
+    for extensao in ".${EXTENSAO_CLASS}" ".${EXTENSAO_TELAS}"; do
         shopt -s nullglob
         arquivos_encontrados=(*"${extensao}")
         shopt -u nullglob
@@ -766,11 +779,10 @@ _processar_atualizacao_pacotes() {
         fi
     done
 
-    # Processar arquivos .class e .int encontrados
+    # Processar arquivos .class e  encontrados
     local arquivo_binario nome_prog caminho_dir arquivo_backup telas_existentes tel
     while IFS= read -r -d '' arquivo_binario; do
         nome_prog="$(basename "$arquivo_binario" .class)"
-        nome_prog="$(basename "$nome_prog" .int)"
         caminho_dir="$(dirname "$arquivo_binario")"
         arquivo_backup="${DEFAULT_OLDS_DIR}/${nome_prog}-anterior.zip"
 
@@ -784,7 +796,12 @@ _processar_atualizacao_pacotes() {
             arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_INT}")
         fi
         shopt -s nullglob
-        arquivos_antigos+=("${E_EXEC}/${nome_prog}_"*.${EXTENSAO_CLASS} "${E_EXEC}/${nome_prog}_"*.${EXTENSAO_INT})
+        for f in "${E_EXEC}/${nome_prog}_"*."${EXTENSAO_CLASS}"; do
+            arquivos_antigos+=("$f")
+        done
+        for f in "${E_EXEC}/${nome_prog}_"*."${EXTENSAO_INT}"; do
+            arquivos_antigos+=("$f")
+        done
         shopt -u nullglob
 
         local backup_criado=0
@@ -803,7 +820,9 @@ _processar_atualizacao_pacotes() {
             telas_existentes+=("${T_TELAS}/${nome_prog}.${EXTENSAO_TELAS}")
         fi
         shopt -s nullglob
-        telas_existentes+=("${T_TELAS}/${nome_prog}_"*.${EXTENSAO_TELAS})
+        for f in "${T_TELAS}/${nome_prog}_"*."${EXTENSAO_TELAS}"; do
+            telas_existentes+=("$f")
+        done
         shopt -u nullglob
         if (( ${#telas_existentes[@]} > 0 )); then
             if ! "${DEFAULT_ZIP}" -j "${arquivo_backup}" "${telas_existentes[@]}" >>"${LOG_ATU}" 2>&1; then
@@ -840,13 +859,15 @@ _processar_atualizacao_pacotes() {
             if [[ -f "${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}" ]]; then
                 tels+=("${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}")
             fi
-            tels+=("${caminho_dir}/${nome_prog}_"*.${EXTENSAO_TELAS})
+            for f in "${caminho_dir}/${nome_prog}_"*."${EXTENSAO_TELAS}"; do
+                tels+=("$f")
+            done
             shopt -u nullglob
             for tel in "${tels[@]}"; do
                 mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
             done
         fi
-    done < <("${DEFAULT_FIND}" . -type f \( -name "*.class" -o -name "*.int" \) -print0)
+    done < <("${DEFAULT_FIND}" . -type f \( -name "*.class" \) -print0)
 
     # Limpar diretorio temporario
     cd "${DEFAULT_RECEBE_DIR}" || true

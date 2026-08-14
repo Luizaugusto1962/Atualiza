@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/08/2026-01
+# Versao: 14/08/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -255,7 +255,6 @@ debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 # =============================================================================
 MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
 EXTENSAO_CLASS="${EXTENSAO_CLASS:-class}"                      # Extensao de arquivos compilados
-EXTENSAO_INT="${EXTENSAO_INT:-int}"                            # Extensao de arquivos intermediarios
 EXTENSAO_TELAS="${EXTENSAO_TELAS:-TEL}"                        # Extensao de arquivos de tela
 
 # =============================================================================
