@@ -629,9 +629,6 @@ _processar_atualizacao_programas() {
         for f in "${programa_verif}"*."${EXTENSAO_CLASS}"; do
             arquivos_programa+=("$f")
         done
-        for f in "${programa_verif}"*."${EXTENSAO_INT}"; do
-            arquivos_programa+=("$f")
-        done
         for f in "${programa_verif}"*."${EXTENSAO_TELAS}"; do
             arquivos_programa+=("$f")
         done
@@ -792,14 +789,8 @@ _processar_atualizacao_pacotes() {
         if [[ -f "${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}" ]]; then
             arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}")
         fi
-        if [[ -f "${E_EXEC}/${nome_prog}.${EXTENSAO_INT}" ]]; then
-            arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_INT}")
-        fi
         shopt -s nullglob
         for f in "${E_EXEC}/${nome_prog}_"*."${EXTENSAO_CLASS}"; do
-            arquivos_antigos+=("$f")
-        done
-        for f in "${E_EXEC}/${nome_prog}_"*."${EXTENSAO_INT}"; do
             arquivos_antigos+=("$f")
         done
         shopt -u nullglob
