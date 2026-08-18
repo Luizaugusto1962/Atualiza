@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-02
+# Versao: 18/08/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -524,8 +524,7 @@ _limpar_arquivos_antigos() {
     fi
 
     # Monta lista de arquivos para exclusão
-    mapfile -d '' -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print0 2>/dev/null)
-#    mapfile -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
+    mapfile -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
     count=${#arquivos[@]}
 
     if ((count > 0)); then
