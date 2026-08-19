@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-02
+# Versao: 19/08/2026-02
 #
 
 # Variaveis globais esperadas
@@ -728,26 +728,9 @@ _processar_atualizacao_pacotes() {
         fi
     done
 
-    # Criar diretorio temporario para extracao
-    local dir_temp_atualizacao="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao"
-    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
-    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
-        return 1
-    fi
-
-    # Mover pacotes para o diretorio temporario e acessa-lo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${dir_temp_atualizacao}/"; then
-            _erro "Falha ao mover ${arquivo} para diretorio temporario"
-            rm -rf "${dir_temp_atualizacao}"
-            return 1
-        fi
-    done
-
-    if ! cd "${dir_temp_atualizacao}"; then
-        _erro "Falha ao acessar diretorio temporario"
-        rm -rf "${dir_temp_atualizacao}"
+    # Acessar diretorio de recebimento
+    if ! cd "${DEFAULT_RECEBE_DIR}"; then
+        _erro "Falha ao acessar diretorio de recebimento ${DEFAULT_RECEBE_DIR}"
         return 1
     fi
 
@@ -755,114 +738,164 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
+
+    # SEGURANCA: Validar integridade pos-extracao (cada pacote deve ter gerado arquivos)
+    local arquivo_zip lista_arquivos nome_arquivo
+    for arquivo_zip in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if [[ ! -f "${arquivo_zip}" ]]; then
+            _erro "Pacote nao encontrado apos extracao: ${arquivo_zip}"
+            return 1
+        fi
+
+        # Listar conteudo do pacote e verificar se ha arquivos
+        lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk 'NR>3 && NF>=4 {print $NF}' | grep -E '\.(class|TEL)$' || true)
+        if [[ -z "${lista_arquivos}" ]]; then
+            _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
+            return 1
+        fi
+
+        # Verificar se os arquivos listados existem apos extracao
+        while IFS= read -r nome_arquivo; do
+            if [[ ! -f "${nome_arquivo}" ]]; then
+                _erro "Arquivo ${nome_arquivo} extraido do pacote ${arquivo_zip} nao encontrado"
+                return 1
+            fi
+        done <<< "${lista_arquivos}"
+    done
+
+    # Backup dos programas antigos com rotacao
+    local programa_indice
+    for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
+        local programa="${PROGRAMAS_SELECIONADOS[$programa_indice]}"
+        local arquivo_backup="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
+        local backup_criado=0
+
+        # Verificar se ja existe backup e fazer rotacao com data e hora
+        if [[ -f "$arquivo_backup" ]]; then
+            local timestamp
+            timestamp=$(date +"%Y%m%d_%H%M%S")
+            if ! mv -f "$arquivo_backup" "${DEFAULT_OLDS_DIR}/${timestamp}-${programa}-anterior.zip"; then
+                _erro "Falha ao arquivar backup anterior de ${programa}"
+                return 1
+            fi
+        fi
+
+        _exibir_mensagem_centralizada "${AMARELO}" "Salvando programa antigo: ${programa}"
+
+        # Backup de arquivos .class (nome exato ou variante com underscore)
+        local class_files=()
+        if [[ -f "${E_EXEC}/${programa}.${EXTENSAO_CLASS}" ]]; then
+            class_files+=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}")
+        fi
+        shopt -s nullglob
+        for f in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
+            class_files+=("$f")
+        done
+        shopt -u nullglob
+        if (( ${#class_files[@]} > 0 )); then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
+                backup_criado=1
+            else
+                _erro "Falha ao fazer backup dos arquivos .${EXTENSAO_CLASS} de ${programa}"
+                return 1
+            fi
+        fi
+
+        # Backup de arquivos .TEL (nome exato ou variante com underscore)
+        local tel_files=()
+        if [[ -f "${T_TELAS}/${programa}.${EXTENSAO_TELAS}" ]]; then
+            tel_files+=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}")
+        fi
+        shopt -s nullglob
+        for f in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
+            tel_files+=("$f")
+        done
+        shopt -u nullglob
+        if (( ${#tel_files[@]} > 0 )); then
+            if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
+                backup_criado=1
+            else
+                _erro "Falha ao fazer backup dos arquivos .${EXTENSAO_TELAS} de ${programa}"
+                return 1
+            fi
+        fi
+
+        # SEGURANCA: Validar integridade do backup criado
+        if (( backup_criado )); then
+            if ! _validar_integridade_backup "$arquivo_backup"; then
+                _erro "CRITICO: Backup criado mas invalido para ${programa}"
+                return 1
+            fi
+            _exibir_mensagem_centralizada "${VERDE}" "Backup validado com sucesso: ${programa}"
+        else
+            _aviso "Nenhum arquivo antigo (.${EXTENSAO_CLASS}/.${EXTENSAO_TELAS}) encontrado para backup de ${programa}"
+        fi
+    done
+
+    _linha
+    _aviso "Backup dos programas efetuado"
+    _linha
+    _aguardar 1
+
+    # Mover arquivos para diretorios corretos
+    local extensao arquivos_encontrados
+    for extensao in ".${EXTENSAO_CLASS}" ".${EXTENSAO_TELAS}"; do
+        shopt -s nullglob
+        arquivos_encontrados=(*"${extensao}")
+        shopt -u nullglob
+
+        if (( ${#arquivos_encontrados[@]} > 0 )); then
+            for arquivo in "${arquivos_encontrados[@]}"; do
+                if [[ "${extensao}" == ".${EXTENSAO_TELAS}" ]]; then
+                    if ! mv -f "${arquivo}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
+                        _log_erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
+                        _erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
+                        return 1
+                    else
+                        _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
+                    fi
+                else
+                    if ! mv -f "${arquivo}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
+                        _log_erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
+                        _erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
+                        _exibir_mensagem_centralizada "${AMARELO}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
+                        _exibir_mensagem_centralizada "${AMARELO}" "Use a opcao 4 de reversao para restaurar o programa anterior."
+                        return 1
+                    else
+                        _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
+                        _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
+                        _obter_data_arquivo "${arquivo}"
+                    fi
+                fi
+            done
+        fi
+    done
+
+    _linha
+    _ok "Atualizando o(s) programa(s)..."
+    _linha
 
     # Mover arquivos .zip para .bkp em DEFAULT_PROGS_DIR
     if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
         _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
             _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
-            rm -rf "${dir_temp_atualizacao}"
             return 1
         }
     fi
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         local backup_file="${arquivo%.zip}.bkp"
         if ! mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}" >>"${LOG_ATU}" 2>&1; then
-            _log_erro "Falha ao arquivar pacote ${arquivo} em ${DEFAULT_PROGS_DIR}/${backup_file}"
-            _aviso "Falha ao arquivar pacote ${arquivo} em ${DEFAULT_PROGS_DIR}. O arquivo sera removido."
+            _log_erro "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_DIR}/${backup_file}"
+            _aviso "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_DIR}. O arquivo sera removido."
         fi
     done
 
-    # Processar arquivos .class e  encontrados
-    local arquivo_binario nome_prog caminho_dir arquivo_backup telas_existentes tel
-    while IFS= read -r -d '' arquivo_binario; do
-        nome_prog="$(basename "$arquivo_binario" .class)"
-        caminho_dir="$(dirname "$arquivo_binario")"
-        arquivo_backup="${DEFAULT_OLDS_DIR}/${nome_prog}-anterior.zip"
-
-        # Backup dos arquivos class antigos (nome exato ou variante com underscore)
-        local arquivos_antigos
-        arquivos_antigos=()
-        if [[ -f "${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}" ]]; then
-            arquivos_antigos+=("${E_EXEC}/${nome_prog}.${EXTENSAO_CLASS}")
-        fi
-        shopt -s nullglob
-        for f in "${E_EXEC}/${nome_prog}_"*."${EXTENSAO_CLASS}"; do
-            arquivos_antigos+=("$f")
-        done
-        shopt -u nullglob
-
-        local backup_criado=0
-        if (( ${#arquivos_antigos[@]} > 0 )); then
-            if ! "${DEFAULT_ZIP}" -j "${arquivo_backup}" "${arquivos_antigos[@]}" >>"${LOG_ATU}" 2>&1; then
-                _log_erro "Falha ao fazer backup dos arquivos de ${nome_prog}"
-                rm -rf "${dir_temp_atualizacao}"
-                return 1
-            fi
-            backup_criado=1
-        fi
-
-        # Backup de arquivos .TEL se existirem (nome exato ou variante com underscore)
-        telas_existentes=()
-        if [[ -f "${T_TELAS}/${nome_prog}.${EXTENSAO_TELAS}" ]]; then
-            telas_existentes+=("${T_TELAS}/${nome_prog}.${EXTENSAO_TELAS}")
-        fi
-        shopt -s nullglob
-        for f in "${T_TELAS}/${nome_prog}_"*."${EXTENSAO_TELAS}"; do
-            telas_existentes+=("$f")
-        done
-        shopt -u nullglob
-        if (( ${#telas_existentes[@]} > 0 )); then
-            if ! "${DEFAULT_ZIP}" -j "${arquivo_backup}" "${telas_existentes[@]}" >>"${LOG_ATU}" 2>&1; then
-                _log_erro "Falha ao fazer backup das telas de ${nome_prog}"
-                rm -rf "${dir_temp_atualizacao}"
-                return 1
-            fi
-            backup_criado=1
-        fi
-
-        # SEGURANCA: Validar integridade do backup apenas se ele foi criado
-        # (primeira instalacao nao possui arquivos antigos para backup)
-        if (( backup_criado )); then
-            if ! _validar_integridade_backup "${arquivo_backup}"; then
-                _erro "CRITICO: Backup invalido ou ausente para ${nome_prog}. Atualizacao abortada."
-                rm -rf "${dir_temp_atualizacao}"
-                return 1
-            fi
-        else
-            _aviso "Nenhum arquivo antigo encontrado para backup de ${nome_prog} (primeira instalacao?)"
-        fi
-
-        # Mover novo arquivo
-        if ! mv -f "${arquivo_binario}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-            _log_erro "Falha ao mover ${arquivo_binario} para ${E_EXEC}"
-            rm -rf "${dir_temp_atualizacao}"
-            return 1
-        fi
-
-        # Move TELs do mesmo diretorio extraido (nome exato ou variante com underscore)
-        if [[ -d "${caminho_dir}" ]]; then
-            shopt -s nullglob
-            local tels=()
-            if [[ -f "${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}" ]]; then
-                tels+=("${caminho_dir}/${nome_prog}.${EXTENSAO_TELAS}")
-            fi
-            for f in "${caminho_dir}/${nome_prog}_"*."${EXTENSAO_TELAS}"; do
-                tels+=("$f")
-            done
-            shopt -u nullglob
-            for tel in "${tels[@]}"; do
-                mv -f "${tel}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1
-            done
-        fi
-    done < <("${DEFAULT_FIND}" . -type f \( -name "*.class" \) -print0)
-
-    # Limpar diretorio temporario
-    cd "${DEFAULT_RECEBE_DIR}" || true
-    rm -rf "${dir_temp_atualizacao}"
+    _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
+    _linha
+    _exibir_mensagem_centralizada "${AMARELO}" "Atualizacao concluida com sucesso!"
 }
 
 # Processa reversao de programas
