@@ -62,8 +62,8 @@ _carregar_config_seguro() {
                 continue
             fi
 
-            # Declarar variavel de forma segura
-            declare -g "$chave_analizada=$valor"
+            # Declarar variavel de forma segura (printf -v: compativel com Bash < 4.2)
+            printf -v "$chave_analizada" '%s' "$valor"
         fi
     done < "$CONFIG_FILE"
 

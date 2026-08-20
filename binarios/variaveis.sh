@@ -28,7 +28,7 @@ BOLD="$(tput bold)"
 # DEFINICAO DE CONSTANTES POR CATEGORIA
 # Estrutura usada pela listagem tabular do modulo.
 # =============================================================================
-declare -gA _VAR_CATEGORIAS=(
+declare -A _VAR_CATEGORIAS=(
     ["DIRETORIOS E CAMINHOS"]="RAIZ SCRIPT_DIR LIBS_DIR CFG_DIR CONFIG_FILE"
     ["CONFIGURACOES DO SISTEMA"]="CFG_VERSAOCLASS CFG_EMPRESA"
     ["BASES DE DADOS"]="CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3"

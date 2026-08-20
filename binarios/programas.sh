@@ -17,7 +17,7 @@ DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zi
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
-declare -g arquivo_compilado_atual=""
+declare arquivo_compilado_atual=""
 declare -a PROGRAMAS_SELECIONADOS=()
 declare -a ARQUIVOS_PROGRAMA=()
 

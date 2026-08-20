@@ -339,8 +339,8 @@ _editar_variavel() {
                 while true; do
                     read -rp "Novo valor [s/n]: " opt
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
-                        [[ "${opt,,}" == "s" ]] && declare -g "$nome"="s"
-                        [[ "${opt,,}" == "n" ]] && declare -g "$nome"="n"
+                        [[ "${opt,,}" == "s" ]] && printf -v "$nome" '%s' "s"
+                        [[ "${opt,,}" == "n" ]] && printf -v "$nome" '%s' "n"
                         break
                     else
                         echo "Entrada inválida. Digite s ou n."
@@ -358,7 +358,7 @@ _editar_variavel() {
                         novo_valor="${novo_valor^^}"  # Normalizar para maiusculo
                         ;;
                 esac
-                declare -g "$nome"="$novo_valor"
+                printf -v "$nome" '%s' "$novo_valor"
                 ;;
         esac
     fi

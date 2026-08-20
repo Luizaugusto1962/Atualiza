@@ -124,83 +124,78 @@ for dir in "${AUX_DIRS[@]}"; do
 done
 
 # =============================================================================
-# CARREGAMENTO DE MÓDULOS
-# Carrega um módulo com verificação de segurança
-# Parâmetros:
-#   $1 - Nome do módulo (sem extensão)
-# Retorna: 0 se sucesso, 1 se erro
-# -----------------------------------------------------------------------------
-_caminho_modulo() {
-    local modulo="${1}"
-    local caminho="${LIBS_DIR}/${modulo}"
+# CARREGAMENTO DE MÓDULOS (ESCOPO GLOBAL)
+# IMPORTANTE: o carregamento acontece aqui no escopo global, fora de funcoes.
+# Os modulos usam `declare -a/-A` no topo do arquivo; se o `source` rodar dentro
+# de uma funcao, essas variaveis viram locais e sao perdidas ao retornar. Usar
+# `declare -g` resolveria, mas exige Bash >= 4.2 e quebra em servidores antigos
+# (Ubuntu 10.04/12.04). Por isso o `source` precisa estar neste escopo.
+# =============================================================================
+
+declare -a MODULOS_CARREGAR=(
+    "constantes.sh" # Constantes do Sistema SAV
+    "config.sh"     # Configuracoes
+    "utils.sh"      # Utilitarios basicos primeiro
+    "auth.sh"       # Autenticacao
+    "lembrete.sh"   # Sistema de lembretes
+    "vaievem.sh"    # Operacoes de rede
+    "sistema.sh"    # Informacoes do sistema
+    "baixar.sh"     # Funcionalidades de download
+    "arquivos.sh"   # Gestao de arquivos
+    "backup.sh"     # Sistema de backup
+    "programas.sh"  # Gestao de programas
+    "biblioteca.sh" # Gestao de biblioteca
+    "help.sh"       # Sistema de ajuda
+    "variaveis.sh"  # Consulta de variaveis/constantes
+    "menus.sh"      # Modulos de Menu
+)
+
+declare -a ERROS_MODULOS=()
+
+for _modulo in "${MODULOS_CARREGAR[@]}"; do
+    _modulo_caminho="${LIBS_DIR}/${_modulo}"
 
     # Verificar se o arquivo existe
-    if [[ ! -f "${caminho}" ]]; then
-        printf "ERRO: Modulo '%s' nao encontrado em '%s'\n" "${modulo}" "${caminho}" >&2
-        return 1
+    if [[ ! -f "${_modulo_caminho}" ]]; then
+        printf "ERRO: Modulo '%s' nao encontrado em '%s'\n" "${_modulo}" "${LIBS_DIR}" >&2
+        ERROS_MODULOS+=("${_modulo}")
+        continue
     fi
 
     # Verificar se o arquivo pode ser lido
-    if [[ ! -r "${caminho}" ]]; then
-        printf "ERRO: Modulo '%s' nao pode ser lido\n" "${modulo}" >&2
-        return 1
+    if [[ ! -r "${_modulo_caminho}" ]]; then
+        printf "ERRO: Modulo '%s' nao pode ser lido\n" "${_modulo}" >&2
+        ERROS_MODULOS+=("${_modulo}")
+        continue
     fi
 
     # Verificar se o arquivo não está vazio
-    if [[ ! -s "${caminho}" ]]; then
-        printf "ERRO: Modulo '%s' esta vazio\n" "${modulo}" >&2
-        return 1
+    if [[ ! -s "${_modulo_caminho}" ]]; then
+        printf "ERRO: Modulo '%s' esta vazio\n" "${_modulo}" >&2
+        ERROS_MODULOS+=("${_modulo}")
+        continue
     fi
 
-    # Carregar o módulo
-    if ! "." "${caminho}"; then
-        printf "ERRO: Falha ao carregar modulo '%s'\n" "${modulo}" >&2
-        return 1
+    # Carregar o módulo (source em escopo global)
+    if ! source "${_modulo_caminho}"; then
+        printf "ERRO: Falha ao carregar modulo '%s'\n" "${_modulo}" >&2
+        ERROS_MODULOS+=("${_modulo}")
+        continue
     fi
-}
+done
 
-# -----------------------------------------------------------------------------
-# Carrega módulos com tratamento de erros acumulativo
-# Retorna: 0 se todos carregados, 1 se algum falhou
-_carregar_modulos() {
-    local modulos=(
-        "constantes.sh" # Constantes do Sistema SAV
-        "config.sh"     # Configuracoes
-        "utils.sh"      # Utilitarios basicos primeiro
-        "auth.sh"       # Autenticacao
-        "lembrete.sh"   # Sistema de lembretes
-        "vaievem.sh"    # Operacoes de rede
-        "sistema.sh"    # Informacoes do sistema
-        "baixar.sh"     # Funcionalidades de download
-        "arquivos.sh"   # Gestao de arquivos
-        "backup.sh"     # Sistema de backup
-        "programas.sh"  # Gestao de programas
-        "biblioteca.sh" # Gestao de biblioteca
-        "help.sh"       # Sistema de ajuda
-        "variaveis.sh"  # Consulta de variaveis/constantes
-        "menus.sh"      # Modulos de Menu
-    )
+unset _modulo _modulo_caminho
 
-    local modulo=""
-    local erros=0
-    local modulos_com_erro=()
-
-    for modulo in "${modulos[@]}"; do
-        if ! _caminho_modulo "$modulo"; then
-            ((erros++)) || true
-            modulos_com_erro+=("$modulo")
-        fi
+if (( ${#ERROS_MODULOS[@]} > 0 )); then
+    printf "ERRO: %d modulo(s) falharam ao carregar.\n" "${#ERROS_MODULOS[@]}" >&2
+    for _m in "${ERROS_MODULOS[@]}"; do
+        printf "  - %s\n" "${_m}" >&2
     done
+    unset MODULOS_CARREGAR ERROS_MODULOS
+    exit 1
+fi
 
-    if (( erros > 0 )); then
-        printf "ERRO: %d modulo(s) falharam ao carregar.\n" "$erros" >&2
-        for _m in "${modulos_com_erro[@]}"; do
-            printf "  - %s\n" "$_m" >&2
-        done
-        return 1
-    fi
-    return 0
-}
+unset MODULOS_CARREGAR ERROS_MODULOS
 
 # =============================================================================
 # INICIALIZAÇÃO DO SISTEMA
@@ -210,11 +205,7 @@ _carregar_modulos() {
 # -----------------------------------------------------------------------------
 _inicializar_sistema() {
 
-    # Carregar módulos do sistema
-    if ! _carregar_modulos; then
-        _erro "Falha ao carregar modulos." >&2
-        return 1
-    fi
+    # Modulos ja foram carregados no escopo global (ver CARREGAMENTO DE MODULOS)
 
     # Inicializar sistema de gerenciamento de variáveis
     if command -v _inicializar_sistema_variaveis >/dev/null 2>&1; then

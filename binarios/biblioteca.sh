@@ -8,8 +8,8 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 14/08/2026-02
 #
-declare -g pids=()                     # Array global para rastrear PIDs de background
-declare -g ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
+declare pids=()                     # Array global para rastrear PIDs de background
+declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
 
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
@@ -525,7 +525,6 @@ _reverter_programa_especifico_biblioteca() {
 #---------- FUNCOES AUXILIARES ----------#
 # Solicita versao da biblioteca
 _solicitar_versao_biblioteca() {
-    declare -g VERSAO
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Informe a versao da Biblioteca a ser atualizada:"
     _linha

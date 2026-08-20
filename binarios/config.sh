@@ -20,10 +20,10 @@ compilado="${compilado:-}"
 debugado="${debugado:-}"
 
 # Arrays para registro e limpeza de variaveis
-declare -ga REGISTRO_VARIAVEIS=()
-declare -gA REGISTRO_CATEGORIAS=()
-declare -gA _REGISTRO_MAPA=()
-declare -g VAR_CONTADOR_REGISTRO=0
+declare -a REGISTRO_VARIAVEIS=()
+declare -A REGISTRO_CATEGORIAS=()
+declare -A _REGISTRO_MAPA=()
+declare VAR_CONTADOR_REGISTRO=0
 
 # =============================================================================
 # SISTEMA DE REGISTRO DE VARIAVEIS
@@ -60,12 +60,16 @@ _register_var() {
 
     # Se ja esta registrada, atualizar valor
     if _var_ja_registrada "$nome_var"; then
-        declare -g "$nome_var"="$valor_var" 2>/dev/null || true
+        _is_var_readonly "$nome_var" || printf -v "$nome_var" '%s' "$valor_var" 2>/dev/null || true
         return 0
     fi
 
-    # Definir a variavel como global
-    declare -g "$nome_var"="$valor_var" 2>/dev/null || {
+    # Definir a variavel como global (printf -v: compativel com Bash < 4.2)
+    if _is_var_readonly "$nome_var"; then
+        _aviso "Nao foi possivel definir variavel %s (pode ser readonly)" "$nome_var" >&2
+        return 0
+    fi
+    printf -v "$nome_var" '%s' "$valor_var" 2>/dev/null || {
         _aviso "Nao foi possivel definir variavel %s (pode ser readonly)" "$nome_var" >&2
         return 0
     }
@@ -85,7 +89,7 @@ _register_var() {
 # Formato: _MAPA_VARIAVEIS["NOME_VARIAVEL"]="CATEGORIA"
 # Valores padrao ficam em constantes.sh; aqui apenas registramos para rastreamento/limpeza.
 
-declare -gA _MAPA_VARIAVEIS=(
+declare -A _MAPA_VARIAVEIS=(
     # ATUALIZACAO
     ["CFG_VERSAOCLASS"]="ATUALIZACAO"
     ["CFG_ACESSO_SSH"]="ATUALIZACAO"

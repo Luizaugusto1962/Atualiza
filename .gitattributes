@@ -1,5 +1,6 @@
 # Auto detect text files and perform LF normalization
-* text=auto
-*.zip
-*.json
+# CRLF quebra os scripts .sh no Bash (servidores Linux), por isso o eol=lf
+* text=auto eol=lf
+*.zip binary
+*.json text eol=lf
 
