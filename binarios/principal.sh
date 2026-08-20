@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 14/08/2026-01
+# Versao: 20/08/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
