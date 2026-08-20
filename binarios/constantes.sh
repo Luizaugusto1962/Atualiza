@@ -102,8 +102,6 @@ CONFIG_FILE="${CFG_DIR}/.config"
     enviabackup=""
     empresa=""
     base=""
-    base2=""
-    base3=""
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "AVISO: Arquivo de configuracao $CONFIG_FILE nao encontrado." >&2
