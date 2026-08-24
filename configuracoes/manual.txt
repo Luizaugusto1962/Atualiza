@@ -1349,7 +1349,7 @@ Offline:
 BIBLIOTECAS:
 -------------------------------------------------------------------
 
-SAVATU1, SAVATU2, SAVATU3, SAVATU4:
+SAVATU1, SAVATU2, SAVATU3:
 Padroes de nome dos arquivos de biblioteca
 
 FORMATO:
@@ -1359,7 +1359,6 @@ EXEMPLO (IsCOBOL 2024):
 SAVATU1=tempSAV_IS2024_CLASSA_
 SAVATU2=tempSAV_IS2024_CLASSB_
 SAVATU3=tempSAV_IS2024_tel_isc_
-SAVATU4=tempSAV_IS2024_xml_
 
 ATUALIZACAO AUTOMATICA:
 Ao mudar verclass, SAVATUs sao atualizados

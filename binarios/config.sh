@@ -21,7 +21,6 @@ debugado="${debugado:-}"
 
 # Arrays para registro e limpeza de variaveis
 declare -a REGISTRO_VARIAVEIS=()
-declare -A REGISTRO_CATEGORIAS=()
 declare -A _REGISTRO_MAPA=()
 declare VAR_CONTADOR_REGISTRO=0
 
@@ -46,7 +45,7 @@ _is_var_readonly() {
 _register_var() {
     local nome_var="$1"
     local valor_var="$2"
-    local categoria_var="${3:-OUTROS}"
+#    local categoria_var="${3:-OUTROS}"
 
     if [[ -z "$nome_var" ]]; then
         _aviso "Nome de variavel vazio, ignorando registro." >&2
@@ -77,7 +76,6 @@ _register_var() {
     # Registrar para limpeza posterior
     REGISTRO_VARIAVEIS+=("$nome_var")
     _REGISTRO_MAPA["$nome_var"]=1
-    REGISTRO_CATEGORIAS["$categoria_var"]+=" $nome_var"
     ((VAR_CONTADOR_REGISTRO++)) || true
 
     return 0
@@ -127,7 +125,6 @@ declare -A _MAPA_VARIAVEIS=(
     ["SAVATU1"]="BIBLIOTECA"
     ["SAVATU2"]="BIBLIOTECA"
     ["SAVATU3"]="BIBLIOTECA"
-    ["SAVATU4"]="BIBLIOTECA"
 
     # COMANDOS
     ["DEFAULT_ZIP"]="COMANDOS"
@@ -275,7 +272,7 @@ _configurar_variaveis_sistema() {
     SAVATU3="tempSAV_${classC}"
     SAVATU="tempSAV_${classX}"
     export E_EXEC T_TELAS CFG_OFFLINE
-    export SAVATU1 SAVATU2 SAVATU3 SAVATU4 SAVATU
+    export SAVATU1 SAVATU2 SAVATU3 SAVATU
 }
 
 # Validar acesso SSH
@@ -529,7 +526,6 @@ _limpar_estado_variaveis() {
     # Limpar arrays
     REGISTRO_VARIAVEIS=()
     _REGISTRO_MAPA=()
-    REGISTRO_CATEGORIAS=()
     unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
@@ -559,9 +555,7 @@ _limpeza_emergencia() {
 _inicializar_sistema_variaveis() {
     REGISTRO_VARIAVEIS=()
     _REGISTRO_MAPA=()
-    declare -A REGISTRO_CATEGORIAS=()
     VAR_CONTADOR_REGISTRO=0
-
     _inicializar_variaveis_sistema
     _register_var "SISTEMA_VARIAVEIS_INICIALIZADO" "true" "SISTEMA"
 }
