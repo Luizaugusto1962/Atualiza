@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/08/2026-01
+# Versao: 24/08/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -109,6 +109,7 @@ _executar_limpeza_temporarios() {
                     _limpar_base_especifica "$caminho_base" "$arquivo_lista2"
                 fi
             else
+                _linha
                 _aviso "Diretorio nao existe: ${caminho_base}"
                 _aguardar 2
             fi
