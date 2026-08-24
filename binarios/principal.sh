@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 20/08/2026-01
+# Versao: 24/08/2026-01
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -35,7 +35,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="17/08/26-v.1"
+declare -rx UPDATE="24/08/26-v.1"
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
@@ -177,7 +177,7 @@ for _modulo in "${MODULOS_CARREGAR[@]}"; do
     fi
 
     # Carregar o módulo (source em escopo global)
-    if ! source "${_modulo_caminho}"; then
+    if ! "." "${_modulo_caminho}"; then
         printf "ERRO: Falha ao carregar modulo '%s'\n" "${_modulo}" >&2
         ERROS_MODULOS+=("${_modulo}")
         continue

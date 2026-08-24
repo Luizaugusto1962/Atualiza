@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 13/08/2026-01
+# Versao: 24/08/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -223,12 +223,12 @@ _atualizando() {
 
     # 1. Remover ZIP da raiz de receber (modo online)
     if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" ]]; then
-        rm -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" 2>/dev/null && _log "ZIP original removido: ${DEFAULT_RECEBE_DIR}/${arquivo_zip}"
+        rm -f -- "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" 2>/dev/null && _log "ZIP original removido: ${DEFAULT_RECEBE_DIR}/${arquivo_zip}"
     fi
 
     # 2. Remover ZIP do dir_temp_atualizacao (modo offline)
     if [[ -f "${temp_dir}/${arquivo_zip}" ]]; then
-        rm -f "${temp_dir}/${arquivo_zip}" 2>/dev/null && _log "ZIP temporario removido: ${temp_dir}/${arquivo_zip}"
+        rm -f -- "${temp_dir}/${arquivo_zip}" 2>/dev/null && _log "ZIP temporario removido: ${temp_dir}/${arquivo_zip}"
     fi
 
     # 3. Remover diretorio dir_temp_atualizacao completamente (contem apenas restos da extracao)

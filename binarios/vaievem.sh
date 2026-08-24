@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-01
+# Versao: 24/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -19,7 +19,7 @@ _validar_caminho_seguro() {
     local caminho="$1"
     local regex_perigoso=$'[;|&$`<>"\']'
 
-    if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" =~ $regex_perigoso ]]; then
+    if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
         return 1
     fi
     return 0
@@ -59,75 +59,33 @@ _usar_chave_ssh() {
     return 0
 }
 
-# Adiciona opcoes SSH de chave a um array de opcoes
-# Uso: _adicionar_opcoes_chave _array_ref
-_adicionar_opcoes_chave() {
-    local -n _opts_ref=$1
-    _opts_ref+=("-i" "$CHAVE" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
-}
 
-#---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
+# Constrói o comando scp em um array nomeado, com opções de conexão e (opcional) chave SSH.
+# Uso: _montar_cmd_scp <nome_array_ref> <porta> [timeout] [alive_interval] [alive_count]
+#   Os tres ultimos defaultam para SSH_TIMEOUT/SSH_ALIVE_INTERVAL/SSH_ALIVE_COUNT.
+_montar_cmd_scp() {
+    local -n _cmd_ref=$1
+    local porta="${2:-}"
+    local timeout="${3:-${SSH_TIMEOUT}}"
+    local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"
+    local alive_max="${5:-${SSH_ALIVE_COUNT}}"
 
-# Download via SSH com chave configurada (usa SCP para melhor controle de timeout)
-# Parametros: $1=arquivo_remoto $2=destino_local(opcional)
-_receber_scp2() {
-    local arquivo_remoto="${1:-}"
-    if [[ -z "$arquivo_remoto" ]]; then
-        _log_erro "Arquivo remoto nao especificado para download SSH"
-        return 1
-    fi
-
-    # SEGURANCA: Validar caminho remoto contra injeção e traversal
-    if ! _validar_caminho_seguro "$arquivo_remoto"; then
-        _log_erro "Caminho remoto invalido ou malicioso: ${arquivo_remoto}"
-        return 1
-    fi
-
-    local destino_local="${2:-.}"
-
-    # SEGURANCA: Validar caminho de destino
-    if ! _validar_caminho_seguro "$destino_local"; then
-        _log_erro "Caminho de destino invalido ou malicioso: ${destino_local}"
-        return 1
-    fi
-
-    local nome_arquivo="${arquivo_remoto##*/}"
-    _log "Iniciando download SSH com chave: ${arquivo_remoto}"
-
-    local servidor_ssh="${CFG_SSH_HOST:-${DEFAULT_IP_SERVER}}"
-    local usuario_ssh="${DEFAULT_SSH_USER:-}"
-    local porta_ssh="${DEFAULT_SSH_PORTA:-}"
-
-    # Usar SCP em vez de SFTP para melhor controle de timeout
-    local -a cmd_scp=(
+    _cmd_ref=(
         scp
-        -P "$porta_ssh"
-        -o "ConnectTimeout=${SSH_TIMEOUT}"
-        -o "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
-        -o "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
+        -P "$porta"
+        -o "ConnectTimeout=${timeout}"
+        -o "ServerAliveInterval=${alive_int}"
+        -o "ServerAliveCountMax=${alive_max}"
         -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
     )
 
     if _usar_chave_ssh; then
-        cmd_scp+=(-i "$CHAVE" -o "BatchMode=yes")
+        _cmd_ref+=("-i" "$CHAVE" "-o" "BatchMode=yes")
     fi
-
-    local origem="${usuario_ssh}@${servidor_ssh}:${arquivo_remoto}"
-
-    if ! "${cmd_scp[@]}" "$origem" "$destino_local"; then
-        _log_erro "Falha no download SSH: ${arquivo_remoto}"
-        return 1
-    fi
-
-    # Verificar se arquivo foi transferido
-    if [[ ! -f "${destino_local}/${nome_arquivo}" ]]; then
-        _log_erro "Falha no download SSH: arquivo ausente apos transferencia: ${destino_local}/${nome_arquivo}"
-        return 1
-    fi
-
-    _log "Download SSH concluido: ${arquivo_remoto}"
-    return 0
 }
+
+#---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
+
 
 # Download via SCP com chave SSH configurada
 # Parametros: $1=arquivo_remoto $2=destino_local(opcional) $3=servidor $4=porta $5=usuario
@@ -160,22 +118,8 @@ _receber_scp() {
 
     _log "Iniciando download SCP: $arquivo_remoto"
 
-    local -a cmd_scp=(
-        scp
-        -P "$porta"
-        -o ConnectTimeout=30
-        -o ServerAliveInterval=15
-        -o ServerAliveCountMax=3
-        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
-    )
-
-    if _usar_chave_ssh; then
-        cmd_scp+=(
-            -i "$CHAVE"
-            -o BatchMode=yes
-            -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
-        )
-    fi
+    local -a cmd_scp=()
+    _montar_cmd_scp cmd_scp "$porta" 30 15 3
 
     local origem="${usuario_remoto}@${servidor}:${arquivo_remoto}"
 
@@ -266,7 +210,7 @@ _baixar_biblioteca_sincroniza() {
     local usuario_remoto="${3:-$DEFAULT_SSH_USER}"
 
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
-    (
+    if (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
 
         # SEGURANCA: Validar diretorio de recebimento
@@ -283,17 +227,8 @@ _baixar_biblioteca_sincroniza() {
                 _log_erro "Erro: Caminho da biblioteca invalido."
                 return 1
             fi
-            local cmd_scp_lib=(
-                "scp"
-                "-P" "$porta"
-                "-o" "ConnectTimeout=${SSH_TIMEOUT}"
-                "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
-                "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
-                "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
-            )
-            if _usar_chave_ssh; then
-                cmd_scp_lib+=("-i" "$CHAVE" "-o" "BatchMode=yes")
-            fi
+            local -a cmd_scp_lib=()
+            _montar_cmd_scp cmd_scp_lib "$porta"
             local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
             if "${cmd_scp_lib[@]}" "$origem" "."; then
@@ -319,18 +254,10 @@ _baixar_biblioteca_sincroniza() {
                 fi
 
                 local origem="${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
-                local cmd_scp=(
-                    "scp"
-                    "-P" "$porta"
-                    "-o" "ConnectTimeout=${SSH_TIMEOUT}"
-                    "-o" "ServerAliveInterval=${SSH_ALIVE_INTERVAL}"
-                    "-o" "ServerAliveCountMax=${SSH_ALIVE_COUNT}"
-                    "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
-                )
+                local -a cmd_scp=()
+                _montar_cmd_scp cmd_scp "$porta"
 
-                if _usar_chave_ssh; then
-                    cmd_scp+=("-i" "$CHAVE" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)" "-o" "BatchMode=yes")
-                fi
+
 
                 if "${cmd_scp[@]}" "$origem" "."; then
                     _log_sucesso "Download concluido: ${arquivo}"
@@ -341,7 +268,10 @@ _baixar_biblioteca_sincroniza() {
             done
             return 0
         fi
-    )
+    ); then
+        return 0
+    fi
+    return 1
 }
 
 # Baixar programas via SFTP/SCP
@@ -358,7 +288,7 @@ _baixar_programas_vaievem() {
 
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Realizando sincronizacao dos arquivos..."
-    (
+    if (
         cd "${DEFAULT_RECEBE_DIR:-}" || return 1
         for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
             _linha
@@ -381,14 +311,17 @@ _baixar_programas_vaievem() {
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _erro "Arquivo corrompido: $arquivo"
                 # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
-                rm -f "$arquivo"
+                rm -f -- "$arquivo"
                 _aguardar 2
                 return 1
             fi
 
             _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
         done
-    )
+    ); then
+        return 0
+    fi
+    return 1
 }
 
 #---------- FUNCOES DE UPLOAD/ENVIO (ALTO NIVEL) ----------#
@@ -433,7 +366,7 @@ _enviar_arquivo_multi() {
         local -a arquivos_encontrados=()
         while IFS= read -r -d '' arquivo_item; do
             arquivos_encontrados+=("$arquivo_item")
-        done < <(find "${diretorio_origem}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
+        done < <(find "${diretorio_origem:-.}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
         shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then

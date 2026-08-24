@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
+# Versao: 24/07/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -272,7 +272,7 @@ _alterar_senha() {
         chmod "${PERM_FILE_PRIVATE}" "$arquivo_senhas" 2>/dev/null || true
         _exibir_mensagem_centralizada "${VERDE}" "Senha alterada com sucesso."
     else
-        rm -f "$tmp_senhas"
+        rm -f -- "$tmp_senhas"
         _exibir_mensagem_centralizada "${VERMELHO}" "Erro ao salvar nova senha."
         return 1
     fi

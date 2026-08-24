@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/08/2026-02
+# Versao: 24/08/2026-02
 #
 
 # Variaveis globais esperadas
@@ -428,14 +428,17 @@ _solicitar_pacotes_atualizacao() {
 #---------- FUNCOES DE DOWNLOAD ----------#
 # Baixa pacotes para diretorio especifico
 _baixar_pacotes_vaievem() {
-    (
+    if (
         cd "${DEFAULT_RECEBE_DIR}" || {
             _erro "Erro: Diretorio ${DEFAULT_RECEBE_DIR} nao encontrado"
             _aguardar 2
             exit 1
         }
         _baixar_programas_vaievem
-    )
+    ); then
+        return 0
+    fi
+    return 1
 }
 
 #---------- FUNCOES DE PROCESSAMENTO ----------#

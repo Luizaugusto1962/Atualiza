@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 18/08/2026-02
+# Versao: 24/08/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -524,14 +524,14 @@ _limpar_arquivos_antigos() {
     fi
 
     # Monta lista de arquivos para exclusão
-    mapfile -t arquivos < <(find "$diretorio" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
+    mapfile -t arquivos < <(find "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
     count=${#arquivos[@]}
 
     if ((count > 0)); then
         _log "Removendo $count arquivos antigos de $diretorio"
         # Remove os arquivos diretamente
         for arquivo in "${arquivos[@]}"; do
-            rm -f "$arquivo" 2>/dev/null || true
+            rm -f -- "$arquivo" 2>/dev/null || true
         done
         _log "Remocao concluida: $count arquivos removidos"
     else
@@ -678,7 +678,7 @@ _enviabackup_para_receber() {
             _erro "Erro ao mover: ${nome_arquivo}"
             ((arquivos_erro++)) || true
         fi
-    done < <(find "${dir_origem}" -maxdepth 1 -type f -name "*.zip" -print0)
+    done < <(find "${dir_origem:-.}" -maxdepth 1 -type f -name "*.zip" -print0)
 
     # Resumo da operação
     _linha

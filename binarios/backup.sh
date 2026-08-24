@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-01
+# Versao: 24/08/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -18,7 +18,7 @@ _limpar_backup() {
     _log "Backup interrompido. Limpando temporários..."
     # Remover arquivos parciais com blindagem contra variaveis nulas
     if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" && "${DEFAULT_BASEBACKUP_DIR}" != "/" && "${DEFAULT_BASEBACKUP_DIR}" != "//" ]]; then
-        rm -f "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
+        rm -f -- "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
     fi
 }
 
@@ -270,7 +270,7 @@ _validar_backup_criado() {
     # Validar se o backup foi criado e tamanho mínimo
     if [[ ! -f "$arquivo_destino" ]] || (( $(wc -c < "$arquivo_destino" 2>/dev/null || echo 0) < 100 )); then
         _log_erro "Backup criado mas vazio ou muito pequeno: $arquivo_destino"
-        rm -f "$arquivo_destino"
+        rm -f -- "$arquivo_destino"
         return 1
     fi
 
@@ -331,7 +331,7 @@ _executar_backup_completo() {
     # Validar integridade do zip
     if ! _validar_integridade_backup "$arquivo_destino"; then
         _erro "Backup completo corrompido (falhou no teste de integridade)"
-        rm -f "$arquivo_destino"
+        rm -f -- "$arquivo_destino"
         return 1
     fi
 
@@ -398,7 +398,7 @@ _executar_backup_incremental() {
     # Validar integridade do zip
     if ! _validar_integridade_backup "$arquivo_destino"; then
         _erro "Backup incremental corrompido (falhou no teste de integridade)"
-        rm -f "$arquivo_destino"
+        rm -f -- "$arquivo_destino"
         return 1
     fi
 
@@ -443,7 +443,7 @@ _selecionar_backup() {
 
     # Carrega todos os .zip disponiveis
     shopt -s nullglob
-    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}"/${padrao_empresa}_*.zip)
+    arquivos_backup=("${DEFAULT_BASEBACKUP_DIR}"/"${padrao_empresa}"_*.zip)
     shopt -u nullglob  # Restaurar imediatamente para nao afetar outros globos
 
     if ((${#arquivos_backup[@]} == 0)); then
@@ -539,7 +539,7 @@ _resolver_base_restauracao() {
     resto="${nome_arquivo#"${CFG_EMPRESA}_"}"
     sufixo="${resto##*_}"
     sufixo="${sufixo%.zip}"
-    base_dir_name="${resto%_${sufixo}}"
+    base_dir_name="${resto%_"${sufixo}"}"
     base_dir_name="${base_dir_name#*_}"
 
     for base_var in "CFG_BASE_DIR" "CFG_BASE_DIR2" "CFG_BASE_DIR3"; do
@@ -701,7 +701,7 @@ _enviar_backup_servidor() {
             _exibir_mensagem_centralizada "${AMARELO}" "Backup local mantido"
             _aguardar 2
         else
-            if rm -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"; then
+            if rm -f -- "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"; then
                 _exibir_mensagem_centralizada "${AMARELO}" "Backup local excluido"
                 _aguardar 2
             else
@@ -816,7 +816,7 @@ _verificar_backups_recentes() {
         _linha
         _exibir_mensagem_centralizada "${CIANO}" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
-        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}"/${padrao_empresa}_*.zip 2>/dev/null
+        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}"/"${padrao_empresa}"_*.zip 2>/dev/null
         _linha
         return 0
     fi
@@ -990,7 +990,7 @@ _executar_backup_multiplos_padroes() {
     # Validar integridade
     if ! _validar_integridade_backup "$caminho_backup"; then
         _erro "CRITICO: Backup criado mas invalido (corrompido)"
-        rm -f "$caminho_backup"
+        rm -f -- "$caminho_backup"
         _aguardar 3
         return 1
     fi

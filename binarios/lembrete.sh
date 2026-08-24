@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 23/07/2026-01
+# Versao: 24/08/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -70,13 +70,13 @@ _gerar_aviso_entrada() {
             _linha
             _exibir_mensagem_centralizada "${VERDE}" "Mensagem gravada com sucesso!"
         else
-            rm -f "$arquivo_tmp"
+            rm -f -- "$arquivo_tmp"
             _linha
             _exibir_mensagem_centralizada "${AMARELO}" "Nenhum conteudo foi digitado. Mensagem nao alterada."
         fi
         _aguardar 2
     else
-        rm -f "$arquivo_tmp"
+        rm -f -- "$arquivo_tmp"
         _erro "ao gravar mensagem"
         _aguardar 2
     fi
@@ -114,7 +114,7 @@ _mostrar_aviso() {
         printf "\n"
         _linha
         if _confirmar "Excluir mensagem de entrada?" "N"; then
-            rm -f "$arquivo_msg"
+            rm -f -- "$arquivo_msg"
             _ok "Mensagem removida"
             _aguardar 1
         fi
@@ -134,7 +134,7 @@ _apagar_arquivo_configuracoes() {
     fi
 
     if _confirmar "Tem certeza que deseja apagar ${descricao}?" "N"; then
-        if rm -f "$arquivo"; then
+        if rm -f -- "$arquivo"; then
             _exibir_mensagem_centralizada "${VERMELHO}" "${descricao^} excluida com sucesso!"
         else
             _erro "Erro ao excluir ${descricao}"

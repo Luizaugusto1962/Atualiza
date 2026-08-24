@@ -164,6 +164,17 @@ _limpar_base_especifica() {
         return 1
     fi
 
+    # SEGURANCA: validar diretorio de backup antes de compactar (falha graciosa)
+    if [[ -z "${DEFAULT_BACKUP_DIR:-}" || "${DEFAULT_BACKUP_DIR}" == "/" || "${DEFAULT_BACKUP_DIR}" == "//" ]] \
+        || ! _validar_caminho_seguro "${DEFAULT_BACKUP_DIR}"; then
+        _erro "Diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}"
+        return 1
+    fi
+    if [[ ! -d "${DEFAULT_BACKUP_DIR}" ]]; then
+        _erro "Diretorio de backup nao encontrado: ${DEFAULT_BACKUP_DIR}"
+        return 1
+    fi
+
     # Ler lista de arquivos temporarios
     mapfile -t arquivos_temp < "$arquivo_lista"
 
@@ -188,7 +199,7 @@ _limpar_base_especifica() {
 
         # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
         # -maxdepth 1: restringe a busca ao diretorio da base (evita varredura recursiva)
-        mapfile -t arquivos_zip < <(find "$caminho_base" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0)
+        mapfile -t arquivos_zip < <(find "${caminho_base:-.}" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0)
         qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
@@ -407,6 +418,7 @@ _recuperar_arquivo_individual() {
     local arquivo
 
     shopt -s nullglob
+    shopt -s nocaseglob
     for arquivo in ${base_trabalho}/${padrao_arquivo}; do
         if [[ -L "$arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
@@ -417,6 +429,7 @@ _recuperar_arquivo_individual() {
         fi
     done
     shopt -u nullglob
+    shopt -u nocaseglob
 
     if (( arquivos_encontrados == 0 )); then
         _aviso "Nenhum arquivo encontrado para: ${nome_arquivo}"
@@ -574,7 +587,7 @@ _editar_lista_arquivos() {
                 conf=$(_trim "$conf")
                 conf="${conf^^}"
                 if [[ "$conf" == "S" ]]; then
-                    rm -f "$arquivo_lista" && touch "$arquivo_lista"
+                    rm -f -- "$arquivo_lista" && touch "$arquivo_lista"
                     _ok "Lista zerada com sucesso"
                 else
                     _aviso "Operacao cancelada"
@@ -630,8 +643,8 @@ _recuperar_arquivos_principais() {
         fi
     done
 
-        # Limpar arquivo temporario
-        [[ -f "indexar2" ]] && rm -f "indexar2"
+    # Limpar arquivo temporario
+    [[ -f "${CFG_DIR}/indexar2" ]] && rm -f -- "${CFG_DIR}/indexar2"
 
         _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
 
@@ -765,7 +778,7 @@ _enviar_arquivo_avulso() {
         local arquivos_encontrados=()
         while IFS= read -r -d '' arquivo; do
             arquivos_encontrados+=("$arquivo")
-        done < <(find "${diretorio_origem}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
+        done < <(find "${diretorio_origem:-.}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
         shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then
@@ -902,7 +915,8 @@ _validar_diretorio_expurgavel() {
 
 # Executa expurgador de arquivos antigos
 _executar_expurgador() {
-    _executar_expurgador_diario
+    # A limpeza diaria (_executar_expurgador_diario) ja e executada no bootstrap
+    # (principal.sh), evitando expurgo duplicado e confuso nesta rotina manual.
 
     clear
 
@@ -929,11 +943,10 @@ _executar_expurgador() {
 
     # Limpar arquivos antigos nos diretorios padrao
     # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.idx)
-    local diretorios_zip
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
             local arquivos_removidos
-            arquivos_removidos=$(find "$diretorio" -type f -mtime +30 \
+            arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 \
                 ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>/dev/null | wc -l)
 
 
@@ -944,7 +957,7 @@ _executar_expurgador() {
         fi
     done
 
-        diretorios_zip=(
+    local diretorios_zip=(
         "${E_EXEC}/"
         "${T_TELAS}/"
     )
@@ -953,7 +966,7 @@ _executar_expurgador() {
     local diretorio zips_removidos
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
-            zips_removidos=$(find "$diretorio" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
+            zips_removidos=$(find "${diretorio:-.}" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
             _log "Expurgo: ${zips_removidos} arquivo(s) .zip removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
@@ -968,24 +981,33 @@ _executar_expurgador() {
     return 0
 }
 
-# Lista os logs de atualizacao
-_listar_logs_atualizacao() {
+# Lista e exibe logs de um tipo (atualizacao|limpeza)
+# Parametros: $1 = titulo legivel (ex: "atualizacao"), $2 = prefixo do arquivo (ex: "atualiza")
+_listar_logs() {
+    local titulo="$1"
+    local prefixo="$2"
     local logs=()
+    local i=1
+    local log
+    local opcao
+    local log_selecionado
+
     clear
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Logs de Atualizacao encontrados em ${DEFAULT_LOGS_DIR}:"
+    _exibir_mensagem_centralizada "${AMARELO}" "Logs de ${titulo} encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
 
-    logs=("${DEFAULT_LOGS_DIR}"/atualiza.*)
+    logs=()
+    for log in "${DEFAULT_LOGS_DIR}"/"${prefixo}".*; do
+        [[ -e "$log" ]] && logs+=("$log")
+    done
     if [[ ! -e "${logs[0]}" ]]; then
-        _erro "Nenhum log de atualizacao encontrado."
+        _erro "Nenhum log de ${titulo} encontrado."
         _aguardar_tecla
         return 1
     fi
 
     # Exibir lista numerada dos logs disponiveis
-    local i=1
-    local log
     for log in "${logs[@]}"; do
         _exibir_mensagem_centralizada "${CIANO}" "  ${i}) $(basename "$log")"
         (( i++ ))
@@ -994,7 +1016,6 @@ _listar_logs_atualizacao() {
     _exibir_mensagem_centralizada "${VERDE}" "  0) Visualizar todos"
     _linha
 
-    local opcao log_selecionado
     read -rp "${AMARELO}Selecione o arquivo [0-$((i-1))]: ${NORMAL}" opcao
 
     # Validar entrada
@@ -1015,7 +1036,7 @@ _listar_logs_atualizacao() {
 
     if (( opcao == 0 )); then
         # Visualizar todos os logs
-        _aviso "Exibindo todos os logs de atualizacao:"
+        _aviso "Exibindo todos os logs de ${titulo}:"
         _linha
         for log in "${logs[@]}"; do
             _exibir_mensagem_centralizada "${CIANO}" ">>> Arquivo: $(basename "$log")"
@@ -1045,79 +1066,12 @@ _listar_logs_atualizacao() {
     read -r
 }
 
+# Lista os logs de atualizacao
+_listar_logs_atualizacao() {
+    _listar_logs "atualizacao" "atualiza"
+}
+
 # Lista os logs de limpeza
 _listar_logs_limpeza() {
-    clear
-    _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Logs de Limpeza encontrados em ${DEFAULT_LOGS_DIR}:"
-    _linha
-
-    local log_selecionado log logs
-
-    logs=("${DEFAULT_LOGS_DIR}"/limpando.*)
-    if [[ ! -e "${logs[0]}" ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum log de limpeza encontrado."
-        _aguardar_tecla
-        return 1
-    fi
-
-    # Exibir lista numerada dos logs disponiveis
-    local i=1
-    for log in "${logs[@]}"; do
-        _exibir_mensagem_centralizada "${CIANO}" "  ${i}) $(basename "$log")"
-        (( i++ ))
-    done
-    _linha
-    _exibir_mensagem_centralizada "${VERDE}" "  0) Visualizar todos"
-    _linha
-
-    local opcao
-    read -rp "${AMARELO}Selecione o arquivo [0-$((i-1))]: ${NORMAL}" opcao
-
-    # Validar entrada
-    if [[ -z "$opcao" ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhuma opcao selecionada."
-        _aguardar_tecla
-        return 0
-    fi
-
-    if ! [[ "$opcao" =~ ^[0-9]+$ ]] || (( opcao < 0 || opcao >= i )); then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Opcao invalida."
-        _aguardar_tecla
-        return 0
-    fi
-
-    clear
-    _linha
-
-    if (( opcao == 0 )); then
-        # Visualizar todos os logs
-        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo todos os logs de limpeza:"
-        _linha
-        for log in "${logs[@]}"; do
-            _exibir_mensagem_centralizada "${CIANO}" ">>> Arquivo: $(basename "$log")"
-            _linha
-            if [[ -s "$log" ]]; then
-                cat "$log"
-            else
-                _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo sem dados."
-            fi
-            printf "\n"
-            _linha
-        done
-    else
-        # Visualizar log selecionado
-        log_selecionado="${logs[$((opcao-1))]}"
-        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
-        _linha
-        if [[ -s "$log_selecionado" ]]; then
-            cat "$log_selecionado"
-        else
-            _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo sem dados."
-        fi
-        printf "\n"
-        _linha
-    fi
-    _exibir_mensagem_centralizada "${AMARELO}" "<< Pressione ENTER para voltar >>"
-    read -r
+    _listar_logs "limpeza" "limpando"
 }

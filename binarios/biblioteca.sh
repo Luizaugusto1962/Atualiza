@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/08/2026-02
+# Versao: 24/08/2026-02
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -31,7 +31,7 @@ _limpar_interrupcao() {
     if [[ -n "${VERSAO:-}" ]]; then
         for arquivo_temp in *"${VERSAO}".zip *"${VERSAO}".tar *"${VERSAO}".tar.gz; do
             if [[ -f "$arquivo_temp" ]]; then
-                rm -f "$arquivo_temp"
+                rm -f -- "$arquivo_temp"
                 _log "Arquivo temporario removido: $arquivo_temp"
             fi
         done
@@ -245,7 +245,7 @@ _processar_atualizacao_biblioteca() {
     _aguardar 1
 
     # Remover backup temporario se existir
-    rm -f "${arquivo_backup_tar}" "${caminho_backup_final}"
+    rm -f -- "${arquivo_backup_tar}" "${caminho_backup_final}"
 
     # Compactacao em E_EXEC
     {
