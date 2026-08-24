@@ -109,8 +109,8 @@ _executar_limpeza_temporarios() {
                     _limpar_base_especifica "$caminho_base" "$arquivo_lista2"
                 fi
             else
-                _linha
                 _aviso "Diretorio nao existe: ${caminho_base}"
+                _linha
                 _aguardar 2
             fi
         fi
