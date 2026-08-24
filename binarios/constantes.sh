@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/08/2026-01
+# Versao: 24/08/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -119,7 +119,7 @@ else
         if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
             return 1
         fi
-    _encerrar_programa 1
+        _encerrar_programa 1
     fi
 fi
 

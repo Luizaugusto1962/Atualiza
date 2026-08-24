@@ -35,19 +35,18 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="24/08/26-v.1"
+declare -rx UPDATE="24/08/26"
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
 # =============================================================================
 
 # Cria diretorio com permissoes seguras (funcao centralizada e melhorada)
-# Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE) $3=log_dir(opcional)
+# Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE)
 # Retorna: 0 se sucesso, 1 se erro
 _criar_diretorio_seguro() {
     local caminho="${1:-}"
     local permissao="${2:-${PERM_DIR_SECURE}}"
-    local log_dir="${3:-}"
 
     # Validar caminho
     if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
@@ -69,10 +68,6 @@ _criar_diretorio_seguro() {
     if mkdir -p "$caminho" 2>/dev/null; then
         # Ajustar permissoes
         if chmod "$permissao" "$caminho" 2>/dev/null; then
-            # Log opcional
-            if [[ -n "$log_dir" ]] && command -v _log >/dev/null 2>&1; then
-                _log "Diretorio criado: $caminho (permissao: $permissao)" "$log_dir" 2>/dev/null || true
-            fi
             return 0
         else
             printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
@@ -101,24 +96,17 @@ for dir in "${AUX_DIRS[@]}"; do
     # Criar diretório caso não exista com permissões seguras
     if [[ ! -d "${dir}" ]]; then
         if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
-                printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
+            printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
             _encerrar_programa 1
         fi
     fi
 
     # APLICAR PERMISSOES DE FORMA SEGURA: usar constante ao inves de hardcoded
-    # Recursivo apenas quando necessario, e com permissao segura
+    # O chmod garante existencia e acessibilidade; se falhar, o dir nao existe/nao acessivel
     chmod "${PERM_DIR_SECURE}" "${dir}" 2>/dev/null || {
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
         printf "Execute como root ou sudo ...\n" >&2
-        _encerrar_programa 1
-    }
-
-    # Verificar se o diretório existe após criação
-    [[ -d "${dir}" ]] || {
-        printf "Erro: O diretorio '%s' nao foi encontrado.\n" "${dir}" >&2
-        printf "Certifique-se de que os arquivos/modulos correspondentes estao instalados corretamente.\n" >&2
         _encerrar_programa 1
     }
 done
@@ -225,13 +213,19 @@ _inicializar_sistema() {
     fi
 
      # Configurar ambiente
-    _configurar_ambiente
+    if ! _configurar_ambiente; then
+        _erro "Falha ao configurar ambiente." >&2
+        return 1
+    fi
 
-    # Executar limpeza automatica diaria
-    _executar_expurgador_diario
+    # Executar limpeza automatica diaria (nao-critico: apenas avisa)
+    _executar_expurgador_diario || _erro "Aviso: limpeza diaria falhou." >&2
 
     # Configura acesso SSH se necessario
-    _validar_ssh
+    if ! _validar_ssh; then
+        _erro "Falha na validacao SSH." >&2
+        return 1
+    fi
 
     return 0
 }

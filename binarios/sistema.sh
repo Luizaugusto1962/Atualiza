@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-01
+# Versao: 24/08/2026-01
 #
 
 # Variaveis globais esperadas
@@ -44,8 +44,10 @@ _mostrar_versao_linux() {
     _exibir_mensagem_centralizada "${AMARELO}" "A partir de algumas informacoes basicas do seu sistema, parece estar executando:"
     _linha
 
-    # Checando se conecta com a internet ou nao
-    if ping -c 1 -W 3 google.com &>/dev/null; then
+    # Checando se conecta com a internet ou nao (pula em modo offline)
+    if [[ "${CFG_OFFLINE:-n}" == "s" ]]; then
+        printf '%s\n' "${VERDE}Internet: ${NORMAL}Nao verificada (modo OFF-Line)${NORMAL}"
+    elif ping -c 1 -W 3 google.com &>/dev/null; then
         printf '%s\n' "${VERDE}Internet: ${NORMAL}Conectada${NORMAL}"
     else
         printf '%s\n' "${VERDE}Internet: ${NORMAL}Desconectada${NORMAL}"
@@ -98,24 +100,28 @@ _mostrar_versao_linux() {
 
     # Checando os usuarios logados — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Usuario Logado: ${NORMAL}"
-    who
+    who || true
     printf "\n"
 
     # Checando uso de memoria RAM e SWAP — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Uso de Memoria Ram: ${NORMAL}"
-    free | grep -v -E '^Swap'
+    free | grep -v -E '^Swap' || true
     printf '%s\n' "${VERDE}Uso de Swap: ${NORMAL}"
-    free | grep -E '^Swap'
+    free | grep -E '^Swap' || true
     printf "\n"
 
     # Checando uso de disco — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Espaco em Disco: ${NORMAL}"
-    df -h | grep -E 'Filesystem|^/dev/'
+    df -h | grep -E 'Filesystem|^/dev/' || true
     printf "\n"
 
     # Checando o Sistema Uptime
     local tecuptime
-    tecuptime=$(uptime -p 2>/dev/null | cut -d " " -f2- || uptime | sed 's/.*up //' | sed 's/,.*//')
+    if command -v uptime >/dev/null 2>&1 && uptime -p >/dev/null 2>&1; then
+        tecuptime=$(uptime -p | cut -d " " -f2-)
+    else
+        tecuptime=$(uptime | sed 's/.*up //' | sed 's/,.*//')
+    fi
     printf '%s\n' "${VERDE}Sistema em uso Dias/(HH:MM): ${NORMAL}${tecuptime}${NORMAL}"
 
     _linha
@@ -154,7 +160,7 @@ _mostrar_parametros() {
     _aguardar_tecla
     clear
     _linha "=" "${CIANO}"
-    printf '%b\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${DEFAULT_RECEBE_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${ACESSO_OFF}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"

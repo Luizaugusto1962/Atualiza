@@ -6,16 +6,9 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/08/2026-01
+# Versao: 24/08/2026-01
 # Autor: Luiz Augusto
 #
-
-caminho="${CFG_DIR:-${SCRIPT_DIR:-.}/configuracoes}"
-
-_criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-    _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-    return 1
-}
 
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"
@@ -451,15 +444,6 @@ _menu_setups() {
             1) _mostrar_parametros || true ;;
             2)
                 _manutencao_setup || true
-                if [[ -f "${CFG_DIR}/.config" ]]; then
-                    if command -v _carregar_config_seguro >/dev/null 2>&1; then
-                        _carregar_config_seguro "${CFG_DIR}/.config" || true
-                    else
-                        "." "${CFG_DIR}/.config" || true
-                    fi
-                    _exibir_mensagem_centralizada "${VERDE}" "Configuracoes recarregadas com sucesso!"
-                    _aguardar 2
-                fi
                 ;;
             3) _menu_configurar_ssh || true ;;
             9) return ;;
@@ -586,12 +570,12 @@ _menu_ajuda_principal() {
         fi
 
         case "${opcao}" in
-            1) _exibir_manual_completo ;;
-            2) _ajuda_rapida ;;
-            3) _ajuda_no_geral ;;
-            4) _buscar_manual ;;
-            5) _exportar_manual ;;
-            6) _menu_selecao_contexto ;;
+            1) _exibir_manual_completo || true ;;
+            2) _ajuda_rapida || true ;;
+            3) _ajuda_no_geral || true ;;
+            4) _buscar_manual || true ;;
+            5) _exportar_manual || true ;;
+            6) _menu_selecao_contexto || true ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -625,16 +609,16 @@ _menu_selecao_contexto() {
     fi
 
     case "${opcao}" in
-        1) _exibir_ajuda_contextual "principal" ;;
-        2) _exibir_ajuda_contextual "programas" ;;
-        3) _exibir_ajuda_contextual "biblioteca" ;;
-        4) _exibir_ajuda_contextual "ferramentas" ;;
-        5) _exibir_ajuda_contextual "temporarios" ;;
-        6) _exibir_ajuda_contextual "recuperacao" ;;
-        7) _exibir_ajuda_contextual "backup" ;;
-        8) _exibir_ajuda_contextual "transferencia" ;;
-        9) _exibir_ajuda_contextual "setups" ;;
-        10) _exibir_ajuda_contextual "lembretes" ;;
+        1) _exibir_ajuda_contextual "principal" || true ;;
+        2) _exibir_ajuda_contextual "programas" || true ;;
+        3) _exibir_ajuda_contextual "biblioteca" || true ;;
+        4) _exibir_ajuda_contextual "ferramentas" || true ;;
+        5) _exibir_ajuda_contextual "temporarios" || true ;;
+        6) _exibir_ajuda_contextual "recuperacao" || true ;;
+        7) _exibir_ajuda_contextual "backup" || true ;;
+        8) _exibir_ajuda_contextual "transferencia" || true ;;
+        9) _exibir_ajuda_contextual "setups" || true ;;
+        10) _exibir_ajuda_contextual "lembretes" || true ;;
         *) _processar_opcao_invalida ;;
     esac
 }
@@ -697,7 +681,6 @@ _menu_tipo_backup() {
         _exibir_opcao_menu "2" "Backup Incremental"
         _exibir_rodape_menu
         printf "\n"
-#        _linha "=" "${VERDE}"
 
         local opcao
         if ! _ler_opcao_menu "tipobackup"; then

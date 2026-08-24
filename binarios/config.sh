@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:04/08/2026-01
+# Versao:24/08/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -210,7 +210,7 @@ _configurar_comandos() {
     done
 
     if [[ ${#faltand[@]} -gt 0 ]]; then
-        _erro "Comandos nao encontrados: " "${faltand[*]}" >&2
+        _erro "Comandos nao encontrados: ${faltand[*]}" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi

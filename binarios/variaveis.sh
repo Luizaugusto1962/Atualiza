@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/08/2026-01
+# Versao: 24/08/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -23,7 +23,7 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 CONFIG_FILE="${CONFIG_FILE:-${CFG_DIR}/.config}"
-BOLD="$(tput bold)"
+BOLD="$(tput bold 2>/dev/null || true)"
 # =============================================================================
 # DEFINICAO DE CONSTANTES POR CATEGORIA
 # Estrutura usada pela listagem tabular do modulo.
@@ -89,9 +89,9 @@ _var_exibir_tabular() {
     # Exibir informacoes sobre o arquivo de configuracao
     printf "%s%s Fonte de Configuracao:%s\n" "$VERDE" "$BOLD" "$NORMAL"
     if [[ -f "$CONFIG_FILE" ]] && [[ -r "$CONFIG_FILE" ]]; then
-        printf "   %s Status: Carregado com sucesso %s" "${VERDE}" "$CONFIG_FILE"
+        printf "   %s Status: Carregado com sucesso %s%s\n" "${VERDE}" "$CONFIG_FILE" "${NORMAL}"
     else
-        printf "   %s Status: Nao encontrado (usando valores padrao) %s" "${AMARELO}" "$CONFIG_FILE"
+        printf "   %s Status: Nao encontrado (usando valores padrao) %s%s\n" "${AMARELO}" "$CONFIG_FILE" "${NORMAL}"
     fi
     printf "\n"
 

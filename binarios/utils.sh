@@ -26,8 +26,9 @@ DEFAULT_LINES="${DEFAULT_LINES:-24}"
 if [[ -t 1 || -t 0 ]]; then
     # Se COLUMNS não está definido, tentar obter do terminal
     if [[ -z "${COLUMNS:-}" ]] && command -v stty >/dev/null 2>&1; then
-        COLUMNS=$(stty size 2>/dev/null | awk '{print $2}' 2>/dev/null)
-        LINES=$(stty size 2>/dev/null | awk '{print $1}' 2>/dev/null)
+        _stty_size=$(stty size 2>/dev/null)
+        COLUMNS=$(printf '%s\n' "$_stty_size" | awk '{print $2}' 2>/dev/null)
+        LINES=$(printf '%s\n' "$_stty_size" | awk '{print $1}' 2>/dev/null)
         export COLUMNS LINES
     fi
 fi
@@ -46,6 +47,7 @@ export COLUMNS LINES
 # Estrategia: COLUMNS (já definida) > Fallback padrão
 # Esta funcao garante que sempre retorna um valor válido
 # Retorna: numero de colunas (garantido ser positivo)
+_COLUNAS_CACHE=""
 _obter_colunas() {
     local colunas="${COLUMNS:-}"
 
@@ -55,11 +57,18 @@ _obter_colunas() {
         return 0
     fi
 
+    # Reutilizar ultimo valor valido sem reprovar stty
+    if [[ -n "$_COLUNAS_CACHE" ]]; then
+        printf '%s' "$_COLUNAS_CACHE"
+        return 0
+    fi
+
     # Fallback: tentar atualizar COLUMNS via stty se disponível
     if [[ -t 1 ]] && command -v stty >/dev/null 2>&1; then
         colunas=$(stty size 2>/dev/null | awk '{print $2}' 2>/dev/null)
         if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
             export COLUMNS="$colunas"
+            _COLUNAS_CACHE="$colunas"
             printf '%s' "$colunas"
             return 0
         fi
@@ -71,10 +80,24 @@ _obter_colunas() {
 }
 
 # Configuracao de alertas
-    _msg()   { _exibir_mensagem_centralizada "${BRANCO}" "[INFORMATIVO] > $1"; }
-    _ok()    { _exibir_mensagem_centralizada "${VERDE}" "[OK] > $1"; }
-    _aviso() { _exibir_mensagem_centralizada "${AMARELO}" "[AVISO] > $1"; }
-    _erro()  { _exibir_mensagem_centralizada "${VERMELHO}" "[ERRO] > $1"; }
+# Helper comum: aplica formato printf (%s/%d) quando ha argumentos extras e
+# o formato usa placeholders conhecidos; senao imprime literal (evita % literais
+# mal-interpretados). Strip de \n final evita linha em branco dupla.
+_formatar_e_exibir() {
+    local cor="$1" prefixo="$2" fmt="$3"; shift 3
+    local saida
+    if (( $# > 0 )) && [[ "$fmt" =~ %[sd] ]]; then
+        saida="$(printf "${prefixo}${fmt}" "$@" 2>/dev/null)" || saida="${prefixo}${fmt}"
+    else
+        saida="${prefixo}${fmt}"
+    fi
+    saida="${saida%$'\n'}"
+    _exibir_mensagem_centralizada "${cor}" "${saida}"
+}
+    _msg()   { _formatar_e_exibir "${BRANCO}"  "[INFORMATIVO] > " "$@"; }
+    _ok()    { _formatar_e_exibir "${VERDE}"   "[OK] > "           "$@"; }
+    _aviso() { _formatar_e_exibir "${AMARELO}" "[AVISO] > "        "$@"; }
+    _erro()  { _formatar_e_exibir "${VERMELHO}" "[ERRO] > "        "$@"; }
 
 # Remove espacos em branco do inicio e fim de uma string
 # Parametros: $1=string
@@ -399,9 +422,6 @@ _mostrar_progresso_backup() {
     # Ocultar cursor se suportado
     printf "\033[?25l" 2>/dev/null || true
 
-    # Forcar sync do output para evitar buffering
-    exec 3>&1
-
     while kill -0 "$pid" 2>/dev/null; do
         decorrido=$((decorrido + 1))
 
@@ -419,9 +439,8 @@ _mostrar_progresso_backup() {
 
         printf "\r\033[K%s[INFORMATIVO]%s %s |%s| %s" \
             "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
-        printf "%s" "" >&3
 
-        sleep 1 2>/dev/null || sleep 1
+        sleep 1
     done
 
     # Coletar status de saida
@@ -438,8 +457,6 @@ _mostrar_progresso_backup() {
 
     printf "\r\033[K%s[OK]%s %s |%s| %s concluido\n" \
         "${VERDE}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
-
-    exec 3>&-
 
     return $status_processo
 }
@@ -551,15 +568,19 @@ _executar_expurgador_diario() {
 
     # Define diretório de logs com fallback
     local logs_dir="${DEFAULT_LOGS_DIR:-}"
-    flag_file="${logs_dir}/.expurgador_$(date +%Y%m%d)"
 
-    # Se já foi executado hoje, pular
-    if [[ -f "$flag_file" ]]; then
-        return 0
+    # So usa o flag de controle diario se houver um diretorio de log valido
+    if [[ -n "$logs_dir" && -d "$logs_dir" && -w "$logs_dir" ]]; then
+        flag_file="${logs_dir}/.expurgador_$(date +%Y%m%d)"
+
+        # Se já foi executado hoje, pular
+        if [[ -f "$flag_file" ]]; then
+            return 0
+        fi
+
+        # Remover flags antigas (mais de 3 dias)
+        find "${logs_dir}" -name ".expurgador_*" -mtime +3 -delete 2>/dev/null || true
     fi
-
-    # Remover flags antigas (mais de 3 dias)
-    find "${logs_dir}" -name ".expurgador_*" -mtime +3 -delete 2>/dev/null || true
 
     # Array de diretórios e configurações de limpeza
     local -A configuracoes=(
@@ -584,8 +605,8 @@ _executar_expurgador_diario() {
     _limpar_arquivos_antigos "${err_isc}" 30 "*.*" 2>/dev/null || true
     _limpar_arquivos_antigos "${viewvix}" 30 "*.*" 2>/dev/null || true
 
-    # Criar flag para hoje
-    if touch "$flag_file" 2>/dev/null; then
+    # Criar flag para hoje (somente se o diretorio de flag for valido)
+    if [[ -n "${flag_file:-}" ]] && touch "$flag_file" 2>/dev/null; then
         _log "Limpeza automatica diaria executada"
     fi
 
