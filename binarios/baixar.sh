@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-01
+# Versao: 25/08/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -71,11 +71,12 @@ _atualizando() {
     shopt -u nullglob
 
     for arquivo in "${arquivos_sh[@]}"; do
-        if cp -f "$arquivo" "${DEFAULT_BACKUP_DIR}/$(basename "$arquivo").bkp" 2>/dev/null; then
-            _exibir_mensagem_centralizada "${VERDE}" "Backup do arquivo $(basename "$arquivo") feito com sucesso"
+        local nome_base="${arquivo##*/}"
+        if cp -f "$arquivo" "${DEFAULT_BACKUP_DIR}/${nome_base}.bkp" 2>/dev/null; then
+            _exibir_mensagem_centralizada "${VERDE}" "Backup do arquivo ${nome_base} feito com sucesso"
             ((backup_sucesso++)) || true
         else
-            _erro "Ao fazer backup de $(basename "$arquivo")"
+            _erro "Ao fazer backup de ${nome_base}"
             ((backup_erro++)) || true
             _aguardar 2
         fi
@@ -297,7 +298,7 @@ _voltar_sh_anterior() {
             local indice_zip=1
             local zip_opcao
             for zip_opcao in "${zips_backup[@]}"; do
-                _exibir_mensagem_centralizada "${VERDE}" "${indice_zip}) $(basename "$zip_opcao")"
+                _exibir_mensagem_centralizada "${VERDE}" "${indice_zip}) ${zip_opcao##*/}"
                 ((indice_zip++)) || true
             done
             _linha
@@ -347,7 +348,7 @@ _voltar_sh_anterior() {
 
     local restaurados=0 erros=0 arquivo_backup nome_script destino
     for arquivo_backup in "${backups_sh[@]}"; do
-        nome_script="$(basename "$arquivo_backup")"
+        nome_script="${arquivo_backup##*/}"
         [[ "$nome_script" == *.sh.bkp ]] || continue
         nome_script="${nome_script%.bkp}"
         destino="${LIBS_DIR}"

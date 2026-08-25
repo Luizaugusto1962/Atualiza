@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:24/08/2026-01
+# Versao:25/08/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -416,8 +416,9 @@ _validar_config_file() {
             return 1
         fi
 
-        # Verificar caracteres perigosos
-        if printf '%s\n' "$linha" | grep -qE '[\`\;|\&<>(){}]'; then
+        # Verificar caracteres perigosos (regex bash, sem pipe para grep)
+        local re_perigoso='[`;|&<>(){}]'
+        if [[ "$linha" =~ $re_perigoso ]]; then
             _erro "Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
             return 1
         fi

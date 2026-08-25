@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-01
+# Versao: 25/08/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -664,7 +664,7 @@ _menu_escolha_base() {
                     _processar_opcao_invalida
                 fi
                 ;;
-            9) return ;;
+            9) return 1 ;; # Sair: retorna erro para o chamador abandonar a operacao sem mensagem de base nao selecionada
             *) _processar_opcao_invalida ;;
         esac
     done

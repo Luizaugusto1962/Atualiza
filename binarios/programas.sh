@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-02
+# Versao: 25/08/2026-02
 #
 
 # Variaveis globais esperadas
@@ -182,7 +182,7 @@ _selecionar_programas_reversao() {
     for arquivo in "${backups[@]}"; do
         # Ignorar backups rotacionados (prefixo de timestamp AAAAMMDD_HHMMSS-)
         local nome_base
-        nome_base="$(basename "${arquivo}")"
+        nome_base="${arquivo##*/}"
         if [[ "${nome_base}" =~ ^[0-9]{8}_[0-9]{6}-.*-anterior\.zip$ ]]; then
             continue
         fi
@@ -652,7 +652,7 @@ _processar_atualizacao_pacotes() {
         fi
 
         # Listar conteudo do pacote e verificar se ha arquivos
-        lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk 'NR>3 && NF>=4 {print $NF}' | grep -E '\.(class|TEL)$' || true)
+        lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk 'NR>3 && NF>=4 && $NF ~ /\.(class|TEL)$/ {print $NF}')
         if [[ -z "${lista_arquivos}" ]]; then
             _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
             cd "$_cwd" || true
@@ -927,16 +927,18 @@ _obter_data_arquivo() {
     if [[ -f "${E_EXEC}/${arquivo}" ]]; then
         local data_modificacao data_formatada
         data_modificacao=$(stat -c %y "${E_EXEC}/${arquivo}" 2>/dev/null)
-        if [[ -z "$data_modificacao" ]]; then
+        if [[ -n "$data_modificacao" ]]; then
+            # Reformatacao "AAAA-MM-DD HH:MM:SS..." -> "DD/MM/AAAA HH:MM:SS" via substring (sem fork de date)
+            data_formatada="${data_modificacao:8:2}/${data_modificacao:5:2}/${data_modificacao:0:4} ${data_modificacao:11:8}"
+        else
             # Fallback para sistemas sem stat GNU (data epoch em segundos)
             local epoch
             epoch=$(stat -f %m "${E_EXEC}/${arquivo}" 2>/dev/null)
             if [[ -n "$epoch" ]]; then
-                data_modificacao=$(date -d "@${epoch}" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || true)
+                data_formatada=$(date -d "@${epoch}" +"%d/%m/%Y %H:%M:%S" 2>/dev/null || true)
             fi
         fi
-        if [[ -n "$data_modificacao" ]]; then
-            data_formatada=$(date -d "$data_modificacao" +"%d/%m/%Y %H:%M:%S" 2>/dev/null)
+        if [[ -n "$data_formatada" ]]; then
             _exibir_mensagem_centralizada "${VERDE}" "Nome do programa: ${arquivo}"
             _exibir_mensagem_centralizada "${AMARELO}" "Data do programa: ${data_formatada}"
         fi

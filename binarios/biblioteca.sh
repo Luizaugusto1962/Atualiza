@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-02
+# Versao: 25/08/2026-02
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -234,9 +234,8 @@ _processar_atualizacao_biblioteca() {
     local arquivo_backup_tar="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${VERSAO}.tar"
     local caminho_backup_final="${arquivo_backup_tar}.gz"
 
-    # Inicializar contadores para progresso geral (opcional, para log final)
+    # Contador de etapas concluidas (para log final)
     local contador=0
-    local total_etapas=2
 
     # Exibir mensagem inicial
     _linha
@@ -247,36 +246,25 @@ _processar_atualizacao_biblioteca() {
     # Remover backup temporario se existir
     rm -f -- "${arquivo_backup_tar}" "${caminho_backup_final}"
 
-    # Compactacao em E_EXEC
+    # Compactacao de E_EXEC + T_TELAS em uma unica passada
+    # (lista via stdin evita a regravacao incremental do tar -rf por lote)
     {
-        "${DEFAULT_FIND}" "${E_EXEC}/" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
+        {
+            "${DEFAULT_FIND}" "${E_EXEC}/" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -print0
+            "${DEFAULT_FIND}" "${T_TELAS}/" -type f -iname "*.TEL" -print0
+        } | "${DEFAULT_TAR}" --null -cf "${arquivo_backup_tar}" -T - >>"${LOG_ATU}" 2>&1
     } &
     local pid_tar_exec=$!
     pids+=("$pid_tar_exec")  # Registrar PID para trap
-    if _mostrar_progresso_backup "$pid_tar_exec" "Compactando $E_EXEC"; then
+    if _mostrar_progresso_backup "$pid_tar_exec" "Compactando $E_EXEC e $T_TELAS"; then
         local novos=()
         for _p in "${pids[@]}"; do [[ "$_p" != "$pid_tar_exec" ]] && novos+=("$_p"); done
         pids=("${novos[@]+"${novos[@]}"}")
         ((contador++)) || true
-        _ok "Compactacao de $E_EXEC concluida [Etapa ${contador}/${total_etapas}]"
+        _ok "Compactacao de $E_EXEC e $T_TELAS concluida"
         _linha
     else
-        _erro "Falha na compactacao de $E_EXEC"
-        return 1
-    fi
-
-    # Compactacao em T_TELAS
-    {
-        "${DEFAULT_FIND}" "${T_TELAS}/" -type f \( -iname "*.TEL" \) -exec "${DEFAULT_TAR}" -rf "${arquivo_backup_tar}" {} + >>"${LOG_ATU}" 2>&1
-    } &
-    local pid_tar_telas=$!
-    pids+=("$pid_tar_telas")  # Registrar PID
-    if _mostrar_progresso_backup "$pid_tar_telas" "Compactando $T_TELAS"; then
-        ((contador++)) || true
-        _exibir_mensagem_centralizada "${VERDE}" "Compactacao de $T_TELAS concluida [Etapa ${contador}/${total_etapas}]"
-        _linha
-    else
-        _exibir_mensagem_centralizada "${VERMELHO}" "Falha na compactacao de $T_TELAS"
+        _erro "Falha na compactacao da biblioteca"
         return 1
     fi
 

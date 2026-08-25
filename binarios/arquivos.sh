@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-01
+# Versao: 25/08/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -678,7 +678,7 @@ _processar_lista_arquivos() {
 _executar_jutil() {
     local arquivo="$1"
     if [[ -L "$arquivo" ]]; then
-        _aviso "Arquivo linkado, pulando recuperacao: $(basename "$arquivo")"
+        _aviso "Arquivo linkado, pulando recuperacao: ${arquivo##*/}"
         return 0
     fi
 	if [[ -z "${REBUILD:-}" ]]; then
@@ -690,14 +690,15 @@ _executar_jutil() {
 	if [[ -x "${REBUILD}" ]]; then
         if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
             if "${REBUILD}" -rebuild "$arquivo" -a -f; then
-                _log_sucesso "Rebuild executado: $(basename "$arquivo")"
+                _log_sucesso "Rebuild executado: ${arquivo##*/}"
                 # garantir permissões máximas após o rebuild
                 chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
                 _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
                 # garantir permissões máximas nos arquivos .indice gerados pelo jutil
 
-                dir_arquivo="$(dirname "$arquivo")"
-                base_arquivo="$(basename "$arquivo".dat)"
+                dir_arquivo="${arquivo%/*}"
+                base_arquivo="${arquivo##*/}"
+                base_arquivo="${base_arquivo%.dat}"
                 for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
                     if [[ -f "$arquivo_indice" ]]; then
                         chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null || \
@@ -705,11 +706,11 @@ _executar_jutil() {
                     fi
                 done
             else
-                _erro "Nao recuperou: $(basename "$arquivo")"
+                _erro "Nao recuperou: ${arquivo##*/}"
             fi
             _linha "-" "${VERDE}"
         else
-            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo nao encontrado ou vazio: $(basename "$arquivo" 2>/dev/null || echo "$arquivo")"
+            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
         fi
     else
         _erro "jutil nao encontrado em ${REBUILD}"
@@ -791,7 +792,7 @@ _enviar_arquivo_avulso() {
         _linha
         _exibir_mensagem_centralizada "${CIANO}" "Arquivos encontrados (${#arquivos_encontrados[@]}):"
         for arquivo in "${arquivos_encontrados[@]}"; do
-            _exibir_mensagem_centralizada "${VERDE}" "  - $(basename "$arquivo")"
+            _exibir_mensagem_centralizada "${VERDE}" "  - ${arquivo##*/}"
         done
         _linha
 
@@ -1009,7 +1010,7 @@ _listar_logs() {
 
     # Exibir lista numerada dos logs disponiveis
     for log in "${logs[@]}"; do
-        _exibir_mensagem_centralizada "${CIANO}" "  ${i}) $(basename "$log")"
+        _exibir_mensagem_centralizada "${CIANO}" "  ${i}) ${log##*/}"
         (( i++ ))
     done
     _linha
@@ -1039,7 +1040,7 @@ _listar_logs() {
         _aviso "Exibindo todos os logs de ${titulo}:"
         _linha
         for log in "${logs[@]}"; do
-            _exibir_mensagem_centralizada "${CIANO}" ">>> Arquivo: $(basename "$log")"
+            _exibir_mensagem_centralizada "${CIANO}" ">>> Arquivo: ${log##*/}"
             _linha
             if [[ -s "$log" ]]; then
                 cat "$log"
@@ -1052,7 +1053,7 @@ _listar_logs() {
     else
         # Visualizar log selecionado
         log_selecionado="${logs[$((opcao-1))]}"
-        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo log: $(basename "$log_selecionado")"
+        _exibir_mensagem_centralizada "${AMARELO}" "Exibindo log: ${log_selecionado##*/}"
         _linha
         if [[ -s "$log_selecionado" ]]; then
             cat "$log_selecionado"

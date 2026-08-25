@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-01
+# Versao: 25/08/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -110,7 +110,7 @@ _executar_backup() {
 
     # Gerar nome do arquivo
     local nome_backup nome_base_dir
-    nome_base_dir=$(basename "$base_trabalho")
+    nome_base_dir="${base_trabalho##*/}"
     nome_backup="${CFG_EMPRESA}_${tipo_backup}_${nome_base_dir}_$(date +%Y%m%d%H%M).zip"
     local caminho_backup="${DEFAULT_BASEBACKUP_DIR}/$nome_backup"
 
@@ -535,7 +535,7 @@ _resolver_base_restauracao() {
     local arquivo_backup="$1"
     local nome_arquivo resto sufixo base_dir_name base_var base
 
-    nome_arquivo=$(basename "$arquivo_backup")
+    nome_arquivo="${arquivo_backup##*/}"
     resto="${nome_arquivo#"${CFG_EMPRESA}_"}"
     sufixo="${resto##*_}"
     sufixo="${sufixo%.zip}"
@@ -544,7 +544,7 @@ _resolver_base_restauracao() {
 
     for base_var in "CFG_BASE_DIR" "CFG_BASE_DIR2" "CFG_BASE_DIR3"; do
         base="${!base_var}"
-        if [[ -n "$base" && "$(basename "$base")" == "${base_dir_name}" ]]; then
+        if [[ -n "$base" && "${base##*/}" == "${base_dir_name}" ]]; then
             printf '%s\n' "${RAIZ}${base}"
             return 0
         fi
@@ -958,7 +958,7 @@ _executar_backup_multiplos_padroes() {
 
     # Gerar nome do arquivo
     local nome_backup nome_base_dir resultado_zip_multi caminho_backup
-    nome_base_dir=$(basename "$base_trabalho")
+    nome_base_dir="${base_trabalho##*/}"
     nome_backup="${CFG_EMPRESA}_multiplos_${nome_base_dir}_$(date +%Y%m%d%H%M).zip"
     caminho_backup="${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"
     _aviso "Criando backup com multiplos padroes..."

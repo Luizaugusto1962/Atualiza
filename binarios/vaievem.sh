@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-01
+# Versao: 25/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -201,6 +201,62 @@ _enviar_rsync() {
 }
 
 
+# Upload em lote via RSYNC (uma unica conexao SSH para varios arquivos)
+# Parametros: $1=destino_remoto(caminho) $2...=arquivos_locais
+_enviar_rsync_lote() {
+    local destino_remoto="${1:-}"
+    shift
+    local -a arquivos_locais=("$@")
+
+    if [[ -z "$destino_remoto" || ${#arquivos_locais[@]} -eq 0 ]]; then
+        _log_erro "Parametros obrigatorios nao informados para upload RSYNC em lote"
+        return 1
+    fi
+
+    for arquivo_local in "${arquivos_locais[@]}"; do
+        if [[ ! -f "$arquivo_local" ]]; then
+            _erro "Arquivo local nao encontrado: ${arquivo_local}"
+            return 1
+        fi
+    done
+
+    # SEGURANCA: Validar destino remoto contra injecao e traversal (interpretado pelo shell remoto)
+    if ! _validar_caminho_seguro "$destino_remoto"; then
+        _log_erro "Destino remoto invalido ou malicioso: ${destino_remoto}"
+        return 1
+    fi
+
+    local servidor="$DEFAULT_IP_SERVER"
+    local porta="$DEFAULT_SSH_PORTA"
+    local usuario_remoto="$DEFAULT_SSH_USER"
+    _log "Iniciando upload RSYNC em lote: ${#arquivos_locais[@]} arquivo(s)"
+    local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
+
+    # SEGURANCA: Construir opções de forma segura usando arrays
+    # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
+    # (ex: SMB) rejeitam chmod com "Operation not permitted"
+    local base_rsync=("rsync" "-rtzP")
+    local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+
+    if _usar_chave_ssh; then
+        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+    fi
+
+    local cmd_ssh
+    printf -v cmd_ssh '%s ' "${ssh_cmd_parts[@]}"
+    cmd_ssh="${cmd_ssh% }"
+
+    # Executa o upload de todos os arquivos em uma unica chamada (1 conexao SSH)
+    if "${base_rsync[@]}" -e "${cmd_ssh}" "${arquivos_locais[@]}" "$destino_completo"; then
+        _log_sucesso "Upload RSYNC em lote concluido: ${#arquivos_locais[@]} arquivo(s)"
+        return 0
+    else
+        _log_erro "Falha no upload RSYNC em lote"
+        return 1
+    fi
+}
+
+
 #---------- FUNCOES DE DOWNLOAD (ALTO NIVEL) ----------#
 # Download da biblioteca via SFTP/SCP (funcao principal)
 _baixar_biblioteca_sincroniza() {
@@ -246,27 +302,29 @@ _baixar_biblioteca_sincroniza() {
                 _erro "Nenhum arquivo de atualizacao encontrado"
                 return 1
             fi
+            # Montar origens remotas em uma unica conexao SCP (lote)
+            local -a origens=()
             for arquivo in "${arquivos_update[@]}"; do
                 # SEGURANCA: Validar cada nome de arquivo antes do uso
                 if ! _validar_caminho_seguro "$arquivo"; then
                     _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
                     return 1
                 fi
-
-                local origem="${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}"
-                local -a cmd_scp=()
-                _montar_cmd_scp cmd_scp "$porta"
-
-
-
-                if "${cmd_scp[@]}" "$origem" "."; then
-                    _log_sucesso "Download concluido: ${arquivo}"
-                else
-                    _log_erro "Falha no download: ${arquivo}"
-                    return 1
-                fi
+                # Cada caminho entre aspas simples: seguro pois _validar_caminho_seguro rejeita '
+                origens+=("'${DESTINO_BIBLIOTECA}${arquivo}'")
             done
-            return 0
+
+            local -a cmd_scp=()
+            _montar_cmd_scp cmd_scp "$porta"
+            local origem_lote="${usuario_remoto}@${servidor}:${origens[*]}"
+
+            if "${cmd_scp[@]}" "$origem_lote" "."; then
+                _log_sucesso "Download em lote concluido: ${#arquivos_update[@]} arquivo(s)"
+                return 0
+            else
+                _log_erro "Falha no download em lote dos arquivos de atualizacao"
+                return 1
+            fi
         fi
     ); then
         return 0
@@ -375,20 +433,13 @@ _enviar_arquivo_multi() {
             return 1
         fi
 
-        # Enviar multiplos arquivos usando _enviar_rsync
-        local falhas_envio=0
-        for arquivo_item in "${arquivos_encontrados[@]}"; do
-            if ! _enviar_rsync "$arquivo_item" "${destino_remoto}"; then
-                ((falhas_envio++)) || true
-            fi
-        done
-
-        if (( falhas_envio == 0 )); then
+        # Enviar multiplos arquivos em uma unica conexao SSH (lote)
+        if _enviar_rsync_lote "${destino_remoto}" "${arquivos_encontrados[@]}"; then
             _exibir_mensagem_centralizada "${AMARELO}" "Arquivo(s) enviado(s) para \"${destino_remoto}\""
             _linha
             _aguardar 3
         else
-            _erro "Falha no envio de ${falhas_envio} arquivo(s)"
+            _erro "Falha no envio de arquivo(s)"
             _aguardar_tecla
         fi
     else

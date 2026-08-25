@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/08/2026-02
+# Versao: 25/08/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -87,6 +87,7 @@ _formatar_e_exibir() {
     local cor="$1" prefixo="$2" fmt="$3"; shift 3
     local saida
     if (( $# > 0 )) && [[ "$fmt" =~ %[sd] ]]; then
+        # shellcheck disable=SC2059  # fmt e prefixo sao formatos/ literais controlados internamente
         saida="$(printf "${prefixo}${fmt}" "$@" 2>/dev/null)" || saida="${prefixo}${fmt}"
     else
         saida="${prefixo}${fmt}"
@@ -201,7 +202,7 @@ _exibir_mensagem_direita() {
         posicao_inicio=0
     fi
 
-    printf "%s%*s%s${NORMAL}\n" "${cor}" "${posicao_inicio}" "" "$mensagem"
+    printf "%s%*s%s%s\n" "${cor}" "${posicao_inicio}" "" "$mensagem" "${NORMAL}"
 }
 
 _exibir_mensagem_corrida() {
@@ -220,7 +221,7 @@ _exibir_mensagem_corrida() {
         posicao_inicio=0
     fi
 # Imprimir espaços iniciais para centralizar
-    printf "%${posicao_inicio}s" ""
+    printf "%*s" "${posicao_inicio}" ""
 
     # Loop para imprimir cada letra com efeito de digitação
     for ((i=0; i<${#mensagem}; i++)); do
@@ -243,9 +244,9 @@ _linha() {
         colunas=10
     fi
 
-    printf "%s" "${cor}"
-    printf '%*s\n' "$colunas" '' | tr ' ' "$traco"
-    printf "%s" "${NORMAL}"
+    local espacos
+    printf -v espacos "%${colunas}s" ''
+    printf "%s%s%s\n" "${cor}" "${espacos// /$traco}" "${NORMAL}"
 }
 
 
@@ -475,20 +476,28 @@ _log() {
         arquivo_log="/var/log/sav.log"
     fi
 
-    # Verifica se o diretório do log existe e é gravável
-    local log_dir
-    log_dir=$(dirname "$arquivo_log")
-    if [[ ! -d "$log_dir" ]]; then
-        _erro "Diretorio de log nao existe: %s\n" "$log_dir" >&2
-        return 1
+    # Cache da validação do diretório (evita fork de dirname + testes a cada linha)
+    local log_dir="${arquivo_log%/*}"
+    if [[ "${_LOG_DIR_CACHE:-}" != "$log_dir" ]]; then
+        # Verifica se o diretório do log existe e é gravável
+        if [[ ! -d "$log_dir" ]]; then
+            _erro "Diretorio de log nao existe: %s\n" "$log_dir" >&2
+            return 1
+        fi
+
+        if [[ ! -w "$log_dir" ]]; then
+            _aviso "Sem permissao de escrita no diretorio de log: $log_dir"
+            return 1
+        fi
+        _LOG_DIR_CACHE="$log_dir"
     fi
 
-    if [[ ! -w "$log_dir" ]]; then
-        _aviso "Sem permissao de escrita no diretorio de log: $log_dir"
-        return 1
+    # Timestamp sem fork em Bash 4.2+; fallback para date em 4.0/4.1
+    if (( BASH_VERSINFO[0] > 4 || BASH_VERSINFO[1] >= 2 )); then
+        printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     fi
-
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     usuario_log="${usuario:-SISTEMA}"
 
     if printf "[%s] [%s] %s\n" "$timestamp" "$usuario_log" "$mensagem" >> "$arquivo_log"; then
@@ -526,7 +535,6 @@ _limpar_arquivos_antigos() {
     local dias="$2"
     local padrao="${3:-*}"
     local count=0
-    local arquivos
 
     # Validação do diretório e segurança contra limpeza na RAIZ
     if [[ ! -d "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
@@ -540,17 +548,12 @@ _limpar_arquivos_antigos() {
         return 1
     fi
 
-    # Monta lista de arquivos para exclusão
-    mapfile -t arquivos < <(find "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" -print 2>/dev/null)
-    count=${#arquivos[@]}
+    # Conta e remove em uma unica passada (find -delete evita um fork de rm por arquivo)
+    count=$(find "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" -print -delete 2>/dev/null | wc -l)
+    count="${count//[[:space:]]/}"
 
     if ((count > 0)); then
-        _log "Removendo $count arquivos antigos de $diretorio"
-        # Remove os arquivos diretamente
-        for arquivo in "${arquivos[@]}"; do
-            rm -f -- "$arquivo" 2>/dev/null || true
-        done
-        _log "Remocao concluida: $count arquivos removidos"
+        _log "Remocao concluida: $count arquivos antigos removidos de $diretorio"
     else
         _log "Nenhum arquivo antigo encontrado em $diretorio"
     fi
@@ -684,7 +687,7 @@ _enviabackup_para_receber() {
     # Iterar sobre arquivos .zip com tratamento seguro
     while IFS= read -r -d '' arquivo; do
         local nome_arquivo
-        nome_arquivo="$(basename "${arquivo}")"
+        nome_arquivo="${arquivo##*/}"
 
         # Verificar se o arquivo já existe no destino
         if [[ -e "${dir_destino}/${nome_arquivo}" ]]; then
