@@ -237,8 +237,7 @@ UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
 # =============================================================================
 # FUNCOES AUXILIARES
 # =============================================================================
-VERSAO="${VERSAO:-}"                                               # Variavel que define a versao do programa.
-# Arquivo de backup padrao - CORRIGIDO: com aspas
+VERSAO="${VERSAO:-}"                                           # Variavel que define a versao do programa.
 
 # =============================================================================
 # CONFIGURACAO DE TIPO DE COMPILACAO
