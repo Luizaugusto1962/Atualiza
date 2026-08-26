@@ -127,29 +127,29 @@ fi
 # CONFIGURACOES DIRETORIO DE BACKUP OFFLINE
 # =============================================================================
 
-CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/Atualiza}"  # Diretorio do portal de atualizacao offline
+CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/Atualiza}"   # Diretorio do portal de atualizacao offline
 
 # =============================================================================
 # CONFIGURACOES DO SISTEMA (variaveis do .config)
 # =============================================================================
-CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-${verclass}}"                     # Versao da classe
-CFG_EMPRESA="${CFG_EMPRESA:-${empresa}}"                        # Nome da empresa
-CFG_BASE_DIR="${CFG_BASE_DIR:-${base}}"                         # Diretorio base principal
-CFG_BASE_DIR2="${CFG_BASE_DIR2:-${base2}}"                      # Diretorio base secundario
-CFG_BASE_DIR3="${CFG_BASE_DIR3:-${base3}}"                      # Diretorio base terciario (vazio se nao definido)
-CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-${enviabackup}}"            # Path para envio de backup
+CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-${verclass}}"              # Versao da classe
+CFG_EMPRESA="${CFG_EMPRESA:-${empresa}}"                       # Nome da empresa
+CFG_BASE_DIR="${CFG_BASE_DIR:-${base}}"                        # Diretorio base principal
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-${base2}}"                     # Diretorio base secundario
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-${base3}}"                     # Diretorio base terciario (vazio se nao definido)
+CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-${enviabackup}}"           # Path para envio de backup
 
 # Flags booleanas do sistema
-CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-${acessossh}}"                # Acesso SSH habilitado (s/n)
-CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                   # Caminho da chave SSH privada
-CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                        # Modo offline (s/n)
+CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-${acessossh}}"               # Acesso SSH habilitado (s/n)
+CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                  # Caminho da chave SSH privada
+CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                       # Modo offline (s/n)
 
 # =============================================================================
 # PERMISSOES DE ARQUIVO E DIRETORIO
 # =============================================================================
-PERM_DIR_SECURE="0755"                                          # Diretorios seguros (rwxr-xr-x)
-PERM_FILE_PRIVATE="0600"                                        # Arquivos privados 600 (rw-------)
-PERM_FILE_EXEC="0755"                                           # Arquivos executaveis (rwxr-xr-x)
+PERM_DIR_SECURE="0755"                                         # Diretorios seguros (rwxr-xr-x)
+PERM_FILE_PRIVATE="0600"                                       # Arquivos privados 600 (rw-------)
+PERM_FILE_EXEC="0755"                                          # Arquivos executaveis (rwxr-xr-x)
 
 # =============================================================================
 # CONFIGURACOES DE REDE
@@ -179,8 +179,8 @@ SSH_ALIVE_COUNT="${SSH_ALIVE_COUNT:-3}"
 # =============================================================================
 # CONFIGURACOES DE TERMINAL
 # =============================================================================
-DEFAULT_COLUMNS="${DEFAULT_COLUMNS:-80}"   # Largura padrao do terminal
-DEFAULT_LINES="${DEFAULT_LINES:-24}"       # Altura padrao do terminal
+DEFAULT_COLUMNS="${DEFAULT_COLUMNS:-80}"                       # Largura padrao do terminal
+DEFAULT_LINES="${DEFAULT_LINES:-24}"                           # Altura padrao do terminal
 
 # =============================================================================
 # DIRETORIOS PADRAO
@@ -242,8 +242,8 @@ VERSAO="${VERSAO:-}"                                           # Variavel que de
 # =============================================================================
 # CONFIGURACAO DE TIPO DE COMPILACAO
 # =============================================================================
-compilado="${compilado:-class}"  # Sufixo para arquivos compilados
-debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
+compilado="${compilado:-class}"                                # Sufixo para arquivos compilados
+debugado="${debugado:-mclass}"                                 # Sufixo para arquivos em depuracao
 
 # =============================================================================
 # CONFIGURACOES DE ATUALIZACAO DE PROGRAMAS
