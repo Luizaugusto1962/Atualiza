@@ -154,19 +154,19 @@ PERM_FILE_EXEC="0755"                                           # Arquivos execu
 # =============================================================================
 # CONFIGURACOES DE REDE
 # =============================================================================
-DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-189.55.194.179}"
+DEFAULT_IP_SERVER="${DEFAULT_IP_SERVER:-191.34.12.223}"
 GITHUB_UPDATE_URL="${GITHUB_UPDATE_URL:-https://github.com/Luizaugusto1962/Atualiza/archive/refs/heads/main.zip}"
 DEFAULT_SSH_PORTA="${DEFAULT_SSH_PORTA:-41122}"
 DEFAULT_SSH_USER="${DEFAULT_SSH_USER:-atualiza}"
-DEFAULT_CHAVE_SSH="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa_atualiza}"
+#DEFAULT_CHAVE_SSH="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa_atualiza}"
 DEFAULT_CHAVE_SSH_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa_atualiza.pub}"
 SSH_TIMEOUT="${SSH_TIMEOUT:-15}"
 
 # =============================================================================
 # CONFIGURACOES DE SEGURANCA
 # =============================================================================
-HASH_ALGORITHM="${HASH_ALGORITHM:-sha256sum}"
-MAX_LOGIN_ATTEMPTS="${MAX_LOGIN_ATTEMPTS:-3}"
+#HASH_ALGORITHM="${HASH_ALGORITHM:-sha256sum}"
+#MAX_LOGIN_ATTEMPTS="${MAX_LOGIN_ATTEMPTS:-3}"
 
 # =============================================================================
 # CONFIGURACOES DE TIMEOUT
@@ -185,8 +185,8 @@ DEFAULT_LINES="${DEFAULT_LINES:-24}"       # Altura padrao do terminal
 # =============================================================================
 # DIRETORIOS PADRAO
 # =============================================================================
-DEFAULT_CONFIG_DIR="${DEFAULT_CONFIG_DIR:-${SCRIPT_DIR}/configuracoes}"
-DEFAULT_LIBS_DIR="${DEFAULT_LIBS_DIR:-${SCRIPT_DIR}/binarios}"
+#DEFAULT_CONFIG_DIR="${DEFAULT_CONFIG_DIR:-${SCRIPT_DIR}/configuracoes}"
+#DEFAULT_LIBS_DIR="${DEFAULT_LIBS_DIR:-${SCRIPT_DIR}/binarios}"
 DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"
 DEFAULT_BACKUP_DIR="${DEFAULT_BACKUP_DIR:-${SCRIPT_DIR}/backups/anterior}"
 DEFAULT_BASEBACKUP_DIR="${DEFAULT_BASEBACKUP_DIR:-${SCRIPT_DIR}/backups/base}"
@@ -216,7 +216,7 @@ DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-/u/varejo/trans_pc/}"
 # =============================================================================
 SAVISC="${SAVISC:-${RAIZ}/savisc/iscobol/bin/}"
 ISCCLIENT="${ISCCLIENT:-iscclient}"
-JUTIL="${JUTIL:-jutil}"
+#JUTIL="${JUTIL:-jutil}"
 REBUILD="${SAVISC}${JUTIL}"
 
 # =============================================================================
@@ -239,7 +239,7 @@ UMADATA="${UMADATA:-$(date +"%d-%m-%Y_%H%M%S")}"
 # =============================================================================
 VERSAO="${VERSAO:-}"                                               # Variavel que define a versao do programa.
 # Arquivo de backup padrao - CORRIGIDO: com aspas
-INI="${INI:-backup-${VERSAO}.zip}"
+#INI="${INI:-backup-${VERSAO}.zip}"
 
 # =============================================================================
 # CONFIGURACAO DE TIPO DE COMPILACAO
@@ -250,7 +250,7 @@ debugado="${debugado:-mclass}"   # Sufixo para arquivos em depuracao
 # =============================================================================
 # CONFIGURACOES DE ATUALIZACAO DE PROGRAMAS
 # =============================================================================
-MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
+#MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
 EXTENSAO_CLASS="${EXTENSAO_CLASS:-class}"                      # Extensao de arquivos compilados
 EXTENSAO_TELAS="${EXTENSAO_TELAS:-TEL}"                        # Extensao de arquivos de tela
 
