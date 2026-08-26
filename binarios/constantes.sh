@@ -216,7 +216,7 @@ DESTINO_BIBLIOTECA="${DESTINO_BIBLIOTECA:-/u/varejo/trans_pc/}"
 # =============================================================================
 SAVISC="${SAVISC:-${RAIZ}/savisc/iscobol/bin/}"
 ISCCLIENT="${ISCCLIENT:-iscclient}"
-#JUTIL="${JUTIL:-jutil}"
+JUTIL="${JUTIL:-jutil}"
 REBUILD="${SAVISC}${JUTIL}"
 
 # =============================================================================
