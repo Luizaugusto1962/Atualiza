@@ -303,6 +303,9 @@ _baixar_biblioteca_sincroniza() {
                 return 1
             fi
             # Montar origens remotas em uma unica conexao SCP (lote)
+            # Cada origem deve ser um argumento separado "user@host:caminho"
+            # (concatenar tudo em um unico token quebra o SCP moderno/SFTP:
+            #  "protocol error: filename does not match request")
             local -a origens=()
             for arquivo in "${arquivos_update[@]}"; do
                 # SEGURANCA: Validar cada nome de arquivo antes do uso
@@ -310,15 +313,17 @@ _baixar_biblioteca_sincroniza() {
                     _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
                     return 1
                 fi
-                # Cada caminho entre aspas simples: seguro pois _validar_caminho_seguro rejeita '
-                origens+=("'${DESTINO_BIBLIOTECA}${arquivo}'")
+                if ! _validar_caminho_seguro "${DESTINO_BIBLIOTECA}${arquivo}"; then
+                    _log_erro "Erro: Caminho de atualizacao invalido ou malicioso: ${DESTINO_BIBLIOTECA}${arquivo}"
+                    return 1
+                fi
+                origens+=("${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}")
             done
 
             local -a cmd_scp=()
             _montar_cmd_scp cmd_scp "$porta"
-            local origem_lote="${usuario_remoto}@${servidor}:${origens[*]}"
 
-            if "${cmd_scp[@]}" "$origem_lote" "."; then
+            if "${cmd_scp[@]}" "${origens[@]}" "."; then
                 _log_sucesso "Download em lote concluido: ${#arquivos_update[@]} arquivo(s)"
                 return 0
             else
