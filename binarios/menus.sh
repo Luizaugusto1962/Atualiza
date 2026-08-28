@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-01
+# Versao: 28/08/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -115,7 +115,8 @@ _principal() {
         _exibir_opcao_menu "5" "Ferramentas"
         _exibir_opcao_menu "0" "Sistema de Ajuda"
         _exibir_rodape_menu
-        _exibir_mensagem_direita "${AZUL}" "${UPDATE:-}"
+        printf "\n"
+#        _exibir_mensagem_direita "${AZUL}" "${UPDATE:-}"
 
         local opcao
         if ! _ler_opcao_menu "principal"; then

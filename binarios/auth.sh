@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/07/2026-01
+# Versao: 28/08/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -125,6 +125,7 @@ _mostrar_boas_vindas() {
 	_exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Data: ${BRANCO}$(date '+%d/%m/%Y')${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Hora: ${BRANCO}$(date '+%H:%M:%S')${NORMAL}"
+    _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Atualizacao: ${BRANCO}${UPDATE:-N/A}${NORMAL}"
     printf "\n"
     _linha "-" "${VERDE}"
     printf "\n"
