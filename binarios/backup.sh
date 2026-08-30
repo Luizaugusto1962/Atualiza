@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-01
+# Versao: 30/08/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -732,20 +732,20 @@ _mover_backup_offline() {
     _aviso "Movendo backup para diretorio offline..."
     _linha
 
-    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
+    if [[ -z "${CFG_PORTALSAV}" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio offline nao configurado"
         _aguardar_tecla
         return 1
     fi
 
-    local caminho="${DEFAULT_RECEBE_DIR}"
+    local caminho="${CFG_PORTALSAV}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
 
-    if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$DEFAULT_RECEBE_DIR"; then
-        _exibir_mensagem_centralizada "${VERDE}" "Backup movido para: ${DEFAULT_RECEBE_DIR}"
+    if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$CFG_PORTALSAV"; then
+        _exibir_mensagem_centralizada "${VERDE}" "Backup movido para: ${CFG_PORTALSAV}"
         _aguardar_tecla
     else
         _erro "Ao mover backup"

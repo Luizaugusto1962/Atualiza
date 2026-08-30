@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-01
+# Versao: 30/08/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -121,13 +121,13 @@ _atualizando() {
     # =========================================================================
     # CORRECAO CRITICA: Localizar origem do ZIP e preparar ambiente
     # =========================================================================
-    local temp_dir="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao/"
+    local temp_dir="${CFG_PORTALSAV}/dir_temp_atualizacao/"
     local origem_zip=""
 
     if [[ -f "${temp_dir}/${arquivo_zip}" ]]; then
         origem_zip="${temp_dir}/${arquivo_zip}"
-    elif [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" ]]; then
-        origem_zip="${DEFAULT_RECEBE_DIR}/${arquivo_zip}"
+    elif [[ -f "${CFG_PORTALSAV}/${arquivo_zip}" ]]; then
+        origem_zip="${CFG_PORTALSAV}/${arquivo_zip}"
     else
         _erro "Arquivo ${arquivo_zip} nao encontrado para descompactacao."
         return 1
@@ -213,8 +213,8 @@ _atualizando() {
     _exibir_mensagem_centralizada "${CIANO}" "Realizando limpeza dos arquivos de atualizacao..."
 
     # SEGURANCA: validar diretorios antes de qualquer remocao
-    if ! _validar_diretorio_operacao "${DEFAULT_RECEBE_DIR}"; then
-        _erro "Diretorio de recepcao invalido ou inseguro para limpeza: ${DEFAULT_RECEBE_DIR}"
+    if ! _validar_diretorio_operacao "${CFG_PORTALSAV}"; then
+        _erro "Diretorio de recepcao invalido ou inseguro para limpeza: ${CFG_PORTALSAV}"
         return 1
     fi
     if ! _validar_diretorio_operacao "${temp_dir}"; then
@@ -223,8 +223,8 @@ _atualizando() {
     fi
 
     # 1. Remover ZIP da raiz de receber (modo online)
-    if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" ]]; then
-        rm -f -- "${DEFAULT_RECEBE_DIR}/${arquivo_zip}" 2>/dev/null && _log "ZIP original removido: ${DEFAULT_RECEBE_DIR}/${arquivo_zip}"
+    if [[ -f "${CFG_PORTALSAV}/${arquivo_zip}" ]]; then
+        rm -f -- "${CFG_PORTALSAV}/${arquivo_zip}" 2>/dev/null && _log "ZIP original removido: ${CFG_PORTALSAV}/${arquivo_zip}"
     fi
 
     # 2. Remover ZIP do dir_temp_atualizacao (modo offline)
@@ -239,7 +239,7 @@ _atualizando() {
 
     # 4. Limpeza residual segura (excluir TODOS os arquivos/diretorios restantes no diretorio receber, sem remover a pasta principal)
     # Excluir todos os arquivos que ficaram no diretorio (atualiza.zip, extracao temporaria, etc.) sem remover a pasta principal
-    if find "${DEFAULT_RECEBE_DIR:?}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; then
+    if find "${CFG_PORTALSAV:?}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; then
         _exibir_mensagem_centralizada "${VERDE}" "Diretorio limpo com sucesso."
     else
         _aviso "Alguns arquivos podem nao ter sido removidos."
@@ -399,16 +399,16 @@ _atualizar_online() {
     fi
 
     # SEGURANCA: validar diretorio de download antes de usar wget
-    if ! _validar_diretorio_operacao "${DEFAULT_RECEBE_DIR}"; then
-        _erro "Diretorio de download invalido ou inseguro: ${DEFAULT_RECEBE_DIR}"
+    if ! _validar_diretorio_operacao "${CFG_PORTALSAV}"; then
+        _erro "Diretorio de download invalido ou inseguro: ${CFG_PORTALSAV}"
         return 1
     fi
 
-    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+    _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
     _erro "Ao criar diretorio de download"
     return 1
     }
-    if ! wget -q -c "$link" -O "${DEFAULT_RECEBE_DIR}/${arquivo_zip}"; then
+    if ! wget -q -c "$link" -O "${CFG_PORTALSAV}/${arquivo_zip}"; then
         _erro "Ao baixar arquivo de atualizacao. Verifique a conexao."
         return 1
     fi
@@ -416,7 +416,7 @@ _atualizar_online() {
 }
 
 _atualizar_offline() {
-    local temp_dir="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao/"
+    local temp_dir="${CFG_PORTALSAV}/dir_temp_atualizacao/"
     local arquivo_zip="atualiza.zip"
 
     # SEGURANCA: validar diretorio temporario antes de operar

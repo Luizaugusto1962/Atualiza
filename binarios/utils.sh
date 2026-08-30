@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-02
+# Versao: 30/08/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -593,7 +593,7 @@ _executar_expurgador_diario() {
         ["${DEFAULT_OLDS_DIR:-}"]=30
         ["${DEFAULT_PROGS_DIR:-}"]=10
         ["${DEFAULT_ENVIA_DIR:-}"]=10
-        ["${DEFAULT_RECEBE_DIR:-}"]=10
+        ["${CFG_PORTALSAV:-}"]=10
     )
 
     # Loop otimizado para limpeza
@@ -657,68 +657,7 @@ _check_instalado() {
     fi
 }
 
-_enviabackup_para_receber() {
-    local dir_origem="${CFG_PORTALSAV}"
-    local dir_destino="${DEFAULT_RECEBE_DIR}"
-    local arquivo
-    local arquivos_copiados=0
-    local arquivos_erro=0
 
-    # Validar diretórios de origem e destino
-    if [[ ! -d "${dir_origem}" ]]; then
-        _aviso "Diretorio de origem nao existe: ${dir_origem}"
-        return 1
-    fi
-
-    if [[ ! -d "${dir_destino}" ]]; then
-        _erro "Diretorio de destino nao existe: ${dir_destino}"
-        return 2
-    fi
-
-    if [[ ! -w "${dir_destino}" ]]; then
-        _erro "Sem permissao de escrita em: ${dir_destino}"
-        return 3
-    fi
-
-    _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Processando arquivos de backup: ${dir_origem} → ${dir_destino}"
-    _linha
-
-    # Iterar sobre arquivos .zip com tratamento seguro
-    while IFS= read -r -d '' arquivo; do
-        local nome_arquivo
-        nome_arquivo="${arquivo##*/}"
-
-        # Verificar se o arquivo já existe no destino
-        if [[ -e "${dir_destino}/${nome_arquivo}" ]]; then
-            _aviso "Arquivo ja existe (sobrescrevendo): ${nome_arquivo}"
-        fi
-
-        # Tentar mover o arquivo
-        if mv -f "${arquivo}" "${dir_destino}/" >> "${LOG_ATU}" 2>&1; then
-            _ok "Arquivo movido: ${nome_arquivo}"
-            ((arquivos_copiados++)) || true
-        else
-            _erro "Erro ao mover: ${nome_arquivo}"
-            ((arquivos_erro++)) || true
-        fi
-    done < <(find "${dir_origem:-.}" -maxdepth 1 -type f -name "*.zip" -print0)
-
-    # Resumo da operação
-    _linha
-    if (( arquivos_copiados == 0 && arquivos_erro == 0 )); then
-        _aviso "Nenhum arquivo .zip encontrado em ${dir_origem}"
-    else
-        _exibir_mensagem_centralizada "${VERDE}" "Operacao concluida: ${arquivos_copiados} arquivo(s) movido(s)"
-        if (( arquivos_erro > 0 )); then
-            _erro "Atencao: ${arquivos_erro} arquivo(s) com erro"
-        fi
-    fi
-    _linha
-
-    # Retornar código apropriado
-    return $((arquivos_erro > 0 ? 1 : 0))
-}
 
 
 # ---------- COMPATIBILIDADE SSH ----------

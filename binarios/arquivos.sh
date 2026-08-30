@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-01
+# Versao: 30/08/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -871,7 +871,7 @@ _receber_arquivo_avulso() {
     destino_local="$(printf '%s' "$destino_local" | LC_ALL=C tr -cd ' -~')"
 
     if [[ -z "$destino_local" ]]; then
-        destino_local="${DEFAULT_RECEBE_DIR:-}"
+        destino_local="${CFG_PORTALSAV:-}"
     fi
 
     # SEGURANCA: bloquear path traversal e caracteres perigosos no destino
@@ -933,7 +933,7 @@ _executar_expurgador() {
         "${DEFAULT_BIBLIOTECA_ATUAL_DIR}/"
         "${DEFAULT_PROGS_DIR}/"
         "${DEFAULT_ENVIA_DIR}/"
-        "${DEFAULT_RECEBE_DIR}/"
+        "${CFG_PORTALSAV}/"
         "${DEFAULT_BASEBACKUP_DIR}/"
         "${DEFAULT_OLDS_DIR}/"
         "${DEFAULT_LOGS_DIR}/"

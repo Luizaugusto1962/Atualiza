@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:25/08/2026-01
+# Versao:30/08/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -114,7 +114,7 @@ declare -A _MAPA_VARIAVEIS=(
     ["DEFAULT_PROGS_DIR"]="CAMINHOS"
     ["DEFAULT_OLDS_DIR"]="CAMINHOS"
     ["DEFAULT_ENVIA_DIR"]="CAMINHOS"
-    ["DEFAULT_RECEBE_DIR"]="CAMINHOS"
+    ["CFG_PORTALSAV"]="CAMINHOS"
     ["UMADATA"]="CAMINHOS"
     ["E_EXEC"]="CAMINHOS"
     ["T_TELAS"]="CAMINHOS"
@@ -242,7 +242,7 @@ _configurar_diretorios() {
                "${DEFAULT_PROGS_DIR}"
                "${DEFAULT_OLDS_DIR}"
                "${DEFAULT_ENVIA_DIR}"
-               "${DEFAULT_RECEBE_DIR}"
+               "${CFG_PORTALSAV}"
     )
 
     local dir

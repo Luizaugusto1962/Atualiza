@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/08/2026-02
+# Versao: 30/08/2026-02
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -97,7 +97,7 @@ _atualizar_transpc() {
 _atualizar_biblioteca_offline() {
     clear
        _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Diretorio de download: ${NORMAL}${DEFAULT_RECEBE_DIR}"
+    _exibir_mensagem_centralizada "${AMARELO}" "Diretorio de download: ${NORMAL}${CFG_PORTALSAV}"
      _solicitar_versao_biblioteca
 
     if [[ -z "${VERSAO}" ]]; then
@@ -108,7 +108,7 @@ _atualizar_biblioteca_offline() {
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
             if ! _processar_biblioteca_offline; then
                 _erro "Falha ao processar biblioteca offline."
-                _aviso "Verifique se os arquivos estao no diretorio: ${DEFAULT_RECEBE_DIR}"
+                _aviso "Verifique se os arquivos estao no diretorio: ${CFG_PORTALSAV}"
                 _linha "-" "${VERMELHO}"
                 _aguardar_tecla
                 return 1
@@ -165,11 +165,11 @@ _reverter_biblioteca() {
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
 _processar_biblioteca_offline() {
-    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio %s\n" "${DEFAULT_RECEBE_DIR}" >&2
+    _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        _erro "Ao criar diretorio %s\n" "${CFG_PORTALSAV}" >&2
         return 1
     }
-    cd "$DEFAULT_RECEBE_DIR" || return 1
+    cd "$CFG_PORTALSAV" || return 1
 
     _definir_variaveis_biblioteca
 
@@ -178,7 +178,7 @@ _processar_biblioteca_offline() {
 
     local arquivos_encontrados=0
     for arquivo in "${arquivos_update[@]}"; do
-        if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
+        if [[ -f "${CFG_PORTALSAV}/${arquivo}" ]]; then
             _exibir_mensagem_centralizada "${VERDE}" "Arquivo encontrado: ${arquivo}"
             _linha
             ((arquivos_encontrados++)) || true
@@ -188,7 +188,7 @@ _processar_biblioteca_offline() {
     done
 
     if (( arquivos_encontrados == 0 )); then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum arquivo de atualizacao encontrado em ${DEFAULT_RECEBE_DIR}"
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum arquivo de atualizacao encontrado em ${CFG_PORTALSAV}"
         _aguardar_tecla
         return 1
     fi
@@ -199,12 +199,12 @@ _processar_biblioteca_offline() {
 
 # Salva atualizacao da biblioteca
 _salvar_atualizacao_biblioteca() {
-    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-        _erro "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+    if [[ -z "${CFG_PORTALSAV}" ]]; then
+        _erro "ERRO: CFG_PORTALSAV nao configurado"
         return 1
     fi
 
-    cd "${DEFAULT_RECEBE_DIR}" || return 1
+    cd "${CFG_PORTALSAV}" || return 1
 
     clear
     _definir_variaveis_biblioteca
@@ -315,13 +315,13 @@ _processar_atualizacao_biblioteca() {
 # Executa a atualizacao da biblioteca
 _executar_atualizacao_biblioteca() {
     # Validar diretorio de recebimento
-    if [[ -z "${DEFAULT_RECEBE_DIR:-}" ]]; then
-        _erro "Diretorio $DEFAULT_RECEBE_DIR nao configurado"
+    if [[ -z "${CFG_PORTALSAV:-}" ]]; then
+        _erro "Diretorio $CFG_PORTALSAV nao configurado"
         return 1
     fi
 
     # Ir para o diretório onde estao os arquivos
-    cd "${DEFAULT_RECEBE_DIR}" || return 1
+    cd "${CFG_PORTALSAV}" || return 1
 
     _definir_variaveis_biblioteca
 
@@ -374,7 +374,7 @@ _executar_atualizacao_biblioteca() {
     _linha
 
     # Ir para o diretorio de recebimento para renomear arquivos
-    cd "${DEFAULT_RECEBE_DIR}" || return 1
+    cd "${CFG_PORTALSAV}" || return 1
 
     # Mover arquivos .zip para .bkp
     shopt -s nullglob

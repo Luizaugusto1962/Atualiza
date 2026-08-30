@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-01
+# Versao: 30/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -267,10 +267,10 @@ _baixar_biblioteca_sincroniza() {
 
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
     if (
-        cd "${DEFAULT_RECEBE_DIR:-}" || return 1
+        cd "${CFG_PORTALSAV:-}" || return 1
 
         # SEGURANCA: Validar diretorio de recebimento
-        if ! _validar_caminho_seguro "${DEFAULT_RECEBE_DIR:-}"; then
+        if ! _validar_caminho_seguro "${CFG_PORTALSAV:-}"; then
             _log_erro "Erro: Diretorio de recebimento invalido."
             return 1
         fi
@@ -339,7 +339,7 @@ _baixar_biblioteca_sincroniza() {
 
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
-    local caminho="${1:-${DEFAULT_RECEBE_DIR}}"
+    local caminho="${1:-${CFG_PORTALSAV}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
@@ -352,7 +352,7 @@ _baixar_programas_vaievem() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Realizando sincronizacao dos arquivos..."
     if (
-        cd "${DEFAULT_RECEBE_DIR:-}" || return 1
+        cd "${CFG_PORTALSAV:-}" || return 1
         for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
             _linha
             _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"

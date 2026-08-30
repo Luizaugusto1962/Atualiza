@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 26/08/2026-01
+# Versao: 30/08/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -127,7 +127,7 @@ fi
 # CONFIGURACOES DIRETORIO DE BACKUP OFFLINE
 # =============================================================================
 
-CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/Atualiza}"   # Diretorio do portal de atualizacao offline
+CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/atualiza}"   # Diretorio do portal de atualizacao offline
 
 # =============================================================================
 # CONFIGURACOES DO SISTEMA (variaveis do .config)
@@ -195,7 +195,7 @@ DEFAULT_BIBLIOTECA_DIR="${DEFAULT_BIBLIOTECA_DIR:-${SCRIPT_DIR}/biblioteca/anter
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-${SCRIPT_DIR}/programas/atual}"
 DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-${SCRIPT_DIR}/programas/anterior}"
 DEFAULT_ENVIA_DIR="${DEFAULT_ENVIA_DIR:-${SCRIPT_DIR}/enviar}"
-DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-${SCRIPT_DIR}/receber}"
+# DEFAULT_RECEBE_DIR removido — usar CFG_PORTALSAV
 
 # =============================================================================
 # COMANDOS EXTERNOS PADRAO
@@ -267,7 +267,7 @@ export DEFAULT_READ_TIMEOUT DEFAULT_PRESS_TIMEOUT SSH_ALIVE_INTERVAL SSH_ALIVE_C
 export DEFAULT_COLUMNS DEFAULT_LINES
 export DEFAULT_BACKUP_DIR DEFAULT_LOGS_DIR DEFAULT_CONFIG_DIR DEFAULT_LIBS_DIR
 export DEFAULT_BIBLIOTECA_DIR DEFAULT_BIBLIOTECA_ATUAL_DIR DEFAULT_BASEBACKUP_DIR
-export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR DEFAULT_RECEBE_DIR
+export DEFAULT_OLDS_DIR DEFAULT_PROGS_DIR DEFAULT_ENVIA_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
 export DEFAULT_TAR DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND
 export SAVISC ISCCLIENT JUTIL REBUILD

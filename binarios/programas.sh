@@ -6,13 +6,13 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/08/2026-02
+# Versao: 30/08/2026-01
 #
 
 # Variaveis globais esperadas
 compilado="${compilado:-class}"                 # Sufixo para arquivos compilados
 debugado="${debugado:-mclass}"                  # Sufixo para arquivos em depuração
-DEFAULT_RECEBE_DIR="${DEFAULT_RECEBE_DIR:-}"    # Diretorio de recebimento de arquivos
+CFG_PORTALSAV="${CFG_PORTALSAV:-}"    # Diretorio de recebimento de arquivos
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
@@ -68,9 +68,6 @@ _atualizar_programa_online() {
 # Atualizacao de programas via arquivos offline
 _atualizar_programa_offline() {
 
-    # Traz arquivos da pasta /portalsav/Atualiza para receber.
-    _enviabackup_para_receber || true
-
     # Solicitar programas a serem atualizados
     _solicitar_programas_atualizacao
 
@@ -83,7 +80,7 @@ _atualizar_programa_offline() {
     fi
 
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${DEFAULT_RECEBE_DIR}"
+    _exibir_mensagem_centralizada "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${CFG_PORTALSAV}"
     _linha
     _aguardar 0
 
@@ -110,9 +107,6 @@ _atualizar_programa_offline() {
 
 # Atualizacao de programas em pacotes
 _atualizar_programa_pacote() {
-
-    # Traz arquivos da pasta /portalsav/Atualiza para receber.
-    _enviabackup_para_receber || true
 
     _solicitar_pacotes_atualizacao
 
@@ -429,8 +423,8 @@ _solicitar_pacotes_atualizacao() {
 # Baixa pacotes para diretorio especifico
 _baixar_pacotes_vaievem() {
     if (
-        cd "${DEFAULT_RECEBE_DIR}" || {
-            _erro "Erro: Diretorio ${DEFAULT_RECEBE_DIR} nao encontrado"
+        cd "${CFG_PORTALSAV}" || {
+            _erro "Erro: Diretorio ${CFG_PORTALSAV} nao encontrado"
             _aguardar 2
             exit 1
         }
@@ -449,7 +443,7 @@ _verificar_arquivos_offline() {
     local erros_encontrados=0
     local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if [[ -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
+        if [[ -f "${CFG_PORTALSAV}/${arquivo}" ]]; then
             _exibir_mensagem_centralizada "${VERDE}" "Arquivo encontrado: ${arquivo}"
         else
             _erro "Arquivo nao encontrado: ${arquivo}"
@@ -463,8 +457,8 @@ _verificar_arquivos_offline() {
 # Valida pre-requisitos comuns antes de qualquer atualizacao
 # Retorna: 0 se valido, 1 se erro
 _validar_pre_requisitos_atualizacao() {
-    if [[ -z "${DEFAULT_RECEBE_DIR}" ]]; then
-        _erro "ERRO: DEFAULT_RECEBE_DIR nao configurado"
+    if [[ -z "${CFG_PORTALSAV}" ]]; then
+        _erro "ERRO: CFG_PORTALSAV nao configurado"
         return 1
     fi
 
@@ -487,8 +481,8 @@ _validar_pre_requisitos_atualizacao() {
 
     # Verificar espaco em disco antes de operacoes de extracao
     if command -v _verificar_espaco_disco >/dev/null 2>&1; then
-        if ! _verificar_espaco_disco "${DEFAULT_RECEBE_DIR}"; then
-            _erro "ERRO: Espaco em disco insuficiente em ${DEFAULT_RECEBE_DIR}"
+        if ! _verificar_espaco_disco "${CFG_PORTALSAV}"; then
+            _erro "ERRO: Espaco em disco insuficiente em ${CFG_PORTALSAV}"
             return 1
         fi
     fi
@@ -496,8 +490,8 @@ _validar_pre_requisitos_atualizacao() {
     # Verificar se arquivos existem no diretorio de recebimento
     local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if [[ ! -f "${DEFAULT_RECEBE_DIR}/${arquivo}" ]]; then
-            _erro "Arquivo nao encontrado: ${DEFAULT_RECEBE_DIR}/${arquivo}"
+        if [[ ! -f "${CFG_PORTALSAV}/${arquivo}" ]]; then
+            _erro "Arquivo nao encontrado: ${CFG_PORTALSAV}/${arquivo}"
             return 1
         fi
     done
@@ -517,7 +511,7 @@ _processar_atualizacao_programas() {
     _cwd="$(pwd)"
 
     # Criar diretorio temporario para extracao
-    local dir_temp_atualizacao="${DEFAULT_RECEBE_DIR}/dir_temp_atualizacao"
+    local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
     rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
     if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
@@ -527,7 +521,7 @@ _processar_atualizacao_programas() {
     # Mover arquivos para o diretorio temporario e acessa-lo
     local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! mv -f "${DEFAULT_RECEBE_DIR}/${arquivo}" "${dir_temp_atualizacao}/"; then
+        if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
             cd "$_cwd" || true
             rm -rf "${dir_temp_atualizacao}"
@@ -607,7 +601,7 @@ _processar_atualizacao_programas() {
     fi
 
     # Limpar diretorio temporario
-    cd "${DEFAULT_RECEBE_DIR}" || true
+    cd "${CFG_PORTALSAV}" || true
     rm -rf "${dir_temp_atualizacao}"
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
@@ -628,8 +622,8 @@ _processar_atualizacao_pacotes() {
     _cwd="$(pwd)"
 
     # Acessar diretorio de recebimento
-    if ! cd "${DEFAULT_RECEBE_DIR}"; then
-        _erro "Falha ao acessar diretorio de recebimento ${DEFAULT_RECEBE_DIR}"
+    if ! cd "${CFG_PORTALSAV}"; then
+        _erro "Falha ao acessar diretorio de recebimento ${CFG_PORTALSAV}"
         return 1
     fi
 
@@ -709,8 +703,8 @@ _processar_atualizacao_pacotes() {
 
 # Processa reversao de programas
 _processar_reversao_programas() {
-    _criar_diretorio_seguro "${DEFAULT_RECEBE_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Erro ao criar diretorio de configuracao ${DEFAULT_RECEBE_DIR}" >&2
+    _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+        _erro "Erro ao criar diretorio de configuracao ${CFG_PORTALSAV}" >&2
         return 1
     }
 
@@ -726,7 +720,7 @@ _processar_reversao_programas() {
                 return 1
             fi
 
-            if ! mv -f "$arquivo_anterior" "${DEFAULT_RECEBE_DIR}/${programa}${compilado}.zip"; then
+            if ! mv -f "$arquivo_anterior" "${CFG_PORTALSAV}/${programa}${compilado}.zip"; then
                 _erro "Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
