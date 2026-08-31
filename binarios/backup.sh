@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 31/08/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -28,7 +28,8 @@ _limpar_backup() {
 # Retorna: 0 se valido, 1 se erro
 _validar_pre_backup() {
 
-    local -n _base_ref="$1"   # nameref para definir base_trabalho no chamador
+    # Compatibilidade: local -n exige Bash 4.4+; ${!var} funciona em 4.2+
+    local _base_ref="${!1}"
 
     # Validar comando de compactacao
     if [[ -z "$DEFAULT_ZIP" ]]; then

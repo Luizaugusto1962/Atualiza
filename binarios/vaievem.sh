@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 31/08/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -64,23 +64,24 @@ _usar_chave_ssh() {
 # Uso: _montar_cmd_scp <nome_array_ref> <porta> [timeout] [alive_interval] [alive_count]
 #   Os tres ultimos defaultam para SSH_TIMEOUT/SSH_ALIVE_INTERVAL/SSH_ALIVE_COUNT.
 _montar_cmd_scp() {
-    local -n _cmd_ref=$1
+    # Compatibilidade: local -n exige Bash 4.4+; eval funciona em 4.2+
+    eval "local _cmd_ref=$1"
     local porta="${2:-}"
     local timeout="${3:-${SSH_TIMEOUT}}"
     local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"
     local alive_max="${5:-${SSH_ALIVE_COUNT}}"
 
-    _cmd_ref=(
+    eval "${_cmd_ref}=(
         scp
-        -P "$porta"
-        -o "ConnectTimeout=${timeout}"
-        -o "ServerAliveInterval=${alive_int}"
-        -o "ServerAliveCountMax=${alive_max}"
-        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
-    )
+        -P \"${porta}\"
+        -o \"ConnectTimeout=${timeout}\"
+        -o \"ServerAliveInterval=${alive_int}\"
+        -o \"ServerAliveCountMax=${alive_max}\"
+        -o \"StrictHostKeyChecking=$(_ssh_aceitar_novo)\"
+    )"
 
     if _usar_chave_ssh; then
-        _cmd_ref+=("-i" "$CHAVE" "-o" "BatchMode=yes")
+        eval "${_cmd_ref}+=(-i \"${CHAVE}\" -o \"BatchMode=yes\")"
     fi
 }
 
