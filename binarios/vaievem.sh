@@ -65,7 +65,7 @@ _usar_chave_ssh() {
 #   Os tres ultimos defaultam para SSH_TIMEOUT/SSH_ALIVE_INTERVAL/SSH_ALIVE_COUNT.
 _montar_cmd_scp() {
     # Compatibilidade: local -n exige Bash 4.4+; eval funciona em 4.2+
-    eval "local _cmd_ref=$1"
+    local _cmd_ref="$1"
     local porta="${2:-}"
     local timeout="${3:-${SSH_TIMEOUT}}"
     local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"
