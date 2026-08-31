@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 31/08/2026-01
+# Versao: 31/08/2026-02
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -322,7 +322,7 @@ _executar_backup_completo() {
     fi
 
     # Definir permissao do arquivo backup (apos todas as operacoes de zip)
-    chmod "$PERM_FILE_PRIVATE" "$arquivo_destino" 2>/dev/null || true
+    chmod "$PERM_FILE_EXEC" "$arquivo_destino" 2>/dev/null || true
 
     # Validar backup criado
     if ! _validar_backup_criado "$arquivo_destino"; then
@@ -404,7 +404,7 @@ _executar_backup_incremental() {
     fi
 
     # Definir permissao do arquivo backup
-    chmod "$PERM_FILE_PRIVATE" "$arquivo_destino" 2>/dev/null || true
+    chmod "$PERM_FILE_EXEC" "$arquivo_destino" 2>/dev/null || true
 
     _log_sucesso "Backup incremental criado: $arquivo_destino"
     return 0
@@ -979,7 +979,7 @@ _executar_backup_multiplos_padroes() {
     fi
 
     # Definir permissao do arquivo backup
-    chmod "$PERM_FILE_PRIVATE" "$caminho_backup" 2>/dev/null || true
+    chmod "$PERM_FILE_EXEC" "$caminho_backup" 2>/dev/null || true
 
     # Verificar se o backup foi criado
     if [[ ! -f "$caminho_backup" ]]; then
