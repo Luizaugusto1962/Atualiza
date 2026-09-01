@@ -408,7 +408,8 @@ _configure_ssh_access() {
 
     # Cria os diretorios padrao
     mkdir -p "${dir_ssh}" "${base_caminho}"
-    chmod "${PERM_DIR_SECURE}" "${dir_ssh}" "${base_caminho}"
+    chmod 0700 "${dir_ssh}"           # ~/.ssh deve ser 0700 para o OpenSSH aceitar as chaves
+    chmod "${PERM_DIR_SECURE}" "${base_caminho}"
 
     # ====================== CRIA NOVO ARQUIVO ~/.ssh/config ======================
     echo "Criando novo arquivo de configuracao SSH em ${arquivo_confg_ssh}..."
