@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 01/09/2026-01
 #
 
 # Variaveis globais esperadas
@@ -621,17 +621,39 @@ _processar_atualizacao_pacotes() {
     local _cwd
     _cwd="$(pwd)"
 
-    # Acessar diretorio de recebimento
-    if ! cd "${CFG_PORTALSAV}"; then
-        _erro "Falha ao acessar diretorio de recebimento ${CFG_PORTALSAV}"
+    # Criar diretorio temporario para extracao isolada
+    local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
+    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
         return 1
     fi
 
-    # Descompactar pacotes
+    # Mover pacotes para o diretorio temporario
+    local arquivo
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
+            _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
+            cd "$_cwd" || true
+            rm -rf "${dir_temp_atualizacao}"
+            return 1
+        fi
+    done
+
+    # Acessar diretorio temporario
+    if ! cd "${dir_temp_atualizacao}"; then
+        _erro "ERRO: Falha ao acessar diretorio temporario"
+        cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
+        return 1
+    fi
+
+    # Descompactar pacotes no diretorio isolado
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
             cd "$_cwd" || true
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -642,6 +664,7 @@ _processar_atualizacao_pacotes() {
         if [[ ! -f "${arquivo_zip}" ]]; then
             _erro "Pacote nao encontrado apos extracao: ${arquivo_zip}"
             cd "$_cwd" || true
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
 
@@ -650,6 +673,7 @@ _processar_atualizacao_pacotes() {
         if [[ -z "${lista_arquivos}" ]]; then
             _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
             cd "$_cwd" || true
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
 
@@ -658,16 +682,41 @@ _processar_atualizacao_pacotes() {
             if [[ ! -f "${nome_arquivo}" ]]; then
                 _erro "Arquivo ${nome_arquivo} extraido do pacote ${arquivo_zip} nao encontrado"
                 cd "$_cwd" || true
+                rm -rf "${dir_temp_atualizacao}"
                 return 1
             fi
         done <<< "${lista_arquivos}"
     done
 
-    # Backup dos programas antigos com rotacao (helper compartilhado com programas)
-    local programa_indice
-    for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
-        if ! _backup_programa_antigo "${PROGRAMAS_SELECIONADOS[$programa_indice]}"; then
+    # Extrair nomes dos programas dos arquivos descompactados e fazer backup dos antigos
+    local -A programas_encontrados=()
+    local nome_base programa
+    shopt -s nullglob
+    for f in *."${EXTENSAO_CLASS}" *."${EXTENSAO_TELAS}"; do
+        nome_base="${f%%.*}"
+        programas_encontrados["$nome_base"]=1
+    done
+    shopt -u nullglob
+
+    if (( ${#programas_encontrados[@]} == 0 )); then
+        _erro "Nenhum arquivo .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} encontrado nos pacotes"
+        cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
+        return 1
+    fi
+
+    _linha
+    _aviso "Programas encontrados nos pacotes:"
+    for programa in "${!programas_encontrados[@]}"; do
+        _exibir_mensagem_centralizada "${VERDE}" "  - ${programa}"
+    done
+    _linha
+
+    # Backup dos programas antigos (preserva arquivos atuais em E_EXEC/T_TELAS)
+    for programa in "${!programas_encontrados[@]}"; do
+        if ! _backup_programa_antigo "${programa}"; then
             cd "$_cwd" || true
+            rm -rf "${dir_temp_atualizacao}"
             return 1
         fi
     done
@@ -680,6 +729,7 @@ _processar_atualizacao_pacotes() {
     # Mover arquivos para diretorios corretos (helper compartilhado com programas)
     if ! _mover_arquivos_extraidos; then
         cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
         return 1
     fi
 
@@ -690,11 +740,13 @@ _processar_atualizacao_pacotes() {
     # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com programas)
     if ! _arquivar_zips_progs_dir; then
         cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
         return 1
     fi
 
-    # #1: restaurar cwd original
-    cd "$_cwd" || true
+    # Limpar diretorio temporario
+    cd "${CFG_PORTALSAV}" || true
+    rm -rf "${dir_temp_atualizacao}"
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha

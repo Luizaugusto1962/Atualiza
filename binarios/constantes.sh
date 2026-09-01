@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 01/092026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
