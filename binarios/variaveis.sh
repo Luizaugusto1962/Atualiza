@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 02/09/2026-01
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -20,8 +20,6 @@ set -euo pipefail
 # Evita redefinir variaveis ja estabelecidas por constantes.sh / config.sh
 
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
-LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"
-CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"
 CONFIG_FILE="${CONFIG_FILE:-${CFG_DIR}/.config}"
 BOLD="$(tput bold 2>/dev/null || true)"
 # =============================================================================

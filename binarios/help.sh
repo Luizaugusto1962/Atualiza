@@ -6,11 +6,8 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/07/2026-01
+# Versao: 02/09/2026-01
 #
-
-# Variaveis globais esperadas
-CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracoes
 
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
 

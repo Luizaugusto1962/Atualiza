@@ -6,12 +6,9 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/08/2026-01
+# Versao: 02/09/2026-01
 # Autor: Luiz Augusto
 #
-
-# Variaveis globais esperadas
-CFG_DIR="${CFG_DIR:-}"                 # Diretorio de configuracao
 
 # Arquivo de senhas oculto — avaliado sob demanda em vez de tempo de source
 arquivo_senhas="${CFG_DIR:-}/.senhas"

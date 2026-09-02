@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:30/08/2026-01
+# Versao:02/09/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -14,7 +14,6 @@ set -euo pipefail
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"
 DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"
 RAIZ="${RAIZ:-}"
-CFG_DIR="${CFG_DIR:-}"
 REBUILD="${REBUILD:-}"
 compilado="${compilado:-}"
 debugado="${debugado:-}"
