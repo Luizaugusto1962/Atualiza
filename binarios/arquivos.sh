@@ -176,11 +176,6 @@ _validar_padrao_limpeza() {
         return 1
     fi
 
-    # Rejeitar caracteres fora do conjunto permitido (sem wildcards para seguranca)
-    if [[ ! "$padrao" =~ ^[A-Za-z0-9._-]+$ ]]; then
-        return 1
-    fi
-
     # Rejeitar padroes amplos demais que varreriam toda a base
     case "$padrao" in
         '*'|'**'|'*.*'|'**.*'|'*.**'|'.') return 1 ;;
