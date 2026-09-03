@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-02
+# Versao: 03/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -302,7 +302,7 @@ _aguardar_tecla() {
 
     colunas=$(_obter_colunas)
 
-    printf "%s" "${AMARELO}"
+    printf "%s" "${CIANO}"
     printf "%*s\n" $(((36 + colunas) / 2)) "<< $mensagem >>"
     printf "%s" "${NORMAL}"
     read -rt "$tempo_limite" || :
