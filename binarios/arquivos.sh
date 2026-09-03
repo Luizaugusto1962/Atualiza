@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 03/09/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -14,6 +14,64 @@ CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Caminho do diretorio da tercei
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 DATA_EXTENSIONS=()                              # Extensoes de arquivos de dados a processar
+
+# =============================================================================
+# FUNCOES AUXILIARES
+# =============================================================================
+
+# Sanitiza entrada do usuario, removendo bytes nao-ASCII e espacos
+# Parametros: $1 - entrada a ser sanitizada
+# Retorna: entrada sanitizada
+_sanitizar_entrada() {
+    local entrada="$1"
+    printf '%s' "$entrada" | LC_ALL=C tr -cd ' -~'
+}
+
+# Valida e configura diretorio de backup para operacoes de limpeza
+# Retorna: 0 se valido, 1 se invalido
+_validar_diretorio_backup() {
+    local dir="${DEFAULT_BACKUP_DIR:-}"
+
+    if [[ -z "$dir" || "$dir" == "/" || "$dir" == "//" ]]; then
+        return 1
+    fi
+
+    if ! _validar_caminho_seguro "$dir"; then
+        return 1
+    fi
+
+    if [[ ! -d "$dir" ]]; then
+        return 1
+    fi
+
+    return 0
+}
+
+# Valida e configura diretorio de trabalho para operacoes de arquivos
+# Parametros: $1 - diretorio a validar (opcional, usa base_trabalho se nao fornecido)
+# Retorna: 0 se valido, 1 se invalido
+_validar_diretorio_trabalho() {
+    local dir="${1:-${base_trabalho:-}}"
+
+    if [[ -z "$dir" ]]; then
+        return 1
+    fi
+
+    if ! _validar_caminho_seguro "$dir"; then
+        return 1
+    fi
+
+    if [[ ! -d "$dir" ]]; then
+        return 1
+    fi
+
+    if [[ ! -r "$dir" ]]; then
+        return 1
+    fi
+
+    return 0
+}
+
 #---------- FUNCOES DE LIMPEZA -----------------#
 
 # Resolve a base de trabalho ativa para operacoes de arquivos
@@ -31,6 +89,7 @@ _selecionar_base_arquivos() {
     # Validar antes de prosseguir
     if [[ -z "${base_trabalho}" ]]; then
         _erro "Diretorio de trabalho nao foi definido"
+        _linha
         _aguardar_tecla
         return 1
     fi
@@ -38,18 +97,21 @@ _selecionar_base_arquivos() {
     # SEGURANCA: bloquear path traversal e caracteres perigosos na base de trabalho
     if ! _validar_caminho_seguro "${base_trabalho}"; then
         _erro "Caminho da base invalido ou malicioso: ${base_trabalho}"
+        _linha
         _aguardar_tecla
         return 1
     fi
 
     if [[ ! -d "${base_trabalho}" ]]; then
         _erro "Diretorio ${base_trabalho} nao encontrado"
+        _linha
         _aguardar_tecla
         return 1
     fi
 
     if [[ ! -r "${base_trabalho}" ]]; then
         _erro "Sem permissao de leitura em ${base_trabalho}"
+        _linha
         _aguardar_tecla
         return 1
     fi
@@ -60,19 +122,6 @@ _selecionar_base_arquivos() {
 
 # Executa limpeza de arquivos temporarios
 _executar_limpeza_temporarios() {
-
-#    # Excluir arquivos de lista antigos para evitar confusao
-#    for lista in "atualizal" "atualizaj" "atualizaj2" "atualizat" "atualizat2" ".atualizac" ".atualizac.bkp" ".atualizac.bak"; do
-#        local caminho_lista="${CFG_DIR}/${lista}"
-#        if [[ -f "${caminho_lista}" ]]; then
-#            if rm -f "${caminho_lista}"; then
-#                _log "Lista temporaria removida: ${lista}"
-#            else
-#                _log "AVISO: Falha ao remover lista temporaria: ${lista}"
-#            fi
-#        fi
-#    done
-
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
     if [[ ! -f "${arquivo_lista}" ]]; then
@@ -87,9 +136,8 @@ _executar_limpeza_temporarios() {
 
     local arquivo_lista2="${CFG_DIR}/limpetmp2"
 
-    # Limpar temporarios antigos do backup (com guarda de seguranca contra diretorio invalido/raiz)
-    if [[ -z "${DEFAULT_BACKUP_DIR:-}" || "${DEFAULT_BACKUP_DIR}" == "/" || "${DEFAULT_BACKUP_DIR}" == "//" ]] \
-        || ! _validar_caminho_seguro "${DEFAULT_BACKUP_DIR}"; then
+    # Limpar temporarios antigos do backup
+    if ! _validar_diretorio_backup; then
         _aviso "Diretorio de backup invalido ou inseguro para limpeza, pulando: ${DEFAULT_BACKUP_DIR:-vazio}"
         _aguardar 2
     else
@@ -128,8 +176,8 @@ _validar_padrao_limpeza() {
         return 1
     fi
 
-    # Rejeitar caracteres fora do conjunto permitido (glob seguro)
-    if [[ ! "$padrao" =~ ^[A-Za-z0-9._*?-]+$ ]]; then
+    # Rejeitar caracteres fora do conjunto permitido (sem wildcards para seguranca)
+    if [[ ! "$padrao" =~ ^[A-Za-z0-9._-]+$ ]]; then
         return 1
     fi
 
@@ -154,8 +202,8 @@ _limpar_base_especifica() {
         return 1
     fi
 
-    if [[ ! -d "$caminho_base" ]]; then
-        _erro "Diretorio nao existe: $caminho_base"
+    if ! _validar_diretorio_trabalho "$caminho_base"; then
+        _erro "Diretorio invalido ou inacessivel: $caminho_base"
         return 1
     fi
 
@@ -164,14 +212,9 @@ _limpar_base_especifica() {
         return 1
     fi
 
-    # SEGURANCA: validar diretorio de backup antes de compactar (falha graciosa)
-    if [[ -z "${DEFAULT_BACKUP_DIR:-}" || "${DEFAULT_BACKUP_DIR}" == "/" || "${DEFAULT_BACKUP_DIR}" == "//" ]] \
-        || ! _validar_caminho_seguro "${DEFAULT_BACKUP_DIR}"; then
+    # Validar diretorio de backup
+    if ! _validar_diretorio_backup; then
         _erro "Diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}"
-        return 1
-    fi
-    if [[ ! -d "${DEFAULT_BACKUP_DIR}" ]]; then
-        _erro "Diretorio de backup nao encontrado: ${DEFAULT_BACKUP_DIR}"
         return 1
     fi
 
@@ -197,9 +240,11 @@ _limpar_base_especifica() {
             continue
         fi
 
-        # Coletar arquivos de uma unica vez — mesma lista usada no zip e no rm
-        # -maxdepth 1: restringe a busca ao diretorio da base (evita varredura recursiva)
-        mapfile -t arquivos_zip < <(find "${caminho_base:-.}" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0)
+        # Coletar arquivos de forma segura (suporte a nomes com espacos)
+        arquivos_zip=()
+        while IFS= read -r -d '' arquivo; do
+            arquivos_zip+=("$arquivo")
+        done < <(find "${caminho_base:-.}" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0 -print0)
         qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
@@ -244,21 +289,16 @@ _adicionar_arquivo_lixo() {
     read -rp "${AMARELO}Qual o arquivo -> ${NORMAL}" novo_arquivo
     _linha
 
+    novo_arquivo=$(_sanitizar_entrada "$novo_arquivo")
+
     if [[ -z "$novo_arquivo" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nome de arquivo nao informado"
         _aguardar_tecla
         return 1
     fi
 
-    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._*-]+$ ]]; then
-        _erro "Nome de arquivo invalido. Use apenas letras, numeros, pontos, hifens ou '*'."
-        _aguardar_tecla
-        return 1
-    fi
-
-# Bloquear wildcards globais se não for intenção
-    if [[ "$novo_arquivo" == *"*"* || "$novo_arquivo" == *"?"* ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Wildcards '*' ou '?' nao sao permitidos aqui por seguranca."
+    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        _erro "Nome de arquivo invalido. Use apenas letras, numeros, pontos e hifens."
         _aguardar_tecla
         return 1
     fi
@@ -365,40 +405,50 @@ _recuperar_arquivo_especifico() {
 
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
+    local old_nullglob
+
     local base_trabalho="$1"
     local -a extensoes=("${DATA_EXTENSIONS[@]:-*.dat}")
     _exibir_mensagem_centralizada "${VERMELHO}" "Recuperando todos os arquivos principais..."
     _linha "-" "${AMARELO}"
 
-    if [[ -d "$base_trabalho" ]]; then
-        shopt -s nullglob
-        for extensao in "${extensoes[@]}"; do
-            for arquivo in ${base_trabalho}/${extensao}; do
-                if [[ -L "$arquivo" ]]; then
-                    _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
-                    _linha "-" "${VERDE}"
-                elif [[ -f "$arquivo" && -s "$arquivo" ]]; then
-                    _executar_jutil "$arquivo"
-                else
-                    _aviso "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
-                    _linha "-" "${VERDE}"
-                fi
-            done
-        done
-        shopt -u nullglob
-    else
-        _erro "Diretorio ${base_trabalho} nao existe"
+    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+        _erro "Diretorio ${base_trabalho} nao existe ou e inacessivel"
         return 1
     fi
+    local old_nullglob
+    old_nullglob=$(shopt -p nullglob)
+    shopt -s nullglob
+    for extensao in "${extensoes[@]}"; do
+        for arquivo in ${base_trabalho}/${extensao}; do
+            if [[ -L "$arquivo" ]]; then
+                _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
+                _linha "-" "${VERDE}"
+            elif [[ -f "$arquivo" && -s "$arquivo" ]]; then
+                _executar_jutil "$arquivo"
+            else
+                _aviso "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
+                _linha "-" "${VERDE}"
+            fi
+        done
+    done
+    eval "$old_nullglob"
     return 0
 }
 
 # Recupera arquivo individual
 _recuperar_arquivo_individual() {
+    local old_nullglob
+    local old_nocaseglob
     local nome_arquivo="$1"
     local base_trabalho="$2"
 
     # Validar nome do arquivo
+    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio de trabalho invalido."
+        return 1
+    fi
+
     # Converter para maiusculo e remover espacos
     nome_arquivo="${nome_arquivo^^}"
     nome_arquivo="${nome_arquivo//[[:space:]]/}"
@@ -417,8 +467,9 @@ _recuperar_arquivo_individual() {
     local arquivos_encontrados=0
     local arquivo
 
-    shopt -s nullglob
-    shopt -s nocaseglob
+    old_nullglob=$(shopt -p nullglob)
+    old_nocaseglob=$(shopt -p nocaseglob)
+    shopt -s nullglob nocaseglob
     for arquivo in ${base_trabalho}/${padrao_arquivo}; do
         if [[ -L "$arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
@@ -428,8 +479,8 @@ _recuperar_arquivo_individual() {
             ((arquivos_encontrados++)) || true
         fi
     done
-    shopt -u nullglob
-    shopt -u nocaseglob
+    eval "$old_nullglob"
+    eval "$old_nocaseglob"
 
     if (( arquivos_encontrados == 0 )); then
         _aviso "Nenhum arquivo encontrado para: ${nome_arquivo}"
@@ -451,6 +502,11 @@ _executar_lista_arquivos() {
         return 0
     fi
 
+    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+        _erro "Diretorio de trabalho invalido: $base_trabalho"
+        return 1
+    fi
+
     clear
     _linha
     _exibir_mensagem_centralizada "${CIANO}" "Recuperando arquivos da lista 'variosarquivos'..."
@@ -459,6 +515,7 @@ _executar_lista_arquivos() {
     local total=0
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
+        linha=$(_sanitizar_entrada "$linha")
         linha="${linha#"${linha%%[![:space:]]*}"}"
         linha="${linha%"${linha##*[![:space:]]}"}"
         [[ -z "$linha" ]] && continue
@@ -522,78 +579,83 @@ _editar_lista_arquivos() {
         fi
 
         case "${opcao}" in
-            1)
-                read -rp "${AMARELO}Nome do arquivo a adicionar: ${NORMAL}" novo
-                novo=$(_trim "$novo")
-                if [[ -n "$novo" ]]; then
-                    if [[ ! "$novo" =~ ^[A-Za-z0-9._-]+$ ]]; then
-                        _aviso "Nome invalido. Use apenas letras, numeros, pontos e hifens."
-                    else
-                        echo "$novo" >> "$arquivo_lista"
-                        _ok "'${novo}' adicionado a lista"
-                    fi
-                else
-                    _aviso "Nenhum nome informado"
-                fi
-                _aguardar 1
-                ;;
-            2)
-                read -rp "${AMARELO}Numero da linha a alterar: ${NORMAL}" num
-                if [[ "$num" =~ ^[0-9]+$ ]] && (( num > 0 && num <= ${#linhas[@]} )); then
-                    read -rp "${AMARELO}Novo valor: ${NORMAL}" novo
-                    novo=$(_trim "$novo")
-                    if [[ -n "$novo" ]]; then
-                        if [[ ! "$novo" =~ ^[A-Za-z0-9._-]+$ ]]; then
-                            _aviso "Nome invalido. Use apenas letras, numeros, pontos e hifens."
-                        else
-                            local tmp_lista=()
-                            for i in "${!linhas[@]}"; do
-                                if (( i + 1 == num )); then
-                                    tmp_lista+=("$novo")
-                                else
-                                    tmp_lista+=("${linhas[$i]}")
-                                fi
-                            done
-                            printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
-                            _ok "Linha ${num} alterada"
-                        fi
-                    else
-                        _aviso "Valor vazio, operacao cancelada"
-                    fi
-                else
-                    _aviso "Numero invalido"
-                fi
-                _aguardar 1
-                ;;
-            3)
-                read -rp "${AMARELO}Numero da linha a remover: ${NORMAL}" num
-                if [[ "$num" =~ ^[0-9]+$ ]] && (( num > 0 && num <= ${#linhas[@]} )); then
-                    local tmp_lista=()
-                    for i in "${!linhas[@]}"; do
-                        if (( i + 1 != num )); then
-                            tmp_lista+=("${linhas[$i]}")
-                        fi
-                    done
-                    printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
-                    _ok "Linha ${num} removida"
-                else
-                    _aviso "Numero invalido"
-                fi
-                _aguardar 1
-                ;;
-            4)
-                _aviso "Tem certeza que deseja ZERAR toda a lista?"
-                read -rp "${AMARELO}Confirma [S/N]: ${NORMAL}" conf
-                conf=$(_trim "$conf")
-                conf="${conf^^}"
-                if [[ "$conf" == "S" ]]; then
-                    rm -f -- "$arquivo_lista" && touch "$arquivo_lista"
-                    _ok "Lista zerada com sucesso"
-                else
-                    _aviso "Operacao cancelada"
-                fi
-                _aguardar 1
-                ;;
+             1)
+                 read -rp "${AMARELO}Nome do arquivo a adicionar: ${NORMAL}" novo
+                 novo=$(_trim "$novo")
+                 novo=$(_sanitizar_entrada "$novo")
+                 if [[ -n "$novo" ]]; then
+                     if [[ ! "$novo" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                         _aviso "Nome invalido. Use apenas letras, numeros, pontos e hifens."
+                     else
+                         echo "$novo" >> "$arquivo_lista"
+                         _ok "'${novo}' adicionado a lista"
+                     fi
+                 else
+                     _aviso "Nenhum nome informado"
+                 fi
+                 _aguardar 1
+                 ;;
+             2)
+                 read -rp "${AMARELO}Numero da linha a alterar: ${NORMAL}" num
+                 num=$(_sanitizar_entrada "$num")
+                 if [[ "$num" =~ ^[0-9]+$ ]] && (( num > 0 && num <= ${#linhas[@]} )); then
+                     read -rp "${AMARELO}Novo valor: ${NORMAL}" novo
+                     novo=$(_trim "$novo")
+                     novo=$(_sanitizar_entrada "$novo")
+                     if [[ -n "$novo" ]]; then
+                         if [[ ! "$novo" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                             _aviso "Nome invalido. Use apenas letras, numeros, pontos e hifens."
+                         else
+                             local tmp_lista=()
+                             for i in "${!linhas[@]}"; do
+                                 if (( i + 1 == num )); then
+                                     tmp_lista+=("$novo")
+                                 else
+                                     tmp_lista+=("${linhas[$i]}")
+                                 fi
+                             done
+                             printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
+                             _ok "Linha ${num} alterada"
+                         fi
+                     else
+                         _aviso "Valor vazio, operacao cancelada"
+                     fi
+                 else
+                     _aviso "Numero invalido"
+                 fi
+                 _aguardar 1
+                 ;;
+             3)
+                 read -rp "${AMARELO}Numero da linha a remover: ${NORMAL}" num
+                 num=$(_sanitizar_entrada "$num")
+                 if [[ "$num" =~ ^[0-9]+$ ]] && (( num > 0 && num <= ${#linhas[@]} )); then
+                     local tmp_lista=()
+                     for i in "${!linhas[@]}"; do
+                         if (( i + 1 != num )); then
+                             tmp_lista+=("${linhas[$i]}")
+                         fi
+                     done
+                     printf '%s\n' "${tmp_lista[@]}" > "$arquivo_lista"
+                     _ok "Linha ${num} removida"
+                 else
+                     _aviso "Numero invalido"
+                 fi
+                 _aguardar 1
+                 ;;
+             4)
+                 _aviso "Tem certeza que deseja ZERAR toda a lista?"
+                 read -rp "${AMARELO}Confirma [S/N]: ${NORMAL}" conf
+                 conf=$(_trim "$conf")
+                 conf=$(_sanitizar_entrada "$conf")
+                 conf="${conf^^}"
+                 if [[ "$conf" == "S" ]]; then
+                     rm -f -- "$arquivo_lista" && touch "$arquivo_lista"
+                     _ok "Lista zerada com sucesso"
+                 else
+                     _aviso "Operacao cancelada"
+                 fi
+                 _aguardar 1
+                 ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -602,6 +664,7 @@ _editar_lista_arquivos() {
 
 # Recupera arquivos principais baseado na lista
 _recuperar_arquivos_principais() {
+    local old_nullglob
     cd "${CFG_DIR}" || return 1
 
     if ! _selecionar_base_arquivos; then
@@ -610,19 +673,20 @@ _recuperar_arquivos_principais() {
 
     # Usar valor padrão se base_trabalho estiver vazia
     base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
-    cd "$base_trabalho" || {
-        _erro "Diretorio ${base_trabalho} nao encontrado"
+    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+        _erro "Diretorio ${base_trabalho} nao encontrado ou inacessivel"
         return 1
-    }
+    fi
 
     # Gerar lista de arquivos atuais
-    local var_ano var_ano4 lista
+    local var_ano var_ano4
     var_ano=$(date +%y)
     var_ano4=$(date +%Y)
 
     # Criar lista temporaria (glob seguro em vez de ls — evita quebra por nomes com espacos/glob)
+    old_nullglob=$(shopt -p nullglob)
+    shopt -s nullglob
     {
-        shopt -s nullglob
         local arquivo_ate arquivo_nfe
         for arquivo_ate in ATE"${var_ano}"*.dat; do
             printf '%s\n' "${arquivo_ate##*/}"
@@ -630,23 +694,26 @@ _recuperar_arquivos_principais() {
         for arquivo_nfe in NFE?"${var_ano4}".*.dat; do
             printf '%s\n' "${arquivo_nfe##*/}"
         done
-        shopt -u nullglob
     } > "${CFG_DIR}/indexar2"
+    eval "$old_nullglob"
 
     cd "${CFG_DIR}" || return 1
     _aguardar 1
 
+    # Verificar se indexar2 tem conteudo antes de processar
+    if [[ -f "${CFG_DIR}/indexar2" && -s "${CFG_DIR}/indexar2" ]]; then
+        _processar_lista_arquivos "${CFG_DIR}/indexar2" "$base_trabalho"
+    fi
+
     # Verificar arquivos de lista
-    for lista in "indexar2" "indexar"; do
-        if [[ -f "$lista" && -r "$lista" ]]; then
-            _processar_lista_arquivos "$lista" "$base_trabalho"
-        fi
-    done
+    if [[ -f "${CFG_DIR}/indexar" && -r "${CFG_DIR}/indexar" ]]; then
+        _processar_lista_arquivos "${CFG_DIR}/indexar" "$base_trabalho"
+    fi
 
     # Limpar arquivo temporario
     [[ -f "${CFG_DIR}/indexar2" ]] && rm -f -- "${CFG_DIR}/indexar2"
 
-        _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
+    _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
 
     _aguardar_tecla
 }
@@ -656,16 +723,32 @@ _processar_lista_arquivos() {
     local arquivo_lista="$1"
     local base_trabalho="$2"
     local caminho_arquivo
+
+    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+        _erro "Diretorio de trabalho invalido: $base_trabalho"
+        return 1
+    fi
+
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
 
         # SEGURANCA: aceitar apenas nomes simples de arquivo .dat (sem caminho/glob/traversal)
-        if [[ "$listando" != *.dat || ! "$listando" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        if [[ "$listando" != *.dat ]]; then
+            _aviso "Entrada invalida ignorada na lista (nao e .dat): ${listando}"
+            continue
+        fi
+
+        if ! _validar_padrao_limpeza "${listando%.dat}"; then
             _aviso "Entrada invalida ignorada na lista: ${listando}"
             continue
         fi
 
         caminho_arquivo="${base_trabalho}/${listando}"
+        if ! _validar_caminho_seguro "$caminho_arquivo"; then
+            _aviso "Caminho invalido ignorado: ${caminho_arquivo}"
+            continue
+        fi
+
         if [[ -L "$caminho_arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${listando}"
         else
@@ -681,41 +764,50 @@ _executar_jutil() {
         _aviso "Arquivo linkado, pulando recuperacao: ${arquivo##*/}"
         return 0
     fi
-	if [[ -z "${REBUILD:-}" ]]; then
-        _erro "Variavel REBUILD nao configurada. Verifique o caminho do jutil em constantes.sh"
+
+    # Validar REBUILD no inicio
+    if [[ -z "${REBUILD:-}" || ! -x "${REBUILD}" ]]; then
+        _erro "Variavel REBUILD nao configurada ou nao executavel: ${REBUILD:-vazio}. Verifique constantes.sh"
         return 1
     fi
 
-    local dir_arquivo base_arquivo arquivo_indice
-	if [[ -x "${REBUILD}" ]]; then
-        if [[ -n "$arquivo" && -e "$arquivo" && -s "$arquivo" ]]; then
-            if "${REBUILD}" -rebuild "$arquivo" -a -f; then
-                _log_sucesso "Rebuild executado: ${arquivo##*/}"
-                # garantir permissões máximas após o rebuild
-                chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null || \
-                _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
-                # garantir permissões máximas nos arquivos .indice gerados pelo jutil
+    if [[ -z "$arquivo" || ! -e "$arquivo" ]]; then
+        _exibir_mensagem_centralizada "${AMARELO}" "Arquivo nao encontrado: ${arquivo:-vazio}"
+        return 1
+    fi
 
-                dir_arquivo="${arquivo%/*}"
-                base_arquivo="${arquivo##*/}"
-                base_arquivo="${base_arquivo%.dat}"
-                for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
-                    if [[ -f "$arquivo_indice" ]]; then
-                        chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null || \
-                        _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_indice"
-                    fi
-                done
-            else
-                _erro "Nao recuperou: ${arquivo##*/}"
-            fi
-            _linha "-" "${VERDE}"
-        else
-            _exibir_mensagem_centralizada "${AMARELO}" "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
+    if [[ ! -s "$arquivo" ]]; then
+        _exibir_mensagem_centralizada "${AMARELO}" "Arquivo vazio: ${arquivo##*/}"
+        return 0
+    fi
+
+    local dir_arquivo base_arquivo arquivo_indice old_nullglob
+    old_nullglob=$(shopt -p nullglob)
+    shopt -s nullglob
+
+    if "${REBUILD}" -rebuild "$arquivo" -a -f; then
+        _log_sucesso "Rebuild executado: ${arquivo##*/}"
+        # garantir permissões máximas após o rebuild
+        if ! chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null; then
+            _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
         fi
+
+        # garantir permissões máximas nos arquivos .indice gerados pelo jutil
+        dir_arquivo="${arquivo%/*}"
+        base_arquivo="${arquivo##*/}"
+        base_arquivo="${base_arquivo%.dat}"
+        for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
+            if [[ -f "$arquivo_indice" ]]; then
+                if ! chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null; then
+                    _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_indice"
+                fi
+            fi
+        done
     else
-        _erro "jutil nao encontrado em ${REBUILD}"
-        return 1
+        _erro "Nao recuperou: ${arquivo##*/}"
     fi
+    eval "$old_nullglob"
+    _linha "-" "${VERDE}"
 }
 
 #---------- FUNCOES DE TRANSFERENCIA ----------#
@@ -723,14 +815,13 @@ _executar_jutil() {
 # Envia arquivo avulso
 _enviar_arquivo_avulso() {
     clear
-    local diretorio_origem arquivo_enviar destino_remoto arquivos
+    local diretorio_origem arquivo_enviar destino_remoto arquivos old_nullglob
 
     # Solicitar diretorio de origem
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "1- Origem: Informe o diretorio onde esta o arquivo:"
     read -rp "${AMARELO} -> ${NORMAL}" diretorio_origem
-    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
-    diretorio_origem="$(printf '%s' "$diretorio_origem" | LC_ALL=C tr -cd ' -~')"
+    diretorio_origem=$(_sanitizar_entrada "$diretorio_origem")
     _linha
 
     if [[ -z "$diretorio_origem" ]]; then
@@ -743,9 +834,10 @@ _enviar_arquivo_avulso() {
         _linha
         _exibir_mensagem_centralizada "${AMARELO}" "Usando diretorio padrao: ${diretorio_origem}"
         # Verificar se há arquivos no diretório
+        old_nullglob=$(shopt -p nullglob)
         shopt -s nullglob
         arquivos=("${diretorio_origem}"/*)
-        shopt -u nullglob
+        eval "$old_nullglob"
         if (( ${#arquivos[@]} == 0 )); then
             _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo encontrado no diretorio"
             _aguardar_tecla
@@ -763,8 +855,7 @@ _enviar_arquivo_avulso() {
     _exibir_mensagem_centralizada "${CIANO}" "Use * para enviar todas as extensoes (ex: ARQUIVO*)"
     _linha
     read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_enviar
-    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
-    arquivo_enviar="$(printf '%s' "$arquivo_enviar" | LC_ALL=C tr -cd ' -~')"
+    arquivo_enviar=$(_sanitizar_entrada "$arquivo_enviar")
 
     if [[ -z "$arquivo_enviar" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"
@@ -775,12 +866,10 @@ _enviar_arquivo_avulso() {
     # Verificar se o arquivo contém wildcard (*)
     if [[ "$arquivo_enviar" == *"*"* ]]; then
         # Listar arquivos que correspondem ao padrão
-        shopt -s nullglob
         local arquivos_encontrados=()
         while IFS= read -r -d '' arquivo; do
             arquivos_encontrados+=("$arquivo")
         done < <(find "${diretorio_origem:-.}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
-        shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then
             _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo encontrado com o padrao: ${arquivo_enviar}"
@@ -820,8 +909,7 @@ _enviar_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Informe o diretorio no servidor:"
     read -rp "${AMARELO} -> ${NORMAL}" destino_remoto
-    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
-    destino_remoto="$(printf '%s' "$destino_remoto" | LC_ALL=C tr -cd ' -~')"
+    destino_remoto=$(_sanitizar_entrada "$destino_remoto")
     _linha
 
     if [[ -z "$destino_remoto" ]]; then
@@ -835,7 +923,7 @@ _enviar_arquivo_avulso() {
     _exibir_mensagem_centralizada "${AMARELO}" "A senha do usuario remoto sera solicitada pelo ssh/rsync (sem eco)."
     _linha
     _enviar_arquivo_multi "${diretorio_origem}" "${arquivo_enviar}" "${destino_remoto}"
- }
+}
 
 # Recebe arquivo avulso
 _receber_arquivo_avulso() {
@@ -846,16 +934,14 @@ _receber_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "1- Origem: Diretorio remoto do arquivo:"
     read -rp "${AMARELO} -> ${NORMAL}" origem_remota
-    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
-    origem_remota="$(printf '%s' "$origem_remota" | LC_ALL=C tr -cd ' -~')"
+    origem_remota=$(_sanitizar_entrada "$origem_remota")
     _linha
 
     # Solicitar nome do arquivo
     _exibir_mensagem_centralizada "${VERMELHO}" "Informe o arquivo que deseja RECEBER"
     _linha
     read -rp "${AMARELO}2- Nome do ARQUIVO: ${NORMAL}" arquivo_receber
-    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
-    arquivo_receber="$(printf '%s' "$arquivo_receber" | LC_ALL=C tr -cd ' -~')"
+    arquivo_receber=$(_sanitizar_entrada "$arquivo_receber")
 
     if [[ -z "$arquivo_receber" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"
@@ -867,8 +953,7 @@ _receber_arquivo_avulso() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Diretorio local para receber:"
     read -rp "${AMARELO} -> ${NORMAL}" destino_local
-    # Sanitizar entrada: remover bytes nao-ASCII (mojibake de terminal) e espacos
-    destino_local="$(printf '%s' "$destino_local" | LC_ALL=C tr -cd ' -~')"
+    destino_local=$(_sanitizar_entrada "$destino_local")
 
     if [[ -z "$destino_local" ]]; then
         destino_local="${CFG_PORTALSAV:-}"
@@ -950,7 +1035,6 @@ _executar_expurgador() {
             arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 \
                 ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>/dev/null | wc -l)
 
-
             _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
         else
@@ -964,7 +1048,7 @@ _executar_expurgador() {
     )
 
     # Limpar arquivos ZIP antigos especificos
-    local diretorio zips_removidos
+    local zips_removidos
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
             zips_removidos=$(find "${diretorio:-.}" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
@@ -998,11 +1082,12 @@ _listar_logs() {
     _exibir_mensagem_centralizada "${AMARELO}" "Logs de ${titulo} encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
 
+    # Filtrar apenas arquivos validos e legiveis
     logs=()
     for log in "${DEFAULT_LOGS_DIR}"/"${prefixo}".*; do
-        [[ -e "$log" ]] && logs+=("$log")
+        [[ -f "$log" && -r "$log" ]] && logs+=("$log")
     done
-    if [[ ! -e "${logs[0]}" ]]; then
+    if [[ ${#logs[@]} -eq 0 ]]; then
         _erro "Nenhum log de ${titulo} encontrado."
         _aguardar_tecla
         return 1
@@ -1026,6 +1111,7 @@ _listar_logs() {
         return 0
     fi
 
+    opcao=$(_sanitizar_entrada "$opcao")
     if ! [[ "$opcao" =~ ^[0-9]+$ ]] || (( opcao < 0 || opcao >= i )); then
         _exibir_mensagem_centralizada "${VERMELHO}" "Opcao invalida."
         _aguardar_tecla

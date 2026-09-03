@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/08/2026-01
+# Versao: 03/09/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -221,11 +221,12 @@ _menu_arquivos() {
         _exibir_cabecalho_menu "Menu Gerencial dos Arquivos"
         _exibir_titulo_secao " Escolha a opcao:"
         _exibir_separador_menu
-        _exibir_opcao_menu "1" "Reconstruir Arquivos"
-        _exibir_opcao_menu "2" "Enviar & Receber Arquivos"
+        _exibir_opcao_menu "1" "Recuperar Index (Jutil)"
         _exibir_separador_menu
-        _exibir_opcao_menu "3" "Arquivos Temporarios"
-        _exibir_opcao_menu "4" "Expurgador de Arquivos"
+        _exibir_opcao_menu "2" "Arquivos Temporarios"
+        _exibir_opcao_menu "3" "Expurgador de Arquivos"
+        _exibir_separador_menu
+        _exibir_opcao_menu "4" "Enviar & Receber Arquivos"
         _exibir_rodape_menu
         printf "\n"
 
@@ -236,9 +237,9 @@ _menu_arquivos() {
 
         case "${opcao}" in
             1) _menu_recuperar_arquivos || true ;;
-            2) _menu_transferencia_arquivos || true ;;
-            3) _menu_temporarios || true ;;
-            4) _executar_expurgador "arquivos" || true ;;
+            2) _menu_temporarios || true ;;
+            3) _executar_expurgador "arquivos" || true ;;
+            4) _menu_transferencia_arquivos || true ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
