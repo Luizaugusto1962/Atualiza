@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/09/2026-01
+# Versao: 04/09/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -181,6 +181,16 @@ _validar_padrao_limpeza() {
         '*'|'**'|'*.*'|'**.*'|'*.**'|'.') return 1 ;;
     esac
 
+    # Permitir * apenas se o padrao tiver parte literal (prefixo ou sufixo)
+    # Valido: NOME*, *.tmp, NOME*.dat   Invalido: * sozinho (ja bloqueado acima)
+    if [[ "$padrao" == *'*'* ]]; then
+        # Deve ter ao menos um caractere literal fora do *
+        local sem_asterisco="${padrao//\*/}"
+        if [[ -z "$sem_asterisco" ]]; then
+            return 1
+        fi
+    fi
+
     return 0
 }
 
@@ -292,8 +302,15 @@ _adicionar_arquivo_lixo() {
         return 1
     fi
 
-    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._-]+$ ]]; then
-        _erro "Nome de arquivo invalido. Use apenas letras, numeros, pontos e hifens."
+    if [[ ! "$novo_arquivo" =~ ^[A-Za-z0-9._*-]+$ ]]; then
+        _erro "Nome de arquivo invalido. Use letras, numeros, pontos, hifens e * para curinga."
+        _aguardar_tecla
+        return 1
+    fi
+
+    # Revalidar usando as mesmas regras da funcao de limpeza
+    if ! _validar_padrao_limpeza "$novo_arquivo"; then
+        _erro "Padrao invalido ou amplo demais. Use prefixo ou sufixo concreto (ex: NOME*, *.tmp)."
         _aguardar_tecla
         return 1
     fi
