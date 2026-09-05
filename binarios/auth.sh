@@ -111,7 +111,6 @@ _cadastrar_usuario() {
 # Mostrar tela de boas-vindas apos login bem-sucedido
 _mostrar_boas_vindas() {
     local nome_usuario="$1"
-
     printf "\n"
     _linha "=" "${VERDE}"
     _exibir_mensagem_centralizada "${AMARELO}" "Bem-vindo ao Sistema"
@@ -120,10 +119,9 @@ _mostrar_boas_vindas() {
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
 	_exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
-    _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Data: ${BRANCO}$(date '+%d/%m/%Y')${NORMAL}"
-    _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Hora: ${BRANCO}$(date '+%H:%M:%S')${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Atualizacao: ${BRANCO}${UPDATE:-N/A}${NORMAL}"
     printf "\n"
+    _linha "-" "${VERDE}"
     _linha "-" "${VERDE}"
     printf "\n"
 
