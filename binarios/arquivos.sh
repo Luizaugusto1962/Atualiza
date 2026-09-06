@@ -178,7 +178,7 @@ _validar_padrao_limpeza() {
 
     # Rejeitar padroes amplos demais que varreriam toda a base
     case "$padrao" in
-        '*'|'**'|'*.*'|'**.*'|'*.**'|'.') return 1 ;;
+        '*'|'**'|'*.*'|'**.*'|'*.**'|'*.**.'|'*.*.*'|'.'|'..') return 1 ;;
     esac
 
     # Permitir * apenas se o padrao tiver parte literal (prefixo ou sufixo)
@@ -188,6 +188,17 @@ _validar_padrao_limpeza() {
         local sem_asterisco="${padrao//\*/}"
         if [[ -z "$sem_asterisco" ]]; then
             return 1
+        fi
+
+        # Bloquear padroes com multiplos asteriscos que seriam muito amplos
+        # (ex: *.*.* ou **.* ou *..*)
+        local qtd_asteriscos="${padrao//[^*]/}"
+        if [[ ${#qtd_asteriscos} -gt 1 ]]; then
+            # Permitir apenas padroes como: NOME*.ext ou *.ext (1 asterisco com contexto)
+            # Rejeitar: *.*.* ou **.ext ou *..*
+            if [[ "$padrao" == *"*."*"*"* ]]; then
+                return 1
+            fi
         fi
     fi
 
@@ -418,7 +429,12 @@ _recuperar_arquivo_especifico() {
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
     local base_trabalho="$1"
-    local -a extensoes=("${DATA_EXTENSIONS[@]:-*.dat}")
+    local -a extensoes=()
+    if [[ ${#DATA_EXTENSIONS[@]} -gt 0 ]]; then
+        extensoes=("${DATA_EXTENSIONS[@]}")
+    else
+        extensoes=("*.dat")
+    fi
     _exibir_mensagem_centralizada "${VERMELHO}" "Recuperando todos os arquivos principais..."
     _linha "-" "${AMARELO}"
 
@@ -478,6 +494,7 @@ _recuperar_arquivo_individual() {
 
     old_nullglob=$(shopt -p nullglob)
     old_nocaseglob=$(shopt -p nocaseglob)
+    # Usar nocaseglob apenas localmente para este loop
     shopt -s nullglob nocaseglob
     for arquivo in ${base_trabalho}/${padrao_arquivo}; do
         if [[ -L "$arquivo" ]]; then
@@ -488,8 +505,17 @@ _recuperar_arquivo_individual() {
             ((arquivos_encontrados++)) || true
         fi
     done
-    eval "$old_nullglob"
-    eval "$old_nocaseglob"
+    # Restaurar shell options de forma segura (sem eval)
+    if [[ "$old_nullglob" == *"off"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
+    if [[ "$old_nocaseglob" == *"off"* ]]; then
+        shopt -u nocaseglob
+    else
+        shopt -s nocaseglob
+    fi
 
     if (( arquivos_encontrados == 0 )); then
         _aviso "Nenhum arquivo encontrado para: ${nome_arquivo}"
@@ -582,6 +608,7 @@ _editar_lista_arquivos() {
         _exibir_opcao_menu "2" "Alterar uma entrada"
         _exibir_opcao_menu "3" "Remover uma entrada"
         _exibir_opcao_menu "4" "Zerar lista (remover todas as entradas)"
+        _exibir_opcao_menu "9" "Voltar ao menu anterior"
         _exibir_rodape_menu
         printf "\n"
 
@@ -820,7 +847,12 @@ _executar_jutil() {
     else
         _erro "Nao recuperou: ${arquivo##*/}"
     fi
-    eval "$old_nullglob"
+    # Restaurar nullglob de forma segura (sem eval)
+    if [[ "$old_nullglob" == *"off"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
     _linha "-" "${VERDE}"
 }
 
@@ -932,6 +964,13 @@ _enviar_arquivo_avulso() {
         return 1
     fi
 
+    # SEGURANCA: bloquear path traversal e caracteres perigosos no destino remoto
+    if ! _validar_caminho_seguro "$destino_remoto"; then
+        _erro "Caminho remoto invalido ou malicioso: ${destino_remoto}"
+        _aguardar_tecla
+        return 1
+    fi
+
     # Enviar arquivo(s)
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "A senha do usuario remoto sera solicitada pelo ssh/rsync (sem eco)."
@@ -950,6 +989,19 @@ _receber_arquivo_avulso() {
     read -rp "${AMARELO} -> ${NORMAL}" origem_remota
     origem_remota=$(_sanitizar_entrada "$origem_remota")
     _linha
+
+    # SEGURANCA: validar caminho remoto
+    if [[ -z "$origem_remota" ]]; then
+        _erro "Origem remota nao informada"
+        _aguardar_tecla
+        return 1
+    fi
+
+    if ! _validar_caminho_seguro "$origem_remota"; then
+        _erro "Caminho remoto invalido ou malicioso: ${origem_remota}"
+        _aguardar_tecla
+        return 1
+    fi
 
     # Solicitar nome do arquivo
     _exibir_mensagem_centralizada "${VERMELHO}" "Informe o arquivo que deseja RECEBER"
@@ -1045,9 +1097,16 @@ _executar_expurgador() {
     # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.idx)
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
-            local arquivos_removidos
+            local arquivos_removidos erros_find
+            erros_find=$(mktemp)
             arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 \
-                ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>/dev/null | wc -l)
+                ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>"$erros_find" | wc -l)
+
+            # Logar erros encontrados (se houver)
+            if [[ -s "$erros_find" ]]; then
+                _log "AVISO expurgo em ${diretorio}: $(cat "$erros_find")" "${LOG_LIMPA}"
+            fi
+            rm -f "$erros_find"
 
             _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
@@ -1065,7 +1124,14 @@ _executar_expurgador() {
     local zips_removidos
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
-            zips_removidos=$(find "${diretorio:-.}" -name "*.zip" -type f -mtime +15 -print -delete 2>/dev/null | wc -l)
+            erros_find=$(mktemp)
+            zips_removidos=$(find "${diretorio:-.}" -name "*.zip" -type f -mtime +15 -print -delete 2>"$erros_find" | wc -l)
+
+            if [[ -s "$erros_find" ]]; then
+                _log "AVISO expurgo ZIP em ${diretorio}: $(cat "$erros_find")" "${LOG_LIMPA}"
+            fi
+            rm -f "$erros_find"
+
             _log "Expurgo: ${zips_removidos} arquivo(s) .zip removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
         else
@@ -1095,6 +1161,13 @@ _listar_logs() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Logs de ${titulo} encontrados em ${DEFAULT_LOGS_DIR}:"
     _linha
+
+    # Validar se DEFAULT_LOGS_DIR esta configurado e existe
+    if [[ -z "${DEFAULT_LOGS_DIR:-}" || ! -d "${DEFAULT_LOGS_DIR}" ]]; then
+        _erro "Diretorio de logs nao configurado ou inexistente: ${DEFAULT_LOGS_DIR:-vazio}"
+        _aguardar_tecla
+        return 1
+    fi
 
     # Filtrar apenas arquivos validos e legiveis
     logs=()
