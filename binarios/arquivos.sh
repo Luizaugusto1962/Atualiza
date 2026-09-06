@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 04/09/2026-01
+# Versao: 06/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -417,8 +417,6 @@ _recuperar_arquivo_especifico() {
 
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
-    local old_nullglob
-
     local base_trabalho="$1"
     local -a extensoes=("${DATA_EXTENSIONS[@]:-*.dat}")
     _exibir_mensagem_centralizada "${VERMELHO}" "Recuperando todos os arquivos principais..."
@@ -428,7 +426,6 @@ _recuperar_todos_arquivos() {
         _erro "Diretorio ${base_trabalho} nao existe ou e inacessivel"
         return 1
     fi
-    local old_nullglob
     old_nullglob=$(shopt -p nullglob)
     shopt -s nullglob
     for extensao in "${extensoes[@]}"; do
@@ -570,8 +567,11 @@ _editar_lista_arquivos() {
         else
             local indice=1
             for linha in "${linhas[@]}"; do
-                [[ -n "$linha" ]] || continue
-                printf '%b' "${VERDE}${indice}${NORMAL} - ${linha}\n"
+                if [[ -z "$linha" ]]; then
+                    printf '%b' "${VERDE}${indice}${NORMAL} - ${AMARELO}(linha em branco)${NORMAL}\n"
+                else
+                    printf '%b' "${VERDE}${indice}${NORMAL} - ${linha}\n"
+                fi
                 ((indice++))
             done
         fi
@@ -728,6 +728,8 @@ _recuperar_arquivos_principais() {
     _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
 
     _aguardar_tecla
+    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
+    return 0
 }
 
 # Processa lista de arquivos para recuperacao
