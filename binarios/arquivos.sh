@@ -122,14 +122,31 @@ _selecionar_base_arquivos() {
 }
 
 # Executa limpeza de arquivos temporarios
+# Parametros: $1="automatico" (opcional) — modo silencioso usado antes do backup:
+#   - limpa apenas a base informada em BASE_TRABALHO/base_trabalho (nao todas as bases)
+#   - sem pausas interativas (_aguardar_tecla)
+#   - erros de lista/diretorio sao apenas logged, nunca abortam o fluxo do backup
+# Retorna: 0 se a limpeza rodou, 1 se pre-requisitos invalidos (modo automatico nao deve bloquear o backup)
 _executar_limpeza_temporarios() {
+    local modo="${1:-}"
+    local automatico=0
+    [[ "${modo}" == "automatico" ]] && automatico=1
+
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
     if [[ ! -f "${arquivo_lista}" ]]; then
+        _log "AVISO: arquivo de lista nao existe, limpeza ignorada: ${arquivo_lista}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 0
+        fi
         _erro "Arquivo ${arquivo_lista} nao existe no diretorio"
         _aguardar 2
         return 1
     elif [[ ! -r "${arquivo_lista}" ]]; then
+        _log "AVISO: arquivo de lista sem permissao de leitura, limpeza ignorada: ${arquivo_lista}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 0
+        fi
         _erro "Arquivo ${arquivo_lista} sem permissao de leitura"
         _aguardar 2
         return 1
@@ -139,32 +156,71 @@ _executar_limpeza_temporarios() {
 
     # Limpar temporarios antigos do backup
     if ! _validar_diretorio_backup; then
-        _aviso "Diretorio de backup invalido ou inseguro para limpeza, pulando: ${DEFAULT_BACKUP_DIR:-vazio}"
-        _aguardar 2
+        if (( automatico )); then
+            _log "AVISO: diretorio de backup invalido ou inseguro, limpeza antiga pulada: ${DEFAULT_BACKUP_DIR:-vazio}" "${LOG_LIMPA}"
+        else
+            _aviso "Diretorio de backup invalido ou inseguro para limpeza, pulando: ${DEFAULT_BACKUP_DIR:-vazio}"
+            _aguardar 2
+        fi
     else
         find "${DEFAULT_BACKUP_DIR}" -maxdepth 1 -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
     fi
 
-    # Processar cada base de dados configurada
     local caminho_base
     local base_dir
-    for base_dir in "$CFG_BASE_DIR" "$CFG_BASE_DIR2" "$CFG_BASE_DIR3"; do
-        if [[ -n "$base_dir" ]]; then
-            caminho_base="${RAIZ}${base_dir}"
-            if [[ -d "$caminho_base" ]]; then
-                _limpar_base_especifica "$caminho_base" "$arquivo_lista"
-                # Processar limpetmp2 na sequencia, se existir
+    local status_geral=0
+    local achou_base=0
+
+    if (( automatico )); then
+        # Modo automatico (pre-backup): limpar somente a base do backup em curso
+        caminho_base="${BASE_TRABALHO:-${base_trabalho:-}}"
+        if [[ -n "${caminho_base}" ]]; then
+            achou_base=1
+            if [[ -d "${caminho_base}" ]]; then
+                _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" || status_geral=$?
                 if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
-                    _limpar_base_especifica "$caminho_base" "$arquivo_lista2"
+                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" || status_geral=$?
                 fi
             else
-                _aviso "Diretorio nao existe: ${caminho_base}"
-                _linha
-                _aguardar 2
+                _log "AVISO: diretorio da base nao existe, limpeza ignorada: ${caminho_base}" "${LOG_LIMPA}"
             fi
+        else
+            _log "AVISO: base de trabalho nao definida, limpeza automatica ignorada" "${LOG_LIMPA}"
         fi
-    done
-    _aguardar_tecla
+    else
+        # Modo interativo (menu): percorrer todas as bases configuradas
+        for base_dir in "$CFG_BASE_DIR" "$CFG_BASE_DIR2" "$CFG_BASE_DIR3"; do
+            if [[ -n "${base_dir}" ]]; then
+                achou_base=1
+                caminho_base="${RAIZ}${base_dir}"
+                if [[ -d "${caminho_base}" ]]; then
+                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" || status_geral=$?
+                    # Processar limpetmp2 na sequencia, se existir
+                    if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
+                        _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" || status_geral=$?
+                    fi
+                else
+                    _aviso "Diretorio nao existe: ${caminho_base}"
+                    _linha
+                    _aguardar 2
+                fi
+            fi
+        done
+    fi
+
+    if (( ! achou_base )); then
+        if (( automatico )); then
+            return 0
+        fi
+        _aviso "Nenhuma base de dados configurada para limpeza"
+        _linha
+    fi
+
+    if (( ! automatico )); then
+        _aguardar_tecla
+    fi
+
+    return "$status_geral"
 }
 
 # Valida padrao de nome de arquivo usado nas listas de limpeza (limpetmp/limpetmp2)
@@ -207,40 +263,60 @@ _validar_padrao_limpeza() {
 }
 
 # Limpa arquivos da base especifica
+# Parametros: $1=caminho_base $2=arquivo_lista $3="automatico" (opcional, modo silencioso)
 _limpar_base_especifica() {
     local caminho_base="$1"
     local arquivo_lista="$2"
+    local modo="${3:-}"
+    local automatico=0
+    [[ "${modo}" == "automatico" ]] && automatico=1
     local arquivos_temp=()
     local padrao_arquivo
 
     # Validar parâmetros
-    if [[ -z "$caminho_base" || -z "$arquivo_lista" ]]; then
-        _erro "Parametros invalidos"
+    if [[ -z "${caminho_base}" || -z "${arquivo_lista}" ]]; then
+        _log "ERRO: parametros invalidos na limpeza" "${LOG_LIMPA}"
         return 1
     fi
 
-    if ! _validar_diretorio_trabalho "$caminho_base"; then
-        _erro "Diretorio invalido ou inacessivel: $caminho_base"
+    if ! _validar_diretorio_trabalho "${caminho_base}"; then
+        _log "ERRO: diretorio invalido ou inacessivel: ${caminho_base}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 1
+        fi
+        _erro "Diretorio invalido ou inacessivel: ${caminho_base}"
         return 1
     fi
 
-    if [[ ! -f "$arquivo_lista" ]]; then
+    if [[ ! -f "${arquivo_lista}" ]]; then
+        _log "ERRO: arquivo de lista nao existe: ${arquivo_lista}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 1
+        fi
         _erro "Arquivo de lista nao existe"
         return 1
     fi
 
     # Validar diretorio de backup
     if ! _validar_diretorio_backup; then
+        _log "ERRO: diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 1
+        fi
         _erro "Diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}"
         return 1
     fi
 
     # Ler lista de arquivos temporarios
-    mapfile -t arquivos_temp < "$arquivo_lista"
+    mapfile -t arquivos_temp < "${arquivo_lista}"
 
-    _aviso "Limpando arquivos temporarios do diretorio: ${caminho_base}"
-    _aguardar 1
-    _linha
+    if (( ! automatico )); then
+        _aviso "Limpando arquivos temporarios do diretorio: ${caminho_base}"
+        _aguardar 1
+        _linha
+    else
+        _log "Iniciando limpeza automatica em: $caminho_base" "${LOG_LIMPA}"
+    fi
 
     local zip_temporarios
     zip_temporarios="Temps-${UMADATA}.zip"
@@ -269,8 +345,12 @@ _limpar_base_especifica() {
             continue
         fi
 
-        _exibir_mensagem_centralizada "${VERDE}" "Processando padrao: ${AMARELO}${padrao_arquivo}${NORMAL} (${qtd_padrao} arquivo(s))"
-        _aguardar 1
+        if (( ! automatico )); then
+            _exibir_mensagem_centralizada "${VERDE}" "Processando padrao: ${AMARELO}${padrao_arquivo}${NORMAL} (${qtd_padrao} arquivo(s))"
+            _aguardar 1
+        else
+            _log "Processando padrao automatico: ${padrao_arquivo} (${qtd_padrao} arquivo(s))" "${LOG_LIMPA}"
+        fi
 
         # Compactar — $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
         if $DEFAULT_ZIP "${DEFAULT_BACKUP_DIR}/${zip_temporarios}" "${arquivos_zip[@]}" >>"${LOG_LIMPA}" 2>&1; then
@@ -284,7 +364,9 @@ _limpar_base_especifica() {
          else
             _log "ERRO ao compactar arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
             _erro "  >> Ao compactar padrao: ${padrao_arquivo}"
-            _aguardar 1
+            if (( ! automatico )); then
+                _aguardar 1
+            fi
         fi
     done
     _linha

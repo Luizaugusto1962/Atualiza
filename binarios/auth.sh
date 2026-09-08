@@ -121,21 +121,22 @@ _mostrar_boas_vindas() {
 
     printf "\n"
     _linha "=" "${VERDE}"
+    printf "\n"
     _exibir_mensagem_centralizada "${AMARELO}" "Bem-vindo ao Sistema"
-    _linha "=" "${VERDE}"
+#    _linha "=" "${VERDE}"
+    _exibir_separador_menu
     printf "\n"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
 	_exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Atualizacao: ${BRANCO}${UPDATE:-N/A}${NORMAL}"
+    _exibir_separador_menu
     if [[ -n "$usuario_anterior" && -n "$data_hora_anterior" ]]; then
         _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Ultimo Acesso: ${BRANCO}${usuario_anterior} - ${data_hora_anterior}${NORMAL}"
     else
         _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Ultimo Acesso: ${BRANCO}Primeiro acesso${NORMAL}"
     fi
-    printf "\n"
-    _linha "-" "${VERDE}"
-    _linha "-" "${VERDE}"
+    _exibir_separador_menu
     printf "\n"
 
     read -rp "${AMARELO}Pressione ENTER para continuar...${NORMAL}" -t 5 2>/dev/null || true

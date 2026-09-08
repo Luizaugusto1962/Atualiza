@@ -59,6 +59,9 @@ _validar_pre_backup() {
         _base_ref="${RAIZ}${CFG_BASE_DIR}"
     fi
 
+    # Devolver valor ao chamador (nameref manual, compativel com Bash 4.2+)
+    printf -v "$1" '%s' "${_base_ref}"
+
     # Validar se o diretorio base existe
     if [[ ! -d "${_base_ref}" ]]; then
         _erro "Diretorio base '${_base_ref}' nao existe"
@@ -139,8 +142,8 @@ _executar_backup() {
     _exibir_mensagem_centralizada "$AMARELO" "Criando Backup da pasta: ${base_trabalho}..."
     _linha
 
-    # Executar limpeza de temporarios antes do backup
-    _executar_limpeza_temporarios || true
+    # Executar limpeza de temporarios antes do backup (modo automatico: so a base do backup, sem pausas)
+    _executar_limpeza_temporarios automatico || true
 
     # Variavel para armazenar PID do processo em background
     local backup_pid
@@ -851,8 +854,8 @@ _executar_backup_multiplos_padroes() {
         return 1
     fi
 
-    # Executar limpeza de temporarios antes do backup
-    _executar_limpeza_temporarios || true
+    # Executar limpeza de temporarios antes do backup (modo automatico: so a base do backup, sem pausas)
+    _executar_limpeza_temporarios automatico || true
 
     # Solicitar padrões de arquivos
     local padroes=()
