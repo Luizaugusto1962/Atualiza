@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 02/09/2026-01
+# Versao: 08/09/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -111,6 +111,14 @@ _cadastrar_usuario() {
 # Mostrar tela de boas-vindas apos login bem-sucedido
 _mostrar_boas_vindas() {
     local nome_usuario="$1"
+    local arquivo_ultimo_acesso="${CFG_DIR}/.ultimo_acesso"
+    local usuario_anterior=""
+    local data_hora_anterior=""
+
+    if [[ -f "$arquivo_ultimo_acesso" ]]; then
+        IFS='|' read -r usuario_anterior data_hora_anterior < "$arquivo_ultimo_acesso"
+    fi
+
     printf "\n"
     _linha "=" "${VERDE}"
     _exibir_mensagem_centralizada "${AMARELO}" "Bem-vindo ao Sistema"
@@ -120,6 +128,11 @@ _mostrar_boas_vindas() {
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
 	_exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Atualizacao: ${BRANCO}${UPDATE:-N/A}${NORMAL}"
+    if [[ -n "$usuario_anterior" && -n "$data_hora_anterior" ]]; then
+        _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Ultimo Acesso: ${BRANCO}${usuario_anterior} - ${data_hora_anterior}${NORMAL}"
+    else
+        _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Ultimo Acesso: ${BRANCO}Primeiro acesso${NORMAL}"
+    fi
     printf "\n"
     _linha "-" "${VERDE}"
     _linha "-" "${VERDE}"

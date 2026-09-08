@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/092026-01
+# Versao: 08/092026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -126,7 +126,6 @@ fi
 # =============================================================================
 # CONFIGURACOES DIRETORIO DE BACKUP OFFLINE
 # =============================================================================
-
 CFG_PORTALSAV="${CFG_PORTALSAV:-${RAIZ}/portalsav/atualiza}"   # Diretorio do portal de atualizacao offline
 
 # =============================================================================
@@ -139,7 +138,9 @@ CFG_BASE_DIR2="${CFG_BASE_DIR2:-${base2}}"                     # Diretorio base 
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-${base3}}"                     # Diretorio base terciario (vazio se nao definido)
 CFG_BACKUP_PATH="${CFG_BACKUP_PATH:-${enviabackup}}"           # Path para envio de backup
 
+# =============================================================================
 # Flags booleanas do sistema
+# =============================================================================
 CFG_ACESSO_SSH="${CFG_ACESSO_SSH:-${acessossh}}"               # Acesso SSH habilitado (s/n)
 CFG_CHAVE_SSH="${CFG_CHAVE_SSH:-${chavessh}}"                  # Caminho da chave SSH privada
 CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                       # Modo offline (s/n)
@@ -195,7 +196,6 @@ DEFAULT_BIBLIOTECA_DIR="${DEFAULT_BIBLIOTECA_DIR:-${SCRIPT_DIR}/biblioteca/anter
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-${SCRIPT_DIR}/programas/atual}"
 DEFAULT_OLDS_DIR="${DEFAULT_OLDS_DIR:-${SCRIPT_DIR}/programas/anterior}"
 DEFAULT_ENVIA_DIR="${DEFAULT_ENVIA_DIR:-${SCRIPT_DIR}/enviar}"
-# DEFAULT_RECEBE_DIR removido — usar CFG_PORTALSAV
 
 # =============================================================================
 # COMANDOS EXTERNOS PADRAO

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:02/09/2026-01
+# Versao:08/09/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -568,6 +568,12 @@ _resetando() {
 
 # Finalizar o sistema
 _finalizar_sistema() {
+    local arquivo_ultimo_acesso="${CFG_DIR}/.ultimo_acesso"
+    if [[ -n "${usuario:-}" ]]; then
+        local data_hora_saida
+        data_hora_saida=$(date +"%d/%m/%Y %H:%M:%S")
+        echo "${usuario}|${data_hora_saida}" > "$arquivo_ultimo_acesso"
+    fi
     _limpar_estado_variaveis
     tput sgr0 2>/dev/null || true
     trap - EXIT INT TERM QUIT
