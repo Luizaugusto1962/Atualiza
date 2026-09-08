@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 31/08/2026-02
+# Versao: 08/09/2026
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -138,6 +138,9 @@ _executar_backup() {
     _linha
     _exibir_mensagem_centralizada "$AMARELO" "Criando Backup da pasta: ${base_trabalho}..."
     _linha
+
+    # Executar limpeza de temporarios antes do backup
+    _executar_limpeza_temporarios || true
 
     # Variavel para armazenar PID do processo em background
     local backup_pid
@@ -847,6 +850,9 @@ _executar_backup_multiplos_padroes() {
         _aguardar 3
         return 1
     fi
+
+    # Executar limpeza de temporarios antes do backup
+    _executar_limpeza_temporarios || true
 
     # Solicitar padrões de arquivos
     local padroes=()
