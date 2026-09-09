@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/09/2026-01
+# Versao: 09/09/2026
 #
 
 # Variaveis globais esperadas
@@ -510,11 +510,27 @@ _processar_atualizacao_programas() {
     local _cwd
     _cwd="$(pwd)"
 
+    # Salvar estado original de nullglob para restauracao segura
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob)
+
+    # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
+    _cleanupAtualizacao() {
+        cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
+        if [[ "$_old_nullglob" == *"off"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
+    }
+
     # Criar diretorio temporario para extracao
     local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
     rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
     if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -523,16 +539,14 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
 
     if ! cd "${dir_temp_atualizacao}"; then
         _erro "ERRO: Falha ao acessar diretorio temporario"
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -541,8 +555,7 @@ _processar_atualizacao_programas() {
     # Criar backup dos programas antigos (helper compartilhado com pacotes)
     for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         if ! _backup_programa_antigo "${PROGRAMAS_SELECIONADOS[$programa_indice]}"; then
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -556,8 +569,7 @@ _processar_atualizacao_programas() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -576,16 +588,14 @@ _processar_atualizacao_programas() {
         shopt -u nullglob
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
 
     # Mover arquivos para diretorios corretos (helper compartilhado com pacotes)
     if ! _mover_arquivos_extraidos; then
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -595,14 +605,12 @@ _processar_atualizacao_programas() {
 
     # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com pacotes)
     if ! _arquivar_zips_progs_dir; then
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
-    # Limpar diretorio temporario
-    cd "${CFG_PORTALSAV}" || true
-    rm -rf "${dir_temp_atualizacao}"
+    # Limpar diretorio temporario e restaurar estado
+    _cleanupAtualizacao
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha
@@ -621,11 +629,27 @@ _processar_atualizacao_pacotes() {
     local _cwd
     _cwd="$(pwd)"
 
+    # Salvar estado original de nullglob para restauracao segura
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob)
+
+    # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
+    _cleanupAtualizacao() {
+        cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
+        if [[ "$_old_nullglob" == *"off"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
+    }
+
     # Criar diretorio temporario para extracao isolada
     local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
     rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
     if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -634,8 +658,7 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -643,8 +666,7 @@ _processar_atualizacao_pacotes() {
     # Acessar diretorio temporario
     if ! cd "${dir_temp_atualizacao}"; then
         _erro "ERRO: Falha ao acessar diretorio temporario"
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -652,8 +674,7 @@ _processar_atualizacao_pacotes() {
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -663,8 +684,7 @@ _processar_atualizacao_pacotes() {
     for arquivo_zip in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo_zip}" ]]; then
             _erro "Pacote nao encontrado apos extracao: ${arquivo_zip}"
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
 
@@ -672,8 +692,7 @@ _processar_atualizacao_pacotes() {
         lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk 'NR>3 && NF>=4 && $NF ~ /\.(class|TEL)$/ {print $NF}')
         if [[ -z "${lista_arquivos}" ]]; then
             _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
 
@@ -681,8 +700,7 @@ _processar_atualizacao_pacotes() {
         while IFS= read -r nome_arquivo; do
             if [[ ! -f "${nome_arquivo}" ]]; then
                 _erro "Arquivo ${nome_arquivo} extraido do pacote ${arquivo_zip} nao encontrado"
-                cd "$_cwd" || true
-                rm -rf "${dir_temp_atualizacao}"
+                _cleanupAtualizacao
                 return 1
             fi
         done <<< "${lista_arquivos}"
@@ -700,8 +718,7 @@ _processar_atualizacao_pacotes() {
 
     if (( ${#programas_encontrados[@]} == 0 )); then
         _erro "Nenhum arquivo .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} encontrado nos pacotes"
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -715,8 +732,7 @@ _processar_atualizacao_pacotes() {
     # Backup dos programas antigos (preserva arquivos atuais em E_EXEC/T_TELAS)
     for programa in "${!programas_encontrados[@]}"; do
         if ! _backup_programa_antigo "${programa}"; then
-            cd "$_cwd" || true
-            rm -rf "${dir_temp_atualizacao}"
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -728,8 +744,7 @@ _processar_atualizacao_pacotes() {
 
     # Mover arquivos para diretorios corretos (helper compartilhado com programas)
     if ! _mover_arquivos_extraidos; then
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -739,14 +754,12 @@ _processar_atualizacao_pacotes() {
 
     # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com programas)
     if ! _arquivar_zips_progs_dir; then
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
+        _cleanupAtualizacao
         return 1
     fi
 
-    # Limpar diretorio temporario
-    cd "${CFG_PORTALSAV}" || true
-    rm -rf "${dir_temp_atualizacao}"
+    # Limpar diretorio temporario e restaurar estado
+    _cleanupAtualizacao
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha

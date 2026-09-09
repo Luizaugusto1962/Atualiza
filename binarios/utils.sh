@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/09/2026
+# Versao: 09/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -493,7 +493,7 @@ _log() {
     fi
 
     # Timestamp sem fork em Bash 4.2+; fallback para date em 4.0/4.1
-    if (( BASH_VERSINFO[0] > 4 || BASH_VERSINFO[1] >= 2 )); then
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
         printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
     else
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')

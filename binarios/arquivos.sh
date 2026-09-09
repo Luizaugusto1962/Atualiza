@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/09/2026
+# Versao: 09/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -361,7 +361,7 @@ _limpar_base_especifica() {
             else
                 _log "AVISO: falha ao remover arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
             fi
-         else
+        else
             _log "ERRO ao compactar arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
             _erro "  >> Ao compactar padrao: ${padrao_arquivo}"
             if (( ! automatico )); then
@@ -369,9 +369,11 @@ _limpar_base_especifica() {
             fi
         fi
     done
-    _linha
-    _ok "Limpeza concluida"
-    _linha
+    if (( ! automatico )); then
+        _linha
+        _ok "Limpeza concluida"
+        _linha
+    fi
 
     return 0
 }
@@ -540,7 +542,11 @@ _recuperar_todos_arquivos() {
             fi
         done
     done
-    eval "$old_nullglob"
+    if [[ "$old_nullglob" == *"off"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
     return 0
 }
 
@@ -817,7 +823,11 @@ _recuperar_arquivos_principais() {
             printf '%s\n' "${arquivo_nfe##*/}"
         done
     } > "${CFG_DIR}/indexar2"
-    eval "$old_nullglob"
+    if [[ "$old_nullglob" == *"off"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
 
     cd "${CFG_DIR}" || return 1
     _aguardar 1
@@ -966,7 +976,11 @@ _enviar_arquivo_avulso() {
         old_nullglob=$(shopt -p nullglob)
         shopt -s nullglob
         arquivos=("${diretorio_origem}"/*)
-        eval "$old_nullglob"
+        if [[ "$old_nullglob" == *"off"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
         if (( ${#arquivos[@]} == 0 )); then
             _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo encontrado no diretorio"
             _aguardar_tecla
@@ -1178,18 +1192,17 @@ _executar_expurgador() {
 
     # Limpar arquivos antigos nos diretorios padrao
     # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.idx)
+    local erros_find arquivos_removidos
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
-            local arquivos_removidos erros_find
             erros_find=$(mktemp)
             arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 \
                 ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>"$erros_find" | wc -l)
 
-            # Logar erros encontrados (se houver)
             if [[ -s "$erros_find" ]]; then
                 _log "AVISO expurgo em ${diretorio}: $(cat "$erros_find")" "${LOG_LIMPA}"
             fi
-            rm -f "$erros_find"
+            rm -f -- "$erros_find"
 
             _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
@@ -1213,7 +1226,7 @@ _executar_expurgador() {
             if [[ -s "$erros_find" ]]; then
                 _log "AVISO expurgo ZIP em ${diretorio}: $(cat "$erros_find")" "${LOG_LIMPA}"
             fi
-            rm -f "$erros_find"
+            rm -f -- "$erros_find"
 
             _log "Expurgo: ${zips_removidos} arquivo(s) .zip removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos .zip antigos: ${diretorio} (${zips_removidos} arquivos)"
