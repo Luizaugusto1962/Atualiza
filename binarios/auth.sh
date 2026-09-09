@@ -171,7 +171,6 @@ _login() {
                 return 1
             elif ! _usuario_existe "$usuario"; then
                 _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao cadastrado no sistema."
-                _linha "-" "${VERMELHO}"
             else
                 read -rsp "${AMARELO}Senha: ${NORMAL}" senha
                 printf "\n"
@@ -182,18 +181,17 @@ _login() {
                     hash_armazenado=$(_obter_hash_usuario "$usuario")
                     if [[ -z "$hash_armazenado" ]]; then
                         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao encontrado."
-                        _linha "-" "${VERMELHO}"
                     else
                         resumo_senha=$(_hash_senha "$senha")
                         if [[ "$resumo_senha" == "$hash_armazenado" ]]; then
+                            clear
+                            _linha "=" "${VERDE}"
                             _exibir_mensagem_centralizada "${VERDE}" "Login bem-sucedido."
                             export usuario
                             _mostrar_boas_vindas "$usuario"
                             return 0
                         else
                             _exibir_mensagem_centralizada "${VERMELHO}" "Senha incorreta."
-                            _linha "-" "${VERMELHO}"
-                            printf "\n"
                             unset usuario
                         fi
                     fi
@@ -204,7 +202,7 @@ _login() {
         if [[ $tentativas -ge $max_tentativas ]]; then
             return 1
         fi
-
+        _linha "-" "${VERDE}"
         read -rp "${AMARELO}Deseja tentar novamente? (s/N): ${NORMAL}" resposta
         if [[ ! "$resposta" =~ ^[sS]$ ]]; then
             return 1
