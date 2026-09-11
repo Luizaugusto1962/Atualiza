@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
-# Versao: 10/07/2026-01
+# Versao: 10/09/2026-01
 # Autor: Luiz Augusto
 # Os scripts de suporte devem estar no diretório binarios ao lado deste script.
 # Padrões e regras de desenvolvimento: ver AGENTS.md
@@ -19,6 +19,12 @@ export LC_ALL=C
 # Verificacoes basicas
 if [[ ! -t 0 && ! -p /dev/stdin ]]; then
     printf "%s\n" "Este script deve ser executado interativamente" >&2
+    exit 1
+fi
+
+# Bash 4.0+ e requerido (arrays associativos: declare -A)
+if (( BASH_VERSINFO[0] < 4 )); then
+    printf "Erro: Bash 4.0+ requerido (versao atual: %s).\n" "${BASH_VERSION}" >&2
     exit 1
 fi
 

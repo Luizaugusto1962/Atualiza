@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:08/09/2026-01
+# Versao:10/09/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -37,7 +37,8 @@ _is_var_readonly() {
     local nome_var="$1"
     local saida_declarada
     saida_declarada=$(declare -p "$nome_var" 2>/dev/null) || return 1
-    [[ "$saida_declarada" == *"declare -r"* ]] || [[ "$saida_declarada" == *"declare -ir"* ]]
+    # Detecta -r em qualquer combinacao de atributos (declare -dr, -ir, -rx...)
+    [[ "$saida_declarada" == declare\ -r* || "$saida_declarada" =~ declare\ -[[:alpha:]]*r[[:space:]] ]]
 }
 
 # Registra uma variavel no sistema
@@ -166,21 +167,34 @@ declare -A _MAPA_VARIAVEIS=(
 # =============================================================================
 
 _inicializar_variaveis_sistema() {
-    # Cores do terminal — tput com fallback seguro
-    VERMELHO=$(tput bold 2>/dev/null; tput setaf 1 2>/dev/null || printf "\033[1;31m")
-    VERDE=$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null || printf "\033[1;32m")
-    AMARELO=$(tput bold 2>/dev/null; tput setaf 3 2>/dev/null || printf "\033[1;33m")
-    AZUL=$(tput bold 2>/dev/null; tput setaf 4 2>/dev/null || printf "\033[1;34m")
-    ROXO=$(tput bold 2>/dev/null; tput setaf 5 2>/dev/null || printf "\033[1;35m")
-    CIANO=$(tput bold 2>/dev/null; tput setaf 6 2>/dev/null || printf "\033[1;36m")
-    BRANCO=$(tput bold 2>/dev/null; tput setaf 7 2>/dev/null || printf "\033[1;37m")
-    NORMAL=$(tput sgr0 2>/dev/null || printf "\033[0m")
-    COLUMNS=$(tput cols 2>/dev/null || printf 80)
+    # Em terminal interativo, definir cores via tput com fallback ANSI;
+    # sem TTY, usar strings vazias para nao vazar escapes em logs/redirecionamento
+    if [[ -t 1 ]]; then
+        VERMELHO=$(tput bold 2>/dev/null; tput setaf 1 2>/dev/null || printf "\033[1;31m")
+        VERDE=$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null || printf "\033[1;32m")
+        AMARELO=$(tput bold 2>/dev/null; tput setaf 3 2>/dev/null || printf "\033[1;33m")
+        AZUL=$(tput bold 2>/dev/null; tput setaf 4 2>/dev/null || printf "\033[1;34m")
+        ROXO=$(tput bold 2>/dev/null; tput setaf 5 2>/dev/null || printf "\033[1;35m")
+        CIANO=$(tput bold 2>/dev/null; tput setaf 6 2>/dev/null || printf "\033[1;36m")
+        BRANCO=$(tput bold 2>/dev/null; tput setaf 7 2>/dev/null || printf "\033[1;37m")
+        NORMAL=$(tput sgr0 2>/dev/null || printf "\033[0m")
+        COLUMNS=$(tput cols 2>/dev/null || printf 80)
 
-    # Limpar tela inicial
-    tput clear 2>/dev/null || true
-    tput bold 2>/dev/null || true
-    tput setaf 7 2>/dev/null || true
+        # Limpar tela inicial
+        tput clear 2>/dev/null || true
+        tput bold 2>/dev/null || true
+        tput setaf 7 2>/dev/null || true
+    else
+        VERMELHO=""
+        VERDE=""
+        AMARELO=""
+        AZUL=""
+        ROXO=""
+        CIANO=""
+        BRANCO=""
+        NORMAL=""
+        COLUMNS="${COLUMNS:-80}"
+    fi
     export VERMELHO VERDE AMARELO AZUL ROXO CIANO BRANCO NORMAL COLUMNS
 
     # Reinicializar arrays
@@ -209,7 +223,7 @@ _configurar_comandos() {
     done
 
     if [[ ${#faltand[@]} -gt 0 ]]; then
-        _erro "Comandos nao encontrados: ${faltand[*]}" >&2
+        _erro "Comandos nao encontrados: %s\n" "${faltand[*]}" >&2
         command -v _aguardar >/dev/null 2>&1 && _aguardar 2 2>/dev/null || true
         return 1
     fi
@@ -259,7 +273,9 @@ _configurar_variaveis_sistema() {
     T_TELAS="${T_TELAS:-${RAIZ}/tel_isc}"
     export E_EXEC T_TELAS
 
-    local verclass_sufixo="${CFG_VERSAOCLASS: -2}"
+    # Substring por offset calculado: compativel com Bash < 4.2
+    # (nao usar "${VAR: -2}", que exige Bash 4.2+)
+    local verclass_sufixo="${CFG_VERSAOCLASS:${#CFG_VERSAOCLASS}-2}"
     compilado="-class${verclass_sufixo}"
     debugado="-mclass${verclass_sufixo}"
     local classA="IS${CFG_VERSAOCLASS}_classA_"
@@ -270,7 +286,7 @@ _configurar_variaveis_sistema() {
     SAVATU2="tempSAV_${classB}"
     SAVATU3="tempSAV_${classC}"
     SAVATU="tempSAV_${classX}"
-    export E_EXEC T_TELAS CFG_OFFLINE
+    export CFG_OFFLINE
     export SAVATU1 SAVATU2 SAVATU3 SAVATU
 }
 
@@ -368,14 +384,16 @@ _validar_ssh() {
         fi
         _linha "-" "${AMARELO}"
         _exibir_mensagem_centralizada "${AMARELO}" "Dica: execute 'ssh ${usuario_ssh}@${servidor_ssh}' manualmente para diagnosticar"
+        _exibir_mensagem_centralizada "${AMARELO}" "Alerta: continuando sem acesso SSH (funcionalidades remotas podem falhar)"
     fi
     _linha "=" "${VERDE}"
+    return 0
 }
 
 # Validar conteudo do arquivo de configuracao (seguranca)
 _validar_config_file() {
     local CONFIG_FILE="${1}"
-    local linha num_linha=0 erros=0
+    local linha num_linha=0
 
     if [[ ! -f "$CONFIG_FILE" ]]; then
         _erro "Arquivo de configuracao nao encontrado: %s\n" "$CONFIG_FILE" >&2
@@ -396,7 +414,9 @@ _validar_config_file() {
     fi
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
-        ((num_linha++))
+        # (( ...++ )) retorna status 1 quando o valor era 0; o "|| true"
+        # evita aborto por set -e fora de contexto condicional
+        ((num_linha++)) || true
 
         # Pular linhas vazias e comentarios
         [[ -z "$linha" ]] && continue
@@ -405,8 +425,11 @@ _validar_config_file() {
         # Remover espacos iniciais
         linha="${linha#"${linha%%[![:space:]]*}"}"
 
-        # Remover comentarios inline
-        [[ "$linha" == *'#'* ]] && linha="${linha%%#*}"
+        # Remover comentarios inline e espacos finais (alinha com _carregar_config_seguro)
+        if [[ "$linha" == *'#'* ]]; then
+            linha="${linha%%#*}"
+            linha="${linha%"${linha##*[![:space:]]}"}"
+        fi
         [[ -z "$linha" ]] && continue
 
         # Validar formato de atribuicao
@@ -415,33 +438,16 @@ _validar_config_file() {
             return 1
         fi
 
-        # Verificar caracteres perigosos (regex bash, sem pipe para grep)
-        local re_perigoso='[`;|&<>(){}]'
+        # Verificar caracteres perigosos. Inclui (){}$ que bloqueiam command
+        # substitution ($(...), `...` via backtick) e expansao ${...}
+        local re_perigoso='[`;|&<>(){}$]'
         if [[ "$linha" =~ $re_perigoso ]]; then
             _erro "Linha %d contem caracteres perigosos: %s\n" "$num_linha" "$linha" >&2
             return 1
         fi
 
-        # Verificar command substitution
-        if [[ "$linha" =~ \$\( ]] || [[ "$linha" =~ \` ]]; then
-            _erro "Linha %d contem command substitution: %s\n" "$num_linha" "$linha" >&2
-            ((erros++))
-            continue
-        fi
-
-        # Verificar expansao de variavel suspeita
-        if [[ "$linha" =~ \$\{.*\} ]]; then
-            _erro "Linha %d contem expansao de variavel suspeita: %s\n" "$num_linha" "$linha" >&2
-            ((erros++))
-            continue
-        fi
-
     done < "$CONFIG_FILE"
 
-    if (( erros > 0 )); then
-        _erro "Arquivo de configuracao contem %d erro(s). Carregamento bloqueado.\n" "$erros" >&2
-        return 1
-    fi
     return 0
 }
 
