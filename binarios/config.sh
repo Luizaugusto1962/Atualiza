@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:10/09/2026-01
+# Versao:10/09/2026
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -593,6 +593,9 @@ _encerrar_programa() {
     exit "$status"
 }
 
+# Traps de bootstrap: protegem a janela entre o sourcing deste modulo e a
+# instalacao dos traps definitivos em _main (principal.sh)
+trap '_encerrar_programa 129' HUP
 trap '_encerrar_programa 130' INT
 trap '_encerrar_programa 143' TERM
 trap '_limpeza_emergencia' QUIT

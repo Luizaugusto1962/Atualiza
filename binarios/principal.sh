@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 30/08/2026-01
+# Versao: 10/09/2026
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -43,10 +43,12 @@ declare -rx UPDATE="03/09/26"
 
 # Cria diretorio com permissoes seguras (funcao centralizada e melhorada)
 # Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE)
+#             $3=arquivo de log(opcional, ignorado; compatibilidade com chamadores)
 # Retorna: 0 se sucesso, 1 se erro
 _criar_diretorio_seguro() {
     local caminho="${1:-}"
     local permissao="${2:-${PERM_DIR_SECURE}}"
+    local _log="${3:-}" # aceito por compatibilidade; nao utilizado
 
     # Validar caminho
     if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
@@ -86,30 +88,32 @@ _criar_diretorio_seguro() {
 # Lista de diretórios obrigatórios
 declare -a AUX_DIRS=("${LIBS_DIR}" "${CFG_DIR}")
 
+# Nota: exit 1 direto (e nao _encerrar_programa) porque este bloco roda
+# ANTES do carregamento dos modulos, quando _encerrar_programa ainda nao existe.
 for dir in "${AUX_DIRS[@]}"; do
     # Verificar se a variável está definida
     if [[ -z "${dir}" ]]; then
         printf "Erro: Variavel de diretorio nao definida.\n" >&2
-        _encerrar_programa 1
+        exit 1
     fi
 
-    # Criar diretório caso não exista com permissões seguras
-    if [[ ! -d "${dir}" ]]; then
-        if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
-            printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
-            _encerrar_programa 1
-        fi
+    # Criar diretorio caso nao exista (funcao trata os casos existente/novo)
+    if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
+        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
+        exit 1
     fi
 
-    # APLICAR PERMISSOES DE FORMA SEGURA: usar constante ao inves de hardcoded
-    # O chmod garante existencia e acessibilidade; se falhar, o dir nao existe/nao acessivel
+    # Garantir permissao tambem em diretorios pre-existentes
+    # (o chmod na funcao so cobre o caminho de criacao)
     chmod "${PERM_DIR_SECURE}" "${dir}" 2>/dev/null || {
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
         printf "Execute como root ou sudo ...\n" >&2
-        _encerrar_programa 1
+        exit 1
     }
 done
+
+unset AUX_DIRS dir
 
 # =============================================================================
 # CARREGAMENTO DE MÓDULOS (ESCOPO GLOBAL)
@@ -179,7 +183,7 @@ if (( ${#ERROS_MODULOS[@]} > 0 )); then
     for _m in "${ERROS_MODULOS[@]}"; do
         printf "  - %s\n" "${_m}" >&2
     done
-    unset MODULOS_CARREGAR ERROS_MODULOS
+    unset MODULOS_CARREGAR ERROS_MODULOS _m
     exit 1
 fi
 
@@ -237,9 +241,10 @@ _inicializar_sistema() {
 # -----------------------------------------------------------------------------
 _main() {
     # Tratamento de sinais para limpeza
+    # Status conforme convencao: 128+signal (HUP=129, INT=130, TERM=143)
     trap '_resetando' EXIT
     trap '_encerrar_programa 130' INT TERM
-    trap '_encerrar_programa 1' HUP
+    trap '_encerrar_programa 129' HUP
 
     # Inicializar sistema
     if ! _inicializar_sistema; then

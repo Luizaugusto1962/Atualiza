@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/092026
+# Versao: 10/09/2026
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -148,10 +148,10 @@ CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                       # Modo offline (s
 # =============================================================================
 # PERMISSOES DE ARQUIVO E DIRETORIO
 # =============================================================================
-PERM_DIR_SECURE="0755"                                         # Diretorios seguros (rwxr-xr-x)
-PERM_FILE_PRIVATE="0600"                                         # Arquivos privados (rw-------)
-PERM_FILE_EXEC="0755"                                          # Arquivos executaveis (rwxr-xr-x)
-PERM_FILE_BACKUP="0644"                                        # Arquivos de backup (rw-r--r--)
+PERM_DIR_SECURE="${PERM_DIR_SECURE:-0755}"                         # Diretorios seguros (rwxr-xr-x)
+PERM_FILE_PRIVATE="${PERM_FILE_PRIVATE:-0600}"                     # Arquivos privados (rw-------)
+PERM_FILE_EXEC="${PERM_FILE_EXEC-0755}"                            # Arquivos executaveis (rwxr-xr-x)
+PERM_FILE_BACKUP="${PERM_FILE_BACKUP-0644}"                        # Arquivos de backup (rw-r--r--)
 
 # =============================================================================
 # CONFIGURACOES DE REDE
