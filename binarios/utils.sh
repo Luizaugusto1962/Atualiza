@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/09/2026
+# Versao: 12/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -95,7 +95,7 @@ _formatar_e_exibir() {
     saida="${saida%$'\n'}"
     _exibir_mensagem_centralizada "${cor}" "${saida}"
 }
-    _msg()   { _formatar_e_exibir "${BRANCO}"  "[INFORMATIVO] > " "$@"; }
+    _msg()   { _formatar_e_exibir "${BRANCO}"  "[INFORMATIVO] > "  "$@"; }
     _ok()    { _formatar_e_exibir "${VERDE}"   "[OK] > "           "$@"; }
     _aviso() { _formatar_e_exibir "${AMARELO}" "[AVISO] > "        "$@"; }
     _erro()  { _formatar_e_exibir "${VERMELHO}" "[ERRO] > "        "$@"; }
@@ -260,7 +260,7 @@ _linha() {
 _meia_linha() {
     local traco="${1:--}"
     local cor="${2:-}"
-    local largura="${3:-40}"
+    local largura="${3:-50}"
     local espacos linhas colunas
 
     colunas=$(_obter_colunas)
