@@ -5,8 +5,13 @@ set -euo pipefail
 # Responsavel por operacoes de download/upload via rsync, sftp e ssh
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
+# DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced ANTES de
+# programas.sh (dono de ARQUIVOS_PROGRAMA; guard proprio nas funcoes que o
+# usam). Requer utils.sh (_ssh_aceitar_novo, _log*), principal.sh
+# (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
+#
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 31/08/2026-01
+# Versao: 14/09/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -63,26 +68,49 @@ _usar_chave_ssh() {
 # Constrói o comando scp em um array nomeado, com opções de conexão e (opcional) chave SSH.
 # Uso: _montar_cmd_scp <nome_array_ref> <porta> [timeout] [alive_interval] [alive_count]
 #   Os tres ultimos defaultam para SSH_TIMEOUT/SSH_ALIVE_INTERVAL/SSH_ALIVE_COUNT.
+# SEGURANCA: sem eval — os valores sao validados (porta/timeout/alive numericos)
+# e publicados no array via printf -v + read -a (ambos Bash 4.0+; nameref
+# exigiria 4.3+). Payloads com aspas/substituicao viram string literal, nunca
+# argumentos extras do scp.
 _montar_cmd_scp() {
-    # Compatibilidade: local -n exige Bash 4.4+; eval funciona em 4.2+
     local _cmd_ref="$1"
     local porta="${2:-}"
     local timeout="${3:-${SSH_TIMEOUT}}"
     local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"
     local alive_max="${5:-${SSH_ALIVE_COUNT}}"
 
-    eval "${_cmd_ref}=(
+    # Validar entradas que viram opcoes do scp: apenas digitos
+    if ! [[ "$porta" =~ ^[0-9]+$ && -n "$porta" ]] ||
+        ! [[ "$timeout" =~ ^[0-9]+$ ]] ||
+        ! [[ "$alive_int" =~ ^[0-9]+$ ]] ||
+        ! [[ "$alive_max" =~ ^[0-9]+$ ]]; then
+        _log_erro "Parametros invalidos para _montar_cmd_scp (porta/timeout/alive devem ser numericos)"
+        return 1
+    fi
+
+    local -a _opcoes_base=(
         scp
-        -P \"${porta}\"
-        -o \"ConnectTimeout=${timeout}\"
-        -o \"ServerAliveInterval=${alive_int}\"
-        -o \"ServerAliveCountMax=${alive_max}\"
-        -o \"StrictHostKeyChecking=$(_ssh_aceitar_novo)\"
-    )"
+        -P "$porta"
+        -o "ConnectTimeout=${timeout}"
+        -o "ServerAliveInterval=${alive_int}"
+        -o "ServerAliveCountMax=${alive_max}"
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
+    )
 
     if _usar_chave_ssh; then
-        eval "${_cmd_ref}+=(-i \"${CHAVE}\" -o \"BatchMode=yes\")"
+        _opcoes_base+=(-i "$CHAVE" -o "BatchMode=yes")
     fi
+
+    # Publicar no array do chamador via serializacao com separador nao
+    # imprimivel (printf -v: compativel com Bash < 4.2). O ${var?} documenta
+    # que o nome do array e intencionalmente dinamico (escopo do chamador).
+    local _sep=$'\x1f'
+    local _serializado
+    printf -v _serializado "%s${_sep}" "${_opcoes_base[@]}"
+    _serializado="${_serializado%"${_sep}"}"
+    IFS="${_sep}" read -r -a "${_cmd_ref?}" <<<"${_serializado}"
+
+    return 0
 }
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
@@ -184,7 +212,9 @@ _enviar_rsync() {
     local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if _usar_chave_ssh; then
-        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+        # StrictHostKeyChecking ja vem no array base; aqui so completam as
+        # opcoes de autenticacao por chave (evitava opcao duplicada no ssh)
+        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes")
     fi
 
     local cmd_ssh
@@ -240,7 +270,9 @@ _enviar_rsync_lote() {
     local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if _usar_chave_ssh; then
-        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+        # StrictHostKeyChecking ja vem no array base; aqui so completam as
+        # opcoes de autenticacao por chave (evitava opcao duplicada no ssh)
+        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes")
     fi
 
     local cmd_ssh
@@ -341,10 +373,24 @@ _baixar_biblioteca_sincroniza() {
 # Baixar programas via SFTP/SCP
 _baixar_programas_vaievem() {
     local caminho="${1:-${CFG_PORTALSAV}}"
+
+    # SEGURANCA: validar o diretorio de recebimento ANTES de cria-lo/usar
+    if ! _validar_caminho_seguro "${caminho:-}"; then
+        _erro "Diretorio de recebimento invalido: ${caminho}"
+        return 1
+    fi
+
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
     }
+
+    # Guard set -u: vaievem.sh e carregado antes de programas.sh (onde o array
+    # e declarado). Em runtime o array ja existe, mas o guard protege chamadas
+    # fora do bootstrap completo (ex: testes isolados de modulo).
+    if [[ -z "${ARQUIVOS_PROGRAMA+x}" ]]; then
+        return 0
+    fi
 
     if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
         return 0
@@ -364,14 +410,9 @@ _baixar_programas_vaievem() {
                 return 1
             fi
 
+            # Integridade do zip recebido (existencia/tamanho ja garantidos
+            # pelo _receber_scp; o teste do zip e exclusivo daqui)
             _linha
-            # Verificar se arquivo foi baixado
-            if [[ ! -f "$arquivo" || ! -s "$arquivo" ]]; then
-                _erro "Falha ao baixar verificar se existe no servidor: $arquivo"
-                _aguardar 0
-                return 1
-            fi
-
             if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
                 _erro "Arquivo corrompido: $arquivo"
                 # SEGURANCA: Usar '--' para prevenir injeção de opções no rm

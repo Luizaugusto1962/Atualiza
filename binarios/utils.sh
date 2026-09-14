@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 12/09/2026
+# Versao: 14/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -209,6 +209,7 @@ _exibir_mensagem_corrida() {
     local cor="${1}"
     local mensagem="${2}"
     local largura_terminal largura_mensagem posicao_inicio
+    local i
 
     # Obter largura do terminal com fallback seguro
     largura_terminal=$(_obter_colunas)
@@ -281,13 +282,20 @@ _aguardar() {
     local tempo="${1:-}"
 
     if [[ -z "$tempo" ]]; then
-        _erro "Nenhum argumento passado para _aguardar.\n" >&2
+        _erro "Nenhum argumento passado para _aguardar." >&2
         return 1
     fi
 
     if ! [[ "$tempo" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
         _erro "Argumento inválido para _aguardar: %s\n" "$tempo" >&2
         return 1
+    fi
+
+    # Bash 4.0/4.1: read -t so aceita inteiros — timeout fracionario falha
+    # silenciosamente. Truncar para inteiro nesses casos (pausa aproximada).
+    if [[ "$tempo" == *.* ]] && (( BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 2 )); then
+        tempo="${tempo%%.*}"
+        [[ -z "$tempo" || "$tempo" == "0" ]] && tempo=1
     fi
 
     read -rt "$tempo" <> <(:) || :
@@ -302,8 +310,13 @@ _aguardar_tecla() {
 
     colunas=$(_obter_colunas)
 
+    # Centralizar pela largura real da mensagem (antes usava 36 fixo)
+    local msg_completa="<< $mensagem >>"
+    local margem=$(( (colunas + ${#msg_completa}) / 2 ))
+    (( margem < 0 )) && margem=0
+
     printf "%s" "${CIANO}"
-    printf "%*s\n" $(((36 + colunas) / 2)) "<< $mensagem >>"
+    printf "%*s\n" "$margem" "$msg_completa"
     printf "%s" "${NORMAL}"
     read -rt "$tempo_limite" || :
     tput sgr0 2>/dev/null || true
@@ -313,7 +326,8 @@ _aguardar_tecla() {
 # Manter compatibilidade com código existente durante transição
 _opinvalida() {
     _linha "-" "${AMARELO:-}"
-    local espacos=$(( ($(_obter_colunas) - 18) / 2 ))
+    # "Opcao Invalida" tem 14 caracteres (antes usava 18, deslocava 2 col)
+    local espacos=$(( ($(_obter_colunas) - 14) / 2 ))
     (( espacos < 0 )) && espacos=0
     printf "%*s%s\n" "$espacos" "" "${VERMELHO}Opcao Invalida${NORMAL}"
     _linha "-" "${AMARELO:-}"
@@ -417,7 +431,13 @@ _mostrar_progresso_backup() {
 
     if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
         _aviso "PID nao informado ou processo ja terminado"
-        return 0
+        # Processo terminou antes do inicio da barra: recolher o status real
+        # via wait em vez de descartar a falha (rc=0 falso-positivo).
+        local _status_antigo=0
+        if [[ -n "$pid" ]]; then
+            wait "$pid" 2>/dev/null && _status_antigo=0 || _status_antigo=$?
+        fi
+        return "$_status_antigo"
     fi
 
     # Ocultar cursor se suportado
@@ -474,6 +494,13 @@ _log() {
     # Validação do arquivo de log
     if [[ -z "$arquivo_log" ]]; then
         arquivo_log="/var/log/sav.log"
+    fi
+
+    # Caminho sem barra (ex: "sav.log"): log_dir seria o proprio nome —
+    # validar como erro de caminho, nao de diretorio inexistente.
+    if [[ "$arquivo_log" != */* ]]; then
+        _erro "Caminho de log invalido (sem diretorio): %s\n" "$arquivo_log" >&2
+        return 1
     fi
 
     # Cache da validação do diretório (evita fork de dirname + testes a cada linha)
@@ -585,28 +612,31 @@ _executar_expurgador_diario() {
         find "${logs_dir}" -name ".expurgador_*" -mtime +3 -delete 2>/dev/null || true
     fi
 
-    # Array de diretórios e configurações de limpeza
-    local -A configuracoes=(
-        ["${DEFAULT_LOGS_DIR:-}"]=30
-        ["${DEFAULT_BACKUP_DIR:-}"]=30
-        ["${DEFAULT_BASEBACKUP_DIR:-}"]=30
-        ["${DEFAULT_OLDS_DIR:-}"]=30
-        ["${DEFAULT_PROGS_DIR:-}"]=10
-        ["${DEFAULT_ENVIA_DIR:-}"]=10
-        ["${CFG_PORTALSAV:-}"]=10
+    # Array de pares "dias:diretorio" (nao usar array associativo: chave vazia
+    # e fatal em Bash 4.0-4.3 e 5.2+, e dirs duplicados descartariam regras).
+    # Pares duplicados sao inofensivos: _limpar_arquivos_antigos e idempotente.
+    local -a pares_limpeza=(
+        "30:${DEFAULT_LOGS_DIR:-}"
+        "30:${DEFAULT_BACKUP_DIR:-}"
+        "30:${DEFAULT_BASEBACKUP_DIR:-}"
+        "30:${DEFAULT_OLDS_DIR:-}"
+        "10:${DEFAULT_PROGS_DIR:-}"
+        "10:${DEFAULT_ENVIA_DIR:-}"
+        "10:${CFG_PORTALSAV:-}"
+        "30:${savlog}"
+        "30:${err_isc}"
+        "30:${viewvix}"
     )
 
     # Loop otimizado para limpeza
-    for dir in "${!configuracoes[@]}"; do
-        if [[ -n "$dir" && -d "$dir" ]]; then
-            _limpar_arquivos_antigos "$dir" "${configuracoes[$dir]}" "*.*" 2>/dev/null || true
+    local _par_limpeza
+    for _par_limpeza in "${pares_limpeza[@]}"; do
+        local _dias_limpeza="${_par_limpeza%%:*}"
+        local _dir_limpeza="${_par_limpeza#*:}"
+        if [[ -n "$_dir_limpeza" && -d "$_dir_limpeza" ]]; then
+            _limpar_arquivos_antigos "$_dir_limpeza" "$_dias_limpeza" "*.*" 2>/dev/null || true
         fi
     done
-
-    # Limpar arquivos específicos do sistema
-    _limpar_arquivos_antigos "${savlog}" 30 "*.*" 2>/dev/null || true
-    _limpar_arquivos_antigos "${err_isc}" 30 "*.*" 2>/dev/null || true
-    _limpar_arquivos_antigos "${viewvix}" 30 "*.*" 2>/dev/null || true
 
     # Criar flag para hoje (somente se o diretorio de flag for valido)
     if [[ -n "${flag_file:-}" ]] && touch "$flag_file" 2>/dev/null; then
@@ -689,17 +719,27 @@ _ssh_aceitar_novo() {
 #===================================================================
 
 # -------------------------------------------------------------------------
+# Contexto SSH compartilhado pelas funcoes deste bloco (globais com prefixo
+# proprio para nao colidir com SERVIDOR/PORTA/USUARIO/CHAVE de outros modulos).
+# -------------------------------------------------------------------------
+_ssh_contexto() {
+    SSH_SERV="${DEFAULT_IP_SERVER:-}"
+    SSH_PORTA="${DEFAULT_SSH_PORTA:-}"
+    SSH_USUARIO="${DEFAULT_SSH_USER:-}"
+    SSH_CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa_atualiza}"
+    SSH_CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa_atualiza.pub}"
+    export SSH_SERV SSH_PORTA SSH_USUARIO SSH_CHAVE SSH_CHAVE_PUB
+}
+
+# -------------------------------------------------------------------------
 # Verifica dependencias
 # -------------------------------------------------------------------------
 _checar_dependencias() {
-    SERVIDOR="${DEFAULT_IP_SERVER:-}"
-    PORTA="${DEFAULT_SSH_PORTA:-}"
-    USUARIO="${DEFAULT_SSH_USER:-}"
-    CHAVE="${DEFAULT_CHAVE_SSH:-${HOME}/.ssh/id_rsa}"
-    CHAVE_PUB="${DEFAULT_CHAVE_SSH_PUB:-${HOME}/.ssh/id_rsa.pub}"
+    # Ajustar contexto antes de validar
+    _ssh_contexto
 
     # Validacao das variaveis obrigatorias
-    if [[ -z "${SERVIDOR}" ]]; then
+    if [[ -z "${SSH_SERV}" ]]; then
         _erro "Variavel DEFAULT_IP_SERVER nao foi definida."
         return 1
     fi
@@ -719,7 +759,8 @@ _checar_dependencias() {
 _preparar_diretorio_ssh() {
     if [ ! -d "$HOME/.ssh" ]; then
         mkdir -p "$HOME/.ssh"
-        chmod "${PERM_DIR_SECURE}" "$HOME/.ssh"
+        # 0700: padrao exigido pelo ssh para o diretorio de chaves
+        chmod 700 "$HOME/.ssh"
         _ok "Diretorio ~/.ssh criado."
     fi
 }
@@ -728,21 +769,22 @@ _preparar_diretorio_ssh() {
 # Verifica se a chave ja existe; pergunta se quer criar caso nao exista
 # -------------------------------------------------------------------------
 _verificar_ou_criar_chave() {
-    if [ -f "$CHAVE" ] && [ -f "$CHAVE_PUB" ]; then
-        _ok "Chave SSH encontrada: $CHAVE"
+    if [ -f "$SSH_CHAVE" ] && [ -f "$SSH_CHAVE_PUB" ]; then
+        _ok "Chave SSH encontrada: $SSH_CHAVE"
         return 0
     fi
 
-    _aviso "Chave SSH nao encontrada em $CHAVE"
+    _aviso "Chave SSH nao encontrada em $SSH_CHAVE"
     printf "\nDeseja criar uma nova chave SSH agora? [s/N] "
-    local RESPOSTA
-    read -r RESPOSTA
+    local RESPOSTA=""
+    # -t: timeout/EOF-guard (sem ele, stdin fechado abortava a funcao)
+    read -r -t "${DEFAULT_READ_TIMEOUT:-60}" RESPOSTA || RESPOSTA=""
 
     case "$RESPOSTA" in
         [sS]|[sS][iI][mM])
             _msg "Gerando par de chaves RSA 4096 bits..."
-            if ssh-keygen -t rsa -b 4096 -f "$CHAVE" -C "${USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
-                _ok "Chave criada com sucesso: $CHAVE"
+            if ssh-keygen -t rsa -b 4096 -f "$SSH_CHAVE" -C "${SSH_USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
+                _ok "Chave criada com sucesso: $SSH_CHAVE"
             else
                 _erro "Falha ao criar a chave SSH."
             fi
@@ -751,25 +793,36 @@ _verificar_ou_criar_chave() {
             _aviso "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
             ;;
     esac
+    return 0
 }
 
 # -------------------------------------------------------------------------
 # Envia a chave publica ao servidor principal
 # -------------------------------------------------------------------------
 _enviar_chave_para_servidor() {
-    _msg "Enviando chave publica para ${USUARIO}@${SERVIDOR}:${PORTA}..."
-    _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor (ultima vez)."
+    _msg "Enviando chave publica para ${SSH_USUARIO}@${SSH_SERV}:${SSH_PORTA}..."
+    _aviso "Sera solicitada a senha do usuario '${SSH_USUARIO}' no servidor (ultima vez)."
 
-    if ssh-copy-id -i "$CHAVE_PUB" -p "$PORTA" "${USUARIO}@${SERVIDOR}"; then
+    # ssh-copy-id moderno aceita -p/-o; clientes legados (RHEL/CentOS 6,
+    # OpenSSH 5.x) rejeitam. Detectar suporte e montar o comando adequado.
+    local ssh_copy_cmd
+    if ssh-copy-id -h 2>&1 | grep -qE '\-p|\-o'; then
+        ssh_copy_cmd=(ssh-copy-id -i "$SSH_CHAVE_PUB" -p "$SSH_PORTA" "${SSH_USUARIO}@${SSH_SERV}")
+    else
+        ssh_copy_cmd=(ssh-copy-id -i "$SSH_CHAVE_PUB" "${SSH_USUARIO}@${SSH_SERV}")
+    fi
+
+    if "${ssh_copy_cmd[@]}"; then
         _ok "Chave enviada com sucesso!"
         _ok "A partir de agora a conexao sera feita sem senha."
     else
         _erro "Falha ao enviar a chave. Verifique:"
-        _msg "  - Se o servidor esta acessivel: ssh -p $PORTA ${USUARIO}@${SERVIDOR}"
-        _msg "  - Se o usuario '${USUARIO}' existe no servidor"
+        _msg "  - Se o servidor esta acessivel: ssh -p $SSH_PORTA ${SSH_USUARIO}@${SSH_SERV}"
+        _msg "  - Se o usuario '${SSH_USUARIO}' existe no servidor"
         _msg "  - Se a senha informada esta correta"
-        _aviso "Sera solicitada a senha do usuario '${USUARIO}' no servidor."
+        _aviso "Sera solicitada a senha do usuario '${SSH_USUARIO}' no servidor."
     fi
+    return 0
 }
 
 # -------------------------------------------------------------------------
@@ -780,15 +833,16 @@ _testar_conexao() {
     if ssh -o BatchMode=yes \
         -o ConnectTimeout=10 \
         -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)" \
-        -i "$CHAVE" \
-        -p "$PORTA" \
-        "${USUARIO}@${SERVIDOR}" \
+        -i "$SSH_CHAVE" \
+        -p "$SSH_PORTA" \
+        "${SSH_USUARIO}@${SSH_SERV}" \
         "echo 'Conexao OK em: \$(hostname) - \$(date)'"; then
         _ok "Conexao sem senha funcionando perfeitamente!"
     else
         _erro "Conexao sem senha falhou. Verifique as permissoes no servidor:"
         _erro "  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
     fi
+    return 0
 }
 
 

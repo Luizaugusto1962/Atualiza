@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026
+# Versao: 14/09/2026
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -334,8 +334,12 @@ _executar_atualizacao_biblioteca() {
     done
     local contador=1
 
-    # Definir diretorio de configuracao usando variaveis locais
-    local principal_local="${RAIZ%/*}"
+    # Definir diretorio de destino para descompactacao
+    # O zip contem caminhos relativos como sav/classes/ e sav/tel_isc/
+    # Extrair na raiz do filesystem para que os caminhos se resolvam corretamente
+    local principal_local
+    principal_local="${RAIZ%/*}"
+    [[ -z "$principal_local" ]] && principal_local="/"
 
     # Processar cada arquivo de atualizacao
     for arquivo in "${arquivos_update[@]}"; do

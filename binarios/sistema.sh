@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 14/09/2026-01
 #
 
 # Variaveis globais esperadas
@@ -22,7 +22,7 @@ _mostrar_versao_iscobol() {
         _linha "=" "${VERDE}"
         _exibir_mensagem_centralizada "${VERDE}" "Versao do IsCobol"
         _linha "=" "${VERDE}"
-        "${SAVISC}${ISCCLIENT}" -v
+        "${SAVISC}${ISCCLIENT}" -v || true
         _linha "=" "${VERDE}"
         printf "\n"
     else
@@ -60,11 +60,17 @@ _mostrar_versao_linux() {
 
     # Checando OS Versao e nome
     if [[ -f /etc/os-release ]]; then
-        grep 'NAME\|VERSION' /etc/os-release | grep -v 'VERSION_ID\|PRETTY_NAME' >"${LOG_TMP}osrelease"
-        printf '%s' "${VERDE}OS Nome :${NORMAL}"
-        grep -v "VERSION" "${LOG_TMP}osrelease" | cut -f2 -d\"
-        printf '%s' "${VERDE}OS Versao: ${NORMAL}"
-        grep -v "NAME" "${LOG_TMP}osrelease" | cut -f2 -d\"
+        local os_nome="" os_versao="" _osr_linha=""
+        while IFS= read -r _osr_linha; do
+            case "$_osr_linha" in
+                NAME=*) os_nome="${_osr_linha#NAME=}" ;;
+                VERSION=*) os_versao="${_osr_linha#VERSION=}" ;;
+            esac
+        done </etc/os-release
+        os_nome="${os_nome//\"/}"
+        os_versao="${os_versao//\"/}"
+        printf '%s\n' "${VERDE}OS Nome :${NORMAL}${os_nome:-desconhecido}${NORMAL}"
+        printf '%s\n' "${VERDE}OS Versao: ${NORMAL}${os_versao:-desconhecida}${NORMAL}"
     else
         _aviso "Arquivo /etc/os-release nao encontrado."
     fi
@@ -76,15 +82,18 @@ _mostrar_versao_linux() {
     printf '%s\n' "${VERDE}Nome do Servidor: ${NORMAL}${servidores_nome}${NORMAL}"
     printf "\n"
 
-    # Checando Interno IP
-    local ip_interno
-    ip_interno=$(ip route get 1 | awk '{print $7;exit}')
+    # Checando Interno IP (fallback "Nao disponivel" se iproute2 ausente)
+    local ip_interno="Nao disponivel"
+    if command -v ip >/dev/null 2>&1; then
+        ip_interno=$(ip route get 1 2>/dev/null | awk '{print $7;exit}' || true)
+        [[ -z "$ip_interno" ]] && ip_interno="Nao disponivel"
+    fi
     printf '%s\n' "${VERDE}IP Interno: ${NORMAL}${ip_interno}${NORMAL}"
     printf "\n"
 
-    # Checando Externo IP
+    # Checando Externo IP (o padrao "${CFG_OFFLINE:-n}" cobre config ausente/vazia)
     local ip_externo="Nao disponivel"
-    if [[ "${CFG_OFFLINE}" == "n" ]]; then
+    if [[ "${CFG_OFFLINE:-n}" != "s" ]]; then
         if command -v curl >/dev/null 2>&1; then
             ip_externo=$(curl -s --max-time 5 ipecho.net/plain || printf "Nao disponivel")
         else
@@ -100,7 +109,7 @@ _mostrar_versao_linux() {
 
     # Checando os usuarios logados — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Usuario Logado: ${NORMAL}"
-    who || true
+    who 2>/dev/null || _aviso "Comando 'who' nao disponivel."
     printf "\n"
 
     # Checando uso de memoria RAM e SWAP — direto, sem arquivo temporario
@@ -112,15 +121,17 @@ _mostrar_versao_linux() {
 
     # Checando uso de disco — direto, sem arquivo temporario
     printf '%s\n' "${VERDE}Espaco em Disco: ${NORMAL}"
-    df -h | grep -E 'Filesystem|^/dev/' || true
+    df -h 2>/dev/null | grep -E 'Filesystem|^/dev/' || true
     printf "\n"
 
     # Checando o Sistema Uptime
-    local tecuptime
-    if command -v uptime >/dev/null 2>&1 && uptime -p >/dev/null 2>&1; then
-        tecuptime=$(uptime -p | cut -d " " -f2-)
-    else
-        tecuptime=$(uptime | sed 's/.*up //' | sed 's/,.*//')
+    local tecuptime="Nao disponivel"
+    if command -v uptime >/dev/null 2>&1; then
+        if uptime -p >/dev/null 2>&1; then
+            tecuptime=$(uptime -p | cut -d " " -f2-)
+        else
+            tecuptime=$(uptime | sed 's/.*up //' | sed 's/,.*//')
+        fi
     fi
     printf '%s\n' "${VERDE}Sistema em uso Dias/(HH:MM): ${NORMAL}${tecuptime}${NORMAL}"
 
@@ -130,11 +141,38 @@ _mostrar_versao_linux() {
 
 #---------- FUNCOES DE PARAMETROS ----------#
 
+# Carrega o .versao de forma segura: em vez de sourcing direto, extrai apenas
+# as chaves que o arquivo legitimo contem (VERSAOANT/VERSAO, gravadas por
+# biblioteca.sh). Whitelist estrita: um .versao adulterado nao consegue
+# sobrescrever PATH/HOME/outras variaveis do ambiente.
+_carregar_versao_seguro() {
+    local arquivo_versao="$1"
+    local linha
+
+    while IFS= read -r linha || [[ -n "$linha" ]]; do
+        case "$linha" in
+            VERSAOANT=*)
+                VERSAOANT="${linha#VERSAOANT=}"
+                VERSAOANT="${VERSAOANT#\"}"
+                VERSAOANT="${VERSAOANT%\"}"
+                ;;
+            VERSAO=*)
+                VERSAO="${linha#VERSAO=}"
+                VERSAO="${VERSAO#\"}"
+                VERSAO="${VERSAO%\"}"
+                ;;
+        esac
+    done <"$arquivo_versao"
+
+    return 0
+}
+
 # Mostra parametros do sistema
 _mostrar_parametros() {
-    # Carregar versao antes de exibir
+    # Carregar versao antes de exibir (parser seguro + whitelist, sem
+    # sourcing direto do arquivo)
     if [[ -f "${CFG_DIR}/.versao" ]]; then
-        "." "${CFG_DIR}/.versao"
+        _carregar_versao_seguro "${CFG_DIR}/.versao"
     fi
     clear
     _linha "=" "${CIANO}"
@@ -165,7 +203,7 @@ _mostrar_parametros() {
     printf '%b\n' "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do backup da biblioteca anterior: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT}${NORMAL}"
+    printf '%b\n' "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT:-desconhecida}${NORMAL}"
     printf '%b\n' "${VERDE}Servidor OFF: ${NORMAL}${CFG_OFFLINE}${NORMAL}"
     printf '%b\n' "${VERDE}Acessa as chaves: ${NORMAL}${CFG_CHAVE_SSH}${NORMAL}"
     printf '%b\n' "${VERDE}Variavel do compilado: ${NORMAL}${compilado}${NORMAL}"
@@ -181,6 +219,7 @@ _mostrar_parametros() {
 #===================================================================
 _manutencao_setup() {
     local atualiza="${SCRIPT_DIR}/atualiza.sh"
+    local rc_setup=0
 
     if [[ ! -f "${atualiza}" ]]; then
         _erro "atualiza.sh nao encontrado em ${SCRIPT_DIR}"
@@ -188,7 +227,9 @@ _manutencao_setup() {
         return 1
     fi
 
-    "${atualiza}" --setup --edit
+    # Rodar setup mesmo abortando (Ctrl+C/erro), o recarregamento abaixo
+    # sempre executa — sem ele a sessao continuaria com valores antigos.
+    "${atualiza}" --setup --edit || rc_setup=$?
 
     # Recarregar configuracoes na sessao atual apos edicao
     if [[ -f "${CFG_DIR}/.config" ]] && command -v _carregar_config_seguro >/dev/null 2>&1; then
@@ -197,6 +238,8 @@ _manutencao_setup() {
         _exibir_mensagem_centralizada "${VERDE}" "Configuracoes recarregadas na sessao atual."
         _aguardar 2
     fi
+
+    return "$rc_setup"
 }
 
 

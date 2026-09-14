@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:10/09/2026
+# Versao:14/09/2026
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -533,6 +533,9 @@ _limpar_estado_variaveis() {
     REGISTRO_VARIAVEIS=()
     _REGISTRO_MAPA=()
     unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
+
+    # Higiene de caches/estado interno de utils.sh (nao entram em REGISTRO_VARIAVEIS)
+    unset -v _COLUNAS_CACHE _LOG_DIR_CACHE _stty_size 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
     return 0

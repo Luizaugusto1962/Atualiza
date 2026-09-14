@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 03/09/2026-01
+# Versao: 14/09/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -759,7 +759,7 @@ _menu_configurar_ssh() {
         *)
             _linha
             _exibir_mensagem_centralizada "${AMARELO}" "Envio cancelado. Para enviar manualmente, execute:"
-            _exibir_mensagem_centralizada "${AMARELO}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA}@${DEFAULT_IP_SERVER}"
+            _exibir_mensagem_centralizada "${AMARELO}" "  ssh-copy-id -i ${DEFAULT_CHAVE_SSH_PUB} -p ${DEFAULT_SSH_PORTA} ${DEFAULT_SSH_USER}@${DEFAULT_IP_SERVER}"
             ;;
     esac
 
