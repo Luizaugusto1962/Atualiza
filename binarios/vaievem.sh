@@ -11,7 +11,7 @@ set -euo pipefail
 # (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 15/09/2026-01
+# Versao: 15/09/2026-02
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -112,6 +112,81 @@ _montar_cmd_scp() {
     return 0
 }
 
+# Constrói as opções de conexão SSH em um array nomeado (base para rsync -e).
+# Uso: _montar_cmd_ssh <nome_array_ref> <porta> [timeout] [alive_interval] [alive_count]
+#   Os tres ultimos defaultam para SSH_TIMEOUT/SSH_ALIVE_INTERVAL/SSH_ALIVE_COUNT.
+# SEGURANCA: sem eval — os valores sao validados (porta/timeout/alive numericos)
+# e publicados no array via nameref (Bash 4.3+) ou serializacao IFS (4.0-4.2).
+# Centraliza a montagem hoje duplicada em _enviar_rsync e _enviar_rsync_lote.
+_montar_cmd_ssh() {
+    local _cmd_ref="$1"
+    local porta="${2:-}"
+    local timeout="${3:-${SSH_TIMEOUT}}"
+    local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"
+    local alive_max="${5:-${SSH_ALIVE_COUNT}}"
+
+    # Validar entradas que viram opcoes do ssh: apenas digitos
+    if ! [[ "$porta" =~ ^[0-9]+$ && -n "$porta" ]] ||
+       ! [[ "$timeout" =~ ^[0-9]+$ ]] ||
+       ! [[ "$alive_int" =~ ^[0-9]+$ ]] ||
+       ! [[ "$alive_max" =~ ^[0-9]+$ ]]; then
+        _erro "Parametros invalidos para _montar_cmd_ssh (porta/timeout/alive devem ser numericos)"
+        _log_erro "Parametros invalidos para _montar_cmd_ssh (porta=${porta} timeout=${timeout} alive=${alive_int}/${alive_max})"
+        return 1
+    fi
+
+    local -a _opcoes_ssh=(
+        ssh
+        -p "$porta"
+        -o "ConnectTimeout=${timeout}"
+        -o "ServerAliveInterval=${alive_int}"
+        -o "ServerAliveCountMax=${alive_max}"
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
+    )
+
+    if _usar_chave_ssh; then
+        _opcoes_ssh+=(-i "$CHAVE" -o "BatchMode=yes")
+    fi
+
+    # Publicar no array do chamador (mesma estrategia do _montar_cmd_scp).
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3) )); then
+        # Bash 4.3+: nameref — publica o array diretamente, sem serializacao.
+        local -n _ssh_ref="${_cmd_ref?}"
+        _ssh_ref=("${_opcoes_ssh[@]}")
+    else
+        local _sep=$'\x1f'
+        local _serializado
+        printf -v _serializado "%s${_sep}" "${_opcoes_ssh[@]}"
+        _serializado="${_serializado%"${_sep}"}"
+        IFS="${_sep}" read -r -a "${_cmd_ref?}" <<<"${_serializado}"
+    fi
+
+    return 0
+}
+
+# Junta um array de comando em uma unica string para o rsync -e (que exige
+# string, nao array). Em Bash 4.4+ usa printf %q para proteger cada argumento
+# (caminho de chave com espacos deixa de quebrar); em versoes antigas mantem
+# o join simples anterior.
+# SEGURANCA: sem eval/indirecao — recebe os elementos ja expandidos pelo
+# chamador, que e o dono do array (evita manipulacao de nome de variavel).
+# Uso: _juntar_comando <elemento...>
+_juntar_comando() {
+    local -a _partes=("$@")
+
+    if (( ${#_partes[@]} == 0 )); then
+        return 1
+    fi
+
+    local _cmd_junto=""
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )); then
+        printf -v _cmd_junto '%q ' "${_partes[@]}"
+    else
+        printf -v _cmd_junto '%s ' "${_partes[@]}"
+    fi
+    printf '%s' "${_cmd_junto% }"
+}
+
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
 
 
@@ -188,7 +263,7 @@ _enviar_rsync() {
     fi
 
     if [[ ! -f "$arquivo_local" ]]; then
-        _erro "Arquivo local nao encontrado: ${arquivo_local}"
+        _log_erro "Arquivo local nao encontrado: ${arquivo_local}"
         return 1
     fi
 
@@ -208,17 +283,13 @@ _enviar_rsync() {
     # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
     # (ex: SMB) rejeitam chmod com "Operation not permitted"
     local base_rsync=("rsync" "-rtzP")
-    local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
-
-    if _usar_chave_ssh; then
-        # StrictHostKeyChecking ja vem no array base; aqui so completam as
-        # opcoes de autenticacao por chave (evitava opcao duplicada no ssh)
-        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes")
+    local -a ssh_cmd_parts=()
+    if ! _montar_cmd_ssh ssh_cmd_parts "$porta"; then
+        _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
+        return 1
     fi
-
     local cmd_ssh
-    printf -v cmd_ssh '%s ' "${ssh_cmd_parts[@]}"
-    cmd_ssh="${cmd_ssh% }"
+    cmd_ssh="$(_juntar_comando "${ssh_cmd_parts[@]}")"
 
     # Executa o upload (única chamada)
     if "${base_rsync[@]}" -e "${cmd_ssh}" "$arquivo_local" "$destino_completo"; then
@@ -245,7 +316,7 @@ _enviar_rsync_lote() {
 
     for arquivo_local in "${arquivos_locais[@]}"; do
         if [[ ! -f "$arquivo_local" ]]; then
-            _erro "Arquivo local nao encontrado: ${arquivo_local}"
+            _log_erro "Arquivo local nao encontrado: ${arquivo_local}"
             return 1
         fi
     done
@@ -266,17 +337,13 @@ _enviar_rsync_lote() {
     # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
     # (ex: SMB) rejeitam chmod com "Operation not permitted"
     local base_rsync=("rsync" "-rtzP")
-    local -a ssh_cmd_parts=("ssh" "-p" "${porta}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
-
-    if _usar_chave_ssh; then
-        # StrictHostKeyChecking ja vem no array base; aqui so completam as
-        # opcoes de autenticacao por chave (evitava opcao duplicada no ssh)
-        ssh_cmd_parts+=("-i" "${CHAVE}" "-o" "BatchMode=yes")
+    local -a ssh_cmd_parts=()
+    if ! _montar_cmd_ssh ssh_cmd_parts "$porta"; then
+        _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
+        return 1
     fi
-
     local cmd_ssh
-    printf -v cmd_ssh '%s ' "${ssh_cmd_parts[@]}"
-    cmd_ssh="${cmd_ssh% }"
+    cmd_ssh="$(_juntar_comando "${ssh_cmd_parts[@]}")"
 
     # Executa o upload de todos os arquivos em uma unica chamada (1 conexao SSH)
     if "${base_rsync[@]}" -e "${cmd_ssh}" "${arquivos_locais[@]}" "$destino_completo"; then
@@ -305,10 +372,12 @@ _baixar_biblioteca_sincroniza() {
         return 1
     fi
 
-    pushd "${CFG_PORTALSAV:-}" >/dev/null || {
-        _log_erro "Erro: Nao foi possivel acessar diretorio: ${CFG_PORTALSAV:-}"
+    # Garantir que o diretorio de recebimento exista (substitui o pushd:
+    # nao ha mais mudanca de cwd, os downloads usam destino absoluto).
+    if ! _criar_diretorio_seguro "${CFG_PORTALSAV:-}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _log_erro "Erro: Nao foi possivel acessar/criar diretorio: ${CFG_PORTALSAV:-}"
         return 1
-    }
+    fi
 
     if _usar_chave_ssh; then
         local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
@@ -316,20 +385,17 @@ _baixar_biblioteca_sincroniza() {
         # SEGURANCA: Validar caminho construido
         if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
             _log_erro "Erro: Caminho da biblioteca invalido."
-            popd >/dev/null
             return 1
         fi
         local -a cmd_scp_lib=()
         _montar_cmd_scp cmd_scp_lib "$porta"
         local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
-        if "${cmd_scp_lib[@]}" "$origem" "."; then
+        if "${cmd_scp_lib[@]}" "$origem" "${CFG_PORTALSAV:-}/"; then
             _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
-            popd >/dev/null
             return 0
         else
             _log_erro "Falha no download da biblioteca: ${SAVATU:-}${VERSAO:-}.zip"
-            popd >/dev/null
             return 1
         fi
     else
@@ -338,7 +404,6 @@ _baixar_biblioteca_sincroniza() {
         read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
         if [[ ${#arquivos_update[@]} -eq 0 ]]; then
             _erro "Nenhum arquivo de atualizacao encontrado"
-            popd >/dev/null
             return 1
         fi
         # Montar origens remotas em uma unica conexao SCP (lote)
@@ -350,12 +415,10 @@ _baixar_biblioteca_sincroniza() {
             # SEGURANCA: Validar cada nome de arquivo antes do uso
             if ! _validar_caminho_seguro "$arquivo"; then
                 _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
-                popd >/dev/null
                 return 1
             fi
             if ! _validar_caminho_seguro "${DESTINO_BIBLIOTECA}${arquivo}"; then
                 _log_erro "Erro: Caminho de atualizacao invalido ou malicioso: ${DESTINO_BIBLIOTECA}${arquivo}"
-                popd >/dev/null
                 return 1
             fi
             origens+=("${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}")
@@ -364,19 +427,17 @@ _baixar_biblioteca_sincroniza() {
         local -a cmd_scp=()
         _montar_cmd_scp cmd_scp "$porta"
 
-        if "${cmd_scp[@]}" "${origens[@]}" "."; then
+        if "${cmd_scp[@]}" "${origens[@]}" "${CFG_PORTALSAV:-}/"; then
             _log_sucesso "Download em lote concluido: ${#arquivos_update[@]} arquivo(s)"
-            popd >/dev/null
             return 0
         else
             _log_erro "Falha no download em lote dos arquivos de atualizacao"
-            popd >/dev/null
             return 1
         fi
     fi
 }
 
-# Baixar programas via SFTP/SCP
+# Baixar programas via SFTP/SCP (download em lote: 1 conexao SCP para N arquivos)
 _baixar_programas_vaievem() {
     local caminho="${1:-${CFG_PORTALSAV}}"
 
@@ -405,38 +466,63 @@ _baixar_programas_vaievem() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Realizando sincronizacao dos arquivos..."
 
-    pushd "${CFG_PORTALSAV:-}" >/dev/null || {
-        _erro "Nao foi possivel acessar diretorio: ${CFG_PORTALSAV:-}"
-        return 1
-    }
+    local servidor="${DEFAULT_IP_SERVER}"
+    local porta="${DEFAULT_SSH_PORTA}"
+    local usuario_remoto="${DEFAULT_SSH_USER}"
 
+    # Montar origens remotas em uma unica conexao SCP (lote)
+    local -a origens=()
+    local -a nomes_arquivos=()
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        # SEGURANCA: Validar cada nome antes do uso
+        if ! _validar_caminho_seguro "$arquivo"; then
+            _log_erro "Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
+            return 1
+        fi
+        if ! _validar_caminho_seguro "${DESTINO_SERVER}${arquivo}"; then
+            _log_erro "Caminho de atualizacao invalido ou malicioso: ${DESTINO_SERVER}${arquivo}"
+            return 1
+        fi
         _linha
         _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
-        _linha
+        origens+=("${usuario_remoto}@${servidor}:${DESTINO_SERVER}${arquivo}")
+        nomes_arquivos+=("$arquivo")
+    done
 
-        if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
-            _erro "Falha no download: $arquivo"
-            popd >/dev/null
+    local -a cmd_scp=()
+    _montar_cmd_scp cmd_scp "$porta"
+
+    if ! "${cmd_scp[@]}" "${origens[@]}" "${caminho}/"; then
+        _log_erro "Falha no download em lote dos programas"
+        return 1
+    fi
+
+    # Integridade de cada zip recebido (existe no destino absoluto ${caminho}/)
+    local arquivo_destino
+    for arquivo in "${nomes_arquivos[@]}"; do
+        arquivo_destino="${caminho%/}/${arquivo}"
+        if [[ ! -f "$arquivo_destino" ]]; then
+            _log_erro "Arquivo nao encontrado apos download: $arquivo"
             return 1
         fi
-
-        # Integridade do zip recebido (existencia/tamanho ja garantidos
-        # pelo _receber_scp; o teste do zip e exclusivo daqui)
+        if [[ ! -s "$arquivo_destino" ]]; then
+            _log_erro "Arquivo recebido vazio: $arquivo"
+            # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
+            rm -f -- "$arquivo_destino"
+            _aguardar 2
+            return 1
+        fi
         _linha
-        if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
+        if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo_destino" >/dev/null 2>&1; then
             _erro "Arquivo corrompido: $arquivo"
             # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
-            rm -f -- "$arquivo"
+            rm -f -- "$arquivo_destino"
             _aguardar 2
-            popd >/dev/null
             return 1
         fi
-
         _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
     done
 
-    popd >/dev/null
     return 0
 }
 
@@ -478,12 +564,10 @@ _enviar_arquivo_multi() {
     # Verificar se esta enviando multiplos arquivos ou apenas um
     if [[ "$arquivo_enviar" == *"*"* ]]; then
         # Localizar arquivos que correspondem ao padrao
-        shopt -s nullglob
         local -a arquivos_encontrados=()
         while IFS= read -r -d '' arquivo_item; do
             arquivos_encontrados+=("$arquivo_item")
         done < <(find "${diretorio_origem:-.}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
-        shopt -u nullglob
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then
             _erro "Nenhum arquivo encontrado para envio multiplo"
@@ -496,9 +580,7 @@ _enviar_arquivo_multi() {
             _exibir_mensagem_centralizada "${AMARELO}" "Arquivo(s) enviado(s) para \"${destino_remoto}\""
             _linha
             _aguardar 3
-        else
-            _erro "Falha no envio de arquivo(s)"
-            _aguardar_tecla
+            return 0
         fi
     else
         # Enviar arquivo unico usando _enviar_rsync
@@ -506,9 +588,12 @@ _enviar_arquivo_multi() {
             _exibir_mensagem_centralizada "${AMARELO}" "Arquivo enviado para \"${destino_remoto}\""
             _linha
             _aguardar 3
-        else
-            _erro "Falha no envio do arquivo"
-            _aguardar_tecla
+            return 0
         fi
     fi
+
+    # Fluxo de erro comum (unico e multiplo)
+    _erro "Falha no envio de arquivo(s)"
+    _aguardar_tecla
+    return 1
 }
