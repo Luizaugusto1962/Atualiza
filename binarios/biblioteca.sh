@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/09/2026
+# Versao: 15/09/2026
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -25,22 +25,19 @@ _limpar_interrupcao() {
     done
     pids=()  # Limpar array
 
-    # Limpeza de temporarios (ex: zips parciais ou descompactados incompletos)
-    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
-
+    # Limpeza de temporarios por caminhos absolutos: nao altera o cwd ativo.
     if [[ -n "${VERSAO:-}" ]]; then
-        for arquivo_temp in *"${VERSAO}".zip *"${VERSAO}".tar *"${VERSAO}".tar.gz; do
-            if [[ -f "$arquivo_temp" ]]; then
-                rm -f -- "$arquivo_temp"
-                _log "Arquivo temporario removido: $arquivo_temp"
-            fi
-        done
+        while IFS= read -r -d '' arquivo_temp; do
+            rm -f -- "$arquivo_temp"
+            _log "Arquivo temporario removido: $arquivo_temp"
+        done < <("${DEFAULT_FIND}" "${SCRIPT_DIR}" -maxdepth 1 -type f \( -name "*${VERSAO}.zip" -o -name "*${VERSAO}.tar" -o -name "*${VERSAO}.tar.gz" \) -print0)
     fi
 
-    # Verificar se backup parcial existe e sugerir rollback
-    shopt -s nullglob
-    local backups_parciais=("${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.zip "${DEFAULT_BIBLIOTECA_DIR}"/backups_biblioteca_antes_da_versao-*.tar.gz)
-    shopt -u nullglob
+    # Verificar se backup parcial existe e sugerir rollback, sem alterar nullglob.
+    local -a backups_parciais=()
+    while IFS= read -r -d '' arquivo_backup; do
+        backups_parciais+=("$arquivo_backup")
+    done < <("${DEFAULT_FIND}" "${DEFAULT_BIBLIOTECA_DIR}" -maxdepth 1 -type f \( -name "backups_biblioteca_antes_da_versao-*.zip" -o -name "backups_biblioteca_antes_da_versao-*.tar.gz" \) -print0)
     if (( ${#backups_parciais[@]} > 0 )); then
         _aviso "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
     fi
@@ -59,6 +56,12 @@ _atualizar_transpc() {
 
     if [[ -z "${VERSAO}" ]]; then
         return 0
+    fi
+
+    if ! _validar_versao_biblioteca "${VERSAO}"; then
+        _erro "Versao invalida. Informe somente numeros."
+        _aguardar_tecla
+        return 1
     fi
 
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
@@ -104,6 +107,12 @@ _atualizar_biblioteca_offline() {
         return 0
     fi
 
+    if ! _validar_versao_biblioteca "${VERSAO}"; then
+        _erro "Versao invalida. Informe somente numeros."
+        _aguardar_tecla
+        return 1
+    fi
+
     if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
             if ! _processar_biblioteca_offline; then
@@ -140,6 +149,13 @@ _reverter_biblioteca() {
         return 1
     fi
 
+    if ! _validar_versao_biblioteca "${versao_reverter}"; then
+        _erro "Versao invalida. Informe somente numeros."
+        _linha
+        _aguardar_tecla
+        return 1
+    fi
+
     # Tentar encontrar o backup tanto em .tar.gz quanto em .zip (para retrocompatibilidade)
     local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
 
@@ -164,7 +180,8 @@ _reverter_biblioteca() {
 
 #---------- FUNCOES DE PROCESSAMENTO ----------#
 # Processa biblioteca offline
-_processar_biblioteca_offline() {
+# Executa em subshell para preservar o diretorio do chamador.
+_processar_biblioteca_offline() (
     _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio %s\n" "${CFG_PORTALSAV}" >&2
         return 1
@@ -195,10 +212,11 @@ _processar_biblioteca_offline() {
 
     _salvar_atualizacao_biblioteca
     _aguardar 2
-}
+)
 
 # Salva atualizacao da biblioteca
-_salvar_atualizacao_biblioteca() {
+# Executa em subshell para preservar o diretorio do chamador.
+_salvar_atualizacao_biblioteca() (
     if [[ -z "${CFG_PORTALSAV}" ]]; then
         _erro "ERRO: CFG_PORTALSAV nao configurado"
         return 1
@@ -223,7 +241,7 @@ _salvar_atualizacao_biblioteca() {
     done
 
     _processar_atualizacao_biblioteca
-}
+)
 
 # Processa a atualizacao da biblioteca
 _processar_atualizacao_biblioteca() {
@@ -314,9 +332,13 @@ _processar_atualizacao_biblioteca() {
 
 # Executa a atualizacao da biblioteca
 _executar_atualizacao_biblioteca() {
-    # Validar diretorio de recebimento
+    # Validar diretorio de recebimento e a versao antes de montar arquivos ou atualizar .versao.
     if [[ -z "${CFG_PORTALSAV:-}" ]]; then
         _erro "Diretorio $CFG_PORTALSAV nao configurado"
+        return 1
+    fi
+    if ! _validar_versao_biblioteca "${VERSAO:-}"; then
+        _erro "Versao invalida. Informe somente numeros."
         return 1
     fi
 
@@ -380,15 +402,14 @@ _executar_atualizacao_biblioteca() {
     # Ir para o diretorio de recebimento para renomear arquivos
     cd "${CFG_PORTALSAV}" || return 1
 
-    # Mover arquivos .zip para .bkp
-    shopt -s nullglob
-    for arquivo_zip in *_"${VERSAO}".zip; do
-        mv -f "${arquivo_zip}" "${arquivo_zip%.zip}.bkp"
-    done
+    # Mover arquivos .zip para .bkp e coletar os backups sem alterar nullglob.
+    local -a arquivos=()
+    while IFS= read -r -d '' arquivo_zip; do
+        mv -f -- "$arquivo_zip" "${arquivo_zip%.zip}.bkp"
+        arquivos+=("${arquivo_zip%.zip}.bkp")
+    done < <("${DEFAULT_FIND}" "${CFG_PORTALSAV}" -maxdepth 1 -type f -name "*_${VERSAO}.zip" -print0)
 
     # Mover backups para diretorio
-    local arquivos=(*_"${VERSAO}".bkp)
-    shopt -u nullglob
     if (( ${#arquivos[@]} > 0 )); then
         mv -- "${arquivos[@]}" "${DEFAULT_BIBLIOTECA_ATUAL_DIR}" || {
         _erro "ao mover arquivos de backup."
@@ -427,6 +448,26 @@ _executar_atualizacao_biblioteca() {
 }
 
 #---------- FUNCOES DE REVERSAO ----------#
+# Extrai backup completo ou seletivo na raiz, preservando suporte TAR.GZ e ZIP.
+# Uso: _extrair_backup_biblioteca <arquivo_backup> <destino> [padrao]
+_extrair_backup_biblioteca() {
+    local arquivo_backup="$1"
+    local destino="$2"
+    local padrao="${3:-}"
+
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        if [[ -n "$padrao" ]]; then
+            "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "$destino" --wildcards "$padrao" >>"${LOG_ATU}" 2>&1
+        else
+            "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "$destino" >>"${LOG_ATU}" 2>&1
+        fi
+    elif [[ -n "$padrao" ]]; then
+        "${DEFAULT_UNZIP}" -o "$arquivo_backup" "$padrao" -d "$destino" >>"${LOG_ATU}" 2>&1
+    else
+        "${DEFAULT_UNZIP}" -o "$arquivo_backup" -d "$destino" >>"${LOG_ATU}" 2>&1
+    fi
+}
+
 # Reverte biblioteca completa
 _reverter_biblioteca_completa() {
     local arquivo_backup="$1"
@@ -438,31 +479,15 @@ _reverter_biblioteca_completa() {
     local temp_restore="/"
     # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
 
-    if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
-        _erro "Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
+    _exibir_mensagem_centralizada "${AMARELO}" "Voltando backup anterior (TAR)..."
+    _linha
+
+    if ! _extrair_backup_biblioteca "$arquivo_backup" "$temp_restore"; then
+        _erro "ao descompactar ${arquivo_backup}"
         _aguardar_tecla
         return 1
     fi
 
-    _exibir_mensagem_centralizada "${AMARELO}" "Voltando backup anterior (TAR)..."
-    _linha
-
-    # Verificar se o arquivo e tar.gz ou zip
-    if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" >>"${LOG_ATU}" 2>&1; then
-            _erro "ao descompactar ${arquivo_backup}"
-            _aguardar_tecla
-            return 1
-        fi
-    else
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" -d "${temp_restore}" >>"${LOG_ATU}" 2>&1; then
-            _erro "ao descompactar ${arquivo_backup}"
-            _aguardar_tecla
-            return 1
-        fi
-    fi
-
-    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
     _aviso "Volta de todos os Programas Concluida"
     _linha
     _aguardar_tecla
@@ -474,12 +499,6 @@ _reverter_programa_especifico_biblioteca() {
     local programa_reverter
     local temp_restore="/"
     # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
-
-    if ! cd "${DEFAULT_BIBLIOTECA_DIR}"; then
-        _erro "Falha ao acessar o diretorio ${DEFAULT_BIBLIOTECA_DIR}"
-        _aguardar 2
-        return 1
-    fi
 
     read -rp "${AMARELO}Informe o nome do programa em MAIÚSCULO: ${NORMAL}" programa_reverter
 
@@ -493,21 +512,17 @@ _reverter_programa_especifico_biblioteca() {
     _exibir_mensagem_centralizada "${AMARELO}" "Voltando versao anterior do programa ${programa_reverter} (TAR)..."
     _linha
 
-    # Verificar se o arquivo e tar.gz ou zip
+    local padrao
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        # No tar, usamos wildcards para encontrar o programa
-        if ! tar -xzf "${arquivo_backup}" -C "${temp_restore}" --wildcards "*${programa_reverter}*" >>"${LOG_ATU}" 2>&1; then
-            _erro "Ao descompactar programa ${programa_reverter}"
-            _aguardar_tecla
-            return 1
-        fi
+        padrao="*${programa_reverter}*"
     else
-        local padrao="*/"
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo_backup}" "${padrao}${programa_reverter}*" -d "${temp_restore}" >>"${LOG_ATU}" 2>&1; then
-            _erro "Ao descompactar programa ${programa_reverter}"
-            _aguardar_tecla
-            return 1
-        fi
+        padrao="*/${programa_reverter}*"
+    fi
+
+    if ! _extrair_backup_biblioteca "$arquivo_backup" "$temp_restore" "$padrao"; then
+        _erro "Ao descompactar programa ${programa_reverter}"
+        _aguardar_tecla
+        return 1
     fi
 
     _aviso "Volta do Programa Concluida"
@@ -515,6 +530,13 @@ _reverter_programa_especifico_biblioteca() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
+# Valida versao numerica antes de usa-la em nomes de arquivos, caminhos ou .versao.
+# Retorna 0 para uma sequencia nao vazia de digitos; 1 nos demais casos.
+_validar_versao_biblioteca() {
+    local versao="${1:-}"
+    [[ "$versao" =~ ^[0-9]+$ ]]
+}
+
 # Solicita versao da biblioteca
 _solicitar_versao_biblioteca() {
     _linha

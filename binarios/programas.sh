@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/09/2026
+# Versao: 15/09/2026
 #
 
 # Variaveis globais esperadas
@@ -422,17 +422,7 @@ _solicitar_pacotes_atualizacao() {
 #---------- FUNCOES DE DOWNLOAD ----------#
 # Baixa pacotes para diretorio especifico
 _baixar_pacotes_vaievem() {
-    if (
-        cd "${CFG_PORTALSAV}" || {
-            _erro "Erro: Diretorio ${CFG_PORTALSAV} nao encontrado"
-            _aguardar 2
-            exit 1
-        }
-        _baixar_programas_vaievem
-    ); then
-        return 0
-    fi
-    return 1
+    _baixar_programas_vaievem
 }
 
 #---------- FUNCOES DE PROCESSAMENTO ----------#
