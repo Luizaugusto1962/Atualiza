@@ -298,75 +298,82 @@ _baixar_biblioteca_sincroniza() {
     local usuario_remoto="${3:-$DEFAULT_SSH_USER}"
 
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
-    if (
-        cd "${CFG_PORTALSAV:-}" || return 1
 
-        # SEGURANCA: Validar diretorio de recebimento
-        if ! _validar_caminho_seguro "${CFG_PORTALSAV:-}"; then
-            _log_erro "Erro: Diretorio de recebimento invalido."
+    # SEGURANCA: Validar diretorio de recebimento
+    if ! _validar_caminho_seguro "${CFG_PORTALSAV:-}"; then
+        _log_erro "Erro: Diretorio de recebimento invalido."
+        return 1
+    fi
+
+    pushd "${CFG_PORTALSAV:-}" >/dev/null || {
+        _log_erro "Erro: Nao foi possivel acessar diretorio: ${CFG_PORTALSAV:-}"
+        return 1
+    }
+
+    if _usar_chave_ssh; then
+        local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
+
+        # SEGURANCA: Validar caminho construido
+        if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
+            _log_erro "Erro: Caminho da biblioteca invalido."
+            popd >/dev/null
             return 1
         fi
+        local -a cmd_scp_lib=()
+        _montar_cmd_scp cmd_scp_lib "$porta"
+        local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
-        if _usar_chave_ssh; then
-            local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
-
-            # SEGURANCA: Validar caminho construído
-            if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
-                _log_erro "Erro: Caminho da biblioteca invalido."
-                return 1
-            fi
-            local -a cmd_scp_lib=()
-            _montar_cmd_scp cmd_scp_lib "$porta"
-            local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
-
-            if "${cmd_scp_lib[@]}" "$origem" "."; then
-                _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
-                return 0
-            else
-                _log_erro "Falha no download da biblioteca: ${SAVATU:-}${VERSAO:-}.zip"
-                return 1
-            fi
+        if "${cmd_scp_lib[@]}" "$origem" "."; then
+            _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
+            popd >/dev/null
+            return 0
         else
-            _definir_variaveis_biblioteca
-            local arquivos_update
-            read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
-            if [[ ${#arquivos_update[@]} -eq 0 ]]; then
-                _erro "Nenhum arquivo de atualizacao encontrado"
-                return 1
-            fi
-            # Montar origens remotas em uma unica conexao SCP (lote)
-            # Cada origem deve ser um argumento separado "user@host:caminho"
-            # (concatenar tudo em um unico token quebra o SCP moderno/SFTP:
-            #  "protocol error: filename does not match request")
-            local -a origens=()
-            for arquivo in "${arquivos_update[@]}"; do
-                # SEGURANCA: Validar cada nome de arquivo antes do uso
-                if ! _validar_caminho_seguro "$arquivo"; then
-                    _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
-                    return 1
-                fi
-                if ! _validar_caminho_seguro "${DESTINO_BIBLIOTECA}${arquivo}"; then
-                    _log_erro "Erro: Caminho de atualizacao invalido ou malicioso: ${DESTINO_BIBLIOTECA}${arquivo}"
-                    return 1
-                fi
-                origens+=("${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}")
-            done
-
-            local -a cmd_scp=()
-            _montar_cmd_scp cmd_scp "$porta"
-
-            if "${cmd_scp[@]}" "${origens[@]}" "."; then
-                _log_sucesso "Download em lote concluido: ${#arquivos_update[@]} arquivo(s)"
-                return 0
-            else
-                _log_erro "Falha no download em lote dos arquivos de atualizacao"
-                return 1
-            fi
+            _log_erro "Falha no download da biblioteca: ${SAVATU:-}${VERSAO:-}.zip"
+            popd >/dev/null
+            return 1
         fi
-    ); then
-        return 0
+    else
+        _definir_variaveis_biblioteca
+        local arquivos_update
+        read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
+        if [[ ${#arquivos_update[@]} -eq 0 ]]; then
+            _erro "Nenhum arquivo de atualizacao encontrado"
+            popd >/dev/null
+            return 1
+        fi
+        # Montar origens remotas em uma unica conexao SCP (lote)
+        # Cada origem deve ser um argumento separado "user@host:caminho"
+        # (concatenar tudo em um unico token quebra o SCP moderno/SFTP:
+        #  "protocol error: filename does not match request")
+        local -a origens=()
+        for arquivo in "${arquivos_update[@]}"; do
+            # SEGURANCA: Validar cada nome de arquivo antes do uso
+            if ! _validar_caminho_seguro "$arquivo"; then
+                _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
+                popd >/dev/null
+                return 1
+            fi
+            if ! _validar_caminho_seguro "${DESTINO_BIBLIOTECA}${arquivo}"; then
+                _log_erro "Erro: Caminho de atualizacao invalido ou malicioso: ${DESTINO_BIBLIOTECA}${arquivo}"
+                popd >/dev/null
+                return 1
+            fi
+            origens+=("${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}")
+        done
+
+        local -a cmd_scp=()
+        _montar_cmd_scp cmd_scp "$porta"
+
+        if "${cmd_scp[@]}" "${origens[@]}" "."; then
+            _log_sucesso "Download em lote concluido: ${#arquivos_update[@]} arquivo(s)"
+            popd >/dev/null
+            return 0
+        else
+            _log_erro "Falha no download em lote dos arquivos de atualizacao"
+            popd >/dev/null
+            return 1
+        fi
     fi
-    return 1
 }
 
 # Baixar programas via SFTP/SCP
@@ -397,35 +404,40 @@ _baixar_programas_vaievem() {
 
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Realizando sincronizacao dos arquivos..."
-    if (
-        cd "${CFG_PORTALSAV:-}" || return 1
-        for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-            _linha
-            _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
-            _linha
 
-            if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
-                _erro "Falha no download: $arquivo"
-                return 1
-            fi
+    pushd "${CFG_PORTALSAV:-}" >/dev/null || {
+        _erro "Nao foi possivel acessar diretorio: ${CFG_PORTALSAV:-}"
+        return 1
+    }
 
-            # Integridade do zip recebido (existencia/tamanho ja garantidos
-            # pelo _receber_scp; o teste do zip e exclusivo daqui)
-            _linha
-            if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
-                _erro "Arquivo corrompido: $arquivo"
-                # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
-                rm -f -- "$arquivo"
-                _aguardar 2
-                return 1
-            fi
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        _linha
+        _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
+        _linha
 
-            _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
-        done
-    ); then
-        return 0
-    fi
-    return 1
+        if ! _receber_scp "${DESTINO_SERVER}${arquivo}" "."; then
+            _erro "Falha no download: $arquivo"
+            popd >/dev/null
+            return 1
+        fi
+
+        # Integridade do zip recebido (existencia/tamanho ja garantidos
+        # pelo _receber_scp; o teste do zip e exclusivo daqui)
+        _linha
+        if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo" >/dev/null 2>&1; then
+            _erro "Arquivo corrompido: $arquivo"
+            # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
+            rm -f -- "$arquivo"
+            _aguardar 2
+            popd >/dev/null
+            return 1
+        fi
+
+        _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
+    done
+
+    popd >/dev/null
+    return 0
 }
 
 #---------- FUNCOES DE UPLOAD/ENVIO (ALTO NIVEL) ----------#
