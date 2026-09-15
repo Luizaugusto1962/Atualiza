@@ -11,7 +11,7 @@ set -euo pipefail
 # (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/09/2026-01
+# Versao: 15/09/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -38,7 +38,7 @@ _usar_chave_ssh() {
 
     # Se a variavel chavessh (configuracao do .config) for "n",
     # pular o controle de acesso a chave e continuar pedindo senha
-    if [[ "${chave,,}" == "n" ]]; then
+    if [[ "${acessochave,,}" == "n" ]]; then
         return 1
     fi
 
@@ -60,7 +60,6 @@ _usar_chave_ssh() {
         _log_erro "Arquivo de chave SSH sem permissao de leitura: ${chave}"
         return 1
     fi
-
     return 0
 }
 
@@ -81,10 +80,10 @@ _montar_cmd_scp() {
 
     # Validar entradas que viram opcoes do scp: apenas digitos
     if ! [[ "$porta" =~ ^[0-9]+$ && -n "$porta" ]] ||
-        ! [[ "$timeout" =~ ^[0-9]+$ ]] ||
-        ! [[ "$alive_int" =~ ^[0-9]+$ ]] ||
-        ! [[ "$alive_max" =~ ^[0-9]+$ ]]; then
-        _log_erro "Parametros invalidos para _montar_cmd_scp (porta/timeout/alive devem ser numericos)"
+       ! [[ "$timeout" =~ ^[0-9]+$ ]] ||
+       ! [[ "$alive_int" =~ ^[0-9]+$ ]] ||
+       ! [[ "$alive_max" =~ ^[0-9]+$ ]]; then
+        _erro "Parametros invalidos para _montar_cmd_scp (porta/timeout/alive devem ser numericos)"
         return 1
     fi
 
