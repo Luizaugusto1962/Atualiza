@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/08/2026-01
+# Versao: 16/09/2026
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -234,7 +234,7 @@ _atualizando() {
 
     # 3. Remover diretorio dir_temp_atualizacao completamente (contem apenas restos da extracao)
     if [[ -d "${temp_dir}" ]]; then
-        rm -rf "${temp_dir}" 2>/dev/null && _log "Diretorio temporario removido: ${temp_dir}"
+        rm -rf -- "${temp_dir}" 2>/dev/null && _log "Diretorio temporario removido: ${temp_dir}"
     fi
 
     # 4. Limpeza residual segura (excluir TODOS os arquivos/diretorios restantes no diretorio receber, sem remover a pasta principal)
@@ -367,7 +367,7 @@ _voltar_sh_anterior() {
 
     # Limpeza do diretorio temporario de restauracao
     if [[ "${dir_restauracao}" != "${DEFAULT_BACKUP_DIR}" && -d "${dir_restauracao}" ]]; then
-        rm -rf "${dir_restauracao}" 2>/dev/null || true
+        rm -rf -- "${dir_restauracao}" 2>/dev/null || true
     fi
 
     if [[ $erros -gt 0 ]]; then

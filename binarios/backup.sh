@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/09/2026
+# Versao: 16/09/2026
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
@@ -21,12 +21,12 @@ _limpar_backup() {
         kill "$BACKUP_PID" 2>/dev/null || true
         wait "$BACKUP_PID" 2>/dev/null || true
     fi
-    # Remover arquivos parciais com blindagem contra variaveis nulas
-    if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" && "${DEFAULT_BASEBACKUP_DIR}" != "/" && "${DEFAULT_BASEBACKUP_DIR}" != "//" ]]; then
+    # Remover arquivos parciais com validacao de caminho seguro
+    if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" ]] && _validar_caminho_seguro "${DEFAULT_BASEBACKUP_DIR}"; then
         rm -f -- "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
     fi
     # Remover zip parcial caso exista
-    if [[ -n "${CAMINHO_BACKUP:-}" && "${CAMINHO_BACKUP}" != "/" && "${CAMINHO_BACKUP}" != "//" ]]; then
+    if [[ -n "${CAMINHO_BACKUP:-}" ]] && _validar_caminho_seguro "${CAMINHO_BACKUP}"; then
         rm -f -- "$CAMINHO_BACKUP" 2>/dev/null || true
     fi
 }
@@ -486,18 +486,28 @@ _selecionar_backup() {
 }
 
 #---------- FUNCOES DE RESTAURACAO ----------#
-# SEGURANCA: Valida entradas do zip contra path traversal (Zip Slip)
-_validar_zip_entradas_seguras() {
-    local arquivo_zip="${1:-}"
-    local lista_entradas
+# SEGURANCA: Valida entradas de backup (.zip ou .tar.gz) contra path traversal
+# Uso: _validar_backup_entradas_seguras <arquivo_backup>
+_validar_backup_entradas_seguras() {
+    local arquivo_backup="${1:-}"
+    local lista_entradas=""
 
-    lista_entradas=$("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_zip" 2>/dev/null) || return 1
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        lista_entradas=$("${DEFAULT_TAR:-tar}" -tzf "$arquivo_backup" 2>/dev/null) || return 1
+    else
+        lista_entradas=$("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_backup" 2>/dev/null) || return 1
+    fi
 
     if grep -qE '(^|/)\.\.(/|$)|^/|^[A-Za-z]:[\\/]' <<<"$lista_entradas"; then
         _erro "Backup contem entradas inseguras (path traversal)."
         return 1
     fi
     return 0
+}
+
+# Compatibilidade: alias para chamadas existentes que usam o nome antigo
+_validar_zip_entradas_seguras() {
+    _validar_backup_entradas_seguras "$@"
 }
 
 # Resolve o diretorio base de destino a partir do nome do arquivo de backup
@@ -597,10 +607,18 @@ _restaurar_backup_completo() {
     _aviso "Restaurando todos os arquivos..."
     _linha
 
-    if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
-        _erro "Erro na restauracao completa"
-        _aguardar_tecla
-        return 1
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        if ! "${DEFAULT_TAR:-tar}" -xzf "$arquivo_backup" -C "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+            _erro "Erro na restauracao completa (tar.gz)"
+            _aguardar_tecla
+            return 1
+        fi
+    else
+        if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" -d "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+            _erro "Erro na restauracao completa"
+            _aguardar_tecla
+            return 1
+        fi
     fi
 
     _ok "Restauracao completa concluida"
@@ -674,7 +692,17 @@ _restaurar_arquivo_especifico() {
         _aviso "Restaurando ${nome_arquivo}..."
         _linha
 
-        if ! "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+        local extrair_ok=0
+        if [[ "$arquivo_backup" == *.tar.gz ]]; then
+            if "${DEFAULT_TAR:-tar}" -xzf "$arquivo_backup" -C "${base_trabalho}" --wildcards "*${nome_arquivo}*" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+                extrair_ok=1
+            fi
+        else
+            if "${DEFAULT_UNZIP:-unzip}" -o "$arquivo_backup" "${nome_arquivo}*.*" -d "${base_trabalho}" >>"${LOG_ATU:-/dev/null}" 2>&1; then
+                extrair_ok=1
+            fi
+        fi
+        if [[ $extrair_ok -eq 0 ]]; then
             _erro "Ao extrair ${nome_arquivo}"
             _aguardar_tecla
         else
@@ -803,13 +831,20 @@ _mover_backup_offline() {
         return 1
     fi
 
+    # SEGURANCA: Validar diretorio de destino contra path traversal e injecao
+    if ! _validar_caminho_seguro "${CFG_PORTALSAV}"; then
+        _erro "Diretorio offline invalido ou malicioso: ${CFG_PORTALSAV}"
+        _aguardar_tecla
+        return 1
+    fi
+
     local caminho="${CFG_PORTALSAV}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Ao criar diretorio de configuracao %s" "${caminho}"
         return 1
     }
 
-    if mv -f "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$CFG_PORTALSAV"; then
+    if mv -f -- "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$CFG_PORTALSAV"; then
         _exibir_mensagem_centralizada "${VERDE}" "Backup movido para: ${CFG_PORTALSAV}"
         _aguardar_tecla
     else
