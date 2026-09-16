@@ -777,12 +777,14 @@ _menu_configurar_ssh() {
     return 0
 }
 
+#---------- MENU DE ESCOLHA DE BASE DE RESTAURACAO ----------#
 # Menu para escolha da base de destino na restauracao
 # Verifica se base2 e/ou base3 estao configuradas no .config
 # Se apenas base1 existir, usa automaticamente sem perguntar
 # Define variavel global BASE_RESTAURACAO e retorna: 0 se selecionado, 1 se cancelado
 _menu_escolha_base_restauracao() {
     BASE_RESTAURACAO=""
+    export BASE_RESTAURACAO
     local -a bases_disponiveis=()
     local -a bases_nomes=()
 
@@ -805,6 +807,7 @@ _menu_escolha_base_restauracao() {
     # Se so existe uma base, usar automaticamente
     if [[ ${#bases_disponiveis[@]} -eq 1 ]]; then
         BASE_RESTAURACAO="${bases_disponiveis[0]}"
+        export BASE_RESTAURACAO
         return 0
     fi
 
@@ -827,28 +830,32 @@ _menu_escolha_base_restauracao() {
             continue
         fi
 
-        if [[ "$opcao" == "9" ]]; then
-            _aviso "Operacao cancelada."
-            return 1
-        fi
+        case "${opcao}" in
+            9)
+                _aviso "Operacao cancelada."
+                return 1
+                ;;
+            *)
+                if [[ ! "$opcao" =~ ^[0-9]+$ ]]; then
+                    _processar_opcao_invalida
+                    continue
+                fi
 
-        if [[ ! "$opcao" =~ ^[0-9]+$ ]]; then
-            _processar_opcao_invalida
-            continue
-        fi
-
-        local indice=$((opcao - 1))
-        if (( indice >= 0 && indice < ${#bases_disponiveis[@]} )); then
-            local base_escolhida="${bases_disponiveis[$indice]}"
-            if [[ -d "$base_escolhida" ]]; then
-                BASE_RESTAURACAO="$base_escolhida"
-                return 0
-            else
-                _erro "Diretorio ${base_escolhida} nao encontrado"
-                _aguardar 2
-            fi
-        else
-            _processar_opcao_invalida
-        fi
+                local indice=$((opcao - 1))
+                if (( indice >= 0 && indice < ${#bases_disponiveis[@]} )); then
+                    local base_escolhida="${bases_disponiveis[$indice]}"
+                    if [[ -d "$base_escolhida" ]]; then
+                        BASE_RESTAURACAO="$base_escolhida"
+                        export BASE_RESTAURACAO
+                        return 0
+                    else
+                        _erro "Diretorio ${base_escolhida} nao encontrado"
+                        _aguardar 2
+                    fi
+                else
+                    _processar_opcao_invalida
+                fi
+                ;;
+        esac
     done
 }
