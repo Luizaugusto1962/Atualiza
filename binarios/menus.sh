@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/09/2026-01
+# Versao: 16/09/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -775,4 +775,80 @@ _menu_configurar_ssh() {
     _exibir_mensagem_centralizada "${VERDE}" "Configuracao concluida."
     _aguardar_tecla
     return 0
+}
+
+# Menu para escolha da base de destino na restauracao
+# Verifica se base2 e/ou base3 estao configuradas no .config
+# Se apenas base1 existir, usa automaticamente sem perguntar
+# Define variavel global BASE_RESTAURACAO e retorna: 0 se selecionado, 1 se cancelado
+_menu_escolha_base_restauracao() {
+    BASE_RESTAURACAO=""
+    local -a bases_disponiveis=()
+    local -a bases_nomes=()
+
+    # Sempre incluir base principal
+    bases_disponiveis+=("${RAIZ}${CFG_BASE_DIR}")
+    bases_nomes+=("Principal: ${RAIZ}${CFG_BASE_DIR}")
+
+    # Incluir base2 se configurada
+    if [[ -n "${CFG_BASE_DIR2}" ]]; then
+        bases_disponiveis+=("${RAIZ}${CFG_BASE_DIR2}")
+        bases_nomes+=("Segunda: ${RAIZ}${CFG_BASE_DIR2}")
+    fi
+
+    # Incluir base3 se configurada
+    if [[ -n "${CFG_BASE_DIR3}" ]]; then
+        bases_disponiveis+=("${RAIZ}${CFG_BASE_DIR3}")
+        bases_nomes+=("Terceira: ${RAIZ}${CFG_BASE_DIR3}")
+    fi
+
+    # Se so existe uma base, usar automaticamente
+    if [[ ${#bases_disponiveis[@]} -eq 1 ]]; then
+        BASE_RESTAURACAO="${bases_disponiveis[0]}"
+        return 0
+    fi
+
+    # Mostrar menu de selecao
+    while true; do
+        clear
+        _exibir_cabecalho_menu "Escolha a Base de Destino"
+        _exibir_titulo_secao " Selecione o diretorio para restauracao:"
+        printf "\n"
+
+        local i
+        for i in "${!bases_nomes[@]}"; do
+            _exibir_opcao_menu "$((i + 1))" "${bases_nomes[$i]}"
+        done
+        _exibir_rodape_menu
+        printf "\n"
+
+        local opcao
+        if ! _ler_opcao_menu "baserestauracao"; then
+            continue
+        fi
+
+        if [[ "$opcao" == "9" ]]; then
+            _aviso "Operacao cancelada."
+            return 1
+        fi
+
+        if [[ ! "$opcao" =~ ^[0-9]+$ ]]; then
+            _processar_opcao_invalida
+            continue
+        fi
+
+        local indice=$((opcao - 1))
+        if (( indice >= 0 && indice < ${#bases_disponiveis[@]} )); then
+            local base_escolhida="${bases_disponiveis[$indice]}"
+            if [[ -d "$base_escolhida" ]]; then
+                BASE_RESTAURACAO="$base_escolhida"
+                return 0
+            else
+                _erro "Diretorio ${base_escolhida} nao encontrado"
+                _aguardar 2
+            fi
+        else
+            _processar_opcao_invalida
+        fi
+    done
 }

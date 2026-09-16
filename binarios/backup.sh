@@ -9,8 +9,10 @@ set -euo pipefail
 # Versao: 16/09/2026
 
 # Variaveis globais esperadas
-CFG_BASE_DIR="${CFG_BASE_DIR:-}"                         # Caminho do diretorio da segunda base de dados.
-DEFAULT_ZIP="${DEFAULT_ZIP:-}"                      # Comando de compactacao (ex: zip)
+CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
+CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Caminho do diretorio da segunda base de dados.
+CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Caminho do diretorio da terceira base de dados.
+DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
@@ -570,16 +572,14 @@ _rotacionar_arquivos_base() {
 _restaurar_backup_completo() {
     local arquivo_backup="${1:-}"
     local base_trabalho
-    base_trabalho=$(_resolver_base_restauracao "$arquivo_backup")
-    local resolver_result=$?
 
-    if [[ $resolver_result -eq 1 ]]; then
-        if ! _confirmar "Base do backup nao encontrada no nome. Usar (${RAIZ}${CFG_BASE_DIR})?" "N"; then
-            _exibir_mensagem_centralizada "$VERMELHO" "Restauracao cancelada pelo usuario"
-            _aguardar_tecla
-            return 1
-        fi
+    # Solicitar escolha da base de destino (mostra menu se base2/base3 configuradas)
+    if ! _menu_escolha_base_restauracao; then
+        _exibir_mensagem_centralizada "$VERMELHO" "Restauracao cancelada pelo usuario"
+        _aguardar_tecla
+        return 1
     fi
+    base_trabalho="${BASE_RESTAURACAO}"
 
     if [[ ! -f "$arquivo_backup" ]]; then
         _erro "Arquivo de backup nao encontrado"
@@ -630,16 +630,14 @@ _restaurar_arquivo_especifico() {
     local arquivo_backup="${1:-}"
     local nome_arquivo
     local base_trabalho
-    base_trabalho=$(_resolver_base_restauracao "$arquivo_backup")
-    local resolver_result=$?
 
-    if [[ $resolver_result -eq 1 ]]; then
-        if ! _confirmar "Base do backup nao encontrada no nome. Usar (${RAIZ}${CFG_BASE_DIR})?" "N"; then
-            _exibir_mensagem_centralizada "$VERMELHO" "Restauracao cancelada pelo usuario"
-            _aguardar_tecla
-            return 1
-        fi
+    # Solicitar escolha da base de destino (mostra menu se base2/base3 configuradas)
+    if ! _menu_escolha_base_restauracao; then
+        _exibir_mensagem_centralizada "$VERMELHO" "Restauracao cancelada pelo usuario"
+        _aguardar_tecla
+        return 1
     fi
+    base_trabalho="${BASE_RESTAURACAO}"
 
     if [[ ! -f "$arquivo_backup" ]]; then
         _erro "Arquivo de backup nao encontrado"
