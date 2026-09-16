@@ -574,7 +574,7 @@ _restaurar_backup_completo() {
     local resolver_result=$?
 
     if [[ $resolver_result -eq 1 ]]; then
-        if ! _confirmar "Base do backup nao encontrada no nome. Usar CFG_BASE_DIR (${RAIZ}${CFG_BASE_DIR})?" "N"; then
+        if ! _confirmar "Base do backup nao encontrada no nome. Usar (${RAIZ}${CFG_BASE_DIR})?" "N"; then
             _exibir_mensagem_centralizada "$VERMELHO" "Restauracao cancelada pelo usuario"
             _aguardar_tecla
             return 1
@@ -634,7 +634,7 @@ _restaurar_arquivo_especifico() {
     local resolver_result=$?
 
     if [[ $resolver_result -eq 1 ]]; then
-        if ! _confirmar "Base do backup nao encontrada no nome. Usar CFG_BASE_DIR (${RAIZ}${CFG_BASE_DIR})?" "N"; then
+        if ! _confirmar "Base do backup nao encontrada no nome. Usar (${RAIZ}${CFG_BASE_DIR})?" "N"; then
             _exibir_mensagem_centralizada "$VERMELHO" "Restauracao cancelada pelo usuario"
             _aguardar_tecla
             return 1
