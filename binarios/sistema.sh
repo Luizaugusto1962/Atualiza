@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/09/2026-01
+# Versao: 18/09/2026
 #
 
 # Variaveis globais esperadas
@@ -231,9 +231,10 @@ _manutencao_setup() {
     # sempre executa — sem ele a sessao continuaria com valores antigos.
     "${atualiza}" --setup --edit || rc_setup=$?
 
-    # Recarregar configuracoes na sessao atual apos edicao
+    # Recarregar configuracoes na sessao atual apos edicao (forcar: o
+    # cache de _carregar_config_seguro pula o reparse redundante no startup)
     if [[ -f "${CFG_DIR}/.config" ]] && command -v _carregar_config_seguro >/dev/null 2>&1; then
-        _carregar_config_seguro "${CFG_DIR}/.config" || true
+        _carregar_config_seguro "${CFG_DIR}/.config" "forcar" || true
         _configurar_variaveis_sistema || true
         _exibir_mensagem_centralizada "${VERDE}" "Configuracoes recarregadas na sessao atual."
         _aguardar 2

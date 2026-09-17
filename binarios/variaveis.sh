@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 02/09/2026-01
+# Versao: 18/09/2026
 #
 # Este modulo e carregado via source por principal.sh (_carregar_modulos).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -43,9 +43,11 @@ declare -A _VAR_CATEGORIAS=(
 _var_carregar_config() {
     local config_file="$1"
     if [[ -f "$config_file" ]] && [[ -r "$config_file" ]]; then
-        # Delegar ao parser seguro do constantes.sh
+        # Delegar ao parser seguro do constantes.sh (forcar: consulta explicita
+        # do usuario deve refletir o conteudo atual do arquivo, ignorando o
+        # cache anti-reparse do startup)
         if command -v _carregar_config_seguro >/dev/null 2>&1; then
-            _carregar_config_seguro "$config_file"
+            _carregar_config_seguro "$config_file" "forcar"
         else
             # Fallback apenas se config.sh/constantes.sh nao estiver carregado
             set -a; "." "$config_file"; set +a

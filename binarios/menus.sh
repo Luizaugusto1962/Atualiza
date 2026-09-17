@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/09/2026-01
+# Versao: 18/09/2026
 # Autor: Luiz Augusto
 #
 
@@ -189,9 +189,10 @@ _menu_biblioteca() {
         _exibir_rodape_menu
 
         if [[ -f "${CFG_DIR}/.versao" ]]; then
-            if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
-                _aviso "Falha ao carregar ${CFG_DIR}/.versao" >&2
-            fi
+            # Parser seguro (whitelist) em vez de source direto: evita
+            # execucao de codigo arbitrario se o .versao for adulterado e
+            # nao reabre o arquivo a cada iteracao do menu.
+            _carregar_versao_seguro "${CFG_DIR}/.versao" 2>/dev/null || _aviso "Falha ao carregar ${CFG_DIR}/.versao" >&2
         fi
 
         if [[ -n "${VERSAOANT:-}" ]]; then

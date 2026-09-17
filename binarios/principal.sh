@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 17/09/2026
+# Versao: 18/09/2026
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -222,10 +222,16 @@ _inicializar_sistema() {
         return 1
     fi
 
-    # Executar limpeza automatica diaria (nao-critico: apenas avisa)
-    _executar_expurgador_diario || _erro "Aviso: limpeza diaria falhou." >&2
+    # Executar limpeza automatica diaria em background desanexado: e uma
+    # operacao de I/O (varios find -delete) que nao precisa bloquear o login.
+    # E idempotente (flag diario) e loga por conta propria em LOG_ATU/LOG_LIMPA;
+    # falhas aqui nao sao criticas para a sessao.
+    (
+        _executar_expurgador_diario >/dev/null 2>&1 || true
+    ) &
+    disown "$!" 2>/dev/null || true
 
-    # Configura acesso SSH se necessario
+    # Configura acesso SSH se necessario (probe em background: ver _validar_ssh)
     if ! _validar_ssh; then
         _erro "Falha na validacao SSH." >&2
         return 1

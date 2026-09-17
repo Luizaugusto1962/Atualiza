@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 10/09/2026
+# Versao: 18/09/2026
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -23,11 +23,23 @@ RAIZ="${SCRIPT_DIR%/*}"
 # -----------------------------------------------------------------------------
 # Carrega configuracao de forma segura sem sourcing direto
 # Parametros: $1 - arquivo de configuracao
+#             $2 - "forcar" para ignorar o cache e reler (pos-edicao no setup)
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
+# Guarda o ultimo arquivo carregado neste processo: o startup chama esta
+# funcao duas vezes (sourcing de constantes.sh e _carregar_config_empresa de
+# config.sh); a segunda chamacao e redundante e pula automaticamente.
+_CONFIG_CARREGADO=""
 _carregar_config_seguro() {
     local CONFIG_FILE="${1}"
+    local forcar="${2:-}"
     local linha chave_analizada valor
+
+    # Pular reparse redundante do mesmo arquivo na mesma sessao (a nao ser
+    # que o chamador force — ex: recarga apos --setup --edit).
+    if [[ -z "$forcar" && "${_CONFIG_CARREGADO:-}" == "$CONFIG_FILE" ]]; then
+        return 0
+    fi
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         # Pular linhas vazias e comentarios
@@ -67,6 +79,7 @@ _carregar_config_seguro() {
         fi
     done < "$CONFIG_FILE"
 
+    _CONFIG_CARREGADO="$CONFIG_FILE"
     return 0
 }
 
@@ -86,7 +99,9 @@ if [[ -z "${CFG_DIR:-}" ]]; then
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
-    _encerrar_programa 1
+    # Executado diretamente: _encerrar_programa ainda nao existe (config.sh
+    # ainda nao foi carregado) — sair direto.
+    exit 1
 fi
 
 # =============================================================================
@@ -110,7 +125,7 @@ elif [[ ! -r "$CONFIG_FILE" ]]; then
     if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
         return 1
     fi
-    _encerrar_programa 1
+    exit 1
 else
     if command -v _carregar_config_seguro >/dev/null 2>&1; then
         _carregar_config_seguro "$CONFIG_FILE"
@@ -119,7 +134,7 @@ else
         if [[ "${BASH_SOURCE[0]:-}" != "${0:-}" ]]; then
             return 1
         fi
-        _encerrar_programa 1
+        exit 1
     fi
 fi
 
@@ -250,6 +265,7 @@ debugado="${debugado:-mclass}"                                 # Sufixo para arq
 # CONFIGURACOES DE ATUALIZACAO DE PROGRAMAS
 # =============================================================================
 MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
+MAX_REBUILD_PARALELO="${MAX_REBUILD_PARALELO:-4}"              # Limite de processos jutil (rebuild) concorrentes
 EXTENSAO_CLASS="${EXTENSAO_CLASS:-class}"                      # Extensao de arquivos compilados
 EXTENSAO_TELAS="${EXTENSAO_TELAS:-TEL}"                        # Extensao de arquivos de tela
 
@@ -275,4 +291,4 @@ export DEFAULT_TAR DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND
 export SAVISC ISCCLIENT JUTIL REBUILD
 export ACESSO_OFF
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA compilado debugado
-export MAX_PROGRAMAS_SELECIONADOS EXTENSAO_CLASS EXTENSAO_TELAS VERSAO
+export MAX_PROGRAMAS_SELECIONADOS MAX_REBUILD_PARALELO EXTENSAO_CLASS EXTENSAO_TELAS VERSAO

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 15/09/2026
+# Versao: 18/09/2026
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -16,13 +16,16 @@ _limpar_interrupcao() {
     local sinal="$1"
     _log "Interrupcao detectada (sinal: $sinal). Limpando processos..."
 
-    # Matar todos os PIDs pendentes
-    for pid in "${pids[@]}"; do
-        if kill -0 "$pid" 2>/dev/null; then
-            kill "$pid" 2>/dev/null || true
-            _log "Processo PID $pid interrompido"
-        fi
-    done
+    # Matar todos os PIDs pendentes (guarda: array pode estar vazio em
+    # Bash 4.0-4.3, onde "${arr[@]}" com set -e abortaria o proprio trap)
+    if (( ${#pids[@]} > 0 )); then
+        for pid in "${pids[@]}"; do
+            if kill -0 "$pid" 2>/dev/null; then
+                kill "$pid" 2>/dev/null || true
+                _log "Processo PID $pid interrompido"
+            fi
+        done
+    fi
     pids=()  # Limpar array
 
     # Limpeza de temporarios por caminhos absolutos: nao altera o cwd ativo.
@@ -389,7 +392,9 @@ _executar_atualizacao_biblioteca() {
                 return 1
             fi
             _linha
-            _aguardar 1
+            # Nota: o atraso artificial de 1s por arquivo foi removido — a
+            # barra de progresso ja usa tick de 0.3s (utils.sh), e a semantica
+            # de abortar na primeira falha foi preservada.
             clear
         fi
     done

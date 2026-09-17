@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/09/2026
+# Versao: 18/09/2026
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -408,7 +408,7 @@ _atualizar_online() {
     _erro "Ao criar diretorio de download"
     return 1
     }
-    if ! wget -q -c "$link" -O "${CFG_PORTALSAV}/${arquivo_zip}"; then
+    if ! wget -q "$link" -O "${CFG_PORTALSAV}/${arquivo_zip}"; then
         _erro "Ao baixar arquivo de atualizacao. Verifique a conexao."
         return 1
     fi
