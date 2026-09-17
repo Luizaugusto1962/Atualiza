@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # lembrete.sh - Modulo de Lembretes e Notas
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 24/08/2026-01
+# Versao: 17/09/2026
 # Autor: Luiz Augusto
 #
 
@@ -88,7 +88,12 @@ _editar_aviso_existente() {
 
     clear
     if [[ -f "$arquivo_avisos" ]]; then
-        if ! ${EDITOR:-nano} "$arquivo_avisos"; then
+        local editor="${EDITOR:-nano}"
+        if ! command -v "$editor" >/dev/null 2>&1; then
+            _erro "Editor não encontrado: $editor"
+            return 1
+        fi
+        if ! "$editor" "$arquivo_avisos"; then
             _erro "ao abrir editor!"
             _aguardar 2
         fi

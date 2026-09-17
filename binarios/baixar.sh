@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/09/2026
+# Versao: 17/09/2026
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -27,7 +27,7 @@ _executar_update() {
 _validar_diretorio_operacao() {
     local diretorio="$1"
 
-    if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
+    if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" || "$diretorio" == "$HOME" ]]; then
         return 1
     fi
     _validar_caminho_seguro "$diretorio"
