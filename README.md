@@ -69,6 +69,36 @@ O diretório `configuracoes/` armazena:
 
 - `.config` — configurações da empresa (gerado pelo `--setup`)
 - `.senhas` — hashes de senha dos usuários
+- `.versao` — versão atual do sistema
 - `lembrete` — notas internas
 - `limpetmp` — lista de arquivos temporários para limpeza
 - `manual.txt` — manual do sistema
+
+## Testes
+
+O sistema inclui scripts de teste para validação:
+
+```bash
+# Teste de smoke (requisitos e estrutura básica)
+./testes/smoke_test.sh
+
+# Testes básicos (estrutura, permissões, sintaxe)
+./testes/teste_basico.sh
+
+# Testes de configuração
+./testes/teste_config.sh
+```
+
+### Resultados dos Testes
+
+| Teste | Resultado | Descrição |
+|-------|-----------|-----------|
+| smoke_test.sh | ✓ 10/10 pass | Requisitos, executáveis, sintaxe |
+| teste_basico.sh | ✓ 43/43 pass | Estrutura, módulos, shebang, sintaxe |
+| teste_config.sh | ✓ 6/6 pass | Configurações, arquivos de ajuda |
+
+## Validação e Qualidade
+
+- **Lint**: `trunk check` (shellcheck, shfmt, prettier)
+- **Correção automática**: `trunk check --fix`
+- **Verificações obrigatórias no commit**

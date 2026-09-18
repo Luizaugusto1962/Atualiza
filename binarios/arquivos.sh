@@ -131,6 +131,7 @@ _executar_limpeza_temporarios() {
     local modo="${1:-}"
     local automatico=0
     [[ "${modo}" == "automatico" ]] && automatico=1
+    local total_arquivos_processados=0
 
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
@@ -176,11 +177,13 @@ _executar_limpeza_temporarios() {
         caminho_base="${BASE_TRABALHO:-${base_trabalho:-}}"
         if [[ -n "${caminho_base}" ]]; then
             achou_base=1
-            if [[ -d "${caminho_base}" ]]; then
-                _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" || status_geral=$?
-                if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
-                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" || status_geral=$?
-                fi
+                if [[ -d "${caminho_base}" ]]; then
+                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" || status_geral=$?
+                    (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
+                    if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
+                        _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" || status_geral=$?
+                        (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
+                    fi
             else
                 _log "AVISO: diretorio da base nao existe, limpeza ignorada: ${caminho_base}" "${LOG_LIMPA}"
             fi
@@ -195,9 +198,11 @@ _executar_limpeza_temporarios() {
                 caminho_base="${RAIZ}${base_dir}"
                 if [[ -d "${caminho_base}" ]]; then
                     _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" || status_geral=$?
+                    (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
                     # Processar limpetmp2 na sequencia, se existir
                     if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
                         _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" || status_geral=$?
+                        (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
                     fi
                 else
                     _aviso "Diretorio nao existe: ${caminho_base}"
@@ -217,6 +222,10 @@ _executar_limpeza_temporarios() {
     fi
 
     if (( ! automatico )); then
+        if [[ "${total_arquivos_processados}" -gt 0 ]]; then
+            _exibir_mensagem_centralizada "${VERDE}" "Total de ${total_arquivos_processados} arquivo(s) processado(s)"
+            _linha
+        fi
         _aguardar_tecla
     fi
 
@@ -264,7 +273,9 @@ _validar_padrao_limpeza() {
 
 # Limpa arquivos da base especifica
 # Parametros: $1=caminho_base $2=arquivo_lista $3="automatico" (opcional, modo silencioso)
+# Atualiza variavel global TOTAL_PROCESSADOS_BASE
 _limpar_base_especifica() {
+    TOTAL_PROCESSADOS_BASE=0
     local caminho_base="$1"
     local arquivo_lista="$2"
     local modo="${3:-}"
@@ -272,6 +283,7 @@ _limpar_base_especifica() {
     [[ "${modo}" == "automatico" ]] && automatico=1
     local arquivos_temp=()
     local padrao_arquivo
+#    local total_processados=0
 
     # Validar parâmetros
     if [[ -z "${caminho_base}" || -z "${arquivo_lista}" ]]; then
@@ -394,6 +406,7 @@ _limpar_base_especifica() {
             # Arquivos removidos: atualizar o conjunto para que um padrao
             # posterior que tambem casava nao tente reprocessa-los (mesmo
             # comportamento do find-por-padrao, que rodava apos a remocao).
+            (( TOTAL_PROCESSADOS_BASE += qtd_padrao )) || true
             local -a _restantes=()
             if (( ${#todos_arquivos[@]} > 0 )); then
                 for arquivo in "${todos_arquivos[@]}"; do
