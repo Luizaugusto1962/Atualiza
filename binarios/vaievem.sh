@@ -133,7 +133,6 @@ _montar_cmd_ssh() {
        ! [[ "$timeout" =~ ^[0-9]+$ ]] ||
        ! [[ "$alive_int" =~ ^[0-9]+$ ]] ||
        ! [[ "$alive_max" =~ ^[0-9]+$ ]]; then
-        _erro "Parametros invalidos para _montar_cmd_ssh (porta/timeout/alive devem ser numericos)"
         _log_erro "Parametros invalidos para _montar_cmd_ssh (porta=${porta} timeout=${timeout} alive=${alive_int}/${alive_max})"
         return 1
     fi
