@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 18/09/2026
+# Versao: 15/09/2026
 #
 
 # Variaveis globais esperadas
@@ -489,72 +489,6 @@ _validar_pre_requisitos_atualizacao() {
     return 0
 }
 
-#---------- FUNCOES COMPARTILHADAS (PROGRAMAS/PACOTES) ----------#
-# Estado da atualizacao corrente (modulo): usado pelo cleanup compartilhado
-# entre _processar_atualizacao_programas e _processar_atualizacao_pacotes.
-# Globais propositais (nao sao locais) para o cleanup poder atuar de qualquer
-# ponto, igual ao comportamento anterior das funcoes locais de cleanup.
-_ATU_CWD=""
-_ATU_NULLGLOB=""
-_ATU_DIR_TEMP=""
-
-# Cleanup compartilhado: restaura cwd/nullglob e remove o diretorio temporario.
-# Seguro para chamadas repetidas (idempotente).
-_limpeza_atualizacao() {
-    cd "${_ATU_CWD:-.}" || true
-    if [[ -n "${_ATU_DIR_TEMP:-}" ]]; then
-        rm -rf "${_ATU_DIR_TEMP}" 2>/dev/null || true
-    fi
-    if [[ "${_ATU_NULLGLOB:-}" == *"off"* ]]; then
-        shopt -u nullglob
-    else
-        shopt -s nullglob
-    fi
-}
-
-# Prepara extracao isolada: salva estado (cwd/nullglob), cria o diretorio
-# temporario, move os arquivos selecionados para la e acessa-o.
-# Retorna: 0 se sucesso, 1 se falha (cleanup por conta do chamador)
-_preparar_extracao_atualizacao() {
-    _ATU_CWD="$(pwd)"
-    _ATU_NULLGLOB=$(shopt -p nullglob)
-
-    _ATU_DIR_TEMP="${CFG_PORTALSAV}/dir_temp_atualizacao"
-    rm -rf "${_ATU_DIR_TEMP}" 2>/dev/null || true
-    if ! _criar_diretorio_seguro "${_ATU_DIR_TEMP}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Falha ao criar diretorio temporario ${_ATU_DIR_TEMP}" >&2
-        return 1
-    fi
-
-    # Mover arquivos para o diretorio temporario
-    local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${_ATU_DIR_TEMP}/"; then
-            _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
-            return 1
-        fi
-    done
-
-    if ! cd "${_ATU_DIR_TEMP}"; then
-        _erro "ERRO: Falha ao acessar diretorio temporario"
-        return 1
-    fi
-    return 0
-}
-
-# Descompacta todos os arquivos selecionados (ja no diretorio temporario).
-# Retorna: 0 se sucesso, 1 se falha
-_descompactar_selecionados() {
-    local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
-        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
-            _erro "Erro ao descompactar ${arquivo}"
-            return 1
-        fi
-    done
-    return 0
-}
-
 # Processa atualizacao dos programas
 _processar_atualizacao_programas() {
     # Validar pre-requisitos comuns (diretorios, backups, arquivos, espaco em disco)
@@ -562,9 +496,47 @@ _processar_atualizacao_programas() {
         return 1
     fi
 
-    # Preparar extracao isolada (temp dir + mover zips + cd)
-    if ! _preparar_extracao_atualizacao; then
-        _limpeza_atualizacao
+    # Salvar cwd para restaurar em todas as saidas (evitar cwd em dir temporario removido)
+    local _cwd
+    _cwd="$(pwd)"
+
+    # Salvar estado original de nullglob para restauracao segura
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob)
+
+    # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
+    _cleanupAtualizacao() {
+        cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
+        if [[ "$_old_nullglob" == *"off"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
+    }
+
+    # Criar diretorio temporario para extracao
+    local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
+    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
+        _cleanupAtualizacao
+        return 1
+    fi
+
+    # Mover arquivos para o diretorio temporario e acessa-lo
+    local arquivo
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
+            _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
+            _cleanupAtualizacao
+            return 1
+        fi
+    done
+
+    if ! cd "${dir_temp_atualizacao}"; then
+        _erro "ERRO: Falha ao acessar diretorio temporario"
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -573,7 +545,7 @@ _processar_atualizacao_programas() {
     # Criar backup dos programas antigos (helper compartilhado com pacotes)
     for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         if ! _backup_programa_antigo "${PROGRAMAS_SELECIONADOS[$programa_indice]}"; then
-            _limpeza_atualizacao
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -584,10 +556,13 @@ _processar_atualizacao_programas() {
     _aguardar 1
 
     # Descompactar e atualizar programas
-    if ! _descompactar_selecionados; then
-        _limpeza_atualizacao
-        return 1
-    fi
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
+            _erro "Erro ao descompactar ${arquivo}"
+            _cleanupAtualizacao
+            return 1
+        fi
+    done
 
     # SEGURANCA: Validar integridade pos-extracao (cada programa deve ter gerado arquivos)
     local programa_verif
@@ -603,14 +578,14 @@ _processar_atualizacao_programas() {
         shopt -u nullglob
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
-            _limpeza_atualizacao
+            _cleanupAtualizacao
             return 1
         fi
     done
 
     # Mover arquivos para diretorios corretos (helper compartilhado com pacotes)
     if ! _mover_arquivos_extraidos; then
-        _limpeza_atualizacao
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -620,12 +595,12 @@ _processar_atualizacao_programas() {
 
     # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com pacotes)
     if ! _arquivar_zips_progs_dir; then
-        _limpeza_atualizacao
+        _cleanupAtualizacao
         return 1
     fi
 
     # Limpar diretorio temporario e restaurar estado
-    _limpeza_atualizacao
+    _cleanupAtualizacao
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha
@@ -640,34 +615,74 @@ _processar_atualizacao_pacotes() {
         return 1
     fi
 
-    # #1: preparar extracao isolada (temp dir + mover pacotes + cd)
-    if ! _preparar_extracao_atualizacao; then
-        _limpeza_atualizacao
+    # #1: salvar cwd para restaurar ao final (evitar vazamento de diretorio)
+    local _cwd
+    _cwd="$(pwd)"
+
+    # Salvar estado original de nullglob para restauracao segura
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob)
+
+    # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
+    _cleanupAtualizacao() {
+        cd "$_cwd" || true
+        rm -rf "${dir_temp_atualizacao}"
+        if [[ "$_old_nullglob" == *"off"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
+    }
+
+    # Criar diretorio temporario para extracao isolada
+    local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
+    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
+    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+        _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
+        _cleanupAtualizacao
+        return 1
+    fi
+
+    # Mover pacotes para o diretorio temporario
+    local arquivo
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
+            _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
+            _cleanupAtualizacao
+            return 1
+        fi
+    done
+
+    # Acessar diretorio temporario
+    if ! cd "${dir_temp_atualizacao}"; then
+        _erro "ERRO: Falha ao acessar diretorio temporario"
+        _cleanupAtualizacao
         return 1
     fi
 
     # Descompactar pacotes no diretorio isolado
-    if ! _descompactar_selecionados; then
-        _limpeza_atualizacao
-        return 1
-    fi
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
+            _erro "Erro ao descompactar ${arquivo}"
+            _cleanupAtualizacao
+            return 1
+        fi
+    done
 
     # SEGURANCA: Validar integridade pos-extracao (cada pacote deve ter gerado arquivos)
     local arquivo_zip lista_arquivos nome_arquivo
-    # Regex das extensoes validas (montada das constantes, sem hardcode)
-    local re_extensoes="\\.(${EXTENSAO_CLASS}|${EXTENSAO_TELAS})$"
     for arquivo_zip in "${ARQUIVOS_PROGRAMA[@]}"; do
         if [[ ! -f "${arquivo_zip}" ]]; then
             _erro "Pacote nao encontrado apos extracao: ${arquivo_zip}"
-            _limpeza_atualizacao
+            _cleanupAtualizacao
             return 1
         fi
 
         # Listar conteudo do pacote e verificar se ha arquivos
-        lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk "NR>3 && NF>=4 && \$NF ~ /${re_extensoes}/ {print \$NF}")
+        lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk 'NR>3 && NF>=4 && $NF ~ /\.(class|TEL)$/ {print $NF}')
         if [[ -z "${lista_arquivos}" ]]; then
-            _erro "Pacote ${arquivo_zip} nao contem arquivos .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} validos"
-            _limpeza_atualizacao
+            _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
+            _cleanupAtualizacao
             return 1
         fi
 
@@ -675,7 +690,7 @@ _processar_atualizacao_pacotes() {
         while IFS= read -r nome_arquivo; do
             if [[ ! -f "${nome_arquivo}" ]]; then
                 _erro "Arquivo ${nome_arquivo} extraido do pacote ${arquivo_zip} nao encontrado"
-                _limpeza_atualizacao
+                _cleanupAtualizacao
                 return 1
             fi
         done <<< "${lista_arquivos}"
@@ -693,7 +708,7 @@ _processar_atualizacao_pacotes() {
 
     if (( ${#programas_encontrados[@]} == 0 )); then
         _erro "Nenhum arquivo .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} encontrado nos pacotes"
-        _limpeza_atualizacao
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -707,7 +722,7 @@ _processar_atualizacao_pacotes() {
     # Backup dos programas antigos (preserva arquivos atuais em E_EXEC/T_TELAS)
     for programa in "${!programas_encontrados[@]}"; do
         if ! _backup_programa_antigo "${programa}"; then
-            _limpeza_atualizacao
+            _cleanupAtualizacao
             return 1
         fi
     done
@@ -719,7 +734,7 @@ _processar_atualizacao_pacotes() {
 
     # Mover arquivos para diretorios corretos (helper compartilhado com programas)
     if ! _mover_arquivos_extraidos; then
-        _limpeza_atualizacao
+        _cleanupAtualizacao
         return 1
     fi
 
@@ -729,12 +744,12 @@ _processar_atualizacao_pacotes() {
 
     # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com programas)
     if ! _arquivar_zips_progs_dir; then
-        _limpeza_atualizacao
+        _cleanupAtualizacao
         return 1
     fi
 
     # Limpar diretorio temporario e restaurar estado
-    _limpeza_atualizacao
+    _cleanupAtualizacao
 
     _exibir_mensagem_centralizada "${VERDE}" "Alterando extensao da atualizacao"
     _linha

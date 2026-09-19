@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 18/09/2026
+# Versao: 14/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -21,11 +21,6 @@ shopt -s checkwinsize 2>/dev/null || true  # Bash 4+: atualizar LINES/COLUMNS au
 # Valor padrão para largura do terminal (fallback final)
 DEFAULT_COLUMNS="${DEFAULT_COLUMNS:-80}"
 DEFAULT_LINES="${DEFAULT_LINES:-24}"
-
-# Cache da largura do terminal (preenchido por _obter_colunas; sem fork).
-# Inicializado no carregamento do modulo e atualizado a cada SIGWINCH.
-_COLUNAS_ATUAL="${COLUMNS:-$DEFAULT_COLUMNS}"
-_COLUNAS_CACHE=""
 
 # Inicializar COLUMNS na primeira execução se em terminal interativo
 if [[ -t 1 || -t 0 ]]; then
@@ -46,23 +41,25 @@ export COLUMNS LINES
 # =============================================================================
 # Funcoes de Utilitarios Basicos
 # =============================================================================
-# Obtem largura do terminal publicando na global _COLUNAS_ATUAL (sem fork).
-# Estrategia: COLUMNS (ja definida) > cache > stty > padrao.
-# Chamadores devem ler "_COLUNAS_ATUAL" em vez de $( _obter_colunas ), que
-# abria um subshell a cada mensagem exibida.
+# Obtem largura do terminal com fallback seguro
+# Retorna: numero de colunas
+# Obtem largura do terminal usando variavel de ambiente COLUMNS
+# Estrategia: COLUMNS (já definida) > Fallback padrão
+# Esta funcao garante que sempre retorna um valor válido
 # Retorna: numero de colunas (garantido ser positivo)
+_COLUNAS_CACHE=""
 _obter_colunas() {
     local colunas="${COLUMNS:-}"
 
     # Se COLUMNS está definido e é um numero positivo, usar
     if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
-        _COLUNAS_ATUAL="$colunas"
+        printf '%s' "$colunas"
         return 0
     fi
 
-    # Reutilizar ultimo valor valido sem chamar stty
+    # Reutilizar ultimo valor valido sem reprovar stty
     if [[ -n "$_COLUNAS_CACHE" ]]; then
-        _COLUNAS_ATUAL="$_COLUNAS_CACHE"
+        printf '%s' "$_COLUNAS_CACHE"
         return 0
     fi
 
@@ -72,19 +69,15 @@ _obter_colunas() {
         if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
             export COLUMNS="$colunas"
             _COLUNAS_CACHE="$colunas"
-            _COLUNAS_ATUAL="$colunas"
+            printf '%s' "$colunas"
             return 0
         fi
     fi
 
     # Ultima alternativa: usar valor padrão
-    _COLUNAS_ATUAL="$DEFAULT_COLUMNS"
+    printf '%s' "$DEFAULT_COLUMNS"
     return 0
 }
-
-# Redimensionamento de terminal: atualiza o cache de largura (o bash ja
-# reescreve COLUMNS internamente; o trap so mantem nosso cache sincronizado).
-trap '_obter_colunas' WINCH
 
 # Configuracao de alertas
 # Helper comum: aplica formato printf (%s/%d) quando ha argumentos extras e
@@ -156,8 +149,7 @@ _exibir_mensagem_centralizada_a_esquerda() {
     local margem_esquerda
 
     # Obter largura do terminal
-    _obter_colunas
-    colunas="$_COLUNAS_ATUAL"
+    colunas=$(_obter_colunas)
 
     # Calcular a margem para centralizar o BLOCO inteiro na tela
     if [[ "$colunas" -le "$largura_bloco" ]]; then
@@ -179,8 +171,7 @@ _exibir_mensagem_centralizada() {
     local mensagem="${2}"
     local colunas
 
-    _obter_colunas
-    colunas="$_COLUNAS_ATUAL"
+    colunas=$(_obter_colunas)
     local tamanho_mensagem=${#mensagem}
 
     if [[ "$colunas" -lt "$tamanho_mensagem" ]]; then
@@ -201,8 +192,7 @@ _exibir_mensagem_direita() {
     local largura_terminal largura_mensagem posicao_inicio
 
     # Obter largura do terminal com fallback seguro
-    _obter_colunas
-    largura_terminal="$_COLUNAS_ATUAL"
+    largura_terminal=$(_obter_colunas)
 
     largura_mensagem=${#mensagem}
     posicao_inicio=$((largura_terminal - largura_mensagem))
@@ -215,6 +205,33 @@ _exibir_mensagem_direita() {
     printf "%s%*s%s%s\n" "${cor}" "${posicao_inicio}" "" "$mensagem" "${NORMAL}"
 }
 
+_exibir_mensagem_corrida() {
+    local cor="${1}"
+    local mensagem="${2}"
+    local largura_terminal largura_mensagem posicao_inicio
+    local i
+
+    # Obter largura do terminal com fallback seguro
+    largura_terminal=$(_obter_colunas)
+
+    largura_mensagem=${#mensagem}
+    posicao_inicio=$(( (largura_terminal - largura_mensagem) / 2 ))
+
+    # Garante posição mínima não negativa
+    if [[ "$posicao_inicio" -lt 0 ]]; then
+        posicao_inicio=0
+    fi
+# Imprimir espaços iniciais para centralizar
+    printf "%*s" "${posicao_inicio}" ""
+
+    # Loop para imprimir cada letra com efeito de digitação
+    for ((i=0; i<${#mensagem}; i++)); do
+        printf "%s%s%s" "${cor}" "${mensagem:$i:1}" "${NORMAL}"
+        sleep 0.05
+    done
+    printf "\n"
+}
+
 # Cria linha horizontal com caractere especificado
 # Parametros: $1=caractere (opcional, padrao='-') $2=cor (opcional)
 _linha() {
@@ -222,8 +239,7 @@ _linha() {
     local cor="${2:-}"
     local colunas
 
-    _obter_colunas
-    colunas="$_COLUNAS_ATUAL"
+    colunas=$(_obter_colunas)
 
     if [[ "$colunas" -lt 10 ]]; then
         colunas=10
@@ -248,8 +264,7 @@ _meia_linha() {
     local largura="${3:-50}"
     local espacos linhas colunas
 
-    _obter_colunas
-    colunas="$_COLUNAS_ATUAL"
+    colunas=$(_obter_colunas)
 
     printf -v espacos "%${largura}s" ""
     linhas=${espacos// /$traco}
@@ -293,8 +308,7 @@ _aguardar_tecla() {
     local tempo_limite="${2:-${DEFAULT_PRESS_TIMEOUT}}"
     local colunas
 
-    _obter_colunas
-    colunas="$_COLUNAS_ATUAL"
+    colunas=$(_obter_colunas)
 
     # Centralizar pela largura real da mensagem (antes usava 36 fixo)
     local msg_completa="<< $mensagem >>"
@@ -313,8 +327,7 @@ _aguardar_tecla() {
 _opinvalida() {
     _linha "-" "${AMARELO:-}"
     # "Opcao Invalida" tem 14 caracteres (antes usava 18, deslocava 2 col)
-    _obter_colunas
-    local espacos=$(( (_COLUNAS_ATUAL - 14) / 2 ))
+    local espacos=$(( ($(_obter_colunas) - 14) / 2 ))
     (( espacos < 0 )) && espacos=0
     printf "%*s%s\n" "$espacos" "" "${VERMELHO}Opcao Invalida${NORMAL}"
     _linha "-" "${AMARELO:-}"
@@ -448,8 +461,7 @@ _mostrar_progresso_backup() {
         printf "\r\033[K%s[INFORMATIVO]%s %s |%s| %s" \
             "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
 
-        # Tick menor que 1s: operacoes curtas nao custam 1s inteiro de espera
-        sleep 0.3
+        sleep 1
     done
 
     # Coletar status de saida
@@ -687,34 +699,18 @@ _check_instalado() {
 #   'accept-new' — tambem aceita chaves novas sem interromper o fluxo.
 # NUNCA escreva StrictHostKeyChecking=aceitar diretamente — chame esta funcao.
 _ssh_aceitar_novo() {
-    # Cache de sessao: ssh -V e um fork caro e esta funcao e chamada a cada
-    # conexao SCP/RSYNC. IMPORTANTE: chame sem $() (a global so e populada no
-    # shell corrente — dentro de $(...) o cache vai para o subshell e se perde).
-    if (( ${_SSH_ACEITAR_NOVO_PRONTO:-0} )); then
-        printf '%s' "${_SSH_ACEITAR_NOVO}"
-        return 0
-    fi
-
     local versao
     versao="$(ssh -V 2>&1 || true)"
     if [[ "${versao}" =~ OpenSSH_([0-9]+)\.([0-9]+) ]]; then
         local maior="${BASH_REMATCH[1]}"
         local menor="${BASH_REMATCH[2]}"
         if (( maior > 7 )) || (( maior == 7 && menor >= 6 )); then
-            _SSH_ACEITAR_NOVO="accept-new"
-            _SSH_ACEITAR_NOVO_PRONTO=1
-#            printf '%s' "${_SSH_ACEITAR_NOVO}"
+            printf 'accept-new'
             return 0
         fi
     fi
-    _SSH_ACEITAR_NOVO="no"
-    _SSH_ACEITAR_NOVO_PRONTO=1
-#    printf '%s' "${_SSH_ACEITAR_NOVO}"
-    return 0
+    printf 'no'
 }
-# Inicializacao das globais de cache (populadas na primeira chamada)
-_SSH_ACEITAR_NOVO=""
-_SSH_ACEITAR_NOVO_PRONTO=0
 
 #---------- FUNCOES DE CHAVES SSH ----------#
 #===================================================================

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 18/09/2026
+# Versao: 16/09/2026
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -14,10 +14,6 @@ CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Caminho do diretorio da segund
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Caminho do diretorio da terceira base de dados.
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
-
-# Diretorio de rotacao (backup de seguranca) criado durante a restauracao;
-# removido ao final do processo por _limpar_restauracao().
-DIR_ROTACAO=""
 
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {
@@ -35,17 +31,6 @@ _limpar_backup() {
     if [[ -n "${CAMINHO_BACKUP:-}" ]] && _validar_caminho_seguro "${CAMINHO_BACKUP}"; then
         rm -f -- "$CAMINHO_BACKUP" 2>/dev/null || true
     fi
-}
-
-# Limpa o diretorio de rotacao criado por _rotacionar_arquivos_base() durante a
-# restauracao. Executada na saida do processo (normal ou interrompida).
-_limpar_restauracao() {
-    if [[ -n "${DIR_ROTACAO:-}" ]] &&
-        _validar_caminho_seguro "${DIR_ROTACAO}" &&
-        [[ "${DIR_ROTACAO}" == *"/restauracao_"* ]]; then
-        rm -rf -- "${DIR_ROTACAO}" 2>/dev/null || true
-    fi
-    DIR_ROTACAO=""
 }
 
 #---------- FUNCOES PRINCIPAIS DE backup ----------#
@@ -103,11 +88,9 @@ _validar_pre_backup() {
     fi
 
     # Verificar espaco em disco (estimar via du -sk da base)
-    # du -sk retorna KB; _verificar_espaco_disco compara com df -kP (tambem KB).
-    # A margem de 2x cobre: backup compactado + arquivos temporarios.
     local tamanho_estimado
     tamanho_estimado=$(_estimar_tamanho_backup "$_base_ref")
-    local espaco_necessario=$((tamanho_estimado * 2))
+    local espaco_necessario=$((tamanho_estimado * 2 / 1024))
     if ! _verificar_espaco_disco "$DEFAULT_BASEBACKUP_DIR" "$espaco_necessario"; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Espaco em disco insuficiente em $DEFAULT_BASEBACKUP_DIR"
         _aguardar 3
@@ -272,22 +255,12 @@ _restaurar_backup() {
         return 0
     fi
 
-    # Registrar trap local apenas durante a restauracao (limpa rotacao ao
-    # interromper) — mesmo padrao usado por _executar_backup()
-    trap '_limpar_restauracao; trap - INT TERM' INT TERM
-
     # Prossegue com a logica de restauracao (completa ou parcial)
     if _confirmar "Deseja restaurar TODOS os arquivos do backup?" "N"; then
         _restaurar_backup_completo "$backup_selecionado"
     else
         _restaurar_arquivo_especifico "$backup_selecionado"
     fi
-
-    # Remover diretorio de rotacao criado durante a restauracao
-    _limpar_restauracao
-
-    # Restaurar trap original ao encerrar a restauracao
-    trap '_encerrar_programa 130' INT TERM
 }
 
 _enviar_backup_avulso() {
@@ -572,9 +545,6 @@ _rotacionar_arquivos_base() {
     timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_dir="${DEFAULT_BASEBACKUP_DIR}/restauracao_${timestamp}"
 
-    # Resetar registro global (so e definido apos criacao bem-sucedida)
-    DIR_ROTACAO=""
-
     if [[ ! -d "$base_origem" ]]; then
         return 0
     fi
@@ -583,8 +553,6 @@ _rotacionar_arquivos_base() {
         _aviso "Nao foi possivel criar diretorio de rotacao: $backup_dir"
         return 1
     fi
-    # Registrar para limpeza ao final da restauracao
-    DIR_ROTACAO="$backup_dir"
 
     # Copiar arquivos existentes para backup de rotacao (nao move, para nao perder referencias)
     local arquivo
@@ -885,9 +853,6 @@ _mover_backup_offline() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
-# Verifica espaco livre em disco.
-# Parametros: $1=diretorio $2=espaco_minimo em KILOBYTES (padrao 1GB)
-# Retorna: 0 se suficiente, 1 caso contrario (ou se indisponivel)
 _verificar_espaco_disco() {
     local diretorio="${1:-}" espaco_minimo="${2:-1048576}"
     local espaco_disponivel
@@ -896,8 +861,7 @@ _verificar_espaco_disco() {
 }
 
 # Estima espaco em disco necessario para backup completo
-# Retorna o tamanho da base em KILOBYTES (du -sk) — o chamador deve comparar
-# na mesma unidade com _verificar_espaco_disco (df -kP tambem retorna KB).
+# Usa du -sk da base para estimar tamanho do backup
 _estimar_tamanho_backup() {
     local base="${1:-}"
     local tamanho_kb

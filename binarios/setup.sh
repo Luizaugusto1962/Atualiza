@@ -12,7 +12,7 @@ set -euo pipefail
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/09/2026
+# Versao: 01/09/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -385,30 +385,6 @@ _recreate_config_files() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
-#===================================================================
-# _validar_config_ssh - Valida configuracao SSH antes de criar arquivo
-#===================================================================
-_validar_config_ssh() {
-    local ip="$1" porta="$2" user="$3"
-
-    # Validar IP
-    if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        return 1
-    fi
-
-    # Validar porta
-    if [[ ! "$porta" =~ ^[0-9]+$ ]] || (( porta < 1 || porta > 65535 )); then
-        return 1
-    fi
-
-    # Validar usuario (apenas alfanumericos e underscore)
-    if [[ ! "$user" =~ ^[a-zA-Z0-9_]+$ ]]; then
-        return 1
-    fi
-
-    return 0
-}
-
 # Configura acesso SSH facilitado
 #===================================================================
 # _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
@@ -427,12 +403,6 @@ _configure_ssh_access() {
     # Validacao das variaveis obrigatorias
     if [[ -z "${ip_server}" ]]; then
         echo "Erro: Variavel DEFAULT_IP_SERVER nao foi definida."
-        return 1
-    fi
-
-    # Validar configuração SSH (IP, porta, usuário)
-    if ! _validar_config_ssh "${ip_server}" "${porta_ssh}" "${user_ssh}"; then
-        _erro "Configuração SSH inválida"
         return 1
     fi
 

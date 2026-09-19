@@ -11,7 +11,7 @@ set -euo pipefail
 # (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 18/09/2026
+# Versao: 15/09/2026-02
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -87,16 +87,13 @@ _montar_cmd_scp() {
         return 1
     fi
 
-    # Cache da opcao StrictHostKeyChecking (popula global; ver _ssh_aceitar_novo)
-    _ssh_aceitar_novo
-
     local -a _opcoes_base=(
         scp
         -P "$porta"
         -o "ConnectTimeout=${timeout}"
         -o "ServerAliveInterval=${alive_int}"
         -o "ServerAliveCountMax=${alive_max}"
-        -o "StrictHostKeyChecking=${_SSH_ACEITAR_NOVO}"
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
     )
 
     if _usar_chave_ssh; then
@@ -133,12 +130,10 @@ _montar_cmd_ssh() {
        ! [[ "$timeout" =~ ^[0-9]+$ ]] ||
        ! [[ "$alive_int" =~ ^[0-9]+$ ]] ||
        ! [[ "$alive_max" =~ ^[0-9]+$ ]]; then
+        _erro "Parametros invalidos para _montar_cmd_ssh (porta/timeout/alive devem ser numericos)"
         _log_erro "Parametros invalidos para _montar_cmd_ssh (porta=${porta} timeout=${timeout} alive=${alive_int}/${alive_max})"
         return 1
     fi
-
-    # Cache da opcao StrictHostKeyChecking (popula global; ver _ssh_aceitar_novo)
-    _ssh_aceitar_novo
 
     local -a _opcoes_ssh=(
         ssh
@@ -146,7 +141,7 @@ _montar_cmd_ssh() {
         -o "ConnectTimeout=${timeout}"
         -o "ServerAliveInterval=${alive_int}"
         -o "ServerAliveCountMax=${alive_max}"
-        -o "StrictHostKeyChecking=${_SSH_ACEITAR_NOVO}"
+        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)"
     )
 
     if _usar_chave_ssh; then

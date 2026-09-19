@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/09/2026
+# Versao: 09/09/2026
 # Autor: Luiz Augusto
 #
 
@@ -267,8 +267,6 @@ _alterar_senha() {
         _exibir_mensagem_centralizada "${VERMELHO}" "Erro ao criar arquivo temporario para atualizacao de senha."
         return 1
     }
-    # Limpeza do temporario ao sair desta funcao (mesmo em caso de erro)
-    trap 'rm -f -- "$tmp_senhas"' RETURN
     # Reescrever o arquivo substituindo apenas a linha do usuario atual
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         if [[ "$linha" == "${usuario}:"* ]]; then

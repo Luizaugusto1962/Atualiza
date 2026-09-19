@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:18/09/2026
+# Versao:14/09/2026
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -290,49 +290,6 @@ _configurar_variaveis_sistema() {
     export SAVATU1 SAVATU2 SAVATU3 SAVATU
 }
 
-# Testa a conexao SSH em background registrando o resultado no log.
-# Roda desanexada para nao bloquear o startup: o teste sincrono podia prender
-# o programa por ate SSH_TIMEOUT quando o servidor estava inalcancavel.
-# NUNCA escreve na tela: rodaria concorrente com o menu interativo. Falhas
-# reais aparecem na propria operacao de rede (scp/rsync/ssh reportam na hora).
-# Parametros: $1=servidor $2=usuario $3=porta $4=tempo_limite $5...=opcoes ssh
-_testar_conexao_ssh_bg() {
-    local servidor_ssh="$1"
-    local usuario_ssh="$2"
-    local porta_ssh="$3"
-    local tempo_limite_ssh="$4"
-    shift 4
-    local -a ssh_opts=("$@")
-    local ssh_output ssh_exit=0
-
-    # BatchMode=yes: sem prompt de senha em background (falha rapida em vez
-    # de esperar uma entrada que nunca chegara).
-    ssh_output=$(ssh "${ssh_opts[@]}" -o BatchMode=yes "${usuario_ssh}@${servidor_ssh}" exit 2>&1) || ssh_exit=$?
-    ssh_output="${ssh_output//$'\n'/ }"
-
-    if (( ssh_exit == 0 )); then
-        _log "Conexao SSH estabelecida com sucesso para ${usuario_ssh}@${servidor_ssh}" "${LOG_ATU}"
-        return 0
-    fi
-
-    _log "Falha na conexao SSH para ${usuario_ssh}@${servidor_ssh} (rc=${ssh_exit})" "${LOG_ATU}"
-    _log "Comando: ssh ${ssh_opts[*]} -o BatchMode=yes ${usuario_ssh}@${servidor_ssh} exit" "${LOG_ATU}"
-
-    if [[ "${ssh_output}" == *"Permission denied"* ]]; then
-        _log "Motivo: Permissao negada (publickey,password). Chave publica pode nao estar no authorized_keys do servidor." "${LOG_ATU}"
-    elif [[ "${ssh_output}" == *"Connection refused"* ]]; then
-        _log "Motivo: Conexao recusada na porta ${porta_ssh}. Verifique se o servidor SSH esta rodando." "${LOG_ATU}"
-    elif [[ "${ssh_output}" == *"Connection timed out"* ]]; then
-        _log "Motivo: Conexao excedeu o tempo_limite de ${tempo_limite_ssh}s. Verifique o IP '${servidor_ssh}'." "${LOG_ATU}"
-    elif [[ "${ssh_output}" == *"Host key verification failed"* ]]; then
-        _log "Motivo: Falha na verificacao da chave do host. Execute: ssh-keygen -R '${servidor_ssh}'" "${LOG_ATU}"
-    else
-        _log "Motivo: erro desconhecido: ${ssh_output}" "${LOG_ATU}"
-    fi
-    _log "Dica: execute 'ssh ${usuario_ssh}@${servidor_ssh}' manualmente para diagnosticar" "${LOG_ATU}"
-    return 0
-}
-
 # Validar acesso SSH
 _validar_ssh() {
     if [[ ! "${CFG_ACESSO_SSH}" =~ ^[sn]$ ]]; then
@@ -363,7 +320,7 @@ _validar_ssh() {
         usuario_ssh="root"
     fi
 
-    local -a ssh_opts=("-o" "ConnectTimeout=${tempo_limite_ssh}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+    local ssh_opts=("-o" "ConnectTimeout=${tempo_limite_ssh}" "-o" "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
 
     if [[ -n "${porta_ssh}" ]]; then
         ssh_opts+=("-p" "${porta_ssh}")
@@ -377,12 +334,58 @@ _validar_ssh() {
         fi
     fi
 
-    # Probe em background desanexado (sem mensagem de job na tela): o teste
-    # sincrono travava o startup quando o servidor estava inalcancavel.
-    _testar_conexao_ssh_bg "${servidor_ssh}" "${usuario_ssh}" "${porta_ssh}" "${tempo_limite_ssh}" "${ssh_opts[@]}" >/dev/null 2>&1 &
-    local _probe_pid=$!
-    disown "$_probe_pid" 2>/dev/null || true
+    local ssh_output ssh_exit=0
+    ssh_output=$(ssh "${ssh_opts[@]}" "${usuario_ssh}@${servidor_ssh}" exit 2>&1) || ssh_exit=$?
 
+    if (( ssh_exit == 0 )); then
+        _exibir_mensagem_centralizada "${VERDE}" "Conexao SSH estabelecida com sucesso para ${usuario_ssh}@${servidor_ssh}"
+    else
+        _exibir_mensagem_centralizada "${VERMELHO}" "Falha na conexao SSH para ${usuario_ssh}@${servidor_ssh}"
+        _linha "-" "${AMARELO}"
+        _exibir_mensagem_centralizada "${AMARELO}" "Comando: ssh ${ssh_opts[*]} ${usuario_ssh}@${servidor_ssh} exit"
+        _linha "-" "${AMARELO}"
+
+        if [[ "${ssh_output}" == *"Permission denied"* ]]; then
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Permissao negada (publickey,password)"
+            _exibir_mensagem_centralizada "${AMARELO}" "Possiveis causas:"
+            if [[ -n "${chave_ssh}" ]]; then
+                if [[ -f "${chave_ssh}" ]]; then
+                    local key_perm
+                    key_perm=$(stat -c "%a" "${chave_ssh}" 2>/dev/null || stat -f "%Lp" "${chave_ssh}" 2>/dev/null || echo "?")
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave usada: ${chave_ssh} (perm: ${key_perm})"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - A chave privada deve ter permissao 600"
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave publica pode nao estar em /home/${usuario_ssh}/.ssh/authorized_keys"
+                else
+                    _exibir_mensagem_centralizada "${NORMAL}" "  - Chave configurada nao existe: ${chave_ssh}"
+                fi
+            else
+                _exibir_mensagem_centralizada "${NORMAL}" "  - Nenhuma chave SSH configurada em CFG_CHAVE_SSH"
+                _exibir_mensagem_centralizada "${NORMAL}" "  - O SSH procura padrao em: ~/.ssh/id_{rsa,ed25519,ecdsa}"
+                _exibir_mensagem_centralizada "${NORMAL}" "  - Se a chave esta em /root/.ssh/, configure:"
+                _exibir_mensagem_centralizada "${NORMAL}" "    CFG_CHAVE_SSH=/root/.ssh/id_rsa_atualiza"
+                _exibir_mensagem_centralizada "${NORMAL}" "    Ou copie a chave para ~/.ssh/ do usuario atual"
+                _exibir_mensagem_centralizada "${NORMAL}" "    Ou execute: ssh-agent bash -c 'ssh-add /root/.ssh/id_rsa_atualiza && comando'"
+            fi
+            _exibir_mensagem_centralizada "${NORMAL}" "  - A chave publica pode nao estar cadastrada no servidor"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - Execute: ssh-copy-id -i /root/.ssh/id_rsa_atualiza.pub ${usuario_ssh}@${servidor_ssh}"
+            _exibir_mensagem_centralizada "${NORMAL}" "  - Usuario '${usuario_ssh}' pode estar incorreto"
+        elif [[ "${ssh_output}" == *"Connection refused"* ]]; then
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao recusada na porta ${porta_ssh}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o servidor SSH esta rodando e a porta correta"
+        elif [[ "${ssh_output}" == *"Connection timed out"* ]]; then
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Conexao excedeu tempo_limite de ${tempo_limite_ssh}s"
+            _exibir_mensagem_centralizada "${AMARELO}" "Verifique se o IP '${servidor_ssh}' esta correto e acessivel"
+        elif [[ "${ssh_output}" == *"Host key verification failed"* ]]; then
+            _exibir_mensagem_centralizada "${VERMELHO}" "Motivo: Falha na verificacao da chave do host"
+            _exibir_mensagem_centralizada "${AMARELO}" "Execute: ssh-keygen -R '${servidor_ssh}'"
+        else
+            _exibir_mensagem_centralizada "${VERMELHO}" "Erro desconhecido:"
+            printf "%s\n" "${ssh_output}" >&2
+        fi
+        _linha "-" "${AMARELO}"
+        _exibir_mensagem_centralizada "${AMARELO}" "Dica: execute 'ssh ${usuario_ssh}@${servidor_ssh}' manualmente para diagnosticar"
+        _exibir_mensagem_centralizada "${AMARELO}" "Alerta: continuando sem acesso SSH (funcionalidades remotas podem falhar)"
+    fi
     _linha "=" "${VERDE}"
     return 0
 }

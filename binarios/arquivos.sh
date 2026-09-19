@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 18/09/2026
+# Versao: 09/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -131,7 +131,6 @@ _executar_limpeza_temporarios() {
     local modo="${1:-}"
     local automatico=0
     [[ "${modo}" == "automatico" ]] && automatico=1
-    local total_arquivos_processados=0
 
     # Verificar arquivo de lista de temporarios
     local arquivo_lista="${CFG_DIR}/limpetmp"
@@ -177,13 +176,11 @@ _executar_limpeza_temporarios() {
         caminho_base="${BASE_TRABALHO:-${base_trabalho:-}}"
         if [[ -n "${caminho_base}" ]]; then
             achou_base=1
-                if [[ -d "${caminho_base}" ]]; then
-                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" || status_geral=$?
-                    (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
-                    if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
-                        _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" || status_geral=$?
-                        (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
-                    fi
+            if [[ -d "${caminho_base}" ]]; then
+                _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" || status_geral=$?
+                if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
+                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" || status_geral=$?
+                fi
             else
                 _log "AVISO: diretorio da base nao existe, limpeza ignorada: ${caminho_base}" "${LOG_LIMPA}"
             fi
@@ -198,11 +195,9 @@ _executar_limpeza_temporarios() {
                 caminho_base="${RAIZ}${base_dir}"
                 if [[ -d "${caminho_base}" ]]; then
                     _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" || status_geral=$?
-                    (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
                     # Processar limpetmp2 na sequencia, se existir
                     if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
                         _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" || status_geral=$?
-                        (( total_arquivos_processados += TOTAL_PROCESSADOS_BASE )) || true
                     fi
                 else
                     _aviso "Diretorio nao existe: ${caminho_base}"
@@ -222,10 +217,6 @@ _executar_limpeza_temporarios() {
     fi
 
     if (( ! automatico )); then
-        if [[ "${total_arquivos_processados}" -gt 0 ]]; then
-            _exibir_mensagem_centralizada "${VERDE}" "Total de ${total_arquivos_processados} arquivo(s) processado(s)"
-            _linha
-        fi
         _aguardar_tecla
     fi
 
@@ -273,9 +264,7 @@ _validar_padrao_limpeza() {
 
 # Limpa arquivos da base especifica
 # Parametros: $1=caminho_base $2=arquivo_lista $3="automatico" (opcional, modo silencioso)
-# Atualiza variavel global TOTAL_PROCESSADOS_BASE
 _limpar_base_especifica() {
-    TOTAL_PROCESSADOS_BASE=0
     local caminho_base="$1"
     local arquivo_lista="$2"
     local modo="${3:-}"
@@ -283,7 +272,6 @@ _limpar_base_especifica() {
     [[ "${modo}" == "automatico" ]] && automatico=1
     local arquivos_temp=()
     local padrao_arquivo
-#    local total_processados=0
 
     # Validar parâmetros
     if [[ -z "${caminho_base}" || -z "${arquivo_lista}" ]]; then
@@ -336,50 +324,20 @@ _limpar_base_especifica() {
     local qtd_padrao
     local arquivos_zip=()
 
-    # Coletar todos os arquivos de todos os padroes em UMA unica passada de
-    # find (antes: 1 find por padrao). A filtragem por padrao e feita abaixo,
-    # mantendo o mesmo agrupamento/mensagens do fluxo original.
-    local -a todos_arquivos=()
-    local -a find_expr=()
-    local _p
-    for _p in "${arquivos_temp[@]}"; do
-        [[ -n "$_p" ]] || continue
-        if ! _validar_padrao_limpeza "$_p"; then
-            _log "AVISO: padrao de limpeza invalido ignorado: ${_p}" "${LOG_LIMPA}"
-            continue
-        fi
-        if (( ${#find_expr[@]} == 0 )); then
-            find_expr+=(-iname "$_p")
-        else
-            find_expr+=(-o -iname "$_p")
-        fi
-    done
-
-    if (( ${#find_expr[@]} > 0 )); then
-        while IFS= read -r -d '' arquivo; do
-            todos_arquivos+=("$arquivo")
-        done < <(find "${caminho_base:-.}" -maxdepth 1 -type f \( "${find_expr[@]}" \) -mtime +0 -print0)
-    fi
-
-    # nocasematch: casar com o -iname do find
-    shopt -s nocasematch
     for padrao_arquivo in "${arquivos_temp[@]}"; do
         [[ -n "$padrao_arquivo" ]] || continue
 
-        # SEGURANCA: padroes invalidos ja foram avisados na coleta acima
+        # SEGURANCA: validar padrao antes de usá-lo no find/zip/rm
         if ! _validar_padrao_limpeza "$padrao_arquivo"; then
+            _log "AVISO: padrao de limpeza invalido ignorado: ${padrao_arquivo}" "${LOG_LIMPA}"
             continue
         fi
 
-        # Filtrar o conjunto unico pelo padrao corrente
+        # Coletar arquivos de forma segura (suporte a nomes com espacos)
         arquivos_zip=()
-        if (( ${#todos_arquivos[@]} > 0 )); then
-            for arquivo in "${todos_arquivos[@]}"; do
-                if [[ "${arquivo##*/}" == "$padrao_arquivo" ]]; then
-                    arquivos_zip+=("$arquivo")
-                fi
-            done
-        fi
+        while IFS= read -r -d '' arquivo; do
+            arquivos_zip+=("$arquivo")
+        done < <(find "${caminho_base:-.}" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0 -print0)
         qtd_padrao="${#arquivos_zip[@]}"
 
         # Nenhum arquivo encontrado para este padrao — pular
@@ -403,21 +361,6 @@ _limpar_base_especifica() {
             else
                 _log "AVISO: falha ao remover arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
             fi
-            # Arquivos removidos: atualizar o conjunto para que um padrao
-            # posterior que tambem casava nao tente reprocessa-los (mesmo
-            # comportamento do find-por-padrao, que rodava apos a remocao).
-            (( TOTAL_PROCESSADOS_BASE += qtd_padrao )) || true
-            local -a _restantes=()
-            if (( ${#todos_arquivos[@]} > 0 )); then
-                for arquivo in "${todos_arquivos[@]}"; do
-                    [[ -e "$arquivo" ]] && _restantes+=("$arquivo")
-                done
-            fi
-            if (( ${#_restantes[@]} > 0 )); then
-                todos_arquivos=("${_restantes[@]}")
-            else
-                todos_arquivos=()
-            fi
         else
             _log "ERRO ao compactar arquivos do padrao: $padrao_arquivo" "${LOG_LIMPA}"
             _erro "  >> Ao compactar padrao: ${padrao_arquivo}"
@@ -426,7 +369,6 @@ _limpar_base_especifica() {
             fi
         fi
     done
-    shopt -u nocasematch
     if (( ! automatico )); then
         _linha
         _ok "Limpeza concluida"
@@ -587,16 +529,12 @@ _recuperar_todos_arquivos() {
     fi
     old_nullglob=$(shopt -p nullglob)
     shopt -s nullglob
-    # Rebuilds em paralelo (limite de _JUTIL_MAX_PROC)
-    _iniciar_lote_jutil
-    _JUTIL_MODO_PARALELO=1
     for extensao in "${extensoes[@]}"; do
         for arquivo in ${base_trabalho}/${extensao}; do
             if [[ -L "$arquivo" ]]; then
                 _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
                 _linha "-" "${VERDE}"
             elif [[ -f "$arquivo" && -s "$arquivo" ]]; then
-                _msg "Processando arquivo: %s\n" "${arquivo##*/}"
                 _executar_jutil "$arquivo"
             else
                 _aviso "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
@@ -604,8 +542,6 @@ _recuperar_todos_arquivos() {
             fi
         done
     done
-    _JUTIL_MODO_PARALELO=0
-    _sincronizar_jutil
     if [[ "$old_nullglob" == *"off"* ]]; then
         shopt -u nullglob
     else
@@ -649,22 +585,15 @@ _recuperar_arquivo_individual() {
     old_nocaseglob=$(shopt -p nocaseglob)
     # Usar nocaseglob apenas localmente para este loop
     shopt -s nullglob nocaseglob
-    # Rebuilds em paralelo (limite de _JUTIL_MAX_PROC); o relatorio e os
-    # chmods sao feitos na ordem original ao sincronizar o lote.
-    _iniciar_lote_jutil
-    _JUTIL_MODO_PARALELO=1
     for arquivo in ${base_trabalho}/${padrao_arquivo}; do
         if [[ -L "$arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
             _linha "-" "${VERDE}"
         elif [[ -f "$arquivo" ]]; then
-            _msg "Processando arquivo: %s\n" "${arquivo##*/}"
             _executar_jutil "$arquivo"
             ((arquivos_encontrados++)) || true
         fi
     done
-    _JUTIL_MODO_PARALELO=0
-    _sincronizar_jutil
     # Restaurar shell options de forma segura (sem eval)
     if [[ "$old_nullglob" == *"off"* ]]; then
         shopt -u nullglob
@@ -934,9 +863,6 @@ _processar_lista_arquivos() {
         return 1
     fi
 
-    # Rebuilds em paralelo (limite de _JUTIL_MAX_PROC)
-    _iniciar_lote_jutil
-    _JUTIL_MODO_PARALELO=1
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
 
@@ -960,89 +886,9 @@ _processar_lista_arquivos() {
         if [[ -L "$caminho_arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${listando}"
         else
-            _msg "Processando arquivo: %s\n" "${listando}"
             _executar_jutil "$caminho_arquivo"
         fi
     done < "$arquivo_lista"
-    _JUTIL_MODO_PARALELO=0
-    _sincronizar_jutil
-}
-
-#---------- FUNCOES DE REBUILD (JUTIL) ----------#
-# Controle de lote paralelo: _JUTIL_MODO_PARALELO liga o disparo de rebuilds
-# em background; _JUTIL_PIDS/_JUTIL_ARQUIVOS guardam os processos na ordem de
-# chegada para que o relatorio final seja exibido na mesma sequencia do fluxo
-# sequencial original. _JUTIL_PROXIMO aponta o proximo a ser finalizado.
-_JUTIL_MODO_PARALELO=0
-_JUTIL_MAX_PROC="${MAX_REBUILD_PARALELO:-4}"
-declare -a _JUTIL_PIDS=()
-declare -a _JUTIL_ARQUIVOS=()
-_JUTIL_PROXIMO=0
-
-# Inicia um novo lote de rebuilds paralelos (zera os registros)
-_iniciar_lote_jutil() {
-    _JUTIL_PIDS=()
-    _JUTIL_ARQUIVOS=()
-    _JUTIL_PROXIMO=0
-}
-
-# Finaliza um rebuild individual: log + chmod do arquivo e dos .idx gerados.
-# Comportamento identico ao fluxo sincrono original.
-# Parametros: $1=arquivo $2=status (0=sucesso)
-_finalizar_jutil() {
-    local arquivo="$1"
-    local status="$2"
-    local dir_arquivo base_arquivo arquivo_indice old_nullglob
-
-    if (( status == 0 )); then
-        _log_sucesso "Rebuild executado: ${arquivo##*/}"
-        # garantir permissões máximas após o rebuild
-        if ! chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null; then
-            _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
-        fi
-
-        # garantir permissões máximas nos arquivos .indice gerados pelo jutil
-        dir_arquivo="${arquivo%/*}"
-        base_arquivo="${arquivo##*/}"
-        base_arquivo="${base_arquivo%.dat}"
-        old_nullglob=$(shopt -p nullglob)
-        shopt -s nullglob
-        for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
-            if [[ -f "$arquivo_indice" ]]; then
-                if ! chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null; then
-                    _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_indice"
-                fi
-            fi
-        done
-        if [[ "$old_nullglob" == *"off"* ]]; then
-            shopt -u nullglob
-        else
-            shopt -s nullglob
-        fi
-    else
-        _erro "Nao recuperou: ${arquivo##*/}"
-    fi
-    _linha "-" "${VERDE}"
-}
-
-# Finaliza (esperar + relatar) o rebuild mais antigo ainda pendente.
-# Usada para limitar a janela de concorrencia a _JUTIL_MAX_PROC processos.
-_finalizar_jutil_antigo() {
-    (( ${#_JUTIL_ARQUIVOS[@]} > _JUTIL_PROXIMO )) || return 0
-
-    local pid="${_JUTIL_PIDS[_JUTIL_PROXIMO]}"
-    local arquivo="${_JUTIL_ARQUIVOS[_JUTIL_PROXIMO]}"
-    local status=0
-    wait "$pid" 2>/dev/null || status=$?
-    _finalizar_jutil "$arquivo" "$status"
-    _JUTIL_PROXIMO=$((_JUTIL_PROXIMO + 1))
-}
-
-# Finaliza todos os rebuilds pendentes, na ordem original de chegada.
-_sincronizar_jutil() {
-    while (( ${#_JUTIL_ARQUIVOS[@]} > _JUTIL_PROXIMO )); do
-        _finalizar_jutil_antigo
-    done
 }
 
 # Executa jutil no arquivo especificado
@@ -1069,24 +915,38 @@ _executar_jutil() {
         return 0
     fi
 
-    # Modo paralelo: dispara o rebuild em background e registra PID/arquivo
-    # para finalizar (relatorio + chmod) na ordem original. A janela de
-    # concorrencia e limitada a _JUTIL_MAX_PROC.
-    if (( _JUTIL_MODO_PARALELO )); then
-        "${REBUILD}" -rebuild "$arquivo" -a -f >>"${LOG_ATU}" 2>&1 &
-        _JUTIL_PIDS+=("$!")
-        _JUTIL_ARQUIVOS+=("$arquivo")
-        if (( ${#_JUTIL_ARQUIVOS[@]} - _JUTIL_PROXIMO >= _JUTIL_MAX_PROC )); then
-            _finalizar_jutil_antigo
-        fi
-        return 0
-    fi
+    local dir_arquivo base_arquivo arquivo_indice old_nullglob
+    old_nullglob=$(shopt -p nullglob)
+    shopt -s nullglob
 
-    # Modo sincrono (comportamento original)
-    local status_rebuild=0
-    "${REBUILD}" -rebuild "$arquivo" -a -f >>"${LOG_ATU}" 2>&1 || status_rebuild=$?
-    _finalizar_jutil "$arquivo" "$status_rebuild"
-    return 0
+    if "${REBUILD}" -rebuild "$arquivo" -a -f; then
+        _log_sucesso "Rebuild executado: ${arquivo##*/}"
+        # garantir permissões máximas após o rebuild
+        if ! chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null; then
+            _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
+        fi
+
+        # garantir permissões máximas nos arquivos .indice gerados pelo jutil
+        dir_arquivo="${arquivo%/*}"
+        base_arquivo="${arquivo##*/}"
+        base_arquivo="${base_arquivo%.dat}"
+        for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
+            if [[ -f "$arquivo_indice" ]]; then
+                if ! chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null; then
+                    _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo_indice"
+                fi
+            fi
+        done
+    else
+        _erro "Nao recuperou: ${arquivo##*/}"
+    fi
+    # Restaurar nullglob de forma segura (sem eval)
+    if [[ "$old_nullglob" == *"off"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
+    _linha "-" "${VERDE}"
 }
 
 #---------- FUNCOES DE TRANSFERENCIA ----------#
@@ -1333,18 +1193,16 @@ _executar_expurgador() {
     # Limpar arquivos antigos nos diretorios padrao
     # SEGURANCA: nunca apagar arquivos de dados (.dat) nem indices (.idx)
     local erros_find arquivos_removidos
-    # Um unico temporario para todos os diretorios (antes eram 2 mktemp por diretorio)
-    erros_find=$(mktemp) || { _erro "Falha ao criar temporario do expurgo"; return 1; }
-
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
-            : > "$erros_find"  # zera a cada diretorio
+            erros_find=$(mktemp)
             arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 \
                 ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>"$erros_find" | wc -l)
 
             if [[ -s "$erros_find" ]]; then
                 _log "AVISO expurgo em ${diretorio}: $(cat "$erros_find")" "${LOG_LIMPA}"
             fi
+            rm -f -- "$erros_find"
 
             _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${VERDE}" "Limpando arquivos do diretorio: ${diretorio} (${arquivos_removidos} arquivos)"
@@ -1362,7 +1220,7 @@ _executar_expurgador() {
     local zips_removidos
     for diretorio in "${diretorios_zip[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
-            : > "$erros_find"
+            erros_find=$(mktemp)
             zips_removidos=$(find "${diretorio:-.}" -name "*.zip" -type f -mtime +15 -print -delete 2>"$erros_find" | wc -l)
 
             if [[ -s "$erros_find" ]]; then
