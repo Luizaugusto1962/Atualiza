@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/09/2026
+# Versao: 19/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -15,6 +15,36 @@ DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"      # Caminho do diretorio de progra
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 DATA_EXTENSIONS=()                              # Extensoes de arquivos de dados a processar
+
+# =============================================================================
+# GESTAO DE PROCESSOS EM SEGUNDO PLANO
+# =============================================================================
+declare -a PIDS_JUTIL=()                        # Array global para rastrear PIDs de jutil em segundo plano
+
+# Limpar processos de recuperacao em segundo plano
+_limpar_pids_jutil() {
+    if [[ ${#PIDS_JUTIL[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    local pid
+    for pid in "${PIDS_JUTIL[@]}"; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+        fi
+    done
+    PIDS_JUTIL=()
+    return 0
+}
+
+# Registrar traps para limpar PIDs de jutil em caso de interrupcao,
+# encadeando com o encerramento padrao do sistema (status 128+sinal).
+# Em saida normal (EXIT), encadeia com o handler existente (_resetando).
+_registrar_trap_recuperacao() {
+    trap '_limpar_pids_jutil; _resetando' EXIT
+    trap '_limpar_pids_jutil; _encerrar_programa 130' INT
+    trap '_limpar_pids_jutil; _encerrar_programa 143' TERM
+}
 
 # =============================================================================
 # FUNCOES AUXILIARES
@@ -508,6 +538,7 @@ _recuperar_arquivo_especifico() {
 
     clear
     done
+    _limpar_pids_jutil
     cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
 }
 
@@ -547,6 +578,7 @@ _recuperar_todos_arquivos() {
     else
         shopt -s nullglob
     fi
+    _limpar_pids_jutil
     return 0
 }
 
@@ -610,6 +642,8 @@ _recuperar_arquivo_individual() {
         _aviso "Nenhum arquivo encontrado para: ${nome_arquivo}"
         _linha "-" "${VERDE}"
     fi
+
+    _limpar_pids_jutil
 }
 
 # Executa recuperacao dos arquivos listados no variosarquivos
@@ -652,6 +686,7 @@ _executar_lista_arquivos() {
         ((total++)) || true
     done < "$arquivo_lista"
 
+    _limpar_pids_jutil
     _linha
     _exibir_mensagem_centralizada "${VERDE}" "${total} arquivo(s) processados da lista."
     _aguardar_tecla
@@ -847,6 +882,7 @@ _recuperar_arquivos_principais() {
 
     _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
 
+    _limpar_pids_jutil
     _aguardar_tecla
     cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
     return 0
@@ -889,9 +925,11 @@ _processar_lista_arquivos() {
             _executar_jutil "$caminho_arquivo"
         fi
     done < "$arquivo_lista"
+
+    _limpar_pids_jutil
 }
 
-# Executa jutil no arquivo especificado
+# Executa jutil no arquivo especificado (em segundo plano com barra de progresso)
 _executar_jutil() {
     local arquivo="$1"
     if [[ -L "$arquivo" ]]; then
@@ -915,11 +953,20 @@ _executar_jutil() {
         return 0
     fi
 
+    _registrar_trap_recuperacao
+
     local dir_arquivo base_arquivo arquivo_indice old_nullglob
     old_nullglob=$(shopt -p nullglob)
     shopt -s nullglob
 
-    if "${REBUILD}" -rebuild "$arquivo" -a -f; then
+    # Executar jutil em segundo plano e monitorar com barra de progresso
+    local pid_jutil
+    { "${REBUILD}" -rebuild "$arquivo" -a -f >>"${LOG_ATU}" 2>&1; } &
+    pid_jutil=$!
+    PIDS_JUTIL+=("$pid_jutil")
+
+    local resultado=0
+    if _mostrar_progresso_backup "$pid_jutil" "Recuperando ${arquivo##*/}"; then
         _log_sucesso "Rebuild executado: ${arquivo##*/}"
         # garantir permissões máximas após o rebuild
         if ! chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null; then
@@ -938,15 +985,24 @@ _executar_jutil() {
             fi
         done
     else
+        resultado=1
         _erro "Nao recuperou: ${arquivo##*/}"
     fi
+
+    # Remover PID do array (processo ja concluido)
+    local novos=()
+    for _p in "${PIDS_JUTIL[@]}"; do [[ "$_p" != "$pid_jutil" ]] && novos+=("$_p"); done
+    PIDS_JUTIL=("${novos[@]+"${novos[@]}"}")
+
     # Restaurar nullglob de forma segura (sem eval)
     if [[ "$old_nullglob" == *"off"* ]]; then
         shopt -u nullglob
     else
         shopt -s nullglob
     fi
+
     _linha "-" "${VERDE}"
+    return $resultado
 }
 
 #---------- FUNCOES DE TRANSFERENCIA ----------#
