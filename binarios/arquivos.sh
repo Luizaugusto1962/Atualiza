@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # arquivos.sh - Modulo de Gestao de Arquivos
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
-# Padrões e regras de desenvolvimento: ver AGENTS.md
+# Padroes e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
 # Versao: 19/09/2026
 #
@@ -110,7 +110,7 @@ _selecionar_base_arquivos() {
 
     if [[ -n "${CFG_BASE_DIR2}" ]]; then
         if ! _menu_escolha_base; then
-            # Usuario escolheu voltar (opcao 9) — retorna 1 para o chamador voltar ao menu
+            # Usuario escolheu voltar (opcao 9) - retorna 1 para o chamador voltar ao menu
             return 1
         fi
     else
@@ -152,7 +152,7 @@ _selecionar_base_arquivos() {
 }
 
 # Executa limpeza de arquivos temporarios
-# Parametros: $1="automatico" (opcional) — modo silencioso usado antes do backup:
+# Parametros: $1="automatico" (opcional) - modo silencioso usado antes do backup:
 #   - limpa apenas a base informada em BASE_TRABALHO/base_trabalho (nao todas as bases)
 #   - sem pausas interativas (_aguardar_tecla)
 #   - erros de lista/diretorio sao apenas logged, nunca abortam o fluxo do backup
@@ -303,7 +303,7 @@ _limpar_base_especifica() {
     local arquivos_temp=()
     local padrao_arquivo
 
-    # Validar parâmetros
+    # Validar parametros
     if [[ -z "${caminho_base}" || -z "${arquivo_lista}" ]]; then
         _log "ERRO: parametros invalidos na limpeza" "${LOG_LIMPA}"
         return 1
@@ -357,7 +357,7 @@ _limpar_base_especifica() {
     for padrao_arquivo in "${arquivos_temp[@]}"; do
         [[ -n "$padrao_arquivo" ]] || continue
 
-        # SEGURANCA: validar padrao antes de usá-lo no find/zip/rm
+        # SEGURANCA: validar padrao antes de usa-lo no find/zip/rm
         if ! _validar_padrao_limpeza "$padrao_arquivo"; then
             _log "AVISO: padrao de limpeza invalido ignorado: ${padrao_arquivo}" "${LOG_LIMPA}"
             continue
@@ -370,7 +370,7 @@ _limpar_base_especifica() {
         done < <(find "${caminho_base:-.}" -maxdepth 1 -type f -iname "$padrao_arquivo" -mtime +0 -print0)
         qtd_padrao="${#arquivos_zip[@]}"
 
-        # Nenhum arquivo encontrado para este padrao — pular
+        # Nenhum arquivo encontrado para este padrao - pular
         if [[ "$qtd_padrao" -eq 0 ]]; then
             continue
         fi
@@ -382,7 +382,7 @@ _limpar_base_especifica() {
             _log "Processando padrao automatico: ${padrao_arquivo} (${qtd_padrao} arquivo(s))" "${LOG_LIMPA}"
         fi
 
-        # Compactar — $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
+        # Compactar - $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
         if $DEFAULT_ZIP "${DEFAULT_BACKUP_DIR}/${zip_temporarios}" "${arquivos_zip[@]}" >>"${LOG_LIMPA}" 2>&1; then
             _log "Arquivos temporarios compactados: $padrao_arquivo (${qtd_padrao} arquivo(s))" "${LOG_LIMPA}"
             # Remover usando o mesmo array ja coletado.
@@ -408,7 +408,7 @@ _limpar_base_especifica() {
     return 0
 }
 
-# Adiciona arquivo à lista de limpeza
+# Adiciona arquivo a lista de limpeza
 _adicionar_arquivo_lixo() {
 
     clear
@@ -441,7 +441,7 @@ _adicionar_arquivo_lixo() {
         return 1
     fi
 
-    # Adicionar arquivo à lista
+    # Adicionar arquivo a lista
     echo "$novo_arquivo" >> "${CFG_DIR}/limpetmp2"
     _exibir_mensagem_centralizada "${CIANO}" "Arquivo '${novo_arquivo}' adicionado com sucesso ao 'limpetmp2'"
     _linha
@@ -476,7 +476,23 @@ _lista_arquivos_lixo() {
     _aguardar_tecla
 }
 
-#---------- FUNCOES DE RECUPERACAO ----------#
+# ---------- FUNCOES DE RECUPERACAO ----------#
+
+# Salva o estado de nullglob e o ativa
+_salvar_ativar_nullglob() {
+    _SAVED_NULLGLOB=$(shopt -p nullglob)
+    shopt -s nullglob
+}
+
+# Restaura nullglob ao estado salvo
+_restaurar_nullglob() {
+    if [[ "$_SAVED_NULLGLOB" == *"off"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
+}
+
 # Recupera arquivo especifico ou todos
 _recuperar_arquivo_especifico() {
     local continuar="S"
@@ -488,7 +504,7 @@ _recuperar_arquivo_especifico() {
 
     clear
 
-    # Loop para permitir múltiplas recuperações
+    # Loop para permitir multiplas recuperacoes
     while [[ "${continuar}" =~ ^[Ss]$ ]]; do
         _meio_da_tela
         _exibir_mensagem_centralizada "${CIANO}" "Informe o nome do arquivo a ser recuperado ou ENTER para todos:"
@@ -496,13 +512,12 @@ _recuperar_arquivo_especifico() {
 
         local nome_arquivo
         read -rp "${AMARELO}Nome do arquivo: ${NORMAL}" nome_arquivo
-        nome_arquivo="${nome_arquivo#"${nome_arquivo%%[![:space:]]*}"}" # trim left
-        nome_arquivo="${nome_arquivo%"${nome_arquivo##*[![:space:]]}"}" # trim right
+        nome_arquivo=$(_trim "$nome_arquivo")
 
         _linha "-" "${AZUL}"
 
         if [[ -z "$nome_arquivo" ]]; then
-            # Pergunta confirmação antes de recuperar todos
+            # Pergunta confirmacao antes de recuperar todos
             _aviso "Deseja recuperar TODOS os arquivos principais?"
             read -rp "${AMARELO}[S/N]: ${NORMAL}" confirmar_todos
             confirmar_todos=$(_trim "$confirmar_todos")
@@ -520,24 +535,22 @@ _recuperar_arquivo_especifico() {
                 return 0
             fi
         else
-            # Recupera arquivo específico
+            # Recupera arquivo especifico
             _recuperar_arquivo_individual "$nome_arquivo" "$base_trabalho"
             _aviso "Arquivo(s) recuperado(s)..."
         fi
         _linha
 
-        # Só pergunta se quer continuar se foi um arquivo específico
+        # So pergunta se quer continuar se foi um arquivo especifico
         _exibir_mensagem_centralizada "${CIANO}" "Deseja recuperar mais arquivos?"
         read -rp "${AMARELO}[S/N]: ${NORMAL}" continuar
-        continuar="${continuar#"${continuar%%[![:space:]]*}"}"
-        continuar="${continuar%"${continuar##*[![:space:]]}"}"
+        continuar=$(_trim "$continuar")
         continuar="${continuar^^}"
 
         # Se vazio, assumir "N"
         [[ -z "$continuar" ]] && continuar="N"
-
-    clear
     done
+    clear
     _limpar_pids_jutil
     cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
 }
@@ -558,10 +571,13 @@ _recuperar_todos_arquivos() {
         _erro "Diretorio ${base_trabalho} nao existe ou e inacessivel"
         return 1
     fi
-    old_nullglob=$(shopt -p nullglob)
-    shopt -s nullglob
+    _salvar_ativar_nullglob
+    local extensao
+    local -a arquivos
     for extensao in "${extensoes[@]}"; do
-        for arquivo in ${base_trabalho}/${extensao}; do
+        arquivos=("${base_trabalho}/${extensao}")
+        local arquivo
+        for arquivo in "${arquivos[@]}"; do
             if [[ -L "$arquivo" ]]; then
                 _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
                 _linha "-" "${VERDE}"
@@ -573,29 +589,21 @@ _recuperar_todos_arquivos() {
             fi
         done
     done
-    if [[ "$old_nullglob" == *"off"* ]]; then
-        shopt -u nullglob
-    else
-        shopt -s nullglob
-    fi
+    _restaurar_nullglob
     _limpar_pids_jutil
     return 0
 }
 
 # Recupera arquivo individual
 _recuperar_arquivo_individual() {
-    local old_nullglob
-    local old_nocaseglob
     local nome_arquivo="$1"
     local base_trabalho="$2"
 
-    # Validar nome do arquivo
     if ! _validar_diretorio_trabalho "$base_trabalho"; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio de trabalho invalido."
         return 1
     fi
 
-    # Converter para maiusculo e remover espacos
     nome_arquivo="${nome_arquivo^^}"
     nome_arquivo="${nome_arquivo//[[:space:]]/}"
 
@@ -613,11 +621,10 @@ _recuperar_arquivo_individual() {
     local arquivos_encontrados=0
     local arquivo
 
-    old_nullglob=$(shopt -p nullglob)
-    old_nocaseglob=$(shopt -p nocaseglob)
-    # Usar nocaseglob apenas localmente para este loop
-    shopt -s nullglob nocaseglob
-    for arquivo in ${base_trabalho}/${padrao_arquivo}; do
+    _salvar_ativar_nullglob
+    local -a arquivos
+    arquivos=("${base_trabalho}/${padrao_arquivo}")
+    for arquivo in "${arquivos[@]}"; do
         if [[ -L "$arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
             _linha "-" "${VERDE}"
@@ -626,17 +633,7 @@ _recuperar_arquivo_individual() {
             ((arquivos_encontrados++)) || true
         fi
     done
-    # Restaurar shell options de forma segura (sem eval)
-    if [[ "$old_nullglob" == *"off"* ]]; then
-        shopt -u nullglob
-    else
-        shopt -s nullglob
-    fi
-    if [[ "$old_nocaseglob" == *"off"* ]]; then
-        shopt -u nocaseglob
-    else
-        shopt -s nocaseglob
-    fi
+    _restaurar_nullglob
 
     if (( arquivos_encontrados == 0 )); then
         _aviso "Nenhum arquivo encontrado para: ${nome_arquivo}"
@@ -674,8 +671,7 @@ _executar_lista_arquivos() {
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         linha=$(_sanitizar_entrada "$linha")
-        linha="${linha#"${linha%%[![:space:]]*}"}"
-        linha="${linha%"${linha##*[![:space:]]}"}"
+        linha=$(_trim "$linha")
         [[ -z "$linha" ]] && continue
 
         local nome_base="${linha%%.*}"
@@ -827,14 +823,13 @@ _editar_lista_arquivos() {
 
 # Recupera arquivos principais baseado na lista
 _recuperar_arquivos_principais() {
-    local old_nullglob
     cd "${CFG_DIR}" || return 1
 
     if ! _selecionar_base_arquivos; then
         return 1
     fi
 
-    # Usar valor padrão se base_trabalho estiver vazia
+    # Usar valor padrao se base_trabalho estiver vazia
     base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
     if ! _validar_diretorio_trabalho "$base_trabalho"; then
         _erro "Diretorio ${base_trabalho} nao encontrado ou inacessivel"
@@ -846,9 +841,8 @@ _recuperar_arquivos_principais() {
     var_ano=$(date +%y)
     var_ano4=$(date +%Y)
 
-    # Criar lista temporaria (glob seguro em vez de ls — evita quebra por nomes com espacos/glob)
-    old_nullglob=$(shopt -p nullglob)
-    shopt -s nullglob
+    # Criar lista temporaria (glob seguro em vez de ls - evita quebra por nomes com espacos/glob)
+    _salvar_ativar_nullglob
     {
         local arquivo_ate arquivo_nfe
         for arquivo_ate in ATE"${var_ano}"*.dat; do
@@ -858,13 +852,8 @@ _recuperar_arquivos_principais() {
             printf '%s\n' "${arquivo_nfe##*/}"
         done
     } > "${CFG_DIR}/indexar2"
-    if [[ "$old_nullglob" == *"off"* ]]; then
-        shopt -u nullglob
-    else
-        shopt -s nullglob
-    fi
+    _restaurar_nullglob
 
-    cd "${CFG_DIR}" || return 1
     _aguardar 1
 
     # Verificar se indexar2 tem conteudo antes de processar
@@ -955,9 +944,8 @@ _executar_jutil() {
 
     _registrar_trap_recuperacao
 
-    local dir_arquivo base_arquivo arquivo_indice old_nullglob
-    old_nullglob=$(shopt -p nullglob)
-    shopt -s nullglob
+    local dir_arquivo base_arquivo arquivo_indice
+    _salvar_ativar_nullglob
 
     # Executar jutil em segundo plano e monitorar com barra de progresso
     local pid_jutil
@@ -968,15 +956,16 @@ _executar_jutil() {
     local resultado=0
     if _mostrar_progresso_backup "$pid_jutil" "Recuperando ${arquivo##*/}"; then
         _log_sucesso "Rebuild executado: ${arquivo##*/}"
-        # garantir permissões máximas após o rebuild
+        # garantir permissoes maximas apOs o rebuild
         if ! chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null; then
             _exibir_mensagem_centralizada "${AMARELO}" "Aviso: nao foi possivel alterar permissoes de $arquivo"
         fi
 
-        # garantir permissões máximas nos arquivos .indice gerados pelo jutil
+        # garantir permissoes maximas nos arquivos .indice gerados pelo jutil
         dir_arquivo="${arquivo%/*}"
         base_arquivo="${arquivo##*/}"
         base_arquivo="${base_arquivo%.dat}"
+        local arquivo_indice
         for arquivo_indice in "${dir_arquivo}/${base_arquivo}"*.idx; do
             if [[ -f "$arquivo_indice" ]]; then
                 if ! chmod "${PERM_FILE_EXEC}" "$arquivo_indice" 2>/dev/null; then
@@ -991,15 +980,11 @@ _executar_jutil() {
 
     # Remover PID do array (processo ja concluido)
     local novos=()
+    local _p
     for _p in "${PIDS_JUTIL[@]}"; do [[ "$_p" != "$pid_jutil" ]] && novos+=("$_p"); done
     PIDS_JUTIL=("${novos[@]+"${novos[@]}"}")
 
-    # Restaurar nullglob de forma segura (sem eval)
-    if [[ "$old_nullglob" == *"off"* ]]; then
-        shopt -u nullglob
-    else
-        shopt -s nullglob
-    fi
+    _restaurar_nullglob
 
     _linha "-" "${VERDE}"
     return $resultado
@@ -1028,7 +1013,7 @@ _enviar_arquivo_avulso() {
         fi
         _linha
         _exibir_mensagem_centralizada "${AMARELO}" "Usando diretorio padrao: ${diretorio_origem}"
-        # Verificar se há arquivos no diretório
+        # Verificar se ha arquivos no diretorio
         old_nullglob=$(shopt -p nullglob)
         shopt -s nullglob
         arquivos=("${diretorio_origem}"/*)
@@ -1062,9 +1047,9 @@ _enviar_arquivo_avulso() {
         return 1
     fi
 
-    # Verificar se o arquivo contém wildcard (*)
+    # Verificar se o arquivo contEm wildcard (*)
     if [[ "$arquivo_enviar" == *"*"* ]]; then
-        # Listar arquivos que correspondem ao padrão
+        # Listar arquivos que correspondem ao padrao
         local arquivos_encontrados=()
         while IFS= read -r -d '' arquivo; do
             arquivos_encontrados+=("$arquivo")
@@ -1095,7 +1080,7 @@ _enviar_arquivo_avulso() {
             return 0
         fi
     else
-        # Verificação para arquivo único (sem wildcard)
+        # Verificacao para arquivo Unico (sem wildcard)
         if [[ ! -e "${diretorio_origem}/${arquivo_enviar}" ]]; then
             _exibir_mensagem_centralizada "${AMARELO}" "${arquivo_enviar} nao encontrado em ${diretorio_origem}"
             _aguardar_tecla

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/09/2026
+# Versao: 19/09/2026
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -31,6 +31,17 @@ _limpar_backup() {
     if [[ -n "${CAMINHO_BACKUP:-}" ]] && _validar_caminho_seguro "${CAMINHO_BACKUP}"; then
         rm -f -- "$CAMINHO_BACKUP" 2>/dev/null || true
     fi
+}
+
+# Exclui diretorios restauracao_* gerados durante o processo de restauracao
+_limpar_restauracao() {
+    if [[ -z "${DEFAULT_BASEBACKUP_DIR:-}" ]] || ! _validar_caminho_seguro "${DEFAULT_BASEBACKUP_DIR}"; then
+        return 0
+    fi
+    local dir
+    for dir in "${DEFAULT_BASEBACKUP_DIR}"/restauracao_*; do
+        [[ -d "$dir" ]] && rm -rf -- "$dir" && _log "Diretorio temporario removido: $dir"
+    done
 }
 
 #---------- FUNCOES PRINCIPAIS DE backup ----------#
@@ -261,6 +272,9 @@ _restaurar_backup() {
     else
         _restaurar_arquivo_especifico "$backup_selecionado"
     fi
+
+    # Excluir diretorios de restauracao temporarios
+    _limpar_restauracao
 }
 
 _enviar_backup_avulso() {
