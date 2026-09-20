@@ -40,7 +40,10 @@ _limpar_restauracao() {
     fi
     local dir
     for dir in "${DEFAULT_BASEBACKUP_DIR}"/restauracao_*; do
-        [[ -d "$dir" ]] && rm -rf -- "$dir" && _log "Diretorio temporario removido: $dir"
+        if [[ -d "$dir" ]]; then
+            rm -rf -- "$dir" 2>/dev/null || true
+            _log "Diretorio temporario removido: $dir" || true
+        fi
     done
 }
 
@@ -266,15 +269,20 @@ _restaurar_backup() {
         return 0
     fi
 
+    trap '_limpar_restauracao; trap - INT TERM' INT TERM
+
+    local _resultado=0
+
     # Prossegue com a logica de restauracao (completa ou parcial)
     if _confirmar "Deseja restaurar TODOS os arquivos do backup?" "N"; then
-        _restaurar_backup_completo "$backup_selecionado"
+        _restaurar_backup_completo "$backup_selecionado" || _resultado=$?
     else
-        _restaurar_arquivo_especifico "$backup_selecionado"
+        _restaurar_arquivo_especifico "$backup_selecionado" || _resultado=$?
     fi
 
-    # Excluir diretorios de restauracao temporarios
     _limpar_restauracao
+    trap '_encerrar_programa 130' INT TERM
+    return $_resultado
 }
 
 _enviar_backup_avulso() {
