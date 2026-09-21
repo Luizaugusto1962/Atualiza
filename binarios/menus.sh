@@ -98,7 +98,7 @@ _exibir_rodape_menu() {
 # Retorna: resultado do case ou invalido
 _processar_opcao_invalida() {
     _opinvalida
-    _aguardar 1
+    _aguardar_tecla
 }
 
 #---------- MENU PRINCIPAL ----------#
