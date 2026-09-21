@@ -616,11 +616,11 @@ _executar_expurgador_diario() {
     # e fatal em Bash 4.0-4.3 e 5.2+, e dirs duplicados descartariam regras).
     # Pares duplicados sao inofensivos: _limpar_arquivos_antigos e idempotente.
     local -a pares_limpeza=(
-        "30:${DEFAULT_LOGS_DIR:-}"
-        "30:${DEFAULT_BACKUP_DIR:-}"
-        "30:${DEFAULT_BASEBACKUP_DIR:-}"
-        "30:${DEFAULT_PROGS_DIR:-}"
-        "10:${DEFAULT_PROGS_ATUAL_DIR:-}"
+        "10:${DEFAULT_LOGS_DIR:-}"
+        "15:${DEFAULT_BACKUP_DIR:-}"
+        "15:${DEFAULT_BASEBACKUP_DIR:-}"
+        "15:${DEFAULT_PROGS_DIR:-}"
+        "15:${DEFAULT_PROGS_ATUAL_DIR:-}"
         "10:${DEFAULT_ENVIA_DIR:-}"
         "10:${CFG_PORTALSAV:-}"
         "30:${savlog}"
