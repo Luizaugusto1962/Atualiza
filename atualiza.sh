@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Atualiza.sh - Script de Atualizacao Modular do SISTEMA SAV
-# Versao: 10/09/2026-01
+# Versao: 21/09/2026
 # Autor: Luiz Augusto
 # Os scripts de suporte devem estar no diretório binarios ao lado deste script.
 # Padrões e regras de desenvolvimento: ver AGENTS.md
@@ -31,8 +31,8 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # Diretorio do script atual
 
 # Rotina: se existir o programa instalar.sh no diretorio, exclua-o
-if [[ -f "${SCRIPT_DIR}/instalar.sh" ]]; then
-    rm -f "${SCRIPT_DIR}/instalar.sh"
+if [[ -f "${SCRIPT_DIR}/instalador.sh" ]]; then
+    rm -f "${SCRIPT_DIR}/instalador.sh"
 fi
 
 # Diretorio do script SCRIPT_DIR

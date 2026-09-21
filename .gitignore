@@ -13,7 +13,7 @@ docs/
 node_modules/
 .atl/
 pack*
-instalar.sh
+instalador.sh
 pacote.bat
 testsprite_tests/tmp/
 testsprite_tests/tmp/config.json
