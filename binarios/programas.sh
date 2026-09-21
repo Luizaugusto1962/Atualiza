@@ -25,14 +25,12 @@ declare -a ARQUIVOS_PROGRAMA=()
 
 # Atualizacao de programas via conexao online
 _atualizar_programa_online() {
-    if [[ -n "${CFG_OFFLINE:-}" && "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            _linha
-            _aviso "Parametro do servidor OFF ativo"
-            _linha
-            _aguardar_tecla
-            return 0
-        fi
+    if [[ "${CFG_OFFLINE}" == "s" ]]; then
+        _linha
+        _aviso "Parametro do servidor OFF ativo"
+        _linha
+        _aguardar_tecla
+        return 0
     fi
 
     # Solicitar programas a serem atualizados
@@ -82,7 +80,8 @@ _atualizar_programa_offline() {
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${CFG_PORTALSAV}"
     _linha
-    _aguardar 0
+    _aguardar_tecla
+    return 0
 
 
     # Verificar arquivos do servidor offline se configurado
