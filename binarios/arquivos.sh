@@ -597,35 +597,57 @@ _recuperar_arquivo_individual() {
         return 1
     fi
 
-    if [[ ! "$nome_arquivo" =~ ^[A-Z0-9._-]+$ ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Nome de arquivo invalido. Use apenas letras, numeros, pontos e hifens."
+    # Reduzir a base (texto antes do primeiro ponto), como em
+    # _executar_lista_arquivos: "ABC", "ABC.dat" e "ABC.ARQ.dat" recuperam o
+    # mesmo arquivo logico e suas partes (ex: ABC.dat e ABC.ARQ.dat).
+    nome_arquivo="${nome_arquivo%%.*}"
+
+    if [[ ! "$nome_arquivo" =~ ^[A-Z0-9_-]+$ ]]; then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Nome de arquivo invalido. Use apenas letras, numeros, underline e hifens."
         return 1
     fi
 
-    local padrao_arquivo="${nome_arquivo}.*.dat"
-    local arquivos_encontrados=0
+    local padrao_arquivo
+    local -a padroes_busca=()
     local arquivo
+    local -A vistos=()
+
+    local arquivos_encontrados=0
+
+    # Montar padroes de busca sobre a base: o nome exato (arquivos sem
+    # extensao), o NOME.dat direto (arquivos curtos sem extensao intermediaria)
+    # e o NOME.*.dat tradicional (ex: NOME.ARQ.dat). O padrao antigo usava
+    # apenas NOME.*.dat, que exige dois pontos e nunca casa com NOME.dat.
+    padroes_busca=("${nome_arquivo}" "${nome_arquivo}.dat" "${nome_arquivo}.*.dat")
 
     old_nullglob=$(shopt -p nullglob)
     old_nocaseglob=$(shopt -p nocaseglob)
     # Usar nocaseglob apenas localmente para este loop
     shopt -s nullglob nocaseglob
-    for arquivo in ${base_trabalho}/${padrao_arquivo}; do
-        if [[ -L "$arquivo" ]]; then
-            _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
-            _linha "-" "${VERDE}"
-        elif [[ -f "$arquivo" ]]; then
-            _executar_jutil "$arquivo"
-            ((arquivos_encontrados++)) || true
-        fi
+    for padrao_arquivo in "${padroes_busca[@]}"; do
+        # shellcheck disable=SC2086 # expansao de glob intencional no padrao
+        for arquivo in "${base_trabalho}"/${padrao_arquivo}; do
+            # Ignorar literais sem match (nullglob nao remove padrao sem metacaractere)
+            [[ -e "$arquivo" || -L "$arquivo" ]] || continue
+            [[ -n "${vistos[$arquivo]:-}" ]] && continue
+            vistos[$arquivo]=1
+            if [[ -L "$arquivo" ]]; then
+                _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
+                _linha "-" "${VERDE}"
+            elif [[ -f "$arquivo" ]]; then
+                _executar_jutil "$arquivo"
+                ((arquivos_encontrados++)) || true
+            fi
+        done
     done
-    # Restaurar shell options de forma segura (sem eval)
-    if [[ "$old_nullglob" == *"off"* ]]; then
+    # Restaurar shell options de forma segura (sem eval).
+    # shopt -p imprime "shopt -u <opt>" (desligado) ou "shopt -s <opt>" (ligado).
+    if [[ "$old_nullglob" == *"-u"* ]]; then
         shopt -u nullglob
     else
         shopt -s nullglob
     fi
-    if [[ "$old_nocaseglob" == *"off"* ]]; then
+    if [[ "$old_nocaseglob" == *"-u"* ]]; then
         shopt -u nocaseglob
     else
         shopt -s nocaseglob
