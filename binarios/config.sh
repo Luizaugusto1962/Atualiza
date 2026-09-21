@@ -6,12 +6,12 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao:14/09/2026
+# Versao: 20/09/2026
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
 # =============================================================================
-DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"
+DEFAULT_PROGS_ATUAL_DIR="${DEFAULT_PROGS_ATUAL_DIR:-}"
 DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"
 RAIZ="${RAIZ:-}"
 REBUILD="${REBUILD:-}"
@@ -111,8 +111,8 @@ declare -A _MAPA_VARIAVEIS=(
     ["DEFAULT_BASEBACKUP_DIR"]="CAMINHOS"
     ["DEFAULT_BIBLIOTECA_ATUAL_DIR"]="CAMINHOS"
     ["DEFAULT_BIBLIOTECA_DIR"]="CAMINHOS"
+    ["DEFAULT_PROGS_ATUAL_DIR"]="CAMINHOS"
     ["DEFAULT_PROGS_DIR"]="CAMINHOS"
-    ["DEFAULT_OLDS_DIR"]="CAMINHOS"
     ["DEFAULT_ENVIA_DIR"]="CAMINHOS"
     ["CFG_PORTALSAV"]="CAMINHOS"
     ["UMADATA"]="CAMINHOS"
@@ -252,8 +252,8 @@ _configurar_diretorios() {
                "${DEFAULT_BASEBACKUP_DIR}"
                "${DEFAULT_BIBLIOTECA_ATUAL_DIR}"
                "${DEFAULT_BIBLIOTECA_DIR}"
+               "${DEFAULT_PROGS_ATUAL_DIR}"
                "${DEFAULT_PROGS_DIR}"
-               "${DEFAULT_OLDS_DIR}"
                "${DEFAULT_ENVIA_DIR}"
                "${CFG_PORTALSAV}"
     )

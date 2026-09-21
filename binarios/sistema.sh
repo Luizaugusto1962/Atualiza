@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/09/2026-01
+# Versao: 20/09/2026
 #
 
 # Variaveis globais esperadas
@@ -184,8 +184,8 @@ _mostrar_parametros() {
     printf '%b\n' "${VERDE}Diretorio dos executaveis: ${NORMAL}${E_EXEC}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio das telas: ${NORMAL}${T_TELAS}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio dos logs: ${NORMAL}${DEFAULT_LOGS_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio dos olds: ${NORMAL}${DEFAULT_OLDS_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio dos progs: ${NORMAL}${DEFAULT_PROGS_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio dos olds: ${NORMAL}${DEFAULT_PROGS_DIR}${NORMAL}"
+    printf '%b\n' "${VERDE}Diretorio dos progs: ${NORMAL}${DEFAULT_PROGS_ATUAL_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do backup: ${NORMAL}${DEFAULT_BACKUP_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio de configuracoes: ${NORMAL}${CFG_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio de receber: ${NORMAL}${CFG_PORTALSAV}${NORMAL}"

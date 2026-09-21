@@ -11,7 +11,7 @@ set -euo pipefail
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
 CFG_BASE_DIR2="${CFG_BASE_DIR2:-}"              # Caminho do diretorio da segunda base de dados.
 CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Caminho do diretorio da terceira base de dados.
-DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"      # Caminho do diretorio de programas (ex: /savisc/programas/atual)
+DEFAULT_PROGS_ATUAL_DIR="${DEFAULT_PROGS_ATUAL_DIR:-}"      # Caminho do diretorio de programas (ex: /savisc/programas/atual)
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 DATA_EXTENSIONS=()                              # Extensoes de arquivos de dados a processar
@@ -1220,11 +1220,11 @@ _executar_expurgador() {
         "${DEFAULT_BACKUP_DIR}/"
         "${DEFAULT_BIBLIOTECA_DIR}/"
         "${DEFAULT_BIBLIOTECA_ATUAL_DIR}/"
-        "${DEFAULT_PROGS_DIR}/"
+        "${DEFAULT_PROGS_ATUAL_DIR}/"
         "${DEFAULT_ENVIA_DIR}/"
         "${CFG_PORTALSAV}/"
         "${DEFAULT_BASEBACKUP_DIR}/"
-        "${DEFAULT_OLDS_DIR}/"
+        "${DEFAULT_PROGS_DIR}/"
         "${DEFAULT_LOGS_DIR}/"
         "${RAIZ}/portalsav/log/"
         "${RAIZ}/err_isc/"

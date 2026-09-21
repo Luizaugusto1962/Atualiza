@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 14/09/2026
+# Versao: 20/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -619,8 +619,8 @@ _executar_expurgador_diario() {
         "30:${DEFAULT_LOGS_DIR:-}"
         "30:${DEFAULT_BACKUP_DIR:-}"
         "30:${DEFAULT_BASEBACKUP_DIR:-}"
-        "30:${DEFAULT_OLDS_DIR:-}"
-        "10:${DEFAULT_PROGS_DIR:-}"
+        "30:${DEFAULT_PROGS_DIR:-}"
+        "10:${DEFAULT_PROGS_ATUAL_DIR:-}"
         "10:${DEFAULT_ENVIA_DIR:-}"
         "10:${CFG_PORTALSAV:-}"
         "30:${savlog}"

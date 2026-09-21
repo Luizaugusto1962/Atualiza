@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 15/09/2026
+# Versao: 20/09/2026
 #
 
 # Variaveis globais esperadas
@@ -148,42 +148,58 @@ _atualizar_programa_pacote() {
 
 #---------- FUNCOES DE REVERSaO ----------#
 
-# Seleciona programas disponiveis para reversao (backups *-anterior.zip)
+# Seleciona programas disponiveis para reversao (todos os .zip de DEFAULT_PROGS_DIR)
 # Popula as variaveis globais PROGRAMAS_SELECIONADOS e ARQUIVOS_PROGRAMA
+# ARQUIVOS_PROGRAMA sai daqui com o nome real do .zip selecionado em DEFAULT_PROGS_DIR;
+# _processar_reversao_programas reescreve para o nome de destino em CFG_PORTALSAV.
 _selecionar_programas_reversao() {
     PROGRAMAS_SELECIONADOS=()
     ARQUIVOS_PROGRAMA=()
 
-    if [[ ! -d "${DEFAULT_OLDS_DIR}" ]]; then
-        _erro "Diretorio de backups nao encontrado: ${DEFAULT_OLDS_DIR}"
+    if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
+        _erro "Diretorio de backups nao encontrado: ${DEFAULT_PROGS_DIR}"
         _aguardar_tecla
         return 1
     fi
 
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
     shopt -s nullglob
-    local backups=("${DEFAULT_OLDS_DIR}"/*-anterior.zip)
-    shopt -u nullglob
+    local backups=("${DEFAULT_PROGS_DIR}"/*.zip)
+    eval "$_old_nullglob"
 
     if (( ${#backups[@]} == 0 )); then
-        _aviso "Nenhum backup de programa encontrado em ${DEFAULT_OLDS_DIR}"
+        _aviso "Nenhum backup de programa encontrado em ${DEFAULT_PROGS_DIR}"
         _aguardar_tecla
         return 1
     fi
 
     local programas=()
+    local arquivos_fonte=()
     local arquivo
     for arquivo in "${backups[@]}"; do
-        # Ignorar backups rotacionados (prefixo de timestamp AAAAMMDD_HHMMSS-)
-        local nome_base
+        local nome_base nome_programa
         nome_base="${arquivo##*/}"
-        if [[ "${nome_base}" =~ ^[0-9]{8}_[0-9]{6}-.*-anterior\.zip$ ]]; then
+        if [[ "${nome_base}" == *-anterior.zip ]]; then
+            nome_programa="${nome_base%-anterior.zip}"
+        else
+            nome_programa="${nome_base%.zip}"
+        fi
+        # Backup rotacionado tem prefixo de timestamp AAAAMMDD_HHMMSS-:
+        # o programa e o que vem depois do prefixo (ex.: 20260921_001613-ADEB11 -> ADEB11),
+        # pois e esse o prefixo dos .class/.TEL dentro do zip.
+        if [[ "${nome_programa}" =~ ^[0-9]{8}_[0-9]{6}-(.+)$ ]]; then
+            nome_programa="${BASH_REMATCH[1]}"
+        fi
+        if [[ -z "${nome_programa}" ]]; then
             continue
         fi
-        programas+=("${nome_base%-anterior.zip}")
+        programas+=("${nome_programa}")
+        arquivos_fonte+=("${nome_base}")
     done
 
     if (( ${#programas[@]} == 0 )); then
-        _aviso "Nenhum backup de programa atual encontrado (apenas backups rotacionados) em ${DEFAULT_OLDS_DIR}"
+        _aviso "Nenhum backup de programa encontrado em ${DEFAULT_PROGS_DIR}"
         _aguardar_tecla
         return 1
     fi
@@ -194,8 +210,8 @@ _selecionar_programas_reversao() {
 
     local indice=1
     local programa
-    for programa in "${programas[@]}"; do
-        _exibir_mensagem_centralizada "${VERDE}" "${indice}) ${programa}"
+    for programa in "${!programas[@]}"; do
+        _exibir_mensagem_centralizada "${VERDE}" "$((indice))) ${programas[$programa]} [${arquivos_fonte[$programa]}]"
         ((indice++)) || true
     done
 
@@ -242,15 +258,41 @@ _selecionar_programas_reversao() {
 
         # Remover duplicatas mantendo a ordem
         local -A seen=()
+        local -a programas_tmp=()
+        local -a arquivos_tmp=()
         for token in "${indices[@]}"; do
             if [[ -n "${seen[$token]:-}" ]]; then
                 continue
             fi
             seen[$token]=1
-            local programa_selecionado="${programas[$((token-1))]}"
-            PROGRAMAS_SELECIONADOS+=("${programa_selecionado}")
-            ARQUIVOS_PROGRAMA+=("${programa_selecionado}${compilado}.zip")
+            programas_tmp+=("${programas[$((token-1))]}")
+            arquivos_tmp+=("${arquivos_fonte[$((token-1))]}")
         done
+
+        if (( ${#programas_tmp[@]} == 0 )); then
+            _erro "Opcao invalida. Informe numero(s) entre 1 e ${#programas[@]}."
+            continue
+        fi
+
+        # O mesmo programa nao pode ser revertido de dois backups diferentes
+        # de uma so vez (o destino em CFG_PORTALSAV seria o mesmo arquivo).
+        local -A seen_prog=()
+        local duplicado=""
+        local item
+        for item in "${programas_tmp[@]}"; do
+            if [[ -n "${seen_prog[$item]:-}" ]]; then
+                duplicado="${item}"
+                break
+            fi
+            seen_prog[$item]=1
+        done
+        if [[ -n "${duplicado}" ]]; then
+            _erro "Programa ${duplicado} selecionado mais de uma vez (backups diferentes). Selecione apenas um backup por programa."
+            continue
+        fi
+
+        PROGRAMAS_SELECIONADOS=("${programas_tmp[@]}")
+        ARQUIVOS_PROGRAMA=("${arquivos_tmp[@]}")
 
         break
     done
@@ -451,8 +493,8 @@ _validar_pre_requisitos_atualizacao() {
         return 1
     fi
 
-    if [[ -z "${DEFAULT_PROGS_DIR}" ]]; then
-        _erro "ERRO: DEFAULT_PROGS_DIR nao configurado"
+    if [[ -z "${DEFAULT_PROGS_ATUAL_DIR}" ]]; then
+        _erro "ERRO: DEFAULT_PROGS_ATUAL_DIR nao configurado"
         return 1
     fi
 
@@ -501,17 +543,13 @@ _processar_atualizacao_programas() {
 
     # Salvar estado original de nullglob para restauracao segura
     local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob)
+    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
 
     # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
     _cleanupAtualizacao() {
         cd "$_cwd" || true
         rm -rf "${dir_temp_atualizacao}"
-        if [[ "$_old_nullglob" == *"off"* ]]; then
-            shopt -u nullglob
-        else
-            shopt -s nullglob
-        fi
+        eval "$_old_nullglob"
     }
 
     # Criar diretorio temporario para extracao
@@ -566,6 +604,8 @@ _processar_atualizacao_programas() {
     # SEGURANCA: Validar integridade pos-extracao (cada programa deve ter gerado arquivos)
     local programa_verif
     for programa_verif in "${PROGRAMAS_SELECIONADOS[@]}"; do
+        local _old_nullglob_glob
+        _old_nullglob_glob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob_glob='shopt -u nullglob'
         shopt -s nullglob
         local arquivos_programa=()
         for f in "${programa_verif}"*."${EXTENSAO_CLASS}"; do
@@ -574,7 +614,7 @@ _processar_atualizacao_programas() {
         for f in "${programa_verif}"*."${EXTENSAO_TELAS}"; do
             arquivos_programa+=("$f")
         done
-        shopt -u nullglob
+        eval "$_old_nullglob_glob"
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
             _cleanupAtualizacao
@@ -592,7 +632,7 @@ _processar_atualizacao_programas() {
     _ok "Atualizando o(s) programa(s)..."
     _linha
 
-    # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com pacotes)
+    # Arquivar .zip como .bkp em DEFAULT_PROGS_ATUAL_DIR (helper compartilhado com pacotes)
     if ! _arquivar_zips_progs_dir; then
         _cleanupAtualizacao
         return 1
@@ -620,17 +660,13 @@ _processar_atualizacao_pacotes() {
 
     # Salvar estado original de nullglob para restauracao segura
     local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob)
+    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
 
     # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
     _cleanupAtualizacao() {
         cd "$_cwd" || true
         rm -rf "${dir_temp_atualizacao}"
-        if [[ "$_old_nullglob" == *"off"* ]]; then
-            shopt -u nullglob
-        else
-            shopt -s nullglob
-        fi
+        eval "$_old_nullglob"
     }
 
     # Criar diretorio temporario para extracao isolada
@@ -698,12 +734,14 @@ _processar_atualizacao_pacotes() {
     # Extrair nomes dos programas dos arquivos descompactados e fazer backup dos antigos
     local -A programas_encontrados=()
     local nome_base programa
+    local _old_nullglob_glob
+    _old_nullglob_glob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob_glob='shopt -u nullglob'
     shopt -s nullglob
     for f in *."${EXTENSAO_CLASS}" *."${EXTENSAO_TELAS}"; do
         nome_base="${f%%.*}"
         programas_encontrados["$nome_base"]=1
     done
-    shopt -u nullglob
+    eval "$_old_nullglob_glob"
 
     if (( ${#programas_encontrados[@]} == 0 )); then
         _erro "Nenhum arquivo .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} encontrado nos pacotes"
@@ -741,7 +779,7 @@ _processar_atualizacao_pacotes() {
     _ok "Atualizando o(s) programa(s)..."
     _linha
 
-    # Arquivar .zip como .bkp em DEFAULT_PROGS_DIR (helper compartilhado com programas)
+    # Arquivar .zip como .bkp em DEFAULT_PROGS_ATUAL_DIR (helper compartilhado com programas)
     if ! _arquivar_zips_progs_dir; then
         _cleanupAtualizacao
         return 1
@@ -762,10 +800,12 @@ _processar_reversao_programas() {
         return 1
     }
 
-    local programa_indice programa arquivo_anterior
+    local programa_indice programa arquivo_origem arquivo_anterior arquivo_destino
     for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
         programa="${PROGRAMAS_SELECIONADOS[$programa_indice]}"
-        arquivo_anterior="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
+        arquivo_origem="${ARQUIVOS_PROGRAMA[$programa_indice]}"
+        arquivo_anterior="${DEFAULT_PROGS_DIR}/${arquivo_origem}"
+        arquivo_destino="${CFG_PORTALSAV}/${programa}${compilado}.zip"
 
         if [[ -f "$arquivo_anterior" ]]; then
             # SEGURANCA: Validar integridade do backup antes de reverter
@@ -774,10 +814,11 @@ _processar_reversao_programas() {
                 return 1
             fi
 
-            if ! mv -f "$arquivo_anterior" "${CFG_PORTALSAV}/${programa}${compilado}.zip"; then
+            if ! mv -f "$arquivo_anterior" "${arquivo_destino}"; then
                 _erro "Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
+            ARQUIVOS_PROGRAMA[programa_indice]="${programa}${compilado}.zip"
             _exibir_mensagem_centralizada "${VERDE}" "Backup validado e preparado para reversao: ${programa}"
         else
             _erro "Backup nao encontrado para: ${programa}"
@@ -796,7 +837,7 @@ _processar_reversao_programas() {
 
 # Valida e cria diretorio de backups se nao existir
 _validar_diretorio_backups() {
-    local caminho="${1:-${DEFAULT_OLDS_DIR}}"
+    local caminho="${1:-${DEFAULT_PROGS_DIR}}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Erro ao criar diretorio de configuracao ${caminho}" >&2
         return 1
@@ -841,14 +882,14 @@ _validar_integridade_backup() {
 # Retorna: 0 sucesso, 1 falha
 _backup_programa_antigo() {
     local programa="$1"
-    local arquivo_backup="${DEFAULT_OLDS_DIR}/${programa}-anterior.zip"
+    local arquivo_backup="${DEFAULT_PROGS_DIR}/${programa}-anterior.zip"
     local backup_criado=0
 
     # Rotacionar backup existente
     if [[ -f "$arquivo_backup" ]]; then
         local timestamp
         timestamp=$(date +"%Y%m%d_%H%M%S")
-        if ! mv -f "$arquivo_backup" "${DEFAULT_OLDS_DIR}/${timestamp}-${programa}-anterior.zip"; then
+        if ! mv -f "$arquivo_backup" "${DEFAULT_PROGS_DIR}/${timestamp}-${programa}-anterior.zip"; then
             _erro "ERRO: Falha ao arquivar backup anterior de ${programa}"
             return 1
         fi
@@ -861,11 +902,13 @@ _backup_programa_antigo() {
     if [[ -f "${E_EXEC}/${programa}.${EXTENSAO_CLASS}" ]]; then
         class_files+=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}")
     fi
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
     shopt -s nullglob
     for f in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
         class_files+=("$f")
     done
-    shopt -u nullglob
+    eval "$_old_nullglob"
     if (( ${#class_files[@]} > 0 )); then
         if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
             backup_criado=1
@@ -880,11 +923,13 @@ _backup_programa_antigo() {
     if [[ -f "${T_TELAS}/${programa}.${EXTENSAO_TELAS}" ]]; then
         tel_files+=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}")
     fi
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
     shopt -s nullglob
     for f in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
         tel_files+=("$f")
     done
-    shopt -u nullglob
+    eval "$_old_nullglob"
     if (( ${#tel_files[@]} > 0 )); then
         if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
             backup_criado=1
@@ -914,9 +959,11 @@ _backup_programa_antigo() {
 _mover_arquivos_extraidos() {
     local extensao arquivos_encontrados
     for extensao in ".${EXTENSAO_CLASS}" ".${EXTENSAO_TELAS}"; do
+        local _old_nullglob
+        _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
         shopt -s nullglob
         arquivos_encontrados=(*"${extensao}")
-        shopt -u nullglob
+        eval "$_old_nullglob"
 
         if (( ${#arquivos_encontrados[@]} > 0 )); then
             local arquivo
@@ -948,22 +995,22 @@ _mover_arquivos_extraidos() {
     return 0
 }
 
-# Arquiva os .zip selecionados como .bkp em DEFAULT_PROGS_DIR
+# Arquiva os .zip selecionados como .bkp em DEFAULT_PROGS_ATUAL_DIR
 # Reutilizado por _processar_atualizacao_programas e _processar_atualizacao_pacotes
 # Retorna: 0 sucesso, 1 falha (apenas se o diretorio nao puder ser criado)
 _arquivar_zips_progs_dir() {
-    if [[ ! -d "${DEFAULT_PROGS_DIR}" ]]; then
-        _criar_diretorio_seguro "${DEFAULT_PROGS_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-            _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_DIR}" >&2
+    if [[ ! -d "${DEFAULT_PROGS_ATUAL_DIR}" ]]; then
+        _criar_diretorio_seguro "${DEFAULT_PROGS_ATUAL_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
+            _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_ATUAL_DIR}" >&2
             return 1
         }
     fi
     local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         local backup_file="${arquivo%.zip}.bkp"
-        if ! mv -f "${arquivo}" "${DEFAULT_PROGS_DIR}/${backup_file}" >>"${LOG_ATU}" 2>&1; then
-            _log_erro "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_DIR}/${backup_file}"
-            _aviso "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_DIR}. O arquivo sera removido."
+        if ! mv -f "${arquivo}" "${DEFAULT_PROGS_ATUAL_DIR}/${backup_file}" >>"${LOG_ATU}" 2>&1; then
+            _log_erro "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_ATUAL_DIR}/${backup_file}"
+            _aviso "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_ATUAL_DIR}. O arquivo sera removido."
         fi
     done
     return 0
