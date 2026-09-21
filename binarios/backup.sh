@@ -167,14 +167,16 @@ _executar_backup() {
         _aguardar 3
         return 0
     fi
-
     _linha
-    _exibir_mensagem_centralizada "$AMARELO" "Criando Backup da pasta: ${base_trabalho}..."
+    _exibir_mensagem_centralizada "$AMARELO" "Verificando arquivos temporarios ..."
     _linha
 
     # Executar limpeza de temporarios antes do backup (modo automatico: so a base do backup, sem pausas)
     _executar_limpeza_temporarios automatico || true
 
+    _linha
+    _exibir_mensagem_centralizada "$AMARELO" "Criando Backup da pasta: ${base_trabalho}..."
+    _linha
     # BACKUP_PID ja exportada como variavel global
 
     # === LOGICA ESPECIAL PARA backup INCREMENTAL: PEDIR ENTRADA ANTES DO & ===
