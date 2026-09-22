@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/09/2026
+# Versao: 22/09/2026
 #
 
 # Variaveis globais esperadas
@@ -351,12 +351,11 @@ _resolver_arquivo_compilado() {
 }
 
 # Seleciona programas para atualizacao
-# Parametros: $1=rotulo_item $2=mensagem_item $3=mensagem_final $4=mensagem_lista
+# Parametros: $1=rotulo_item $2=mensagem_item $3=mensagem_final
 _coletar_artefatos_atualizacao() {
     local rotulo_item="$1"
     local mensagem_item="$2"
     local mensagem_final="$3"
-    local mensagem_lista="$4"
     local max_repeticoes="${MAX_PROGRAMAS_SELECIONADOS:-6}"
     local contador=0
     local item
@@ -426,13 +425,6 @@ _coletar_artefatos_atualizacao() {
         _linha
         _aguardar_tecla
 
-        if [[ -n "$mensagem_lista" ]]; then
-            _exibir_mensagem_centralizada "${AMARELO}" "$mensagem_lista"
-            local prog
-            for prog in "${PROGRAMAS_SELECIONADOS[@]}"; do
-                _exibir_mensagem_centralizada "${VERDE}" "  - $prog"
-            done
-        fi
     done
 
     # Se o limite foi atingido sem o usuario finalizar, confirmar a selecao acumulada
@@ -447,8 +439,7 @@ _solicitar_programas_atualizacao() {
     _coletar_artefatos_atualizacao \
         "programa" \
         "Informe o nome do programa a ser atualizado da versao do sistema ${CFG_VERSAOCLASS}" \
-        "Finalizando selecao de programas..." \
-        "Programas selecionados:"
+        "Finalizando selecao de programas..."
 }
 
 # Solicita pacotes para atualizacao
@@ -456,8 +447,7 @@ _solicitar_pacotes_atualizacao() {
     _coletar_artefatos_atualizacao \
         "pacote" \
         "Informe o nome do pacote da versao do sistema ${CFG_VERSAOCLASS}" \
-        "Finalizando selecao de pacotes..." \
-        "Pacotes selecionados:"
+        "Finalizando selecao de pacotes..."
 }
 
 #---------- FUNCOES DE DOWNLOAD ----------#
