@@ -150,6 +150,10 @@ declare -A _MAPA_VARIAVEIS=(
     ["VERSAO"]="CONFIGURACOES"
     ["SAVISC"]="CONFIGURACOES"
     ["base_trabalho"]="CONFIGURACOES"
+    ["C_JUTIL_PARALELO"]="CONFIGURACOES"
+    ["C_JUTIL_SEQUENCIAL"]="CONFIGURACOES"
+    ["C_JUTIL_PROGRESSO"]="CONFIGURACOES"
+    ["C_LOG_LINHAS"]="CONFIGURACOES"
 
     # SEGURANCA
     ["PERM_DIR_SECURE"]="SEGURANCA"
@@ -535,7 +539,7 @@ _limpar_estado_variaveis() {
     unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
 
     # Higiene de caches/estado interno de utils.sh (nao entram em REGISTRO_VARIAVEIS)
-    unset -v _COLUNAS_CACHE _LOG_DIR_CACHE _stty_size 2>/dev/null || true
+    unset -v _COLUNAS_CACHE _LOG_DIR_CACHE _stty_size _JUTIL_PRONTO 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
     return 0

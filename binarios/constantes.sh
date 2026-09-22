@@ -247,6 +247,14 @@ compilado="${compilado:-class}"                                # Sufixo para arq
 debugado="${debugado:-mclass}"                                 # Sufixo para arquivos em depuracao
 
 # =============================================================================
+# CONFIGURACOES DE PERFORMANCE (arquivos.sh)
+# =============================================================================
+C_JUTIL_PARALELO="${C_JUTIL_PARALELO:-4}"                      # Paralelismo do lote jutil (1=sequencial)
+C_JUTIL_SEQUENCIAL="${C_JUTIL_SEQUENCIAL:-0}"                  # 1=forca modo sequencial legado
+C_JUTIL_PROGRESSO="${C_JUTIL_PROGRESSO:-1}"                    # 1=barra agregada no lote, 0=silencioso
+C_LOG_LINHAS="${C_LOG_LINHAS:-200}"                            # Linhas exibidas por log em _listar_logs
+
+# =============================================================================
 # CONFIGURACOES DE ATUALIZACAO DE PROGRAMAS
 # =============================================================================
 MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
@@ -257,7 +265,7 @@ EXTENSAO_TELAS="${EXTENSAO_TELAS:-TEL}"                        # Extensao de arq
 # EXPORTAR CONSTANTES
 # =============================================================================
 export SCRIPT_DIR RAIZ
-export CFG_DIR
+export CFG_DIR ACESSO_OFF
 export CFG_PORTALSAV CFG_VERSAOCLASS CFG_EMPRESA
 export CFG_BASE_DIR CFG_BASE_DIR2 CFG_BASE_DIR3 CFG_BACKUP_PATH
 export CFG_ACESSO_SSH CFG_OFFLINE CFG_CHAVE_SSH
@@ -273,6 +281,6 @@ export DEFAULT_PROGS_DIR DEFAULT_PROGS_ATUAL_DIR DEFAULT_ENVIA_DIR
 export DESTINO_SERVER DESTINO_BIBLIOTECA
 export DEFAULT_TAR DEFAULT_UNZIP DEFAULT_ZIP DEFAULT_FIND
 export SAVISC ISCCLIENT JUTIL REBUILD
-export ACESSO_OFF
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA compilado debugado
 export MAX_PROGRAMAS_SELECIONADOS EXTENSAO_CLASS EXTENSAO_TELAS VERSAO
+export C_JUTIL_PARALELO C_JUTIL_SEQUENCIAL C_JUTIL_PROGRESSO C_LOG_LINHAS
