@@ -554,6 +554,7 @@ _recuperar_todos_arquivos() {
     fi
     old_nullglob=$(shopt -p nullglob)
     shopt -s nullglob
+    local arquivo
     for extensao in "${extensoes[@]}"; do
         for arquivo in ${base_trabalho}/${extensao}; do
             if [[ -L "$arquivo" ]]; then
@@ -974,7 +975,7 @@ _executar_jutil() {
     pid_jutil=$!
     PIDS_JUTIL+=("$pid_jutil")
 
-    resultado=0
+    local resultado=0
     if _mostrar_progresso_backup "$pid_jutil" "Recuperando ${arquivo##*/}"; then
         _log_sucesso "Rebuild executado: ${arquivo##*/}"
         # garantir permissões máximas após o rebuild
@@ -1000,6 +1001,7 @@ _executar_jutil() {
 
     # Remover PID do rastreador (processo ja concluido via wait no progresso)
     novos=()
+    local _p 
     for _p in "${PIDS_JUTIL[@]}"; do [[ "$_p" != "$pid_jutil" ]] && novos+=("$_p"); done
     PIDS_JUTIL=("${novos[@]+"${novos[@]}"}")
 
