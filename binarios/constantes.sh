@@ -249,7 +249,10 @@ debugado="${debugado:-mclass}"                                 # Sufixo para arq
 # =============================================================================
 # CONFIGURACOES DE PERFORMANCE (arquivos.sh)
 # =============================================================================
-C_JUTIL_PARALELO="${C_JUTIL_PARALELO:-4}"                      # Paralelismo do lote jutil (1=sequencial)
+# Default 1 (sequencial = comportamento legado): servidores antigos tem pouca
+# RAM e jutils paralelos tomam SIGKILL do OOM-killer ("Killed"). Suba para 2+
+# apenas em maquina com folga de memoria; C_JUTIL_SEQUENCIAL=1 forca o legado.
+C_JUTIL_PARALELO="${C_JUTIL_PARALELO:-1}"                      # Paralelismo do lote jutil (1=sequencial)
 C_JUTIL_SEQUENCIAL="${C_JUTIL_SEQUENCIAL:-0}"                  # 1=forca modo sequencial legado
 C_JUTIL_PROGRESSO="${C_JUTIL_PROGRESSO:-1}"                    # 1=barra agregada no lote, 0=silencioso
 C_LOG_LINHAS="${C_LOG_LINHAS:-200}"                            # Linhas exibidas por log em _listar_logs

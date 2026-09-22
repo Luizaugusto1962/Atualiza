@@ -607,33 +607,56 @@ _recuperar_todos_arquivos() {
         _erro "Diretorio ${base_trabalho} nao existe ou e inacessivel"
         return 1
     fi
-    old_nullglob=$(shopt -p nullglob)
-    shopt -s nullglob
-    local arquivo extensao
-    local -a lote_todos=()
+
+    # Coleta com find -iname (1 passada): case-insensitive (*.dat e *.DAT) e
+    # segura para nomes com espacos — o glob anterior (*.dat + expansao sem
+    # aspas) perdia esses arquivos em silencio.
+    local -a find_args=( "(" )
+    local primeiro=1 extensao
     for extensao in "${extensoes[@]}"; do
-        # shellcheck disable=SC2086 # expansao de glob intencional na extensao
-        for arquivo in ${base_trabalho}/${extensao}; do
-            if [[ -L "$arquivo" ]]; then
-                _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
-                _linha "-" "${VERDE}"
-            elif [[ -f "$arquivo" && -s "$arquivo" ]]; then
-                lote_todos+=("$arquivo")
-            else
-                _aviso "Arquivo nao encontrado ou vazio: ${arquivo##*/}"
-                _linha "-" "${VERDE}"
-            fi
-        done
+        if (( primeiro )); then
+            primeiro=0
+        else
+            find_args+=( -o )
+        fi
+        find_args+=( -iname "$extensao" )
     done
-    if [[ "$old_nullglob" == *"off"* ]]; then
-        shopt -u nullglob
-    else
-        shopt -s nullglob
-    fi
+    find_args+=( ")" )
+
+    local arquivo
+    local -a lote_todos=()
+    local qtd_links=0 qtd_vazios=0 qtd_outros=0
+    _JUTIL_LOTE_OK=0
+    _JUTIL_LOTE_FALHAS=0
+    while IFS= read -r -d '' arquivo; do
+        if [[ -L "$arquivo" ]]; then
+            _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
+            _linha "-" "${VERDE}"
+            ((qtd_links++)) || true
+        elif [[ ! -s "$arquivo" ]]; then
+            _aviso "Arquivo vazio, pulando: ${arquivo##*/}"
+            _linha "-" "${VERDE}"
+            ((qtd_vazios++)) || true
+        else
+            lote_todos+=("$arquivo")
+        fi
+    done < <(find "$base_trabalho" -maxdepth 1 \( -type f -o -type l \) "${find_args[@]}" -print0 2>/dev/null)
+
+    # Arquivos que nao sao .dat (explicam diferenca vs total da pasta)
+    qtd_outros=$(find "$base_trabalho" -maxdepth 1 -type f ! \( "${find_args[@]}" \) -print 2>/dev/null | wc -l)
+    qtd_outros="${qtd_outros//[[:space:]]/}"
+    [[ "$qtd_outros" =~ ^[0-9]+$ ]] || qtd_outros=0
+
+    local rc=0
     if (( ${#lote_todos[@]} > 0 )); then
-        _executar_jutil_lote "${lote_todos[@]}" || return 1
+        _executar_jutil_lote "${lote_todos[@]}" || rc=1
     fi
-    return 0
+
+    _linha "-" "${AMARELO}"
+    _exibir_mensagem_centralizada "${CIANO}" "Resumo: ${#lote_todos[@]} alvo(s) (${_JUTIL_LOTE_OK:-0} recuperado(s), ${_JUTIL_LOTE_FALHAS:-0} falha(s), ${qtd_links} link(s), ${qtd_vazios} vazio(s), ${qtd_outros} nao-.dat ignorado(s))"
+    _linha "-" "${AMARELO}"
+    _log "Recuperacao total em ${base_trabalho}: ${#lote_todos[@]} alvo(s), ${_JUTIL_LOTE_OK:-0} ok, ${_JUTIL_LOTE_FALHAS:-0} falhas, ${qtd_links} links, ${qtd_vazios} vazios, ${qtd_outros} nao-.dat" "${LOG_ATU:-/dev/null}"
+    return "$rc"
 }
 
 # Recupera arquivo individual
@@ -1084,6 +1107,9 @@ _validar_rebuild() {
 _executar_jutil_lote() {
     local -a lista=("$@")
     local total="${#lista[@]}"
+    # Resultado do lote para o resumo do chamador (sempre definidos na saida)
+    _JUTIL_LOTE_OK=0
+    _JUTIL_LOTE_FALHAS=0
     if (( total == 0 )); then
         return 0
     fi
@@ -1102,7 +1128,12 @@ _executar_jutil_lote() {
     if [[ "${C_JUTIL_SEQUENCIAL:-0}" == "1" ]] || (( paralelo <= 1 || total <= 1 )); then
         local arquivo rc=0
         for arquivo in "${lista[@]}"; do
-            _executar_jutil "$arquivo" || rc=1
+            if _executar_jutil "$arquivo"; then
+                ((_JUTIL_LOTE_OK++)) || true
+            else
+                rc=1
+                ((_JUTIL_LOTE_FALHAS++)) || true
+            fi
         done
         return "$rc"
     fi
@@ -1161,9 +1192,13 @@ _executar_jutil_lote() {
                 continue
             fi
             {
-                # Subshell herda REBUILD/LOG_ATU por export (constantes.sh)
-                "${REBUILD}" -rebuild "$arquivo" -a -f >>"${LOG_ATU:-/dev/null}" 2>&1
-                printf '%s' "$?" > "${dir_status}/${indice}.status"
+                # Subshell herda REBUILD/LOG_ATU por export (constantes.sh).
+                # O || rc=... e obrigatorio: o subshell herda set -e, e sem ele
+                # um jutil morto por sinal (ex: OOM-killer) abortaria o subshell
+                # antes do printf, perdendo o codigo real (137/143).
+                rc=0
+                "${REBUILD}" -rebuild "$arquivo" -a -f >>"${LOG_ATU:-/dev/null}" 2>&1 || rc=$?
+                printf '%s' "$rc" > "${dir_status}/${indice}.status"
             } &
             pids_onda+=("$!")
             idx_onda+=("$indice")
@@ -1179,6 +1214,7 @@ _executar_jutil_lote() {
 
     # Coletar resultados na ordem da fila (saida deterministica)
     local -a ok_lista=()
+    local -a retentar=()
     for ((i = 0; i < ${#fila[@]}; i++)); do
         arquivo="${fila[$i]}"
         status_arquivo="1"
@@ -1196,6 +1232,14 @@ _executar_jutil_lote() {
                 ok_lista+=("$arquivo")
             fi
             ((concluidos++)) || true
+        elif [[ "$status_arquivo" == "137" || "$status_arquivo" == "143" ]]; then
+            # SIGKILL/SIGTERM (ex: OOM-killer matou o jutil sob paralelismo).
+            # Guarda para retry sequencial abaixo, que usa menos memoria.
+            if [[ -e "$arquivo" ]]; then
+                _aviso "jutil interrompido pelo sistema (sinal ${status_arquivo}) em: ${arquivo##*/}"
+                retentar+=("$arquivo")
+            fi
+            ((falhas++)) || true
         else
             if [[ -e "$arquivo" ]]; then
                 _erro "Nao recuperou: ${arquivo##*/}"
@@ -1203,6 +1247,23 @@ _executar_jutil_lote() {
             ((falhas++)) || true
         fi
     done
+
+    # Retry sequencial dos mortos por sinal: 1 jutil por vez raramente estoura
+    # memoria. Se falhar de novo, orienta a reduzir o paralelismo.
+    if (( ${#retentar[@]} > 0 )); then
+        _aviso "Tentando novamente ${#retentar[@]} arquivo(s) de forma sequencial (menos memoria)..."
+        _log "Retry sequencial apos sinal do sistema: ${#retentar[@]} arquivo(s)" "${LOG_ATU:-/dev/null}"
+        local arq_retry
+        for arq_retry in "${retentar[@]}"; do
+            if _executar_jutil "$arq_retry"; then
+                ok_lista+=("$arq_retry")
+                ((concluidos++)) || true
+                ((falhas--)) || true
+            else
+                _erro "jutil morto pelo sistema em: ${arq_retry##*/}. Memoria insuficiente? Reduza C_JUTIL_PARALELO ou use C_JUTIL_SEQUENCIAL=1"
+            fi
+        done
+    fi
 
     # chmod em lote unico (1 fork em vez de N)
     if (( ${#ok_lista[@]} > 0 )); then
@@ -1256,6 +1317,8 @@ _executar_jutil_lote() {
 
     rm -rf -- "$dir_status" 2>/dev/null || true
 
+    _JUTIL_LOTE_OK="$concluidos"
+    _JUTIL_LOTE_FALHAS="$falhas"
     _linha "-" "${VERDE}"
     _log "Lote jutil concluido: ${concluidos} ok, ${falhas} falha(s)" "${LOG_ATU:-/dev/null}"
     if (( falhas > 0 )); then
@@ -1299,8 +1362,9 @@ _executar_jutil() {
     pid_jutil=$!
     PIDS_JUTIL+=("$pid_jutil")
 
-    local resultado=0
-    if _mostrar_progresso_backup "$pid_jutil" "Recuperando ${arquivo##*/}"; then
+    local resultado=0 status_jutil=0
+    _mostrar_progresso_backup "$pid_jutil" "Recuperando ${arquivo##*/}" || status_jutil=$?
+    if (( status_jutil == 0 )); then
         _log_sucesso "Rebuild executado: ${arquivo##*/}"
         # garantir permissões máximas após o rebuild
         if ! chmod "${PERM_FILE_EXEC}" "$arquivo" 2>/dev/null; then
@@ -1320,7 +1384,11 @@ _executar_jutil() {
         done
     else
         resultado=1
-        _erro "Nao recuperou: ${arquivo##*/}"
+        if (( status_jutil == 137 || status_jutil == 143 )); then
+            _erro "jutil morto pelo sistema (sinal ${status_jutil}) em: ${arquivo##*/}. Memoria insuficiente (OOM-killer)? Feche outros processos e tente de novo"
+        else
+            _erro "Nao recuperou: ${arquivo##*/}"
+        fi
     fi
 
     # Remover PID do rastreador (processo ja concluido via wait no progresso)
