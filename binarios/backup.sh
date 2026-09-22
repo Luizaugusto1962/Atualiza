@@ -100,7 +100,6 @@ _validar_pre_backup() {
         _aguardar 3
         return 1
     fi
-
     # Verificar espaco em disco (estimar via du -sk da base)
     local tamanho_estimado
     tamanho_estimado=$(_estimar_tamanho_backup "$_base_ref")

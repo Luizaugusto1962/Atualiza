@@ -844,5 +844,3 @@ _testar_conexao() {
     fi
     return 0
 }
-
-

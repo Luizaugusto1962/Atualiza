@@ -21,6 +21,16 @@ declare arquivo_compilado_atual=""
 declare -a PROGRAMAS_SELECIONADOS=()
 declare -a ARQUIVOS_PROGRAMA=()
 
+# Restaura nullglob a partir do estado salvo por `shopt -p nullglob`.
+# Uso: _restaurar_nullglob "${_old_nullglob}"
+# Argumento vazio/ausente desliga (padrao seguro); nunca aborta sob `set -u`.
+_restaurar_nullglob() {
+    if [[ "${1:-}" == *"-s"* ]]; then
+        shopt -s nullglob
+    else
+        shopt -u nullglob
+    fi
+}
 #---------- FUNCOES DE ATUALIZACAO ONLINE ----------#
 
 # Atualizacao de programas via conexao online
@@ -166,8 +176,8 @@ _selecionar_programas_reversao() {
     _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
     shopt -s nullglob
     local backups=("${DEFAULT_PROGS_DIR}"/*.zip)
-    eval "$_old_nullglob"
-
+    _restaurar_nullglob "${_old_nullglob:-}"
+    
     if (( ${#backups[@]} == 0 )); then
         _aviso "Nenhum backup de programa encontrado em ${DEFAULT_PROGS_DIR}"
         _aguardar_tecla
@@ -539,7 +549,8 @@ _processar_atualizacao_programas() {
     _cleanupAtualizacao() {
         cd "$_cwd" || true
         rm -rf "${dir_temp_atualizacao}"
-        eval "$_old_nullglob"
+        _restaurar_nullglob "${_old_nullglob:-}"
+
     }
 
     # Criar diretorio temporario para extracao
@@ -604,7 +615,8 @@ _processar_atualizacao_programas() {
         for f in "${programa_verif}"*."${EXTENSAO_TELAS}"; do
             arquivos_programa+=("$f")
         done
-        eval "$_old_nullglob_glob"
+        _restaurar_nullglob "${_old_nullglob_glob:-}"
+
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
             _cleanupAtualizacao
@@ -656,7 +668,8 @@ _processar_atualizacao_pacotes() {
     _cleanupAtualizacao() {
         cd "$_cwd" || true
         rm -rf "${dir_temp_atualizacao}"
-        eval "$_old_nullglob"
+        _restaurar_nullglob "${_old_nullglob:-}"
+
     }
 
     # Criar diretorio temporario para extracao isolada
@@ -731,7 +744,7 @@ _processar_atualizacao_pacotes() {
         nome_base="${f%%.*}"
         programas_encontrados["$nome_base"]=1
     done
-    eval "$_old_nullglob_glob"
+    _restaurar_nullglob "${_old_nullglob_glob:-}"
 
     if (( ${#programas_encontrados[@]} == 0 )); then
         _erro "Nenhum arquivo .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} encontrado nos pacotes"
@@ -898,7 +911,8 @@ _backup_programa_antigo() {
     for f in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
         class_files+=("$f")
     done
-    eval "$_old_nullglob"
+    _restaurar_nullglob "${_old_nullglob:-}"
+
     if (( ${#class_files[@]} > 0 )); then
         if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
             backup_criado=1
@@ -919,7 +933,8 @@ _backup_programa_antigo() {
     for f in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
         tel_files+=("$f")
     done
-    eval "$_old_nullglob"
+    _restaurar_nullglob "${_old_nullglob:-}"
+
     if (( ${#tel_files[@]} > 0 )); then
         if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
             backup_criado=1
@@ -953,7 +968,7 @@ _mover_arquivos_extraidos() {
         _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
         shopt -s nullglob
         arquivos_encontrados=(*"${extensao}")
-        eval "$_old_nullglob"
+        _restaurar_nullglob "${_old_nullglob:-}"
 
         if (( ${#arquivos_encontrados[@]} > 0 )); then
             local arquivo
