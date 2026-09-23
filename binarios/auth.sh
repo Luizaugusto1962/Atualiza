@@ -23,13 +23,13 @@ declare usuario           # Variavel global para armazenar o nome do usuario aut
 
 # Validar nome de usuário (somente letras maiusculas e números)
 _usuario_valido() {
-    local usuario="$1"
+    local usuario="${1:-}"
     [[ "$usuario" =~ ^[A-Z0-9._-]+$ ]]
 }
 
 # Buscar hash do usuário no arquivo de senhas
 _obter_hash_usuario() {
-    local usuario="$1"
+    local usuario="${1:-}"
     awk -F: -v u="$usuario" '
         $1 == u {print $2; encontrado=1; exit}
         END {exit !encontrado}
@@ -38,14 +38,14 @@ _obter_hash_usuario() {
 
 # Verificar se o usuario existe no arquivo de senhas
 _usuario_existe() {
-    local usuario="$1"
+    local usuario="${1:-}"
     [[ -z "$usuario" ]] && return 1
     awk -F: -v u="$usuario" '$1 == u {encontrado=1; exit} END {exit !encontrado}' "$arquivo_senhas" 2>/dev/null
 }
 
 # Funcao para hash da senha usando algoritmo configuravel
 _hash_senha() {
-    local senha="$1"
+    local senha="${1:-}"
     local algoritmo="${HASH_ALGORITHM:-sha256sum}"
 
     if ! command -v "$algoritmo" >/dev/null 2>&1; then
@@ -110,7 +110,7 @@ _cadastrar_usuario() {
 
 # Mostrar tela de boas-vindas apos login bem-sucedido
 _mostrar_boas_vindas() {
-    local nome_usuario="$1"
+    local nome_usuario="${1:-}"
     local arquivo_ultimo_acesso="${CFG_DIR}/.ultimo_acesso"
     local usuario_anterior=""
     local data_hora_anterior=""

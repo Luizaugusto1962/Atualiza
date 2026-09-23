@@ -19,7 +19,7 @@ arquivo_manual="${CFG_DIR}/manual.txt"
 #   $1 = conteúdo para exibir
 #   $2 = linhas por página (opcional, padrao: 25)
 _exibir_paginado() {
-    local conteudo="$1"
+    local conteudo="${1:-}"
     local linhas_por_pagina="${2:-25}"
     local linha_atual=1
     local total_linhas
@@ -79,7 +79,7 @@ _exibir_paginado() {
 # Lê uma seçao específica do arquivo manual.txt
 # Parâmetro: $1 = nome da seçao (ex: MENU_PRINCIPAL, MENU_PROGRAMAS)
 _ler_secao_manual() {
-    local secao="$1"
+    local secao="${1:-}"
     local conteudo=""
     local linha_inicio
     local linha_fim
@@ -141,8 +141,8 @@ _exibir_manual_completo() {
 # Exibe uma secao do manual com cabecalho e aguarda tecla
 # Parametros: $1=contexto (chave do menu) $2=nome_secao (chave no manual.txt)
 _exibir_secao_manual() {
-    local contexto="$1"
-    local nome_secao="$2"
+    local contexto="${1:-}"
+    local nome_secao="${2:-}"
     local conteudo
 
     clear

@@ -84,7 +84,7 @@ _obter_colunas() {
 # o formato usa placeholders conhecidos; senao imprime literal (evita % literais
 # mal-interpretados). Strip de \n final evita linha em branco dupla.
 _formatar_e_exibir() {
-    local cor="$1" prefixo="$2" fmt="$3"; shift 3
+    local cor="${1:-}" prefixo="${2:-}" fmt="${3:-}"; shift 3
     local saida
     if (( $# > 0 )) && [[ "$fmt" =~ %[sd] ]]; then
         # shellcheck disable=SC2059  # fmt e prefixo sao formatos/ literais controlados internamente
@@ -104,7 +104,7 @@ _formatar_e_exibir() {
 # Parametros: $1=string
 # Retorna: string sem espacos nas extremidades
 _trim() {
-    local var="$1"
+    local var="${1:-}"
     # Remove espacos do inicio
     var="${var#"${var%%[![:space:]]*}"}"
     # Remove espacos do fim
@@ -142,8 +142,8 @@ _meio_da_tela() {
 # Exibe mensagem centralizada alinhada a esquerda com cor
 # Parametros: $1=cor $2=mensagem
 _exibir_mensagem_centralizada_a_esquerda() {
-    local cor="${1}"
-    local mensagem="${2}"
+    local cor="${1:-}"
+    local mensagem="${2:-}"
     local largura_bloco="${3:-30}" # Largura do bloco (padrao 30)
     local colunas
     local margem_esquerda
@@ -167,8 +167,8 @@ _exibir_mensagem_centralizada_a_esquerda() {
 
 # Exibe mensagem centralizada com cor
 _exibir_mensagem_centralizada() {
-    local cor="${1}"
-    local mensagem="${2}"
+    local cor="${1:-}"
+    local mensagem="${2:-}"
     local colunas
 
     colunas=$(_obter_colunas)
@@ -187,8 +187,8 @@ _exibir_mensagem_centralizada() {
 # Exibe mensagem alinhada à direita
 # Parametros: $1=cor $2=mensagem
 _exibir_mensagem_direita() {
-    local cor="${1}"
-    local mensagem="${2}"
+    local cor="${1:-}"
+    local mensagem="${2:-}"
     local largura_terminal largura_mensagem posicao_inicio
 
     # Obter largura do terminal com fallback seguro
@@ -207,7 +207,7 @@ _exibir_mensagem_direita() {
 
 _exibir_mensagem_corrida() {
     local cor="${1}"
-    local mensagem="${2}"
+    local mensagem="${2:-}"
     local largura_terminal largura_mensagem posicao_inicio
     local i
 

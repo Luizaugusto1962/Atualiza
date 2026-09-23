@@ -21,7 +21,7 @@ CHAVE="${DEFAULT_CHAVE_SSH:-}"
 # =============================================================================
 # Valida caminhos contra path traversal e injeção de caracteres especiais
 _validar_caminho_seguro() {
-    local caminho="$1"
+    local caminho="${1:-}"
     local regex_perigoso=$'[;|&$`<>"\']'
 
     if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
@@ -72,7 +72,7 @@ _usar_chave_ssh() {
 # exigiria 4.3+). Payloads com aspas/substituicao viram string literal, nunca
 # argumentos extras do scp.
 _montar_cmd_scp() {
-    local _cmd_ref="$1"
+    local _cmd_ref="${1:-}"
     local porta="${2:-}"
     local timeout="${3:-${SSH_TIMEOUT}}"
     local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"
@@ -119,7 +119,7 @@ _montar_cmd_scp() {
 # e publicados no array via nameref (Bash 4.3+) ou serializacao IFS (4.0-4.2).
 # Centraliza a montagem hoje duplicada em _enviar_rsync e _enviar_rsync_lote.
 _montar_cmd_ssh() {
-    local _cmd_ref="$1"
+    local _cmd_ref="${1:-}"
     local porta="${2:-}"
     local timeout="${3:-${SSH_TIMEOUT}}"
     local alive_int="${4:-${SSH_ALIVE_INTERVAL}}"

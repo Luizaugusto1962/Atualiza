@@ -124,8 +124,8 @@ _mostrar_aviso() {
 # Apaga um arquivo de configuracao apos confirmacao
 # Parametros: $1=caminho_arquivo $2=descricao (ex: "mensagem de entrada", "notas")
 _apagar_arquivo_configuracoes() {
-    local arquivo="$1"
-    local descricao="$2"
+    local arquivo="${1:-}"
+    local descricao="${2:-}"
 
     if [[ ! -f "$arquivo" ]]; then
         _exibir_mensagem_centralizada "${AMARELO}" "Nenhuma ${descricao} encontrada para excluir!"
@@ -154,7 +154,7 @@ _apagar_nota_existente() {
 }
 # Parametros: $1=arquivo_de_notas
 _visualizar_notas_arquivo() {
-    local arquivo="$1"
+    local arquivo="${1:-}"
     local llinha
 
     # Largura dinamica do terminal (fallback 80)

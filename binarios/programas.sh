@@ -338,7 +338,7 @@ _reverter_programa() {
 
 # Solicita tipo de compilacao e define o nome do artefato selecionado
 _resolver_arquivo_compilado() {
-    local nome_item="$1"
+    local nome_item="${1:-}"
     local tipo_compilacao
 
     if [[ -z "${nome_item}" ]]; then
@@ -363,9 +363,9 @@ _resolver_arquivo_compilado() {
 # Seleciona programas para atualizacao
 # Parametros: $1=rotulo_item $2=mensagem_item $3=mensagem_final
 _coletar_artefatos_atualizacao() {
-    local rotulo_item="$1"
-    local mensagem_item="$2"
-    local mensagem_final="$3"
+    local rotulo_item="${1:-}"
+    local mensagem_item="${2:-}"
+    local mensagem_final="${3:-}"
     local max_repeticoes="${MAX_PROGRAMAS_SELECIONADOS:-6}"
     local contador=0
     local item
@@ -849,7 +849,7 @@ _validar_diretorio_backups() {
 
 # Valida integridade de arquivo de backup
 _validar_integridade_backup() {
-    local arquivo_backup="$1"
+    local arquivo_backup="${1:-}"
 
     # Verificar se arquivo existe
     if [[ ! -f "${arquivo_backup}" ]]; then
@@ -884,7 +884,7 @@ _validar_integridade_backup() {
 # Parametros: $1=programa
 # Retorna: 0 sucesso, 1 falha
 _backup_programa_antigo() {
-    local programa="$1"
+    local programa="${1:-}"
     local arquivo_backup="${DEFAULT_PROGS_DIR}/${programa}-anterior.zip"
     local backup_criado=0
 
@@ -1023,7 +1023,7 @@ _arquivar_zips_progs_dir() {
 
 # Obtem data de modificacao do arquivo
 _obter_data_arquivo() {
-    local arquivo="$1" # Nome do arquivo
+    local arquivo="${1:-}" # Nome do arquivo
     if [[ -f "${E_EXEC}/${arquivo}" ]]; then
         local data_modificacao data_formatada
         data_modificacao=$(stat -c %y "${E_EXEC}/${arquivo}" 2>/dev/null)

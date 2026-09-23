@@ -146,7 +146,7 @@ _mostrar_versao_linux() {
 # biblioteca.sh). Whitelist estrita: um .versao adulterado nao consegue
 # sobrescrever PATH/HOME/outras variaveis do ambiente.
 _carregar_versao_seguro() {
-    local arquivo_versao="$1"
+    local arquivo_versao="${1:-}"
     local linha
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do

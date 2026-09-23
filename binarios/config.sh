@@ -396,7 +396,7 @@ _validar_ssh() {
 
 # Validar conteudo do arquivo de configuracao (seguranca)
 _validar_config_file() {
-    local CONFIG_FILE="${1}"
+    local CONFIG_FILE="${1:-}"
     local linha num_linha=0
 
     if [[ ! -f "$CONFIG_FILE" ]]; then

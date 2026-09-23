@@ -26,7 +26,7 @@ RAIZ="${SCRIPT_DIR%/*}"
 # Retorna: 0 se sucesso, 1 se erro
 # -----------------------------------------------------------------------------
 _carregar_config_seguro() {
-    local CONFIG_FILE="${1}"
+    local CONFIG_FILE="${1:-}"
     local linha chave_analizada valor
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do

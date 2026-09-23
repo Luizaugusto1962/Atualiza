@@ -13,7 +13,7 @@ declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
 
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
-    local sinal="$1"
+    local sinal="${1:-}"
     _log "Interrupcao detectada (sinal: $sinal). Limpando processos..."
 
     # Matar todos os PIDs pendentes
@@ -451,8 +451,8 @@ _executar_atualizacao_biblioteca() {
 # Extrai backup completo ou seletivo na raiz, preservando suporte TAR.GZ e ZIP.
 # Uso: _extrair_backup_biblioteca <arquivo_backup> <destino> [padrao]
 _extrair_backup_biblioteca() {
-    local arquivo_backup="$1"
-    local destino="$2"
+    local arquivo_backup="${1:-}"
+    local destino="${2:-}"
     local padrao="${3:-}"
 
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
@@ -495,7 +495,7 @@ _reverter_biblioteca_completa() {
 
 # Reverte programa especifico da biblioteca
 _reverter_programa_especifico_biblioteca() {
-    local arquivo_backup="$1"
+    local arquivo_backup="${1:-}"
     local programa_reverter
     local temp_restore="/"
     # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)

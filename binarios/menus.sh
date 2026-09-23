@@ -67,7 +67,7 @@ _exibir_cabecalho_menu() {
 # Exibe titulo de secao dentro do menu
 # Parametros: $1=mensagem $2=cor (opcional, padrao=PURPLE)
 _exibir_titulo_secao() {
-    local mensagem="${1}"
+    local mensagem="${1:-}"
     local cor="${2:-${ROXO}}"
     _exibir_mensagem_centralizada "${cor}" "${mensagem}"
 }
@@ -75,8 +75,8 @@ _exibir_titulo_secao() {
 # Exibe opcao de menu padronizada
 # Parametros: $1=numero $2=descricao $3=cor_opcao (opcional, padrao=GREEN)
 _exibir_opcao_menu() {
-    local numero="${1}"
-    local descricao="${2}"
+    local numero="${1:-}"
+    local descricao="${2:-}"
     local cor_opcao="${3:-${VERDE}}"
     _exibir_mensagem_centralizada_a_esquerda "${cor_opcao}" "${numero}${NORMAL} -|: ${descricao}"
     printf "\n"

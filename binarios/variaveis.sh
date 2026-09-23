@@ -41,7 +41,7 @@ declare -A _VAR_CATEGORIAS=(
 # FUNCAO: Carregar arquivo de configuracao (delegacao segura)
 # =============================================================================
 _var_carregar_config() {
-    local config_file="$1"
+    local config_file="${1:-}"
     if [[ -f "$config_file" ]] && [[ -r "$config_file" ]]; then
         # Delegar ao parser seguro do constantes.sh
         if command -v _carregar_config_seguro >/dev/null 2>&1; then
@@ -59,7 +59,7 @@ _var_carregar_config() {
 # FUNCAO: Obter valor de uma variavel com fallback
 # =============================================================================
 _var_obter_valor() {
-    local nome_var="$1"
+    local nome_var="${1:-}"
     local valor
 
     # Indirecao para obter o valor da variavel

@@ -257,7 +257,7 @@ _executar_limpeza_temporarios() {
 # Valida padrao de nome de arquivo usado nas listas de limpeza (limpetmp/limpetmp2)
 # Retorna: 0=valido 1=invalido (vazio, com caminho, traversal ou amplo demais)
 _validar_padrao_limpeza() {
-    local padrao="$1"
+    local padrao="${1:-}"
 
     # Rejeitar vazio, separador de caminho ou traversal
     if [[ -z "$padrao" || "$padrao" == *"/"* || "$padrao" == *".."* ]]; then
@@ -296,8 +296,8 @@ _validar_padrao_limpeza() {
 # Limpa arquivos da base especifica
 # Parametros: $1=caminho_base $2=arquivo_lista $3="automatico" (opcional, modo silencioso)
 _limpar_base_especifica() {
-    local caminho_base="$1"
-    local arquivo_lista="$2"
+    local caminho_base="${1:-}"
+    local arquivo_lista="${2:-}"
     local modo="${3:-}"
     local automatico=0
     [[ "${modo}" == "automatico" ]] && automatico=1
@@ -593,7 +593,7 @@ _recuperar_arquivo_especifico() {
 
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
-    local base_trabalho="$1"
+    local base_trabalho="${1:-}"
     local -a extensoes=()
     if [[ ${#DATA_EXTENSIONS[@]} -gt 0 ]]; then
         extensoes=("${DATA_EXTENSIONS[@]}")
@@ -663,8 +663,8 @@ _recuperar_todos_arquivos() {
 _recuperar_arquivo_individual() {
     local old_nullglob
     local old_nocaseglob
-    local nome_arquivo="$1"
-    local base_trabalho="$2"
+    local nome_arquivo="${1:-}"
+    local base_trabalho="${2:-}"
 
     # Validar nome do arquivo
     if ! _validar_diretorio_trabalho "$base_trabalho"; then
@@ -1037,8 +1037,8 @@ _recuperar_arquivos_principais() {
 
 # Processa lista de arquivos para recuperacao
 _processar_lista_arquivos() {
-    local arquivo_lista="$1"
-    local base_trabalho="$2"
+    local arquivo_lista="${1:-}"
+    local base_trabalho="${2:-}"
     local caminho_arquivo
 
     if ! _validar_diretorio_trabalho "$base_trabalho"; then
@@ -1331,7 +1331,7 @@ _executar_jutil_lote() {
 # Todas as rotinas de recuperacao passam por aqui, logo todo jutil roda em
 # segundo plano: dispara o REBUILD com & e acompanha via _mostrar_progresso_backup.
 _executar_jutil() {
-    local arquivo="$1"
+    local arquivo="${1:-}"
     if [[ -L "$arquivo" ]]; then
         _aviso "Arquivo linkado, pulando recuperacao: ${arquivo##*/}"
         return 0
@@ -1612,7 +1612,7 @@ _receber_arquivo_avulso() {
 # Valida se um diretorio pode ser alvo de expurgo (nao vazio, nao raiz, caminho seguro)
 # Retorna: 0=seguro 1=inseguro
 _validar_diretorio_expurgavel() {
-    local diretorio="$1"
+    local diretorio="${1:-}"
 
     if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
         return 1
@@ -1763,7 +1763,7 @@ _executar_expurgador() {
 # Exibe um arquivo de log com paginacao segura (evita cat de GB no terminal)
 # Parametros: $1 = caminho do log
 _exibir_log_arquivo() {
-    local arquivo_log="$1"
+    local arquivo_log="${1:-}"
     local max_linhas="${C_LOG_LINHAS:-200}"
     [[ "$max_linhas" =~ ^[0-9]+$ ]] || max_linhas=200
     if (( max_linhas < 10 )); then
@@ -1793,8 +1793,8 @@ _exibir_log_arquivo() {
 # Lista e exibe logs de um tipo (atualizacao|limpeza)
 # Parametros: $1 = titulo legivel (ex: "atualizacao"), $2 = prefixo do arquivo (ex: "atualiza")
 _listar_logs() {
-    local titulo="$1"
-    local prefixo="$2"
+    local titulo="${1:-}"
+    local prefixo="${2:-}"
     local logs=()
     local i=1
     local log

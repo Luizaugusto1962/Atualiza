@@ -25,7 +25,7 @@ _executar_update() {
 # Valida se um diretorio pode ser alvo de operacoes de escrita/remocao (nao vazio, nao raiz, caminho seguro)
 # Retorna: 0=seguro 1=inseguro
 _validar_diretorio_operacao() {
-    local diretorio="$1"
+    local diretorio="${1:-}"
 
     if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
         return 1
@@ -37,7 +37,7 @@ _validar_diretorio_operacao() {
 _atualizando() {
     local arquivo_zip="atualiza.zip"
     _configurar_diretorios
-    local caminho="${CFG_DIR}"
+    local caminho="${CFG_DIR:-}"
     _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
         _erro "Erro ao criar diretorio de configuracao %s\n" "${caminho}" >&2
         return 1
