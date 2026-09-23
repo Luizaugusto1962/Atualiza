@@ -29,12 +29,18 @@ declare VAR_CONTADOR_REGISTRO=0
 
 # Verifica se uma variavel ja esta registrada (O(1) via associative array)
 _var_ja_registrada() {
-    [[ -n "${_REGISTRO_MAPA[$1]+x}" ]]
+    # Guarda: subscrito vazio em array associativo e erro fatal no bash
+    # ("bad array subscript") — nome vazio nunca esta registrado.
+    local _nome="${1:-}"
+    if [[ -z "$_nome" ]]; then
+        return 1
+    fi
+    [[ -n "${_REGISTRO_MAPA[$_nome]+x}" ]]
 }
 
 # Verifica se uma variavel e readonly
 _is_var_readonly() {
-    local nome_var="$1"
+    local nome_var="${1:-}"
     local saida_declarada
     saida_declarada=$(declare -p "$nome_var" 2>/dev/null) || return 1
     # Detecta -r em qualquer combinacao de atributos (declare -dr, -ir, -rx...)
@@ -43,8 +49,8 @@ _is_var_readonly() {
 
 # Registra uma variavel no sistema
 _register_var() {
-    local nome_var="$1"
-    local valor_var="$2"
+    local nome_var="${1:-}"
+    local valor_var="${2:-}"
 #    local categoria_var="${3:-OUTROS}"
 
     if [[ -z "$nome_var" ]]; then

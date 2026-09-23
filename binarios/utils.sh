@@ -206,7 +206,7 @@ _exibir_mensagem_direita() {
 }
 
 _exibir_mensagem_corrida() {
-    local cor="${1}"
+    local cor="${1:-}"
     local mensagem="${2:-}"
     local largura_terminal largura_mensagem posicao_inicio
     local i
@@ -339,7 +339,7 @@ _opinvalida() {
 # Parametros: $1=nome_programa
 # Retorna: 0=valido 1=invalido
 _validar_nome_programa() {
-    local programa="$1"
+    local programa="${1:-}"
 
     if [[ -z "$programa" ]]; then
         return 1
@@ -352,7 +352,7 @@ _validar_nome_programa() {
 # Parametros: $1=mensagem $2=padrao(S/N)
 # Retorna: 0=sim 1=nao
 _confirmar() {
-    local mensagem="$1"
+    local mensagem="${1:-}"
     local padrao="${2:-N}"
     local opcoes
     local resposta
@@ -404,7 +404,7 @@ _confirmar() {
 # Parametros: $1=decorrido seconds
 # Retorna: string formatada (ex: "2m 30s" ou "45s")
 _formatar_tempo() {
-    local decorrido="$1"
+    local decorrido="${1:-}"
     local min=$(( decorrido / 60 ))
     local seg=$(( decorrido % 60 ))
     local tempo_str=""
@@ -487,7 +487,7 @@ _mostrar_progresso_backup() {
 # Registra mensagem no log com timestamp
 # Parametros: $1=mensagem $2=arquivo_log(opcional)
 _log() {
-    local mensagem="$1"
+    local mensagem="${1:-}"
     local arquivo_log="${2:-$LOG_ATU}"
     local timestamp usuario_log
 
@@ -538,7 +538,7 @@ _log() {
 # Registra erro no log
 # Parametros: $1=mensagem_erro $2=arquivo_log(opcional)
 _log_erro() {
-    local erro="$1"
+    local erro="${1:-}"
     local arquivo_log="${2:-$LOG_ATU}"
 
     _log "ERRO: $erro" "$arquivo_log" || true
@@ -547,7 +547,7 @@ _log_erro() {
 # Registra sucesso no log
 # Parametros: $1=mensagem_sucesso $2=arquivo_log(opcional)
 _log_sucesso() {
-    local sucesso="$1"
+    local sucesso="${1:-}"
     local arquivo_log="${2:-$LOG_ATU}"
 
     _log "SUCESSO: $sucesso" "$arquivo_log" || true
@@ -558,8 +558,8 @@ _log_sucesso() {
 # Remove arquivos antigos de um diretorio
 # Parametros: $1=diretorio $2=dias $3=padrao(opcional)
 _limpar_arquivos_antigos() {
-    local diretorio="$1"
-    local dias="$2"
+    local diretorio="${1:-}"
+    local dias="${2:-}"
     local padrao="${3:-*}"
     local count=0
 

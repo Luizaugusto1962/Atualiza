@@ -714,7 +714,15 @@ _menu_tipo_backup() {
 # Define a base de trabalho atual
 # Parametros: $1=nome_da_base (CFG_BASE_DIR, CFG_BASE_DIR2, CFG_BASE_DIR3)
 _definir_base_trabalho() {
-    local base_var="$1"
+    local base_var="${1:-}"
+    # Guarda: ${!base_var} com nome vazio e erro fatal no bash ("invalid
+    # indirect expansion") — tratar antes da indirecao.
+    if [[ -z "$base_var" ]]; then
+        _erro "Erro: base de trabalho nao informada"
+        _linha
+        _aguardar 2
+        return 1
+    fi
     local base_dir="${!base_var}"
 
     if [[ -z "${RAIZ}" ]] || [[ -z "${base_dir}" ]]; then

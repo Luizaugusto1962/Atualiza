@@ -870,12 +870,12 @@ _enviar_backup() {
 
 # Envia backup para servidor (wrapper)
 _enviar_backup_servidor() {
-    _enviar_backup "$1" "servidor"
+    _enviar_backup "${1:-}" "servidor"
 }
 
 # Envia backup via rede (wrapper)
 _enviar_backup_rede() {
-    _enviar_backup "$1" "rede"
+    _enviar_backup "${1:-}" "rede"
 }
 
 # Move backup para diretorio offline

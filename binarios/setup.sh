@@ -320,7 +320,13 @@ _setup_empresa() {
 
 # Edita uma variavel de forma interativa
 _editar_variavel() {
-    local nome="$1"
+    local nome="${1:-}"
+    # Guarda: ${!nome} com nome vazio e erro fatal no bash ("invalid indirect
+    # expansion") — abortaria todo o setup; tratar cedo e retornar graciosamente.
+    if [[ -z "$nome" ]]; then
+        echo "Erro: nome da variavel nao informado"
+        return 1
+    fi
     local valor_atual="${!nome}"
     local tracejada="#-------------------------------------------------------------------#"
     local alterar opt novo_valor
