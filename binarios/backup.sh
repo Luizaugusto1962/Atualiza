@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 19/09/2026
+# Versao: 24/09/2026
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -53,8 +53,21 @@ _limpar_restauracao() {
 # Retorna: 0 se valido, 1 se erro
 _validar_pre_backup() {
 
+    local var_name="${1:-}"
+    if [[ -z "$var_name" ]]; then
+        _erro "Erro interno: nome da variavel nao informado em _validar_pre_backup"
+        return 1
+    fi
+    
+    # Validar que o nome da variável é um identificador bash válido
+    if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        _erro "Erro interno: nome de variavel invalido: ${var_name}"
+        return 1
+    fi
+    
     # Compatibilidade: local -n exige Bash 4.4+; ${!var} funciona em 4.2+
-    local _base_ref="${!1}"
+ #   local _base_ref="${!1}"
+    local _base_ref="${!var_name:-}"
 
     # Validar comando de compactacao
     if [[ -z "$DEFAULT_ZIP" ]]; then
@@ -81,11 +94,32 @@ _validar_pre_backup() {
         fi
         _base_ref="${base_trabalho}"
     else
+        if [[ -z "${CFG_BASE_DIR}" ]]; then
+            _erro "CFG_BASE_DIR nao configurado"
+            _aguardar 3
+            return 1
+        fi    
         _base_ref="${RAIZ}${CFG_BASE_DIR}"
     fi
 
+    # VALIDAÇÃO: Verificar se base_ref não está vazia antes de prosseguir
+    if [[ -z "$_base_ref" ]]; then
+        _erro "Erro interno: base de trabalho vazia apos selecao"
+        return 1
+    fi
+    
+    # SEGURANÇA: Validar caminho da base contra traversal
+    if ! _validar_caminho_seguro "$_base_ref"; then
+        _erro "Caminho da base invalido ou malicioso: ${_base_ref}"
+        _aguardar 3
+        return 1
+    fi
+    
     # Devolver valor ao chamador (nameref manual, compativel com Bash 4.2+)
-    printf -v "$1" '%s' "${_base_ref}"
+    printf -v "$var_name" '%s' "${_base_ref}"
+    
+    # Devolver valor ao chamador (nameref manual, compativel com Bash 4.2+)
+#    printf -v "$1" '%s' "${_base_ref}"
 
     # Validar se o diretorio base existe
     if [[ ! -d "${_base_ref}" ]]; then
@@ -94,6 +128,19 @@ _validar_pre_backup() {
         return 1
     fi
 
+    # VALIDAÇÃO: Verificar DEFAULT_BASEBACKUP_DIR antes de usar
+    if [[ -z "${DEFAULT_BASEBACKUP_DIR:-}" ]]; then
+        _erro "DEFAULT_BASEBACKUP_DIR nao configurado"
+        _aguardar 3
+        return 1
+    fi
+    
+    if ! _validar_caminho_seguro "$DEFAULT_BASEBACKUP_DIR"; then
+        _erro "Diretorio de backup invalido ou malicioso: ${DEFAULT_BASEBACKUP_DIR}"
+        _aguardar 3
+        return 1
+    fi
+    
     # Verificar se o diretorio de backup existe
     if [[ ! -d "$DEFAULT_BASEBACKUP_DIR" ]]; then
         _exibir_mensagem_centralizada "${AMARELO}" "Diretorio de backups em $DEFAULT_BASEBACKUP_DIR nao encontrado..."

@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/09/2026
+# Versao: 23/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -394,11 +394,16 @@ _limpar_base_especifica() {
     done
     find_args+=( ")" )
 
+    if (( ${#find_args[@]} < 3 )); then
+        _log "ERRO: find_args invalido (${#find_args[@]} elementos)" "${LOG_LIMPA}"
+        return 1
+    fi
+
     local -a arquivos_zip_total=()
     local arquivo
     while IFS= read -r -d '' arquivo; do
         arquivos_zip_total+=("$arquivo")
-    done < <(find "${caminho_base:-.}" -maxdepth 1 -type f -mtime +0 "${find_args[@]}" -print0)
+    done < <(find "${caminho_base:-.}" -maxdepth 1 -type f -mtime +0 "${find_args[@]}" -print0 2>/dev/null)
 
     local qtd_total="${#arquivos_zip_total[@]}"
     if (( qtd_total == 0 )); then
@@ -608,6 +613,10 @@ _recuperar_todos_arquivos() {
         return 1
     fi
 
+    if (( ${#extensoes[@]} == 0 )); then
+        _aviso "Nenhuma extensao configurada para recuperacao"
+        return 0
+    fi
     # Coleta com find -iname (1 passada): case-insensitive (*.dat e *.DAT) e
     # segura para nomes com espacos — o glob anterior (*.dat + expansao sem
     # aspas) perdia esses arquivos em silencio.
@@ -622,6 +631,11 @@ _recuperar_todos_arquivos() {
         find_args+=( -iname "$extensao" )
     done
     find_args+=( ")" )
+
+    if (( ${#find_args[@]} < 3 )); then
+        _log "ERRO: find_args invalido para recuperacao" "${LOG_ATU:-/dev/null}"
+        return 1
+    fi
 
     local arquivo
     local -a lote_todos=()
@@ -1420,7 +1434,14 @@ _enviar_arquivo_avulso() {
     read -rp "${AMARELO} -> ${NORMAL}" diretorio_origem
     diretorio_origem=$(_sanitizar_entrada "$diretorio_origem")
     _linha
-
+ 
+     # SEGURANÇA CRÍTICA: Validar caminho contra path traversal
+    if [[ -n "$diretorio_origem" ]] && ! _validar_caminho_seguro "$diretorio_origem"; then
+        _erro "Caminho de origem invalido ou malicioso: ${diretorio_origem}"
+        _aguardar_tecla
+        return 1
+    fi
+    
     if [[ -z "$diretorio_origem" ]]; then
         diretorio_origem="${DEFAULT_ENVIA_DIR:-}"
         if [[ -z "$diretorio_origem" || ! -d "$diretorio_origem" ]]; then

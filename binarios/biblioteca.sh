@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 15/09/2026
+# Versao: 24/09/2026
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -470,15 +470,20 @@ _extrair_backup_biblioteca() {
 
 # Reverte biblioteca completa
 _reverter_biblioteca_completa() {
-    local arquivo_backup="$1"
+    local arquivo_backup="${1:-}"
     if [[ ! -r "$arquivo_backup" ]]; then
         _erro "Backup nao encontrado ou ilegivel"
         return 1
     fi
 
+    if ! _validar_backup_entradas_seguras "$arquivo_backup"; then
+        _erro "Restauracao bloqueada: backup contem caminhos inseguros (path traversal ou absolutos)"
+        _aguardar_tecla
+        return 1
+    fi
+
     local temp_restore="/"
     # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
-
     _exibir_mensagem_centralizada "${AMARELO}" "Voltando backup anterior (TAR)..."
     _linha
 
@@ -487,7 +492,6 @@ _reverter_biblioteca_completa() {
         _aguardar_tecla
         return 1
     fi
-
     _aviso "Volta de todos os Programas Concluida"
     _linha
     _aguardar_tecla
@@ -498,8 +502,18 @@ _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="${1:-}"
     local programa_reverter
     local temp_restore="/"
-    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
 
+    if [[ ! -r "$arquivo_backup" ]]; then
+        _erro "Backup nao encontrado ou ilegivel"
+        return 1
+    fi
+    #SEGURANÇA CRÍTICA: Validar entradas do backup ANTES de extrair
+    if ! _validar_backup_entradas_seguras "$arquivo_backup"; then
+        _erro "Restauracao bloqueada: backup contem caminhos inseguros"
+        _aguardar_tecla
+        return 1
+    fi
+    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)        
     read -rp "${AMARELO}Informe o nome do programa em MAIÚSCULO: ${NORMAL}" programa_reverter
 
     if ! _validar_nome_programa "${programa_reverter}"; then

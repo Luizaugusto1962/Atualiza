@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/09/2026
+# Versao: 24/09/2026
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -265,6 +265,13 @@ EXTENSAO_CLASS="${EXTENSAO_CLASS:-class}"                      # Extensao de arq
 EXTENSAO_TELAS="${EXTENSAO_TELAS:-TEL}"                        # Extensao de arquivos de tela
 
 # =============================================================================
+# Configurações de segurança do auth.sh
+# =============================================================================
+MAX_LOGIN_ATTEMPTS="${MAX_LOGIN_ATTEMPTS:-3}"      # Máximo de tentativas antes do bloqueio
+C_BLOQUEIO_LOGIN="${C_BLOQUEIO_LOGIN:-300}"        # Tempo de bloqueio em segundos (5 min)
+HASH_ALGORITHM="${HASH_ALGORITHM:-sha256sum}"      # Algoritmo de hash (sha256sum, sha512sum)
+
+# =============================================================================
 # EXPORTAR CONSTANTES
 # =============================================================================
 export SCRIPT_DIR RAIZ
@@ -287,3 +294,4 @@ export SAVISC ISCCLIENT JUTIL REBUILD
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA compilado debugado
 export MAX_PROGRAMAS_SELECIONADOS EXTENSAO_CLASS EXTENSAO_TELAS VERSAO
 export C_JUTIL_PARALELO C_JUTIL_SEQUENCIAL C_JUTIL_PROGRESSO C_LOG_LINHAS
+export MAX_LOGIN_ATTEMPTS C_BLOQUEIO_LOGIN HASH_ALGORITHM
