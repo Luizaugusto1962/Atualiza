@@ -97,7 +97,7 @@ _validar_diretorio_trabalho() {
         return 1
     fi
 
-    if [[ ! -r "$dir" ]]; then
+    if [[ ! -r "$dir" || ! -w "$dir" ]]; then
         return 1
     fi
 
@@ -115,6 +115,12 @@ _selecionar_base_arquivos() {
             return 1
         fi
     else
+        if [[ -z "${CFG_BASE_DIR}" ]]; then
+            _erro "Diretorio de base principal (CFG_BASE_DIR) nao configurado"
+            _linha
+            _aguardar_tecla
+            return 1
+        fi
         base_trabalho="${RAIZ}${CFG_BASE_DIR}"
     fi
 
@@ -185,16 +191,18 @@ _executar_limpeza_temporarios() {
 
     local arquivo_lista2="${CFG_DIR}/limpetmp2"
 
-    # Limpar temporarios antigos do backup
-    if ! _validar_diretorio_backup; then
+    # Limpar temporarios antigos do backup (validacao unica, reaproveitada abaixo)
+    local backup_ok="0"
+    if _validar_diretorio_backup; then
+        backup_ok="1"
+        find "${DEFAULT_BACKUP_DIR}" -maxdepth 1 -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
+    else
         if (( automatico )); then
             _log "AVISO: diretorio de backup invalido ou inseguro, limpeza antiga pulada: ${DEFAULT_BACKUP_DIR:-vazio}" "${LOG_LIMPA}"
         else
             _aviso "Diretorio de backup invalido ou inseguro para limpeza, pulando: ${DEFAULT_BACKUP_DIR:-vazio}"
             _aguardar 2
         fi
-    else
-        find "${DEFAULT_BACKUP_DIR}" -maxdepth 1 -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
     fi
 
     local caminho_base
@@ -208,9 +216,9 @@ _executar_limpeza_temporarios() {
         if [[ -n "${caminho_base}" ]]; then
             achou_base=1
             if [[ -d "${caminho_base}" ]]; then
-                _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" || status_geral=$?
+                _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "automatico" "${backup_ok}" || status_geral=$?
                 if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
-                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" || status_geral=$?
+                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "automatico" "${backup_ok}" || status_geral=$?
                 fi
             else
                 _log "AVISO: diretorio da base nao existe, limpeza ignorada: ${caminho_base}" "${LOG_LIMPA}"
@@ -225,10 +233,10 @@ _executar_limpeza_temporarios() {
                 achou_base=1
                 caminho_base="${RAIZ}${base_dir}"
                 if [[ -d "${caminho_base}" ]]; then
-                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" || status_geral=$?
+                    _limpar_base_especifica "${caminho_base}" "${arquivo_lista}" "" "${backup_ok}" || status_geral=$?
                     # Processar limpetmp2 na sequencia, se existir
                     if [[ -f "${arquivo_lista2}" && -r "${arquivo_lista2}" ]]; then
-                        _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" || status_geral=$?
+                        _limpar_base_especifica "${caminho_base}" "${arquivo_lista2}" "" "${backup_ok}" || status_geral=$?
                     fi
                 else
                     _aviso "Diretorio nao existe: ${caminho_base}"
@@ -264,6 +272,15 @@ _validar_padrao_limpeza() {
         return 1
     fi
 
+    # Rejeitar metacaracteres de shell (; & | $ ` etc. nao tem sentido em nome
+    # de arquivo). Espaco e permitido (nomes com espaco sao tratados entre
+    # aspas em todos os usos); o resto segue o charset de _adicionar_arquivo_lixo.
+    # (regex em variavel: '-' nao-quotado dentro de [[ =~ ]] vira operador.)
+    local re_charset='^[A-Za-z0-9._* -]+$'
+    if [[ ! "$padrao" =~ $re_charset ]]; then
+        return 1
+    fi
+
     # Rejeitar padroes amplos demais que varreriam toda a base
     case "$padrao" in
         '*'|'**'|'*.*'|'**.*'|'*.**'|'*.**.'|'*.*.*'|'.'|'..') return 1 ;;
@@ -295,10 +312,13 @@ _validar_padrao_limpeza() {
 
 # Limpa arquivos da base especifica
 # Parametros: $1=caminho_base $2=arquivo_lista $3="automatico" (opcional, modo silencioso)
+#            $4="backup_ok" (opcional): "1"=backup validado pelo chamador (pula re-validacao),
+#               "0"=backup invalido (compactacao sera pulada), ausente=validar aqui.
 _limpar_base_especifica() {
     local caminho_base="${1:-}"
     local arquivo_lista="${2:-}"
     local modo="${3:-}"
+    local backup_ok="${4:-}"
     local automatico=0
     [[ "${modo}" == "automatico" ]] && automatico=1
     local arquivos_temp=()
@@ -328,8 +348,18 @@ _limpar_base_especifica() {
         return 1
     fi
 
-    # Validar diretorio de backup
-    if ! _validar_diretorio_backup; then
+    # Validar diretorio de backup (a menos que o chamador ja tenha validado)
+    local backup_valido=0
+    if [[ "${backup_ok}" == "1" ]]; then
+        backup_valido=1
+    elif [[ "${backup_ok}" == "0" ]]; then
+        backup_valido=0
+    else
+        if _validar_diretorio_backup; then
+            backup_valido=1
+        fi
+    fi
+    if (( ! backup_valido )); then
         _log "ERRO: diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}" "${LOG_LIMPA}"
         if (( automatico )); then
             return 1
@@ -601,7 +631,19 @@ _recuperar_todos_arquivos() {
     local base_trabalho="${1:-}"
     local -a extensoes=()
     if [[ ${#DATA_EXTENSIONS[@]} -gt 0 ]]; then
-        extensoes=("${DATA_EXTENSIONS[@]}")
+        # Filtrar padroes amplos/inseguros (ex: "*" varreria a base toda).
+        local ext_candidata
+        for ext_candidata in "${DATA_EXTENSIONS[@]}"; do
+            if _validar_padrao_limpeza "$ext_candidata"; then
+                extensoes+=("$ext_candidata")
+            else
+                _log "AVISO: extensao invalida/ampla ignorada em DATA_EXTENSIONS: ${ext_candidata}" "${LOG_ATU:-/dev/null}"
+            fi
+        done
+        if (( ${#extensoes[@]} == 0 )); then
+            _aviso "Nenhuma extensao valida em DATA_EXTENSIONS, usando padrao *.dat"
+            extensoes=("*.dat")
+        fi
     else
         extensoes=("*.dat")
     fi
@@ -617,32 +659,38 @@ _recuperar_todos_arquivos() {
         _aviso "Nenhuma extensao configurada para recuperacao"
         return 0
     fi
-    # Coleta com find -iname (1 passada): case-insensitive (*.dat e *.DAT) e
-    # segura para nomes com espacos — o glob anterior (*.dat + expansao sem
-    # aspas) perdia esses arquivos em silencio.
-    local -a find_args=( "(" )
-    local primeiro=1 extensao
-    for extensao in "${extensoes[@]}"; do
-        if (( primeiro )); then
-            primeiro=0
-        else
-            find_args+=( -o )
-        fi
-        find_args+=( -iname "$extensao" )
-    done
-    find_args+=( ")" )
-
-    if (( ${#find_args[@]} < 3 )); then
-        _log "ERRO: find_args invalido para recuperacao" "${LOG_ATU:-/dev/null}"
-        return 1
-    fi
-
+    # Coleta em 1 passada no diretorio (find sem filtro + classificacao
+    # case-insensitive em memoria via minusculas). Segura para nomes com
+    # espacos — o glob antigo (*.dat + expansao sem aspas) perdia esses
+    # arquivos em silencio.
     local arquivo
     local -a lote_todos=()
     local qtd_links=0 qtd_vazios=0 qtd_outros=0
     _JUTIL_LOTE_OK=0
     _JUTIL_LOTE_FALHAS=0
+    # 1 unica passada no diretorio: classifica alvo vs nao-alvo em memoria
+    # (evita o 2o find so para contar qtd_outros).
+    local nome_base nome_lower padrao_lower e_alvo ext
     while IFS= read -r -d '' arquivo; do
+        nome_base="${arquivo##*/}"
+        nome_lower="${nome_base,,}"
+        e_alvo=0
+        for ext in "${extensoes[@]}"; do
+            padrao_lower="${ext,,}"
+            # shellcheck disable=SC2053 # glob intencional em $padrao_lower
+            if [[ "$nome_lower" == $padrao_lower ]]; then
+                e_alvo=1
+                break
+            fi
+        done
+        if (( ! e_alvo )); then
+            # Mesma semantica da contagem anterior: so regulares contam como
+            # "nao-alvo"; links fora do padrao seguem ignorados.
+            if [[ -f "$arquivo" && ! -L "$arquivo" ]]; then
+                ((qtd_outros++)) || true
+            fi
+            continue
+        fi
         if [[ -L "$arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
             _linha "-" "${VERDE}"
@@ -654,12 +702,7 @@ _recuperar_todos_arquivos() {
         else
             lote_todos+=("$arquivo")
         fi
-    done < <(find "$base_trabalho" -maxdepth 1 \( -type f -o -type l \) "${find_args[@]}" -print0 2>/dev/null)
-
-    # Arquivos que nao sao .dat (explicam diferenca vs total da pasta)
-    qtd_outros=$(find "$base_trabalho" -maxdepth 1 -type f ! \( "${find_args[@]}" \) -print 2>/dev/null | wc -l)
-    qtd_outros="${qtd_outros//[[:space:]]/}"
-    [[ "$qtd_outros" =~ ^[0-9]+$ ]] || qtd_outros=0
+    done < <(find "$base_trabalho" -maxdepth 1 \( -type f -o -type l \) -print0 2>/dev/null)
 
     local rc=0
     if (( ${#lote_todos[@]} > 0 )); then
@@ -1020,13 +1063,12 @@ _recuperar_arquivos_principais() {
             printf '%s\n' "${arquivo_nfe##*/}"
         done
     } > "${CFG_DIR}/indexar2"
-    if [[ "$old_nullglob" == *"off"* ]]; then
+    if [[ "$old_nullglob" == *"-u"* ]]; then
         shopt -u nullglob
     else
         shopt -s nullglob
     fi
 
-    cd "${CFG_DIR}" || return 1
     _aguardar 1
 
     # Verificar se indexar2 tem conteudo antes de processar
@@ -1158,9 +1200,16 @@ _executar_jutil_lote() {
 
     local dir_status
     dir_status=$(mktemp -d -t jutil_lote.XXXXXX) || {
+        # Fallback sem dir temporario: sequencial com os mesmos contadores do
+        # caminho legado (o chamador usa _JUTIL_LOTE_OK/FALHAS no resumo).
         local arquivo rc=0
         for arquivo in "${lista[@]}"; do
-            _executar_jutil "$arquivo" || rc=1
+            if _executar_jutil "$arquivo"; then
+                ((_JUTIL_LOTE_OK++)) || true
+            else
+                rc=1
+                ((_JUTIL_LOTE_FALHAS++)) || true
+            fi
         done
         return "$rc"
     }
@@ -1412,11 +1461,12 @@ _executar_jutil() {
     PIDS_JUTIL=("${novos[@]+"${novos[@]}"}")
 
     # Restaurar nullglob de forma segura (sem eval)
-    if [[ "$old_nullglob" == *"off"* ]]; then
+    if [[ "$old_nullglob" == *"-u"* ]]; then
         shopt -u nullglob
     else
         shopt -s nullglob
     fi
+
     _linha "-" "${VERDE}"
     return $resultado
 }
@@ -1777,7 +1827,6 @@ _executar_expurgador() {
     printf "\n"
     _linha
     _aguardar_tecla
-    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
     return 0
 }
 
