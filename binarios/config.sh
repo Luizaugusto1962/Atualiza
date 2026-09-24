@@ -12,7 +12,6 @@ set -euo pipefail
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
 # =============================================================================
 DEFAULT_PROGS_ATUAL_DIR="${DEFAULT_PROGS_ATUAL_DIR:-}"
-DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-}"
 RAIZ="${RAIZ:-}"
 REBUILD="${REBUILD:-}"
 compilado="${compilado:-}"
