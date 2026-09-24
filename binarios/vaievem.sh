@@ -11,7 +11,7 @@ set -euo pipefail
 # (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 15/09/2026-02
+# Versao: 24/09/2026
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -20,14 +20,54 @@ CHAVE="${DEFAULT_CHAVE_SSH:-}"
 # VALIDACAO DE SEGURANCA (AGENTS.md: Validate and sanitize user input)
 # =============================================================================
 # Valida caminhos contra path traversal e injeção de caracteres especiais
+# Rejeita tambem raiz ("/", "//"): nenhum destino legitimo do SAV e a raiz
+# (paridade com _validar_diretorio_backup/_validar_diretorio_expurgavel).
+# Caminhos absolutos legitimos (/savisc/...) continuam aceitos.
 _validar_caminho_seguro() {
     local caminho="${1:-}"
     local regex_perigoso=$'[;|&$`<>"\']'
 
-    if [[ -z "$caminho" || "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
+    if [[ -z "$caminho" || "$caminho" == "/" || "$caminho" == "//" ]]; then
+        return 1
+    fi
+    if [[ "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
         return 1
     fi
     return 0
+}
+
+# Valida o par usuario@servidor usado nas origens/destinos SSH
+# (user@host:path). Complementa _validar_caminho_seguro, que cobre so o path.
+# Retorna: 0=valido 1=invalido (vazio, com espaco, metacaractere ou separador)
+_validar_destino_ssh() {
+    local usuario="${1:-}"
+    local servidor="${2:-}"
+    local regex_perigoso=$'[;|&$`<>"\']'
+
+    if [[ -z "$usuario" || -z "$servidor" ]]; then
+        return 1
+    fi
+    # Usuario nao pode conter espacos, @ : / nem metacaracteres
+    if [[ "$usuario" == *[[:space:]@:/]* || "$usuario" =~ $regex_perigoso ]]; then
+        return 1
+    fi
+    # Servidor (hostname/IP) nao pode conter espacos, @ nem metacaracteres
+    if [[ "$servidor" == *[[:space:]@]* || "$servidor" =~ $regex_perigoso ]]; then
+        return 1
+    fi
+    return 0
+}
+
+# Valida uma origem/destino remoto completo no formato "usuario@host:caminho",
+# aplicando _validar_caminho_seguro ao sufixo apos o primeiro ":".
+# Retorna: 0=valido 1=invalido (sem ":" ou sufixo inseguro)
+_validar_origem_remota() {
+    local origem="${1:-}"
+
+    if [[ "$origem" != *":"* ]]; then
+        return 1
+    fi
+    _validar_caminho_seguro "${origem#*:}"
 }
 
 # Verifica se autenticacao por chave SSH deve ser utilizada
@@ -68,9 +108,8 @@ _usar_chave_ssh() {
 # Uso: _montar_cmd_scp <nome_array_ref> <porta> [timeout] [alive_interval] [alive_count]
 #   Os tres ultimos defaultam para SSH_TIMEOUT/SSH_ALIVE_INTERVAL/SSH_ALIVE_COUNT.
 # SEGURANCA: sem eval — os valores sao validados (porta/timeout/alive numericos)
-# e publicados no array via printf -v + read -a (ambos Bash 4.0+; nameref
-# exigiria 4.3+). Payloads com aspas/substituicao viram string literal, nunca
-# argumentos extras do scp.
+# e publicados no array via nameref (Bash 4.3+) ou serializacao IFS (4.0-4.2).
+# Payloads com aspas/substituicao viram string literal, nunca argumentos extras.
 _montar_cmd_scp() {
     local _cmd_ref="${1:-}"
     local porta="${2:-}"
@@ -100,14 +139,19 @@ _montar_cmd_scp() {
         _opcoes_base+=(-i "$CHAVE" -o "BatchMode=yes")
     fi
 
-    # Publicar no array do chamador via serializacao com separador nao
-    # imprimivel (printf -v: compativel com Bash < 4.2). O ${var?} documenta
+    # Publicar no array do chamador (mesma estrategia do _montar_cmd_ssh:
+    # nameref em Bash 4.3+, serializacao IFS em 4.0-4.2). O ${var?} documenta
     # que o nome do array e intencionalmente dinamico (escopo do chamador).
-    local _sep=$'\x1f'
-    local _serializado
-    printf -v _serializado "%s${_sep}" "${_opcoes_base[@]}"
-    _serializado="${_serializado%"${_sep}"}"
-    IFS="${_sep}" read -r -a "${_cmd_ref?}" <<<"${_serializado}"
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3) )); then
+        local -n _scp_ref="${_cmd_ref?}"
+        _scp_ref=("${_opcoes_base[@]}")
+    else
+        local _sep=$'\x1f'
+        local _serializado
+        printf -v _serializado "%s${_sep}" "${_opcoes_base[@]}"
+        _serializado="${_serializado%"${_sep}"}"
+        IFS="${_sep}" read -r -a "${_cmd_ref?}" <<<"${_serializado}"
+    fi
 
     return 0
 }
@@ -164,10 +208,27 @@ _montar_cmd_ssh() {
     return 0
 }
 
+# Protege um argumento para uso dentro de string interpretada por shell
+# (caso do rsync -e). Elementos simples passam nus; os demais vao entre aspas
+# simples POSIX com escape de ' embutida. Equivale ao %q para os casos reais
+# (caminho de chave com espacos ou $).
+# Uso: _proteger_arg_shell <texto>  (imprime o texto protegido)
+_proteger_arg_shell() {
+    local _texto="${1:-}"
+    local _re_seguro='^[A-Za-z0-9@%_+=:,./-]+$'
+
+    if [[ "$_texto" =~ $_re_seguro ]]; then
+        printf '%s' "$_texto"
+        return 0
+    fi
+    # Aspas simples: ' vira '\'' (fecha, escapa, reabre)
+    printf "'%s'" "${_texto//\'/\'\\\'\'}"
+}
+
 # Junta um array de comando em uma unica string para o rsync -e (que exige
-# string, nao array). Em Bash 4.4+ usa printf %q para proteger cada argumento
-# (caminho de chave com espacos deixa de quebrar); em versoes antigas mantem
-# o join simples anterior.
+# string, nao array). Em Bash 4.4+ usa printf %q para proteger cada argumento;
+# em versoes antigas usa _proteger_arg_shell (aspas POSIX), de modo que
+# caminho de chave com espacos nao quebra em nenhuma versao suportada.
 # SEGURANCA: sem eval/indirecao — recebe os elementos ja expandidos pelo
 # chamador, que e o dono do array (evita manipulacao de nome de variavel).
 # Uso: _juntar_comando <elemento...>
@@ -182,7 +243,10 @@ _juntar_comando() {
     if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )); then
         printf -v _cmd_junto '%q ' "${_partes[@]}"
     else
-        printf -v _cmd_junto '%s ' "${_partes[@]}"
+        local _p
+        for _p in "${_partes[@]}"; do
+            _cmd_junto+="$(_proteger_arg_shell "$_p") "
+        done
     fi
     printf '%s' "${_cmd_junto% }"
 }
@@ -222,9 +286,19 @@ _receber_scp() {
     _log "Iniciando download SCP: $arquivo_remoto"
 
     local -a cmd_scp=()
-    _montar_cmd_scp cmd_scp "$porta" 30 15 3
+    _montar_cmd_scp cmd_scp "$porta" "${SSH_TIMEOUT:-30}" "${SSH_ALIVE_INTERVAL:-15}" "${SSH_ALIVE_COUNT:-3}"
+
+    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
+        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
+        return 1
+    fi
 
     local origem="${usuario_remoto}@${servidor}:${arquivo_remoto}"
+
+    if ! _validar_origem_remota "$origem"; then
+        _log_erro "Origem remota invalida: $origem"
+        return 1
+    fi
 
     if ! "${cmd_scp[@]}" "$origem" "$destino_local"; then
         _log_erro "Falha no download SCP: $arquivo_remoto"
@@ -277,7 +351,18 @@ _enviar_rsync() {
     local porta="${4:-$DEFAULT_SSH_PORTA}"
     local usuario_remoto="${5:-$DEFAULT_SSH_USER}"
     _log "Iniciando upload RSYNC: ${arquivo_local}"
+
+    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
+        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
+        return 1
+    fi
+
     local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
+
+    if ! _validar_origem_remota "$destino_completo"; then
+        _log_erro "Destino remoto invalido: ${destino_completo}"
+        return 1
+    fi
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
@@ -331,7 +416,18 @@ _enviar_rsync_lote() {
     local porta="$DEFAULT_SSH_PORTA"
     local usuario_remoto="$DEFAULT_SSH_USER"
     _log "Iniciando upload RSYNC em lote: ${#arquivos_locais[@]} arquivo(s)"
+
+    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
+        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
+        return 1
+    fi
+
     local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
+
+    if ! _validar_origem_remota "$destino_completo"; then
+        _log_erro "Destino remoto invalido: ${destino_completo}"
+        return 1
+    fi
 
     # SEGURANCA: Construir opções de forma segura usando arrays
     # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
@@ -364,6 +460,11 @@ _baixar_biblioteca_sincroniza() {
     local porta="${2:-$DEFAULT_SSH_PORTA}"
     local usuario_remoto="${3:-$DEFAULT_SSH_USER}"
 
+    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
+        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
+        return 1
+    fi
+
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
 
     # SEGURANCA: Validar diretorio de recebimento
@@ -391,8 +492,24 @@ _baixar_biblioteca_sincroniza() {
         _montar_cmd_scp cmd_scp_lib "$porta"
         local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
+        if ! _validar_origem_remota "$origem"; then
+            _log_erro "Origem remota invalida: ${origem}"
+            return 1
+        fi
+
         if "${cmd_scp_lib[@]}" "$origem" "${CFG_PORTALSAV:-}/"; then
-            _log_sucesso "Download da biblioteca concluido: ${SAVATU:-}${VERSAO:-}.zip"
+            local nome_bib="${SAVATU:-}${VERSAO:-}.zip"
+            local destino_bib="${CFG_PORTALSAV:-}/${nome_bib}"
+            if [[ ! -f "$destino_bib" ]]; then
+                _log_erro "Arquivo nao encontrado apos download: ${destino_bib}"
+                return 1
+            fi
+            if [[ ! -s "$destino_bib" ]]; then
+                _log_erro "Arquivo recebido vazio: ${destino_bib}"
+                rm -f -- "$destino_bib"
+                return 1
+            fi
+            _log_sucesso "Download da biblioteca concluido: ${nome_bib}"
             return 0
         else
             _log_erro "Falha no download da biblioteca: ${SAVATU:-}${VERSAO:-}.zip"
@@ -427,7 +544,28 @@ _baixar_biblioteca_sincroniza() {
         local -a cmd_scp=()
         _montar_cmd_scp cmd_scp "$porta"
 
+        local origem_remota
+        for origem_remota in "${origens[@]}"; do
+            if ! _validar_origem_remota "$origem_remota"; then
+                _log_erro "Origem remota invalida: ${origem_remota}"
+                return 1
+            fi
+        done
+
         if "${cmd_scp[@]}" "${origens[@]}" "${CFG_PORTALSAV:-}/"; then
+            local arquivo_baixado destino_baixado
+            for arquivo_baixado in "${arquivos_update[@]}"; do
+                destino_baixado="${CFG_PORTALSAV:-}/${arquivo_baixado##*/}"
+                if [[ ! -f "$destino_baixado" ]]; then
+                    _log_erro "Arquivo nao encontrado apos download: ${arquivo_baixado}"
+                    return 1
+                fi
+                if [[ ! -s "$destino_baixado" ]]; then
+                    _log_erro "Arquivo recebido vazio: ${arquivo_baixado}"
+                    rm -f -- "$destino_baixado"
+                    return 1
+                fi
+            done
             _log_sucesso "Download em lote concluido: ${#arquivos_update[@]} arquivo(s)"
             return 0
         else
@@ -470,6 +608,11 @@ _baixar_programas_vaievem() {
     local porta="${DEFAULT_SSH_PORTA}"
     local usuario_remoto="${DEFAULT_SSH_USER}"
 
+    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
+        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
+        return 1
+    fi
+
     # Montar origens remotas em uma unica conexao SCP (lote)
     local -a origens=()
     local -a nomes_arquivos=()
@@ -487,6 +630,14 @@ _baixar_programas_vaievem() {
         _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
         origens+=("${usuario_remoto}@${servidor}:${DESTINO_SERVER}${arquivo}")
         nomes_arquivos+=("$arquivo")
+    done
+
+    local origem_prog
+    for origem_prog in "${origens[@]}"; do
+        if ! _validar_origem_remota "$origem_prog"; then
+            _log_erro "Origem remota invalida: ${origem_prog}"
+            return 1
+        fi
     done
 
     local -a cmd_scp=()
@@ -584,7 +735,13 @@ _enviar_arquivo_multi() {
         fi
     else
         # Enviar arquivo unico usando _enviar_rsync
-        if _enviar_rsync "${diretorio_origem}/${arquivo_enviar}" "${destino_remoto}"; then
+        local caminho_envio="${diretorio_origem}/${arquivo_enviar}"
+        if ! _validar_caminho_seguro "$caminho_envio"; then
+            _erro "Caminho local invalido ou malicioso: ${caminho_envio}"
+            _aguardar 2
+            return 1
+        fi
+        if _enviar_rsync "$caminho_envio" "${destino_remoto}"; then
             _exibir_mensagem_centralizada "${AMARELO}" "Arquivo enviado para \"${destino_remoto}\""
             _linha
             _aguardar 3
