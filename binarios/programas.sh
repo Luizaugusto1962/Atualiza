@@ -91,15 +91,13 @@ _atualizar_programa_offline() {
     _exibir_mensagem_centralizada "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${CFG_PORTALSAV}"
     _linha
     _aguardar_tecla
-    return 0
-
 
     # Verificar arquivos do servidor offline se configurado
     if ! _verificar_arquivos_offline; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo(s) nao encontrado(s) no diretorio offline"
         _linha
         _aguardar_tecla
-        return 1
+       return 1
     fi
 
     # Atualizar programas
@@ -177,7 +175,7 @@ _selecionar_programas_reversao() {
     shopt -s nullglob
     local backups=("${DEFAULT_PROGS_DIR}"/*.zip)
     _restaurar_nullglob "${_old_nullglob:-}"
-    
+
     if (( ${#backups[@]} == 0 )); then
         _aviso "Nenhum backup de programa encontrado em ${DEFAULT_PROGS_DIR}"
         _aguardar_tecla
