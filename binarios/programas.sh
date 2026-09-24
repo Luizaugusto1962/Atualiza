@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/09/2026
+# Versao: 25/09/2026
 #
 
 # Variaveis globais esperadas
@@ -30,6 +30,19 @@ _restaurar_nullglob() {
     else
         shopt -u nullglob
     fi
+}
+
+# Cleanup compartilhado por _processar_atualizacao_programas e
+# _processar_atualizacao_pacotes: restaura cwd, remove o temporario e restaura
+# nullglob. Definida uma unica vez no modulo (as copias internas foram
+# removidas para evitar divergencia). Usa escopo dinamico: le _cwd,
+# dir_temp_atualizacao e _old_nullglob do chamador — chamar somente apos
+# essas locais existirem. Comportamento identico as definicoes anteriores.
+_cleanupAtualizacao() {
+    cd "$_cwd" || true
+    rm -rf "${dir_temp_atualizacao}"
+    _restaurar_nullglob "${_old_nullglob:-}"
+
 }
 #---------- FUNCOES DE ATUALIZACAO ONLINE ----------#
 
@@ -97,7 +110,7 @@ _atualizar_programa_offline() {
         _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo(s) nao encontrado(s) no diretorio offline"
         _linha
         _aguardar_tecla
-       return 1
+        return 1
     fi
 
     # Atualizar programas
@@ -202,6 +215,14 @@ _selecionar_programas_reversao() {
         if [[ -z "${nome_programa}" ]]; then
             continue
         fi
+        # SEGURANCA: o nome derivado vira nome de arquivo de destino
+        # (CFG_PORTALSAV/${programa}${compilado}.zip). Rejeitar qualquer
+        # coisa que nao seja nome de programa valido (barra, "..", etc.) para
+        # evitar escrita fora do diretorio de recebimento.
+        if ! _validar_nome_programa "${nome_programa}"; then
+            _log_erro "Backup ignorado (nome de programa invalido): ${nome_base}"
+            continue
+        fi
         programas+=("${nome_programa}")
         arquivos_fonte+=("${nome_base}")
     done
@@ -244,7 +265,10 @@ _selecionar_programas_reversao() {
         local invalido=0
         # Omitimos as aspas intencionalmente aqui para permitir word splitting na variavel $escolha,
         # o que permite o usuario digitar multiplos numeros separados por espaco (ex: "1 2 3").
-        # ponytail: desativar glob temporariamente para evitar expansao de * e ? em ${escolha}
+        # Desativar glob temporariamente para evitar expansao de * e ? em ${escolha},
+        # restaurando o estado anterior ao final (set +f cego alteraria o shell).
+        local _old_noglob
+        _old_noglob=$(shopt -p noglob 2>/dev/null) || _old_noglob='shopt -u noglob'
         set -f
         for token in ${escolha}; do
             if ! [[ "${token}" =~ ^[0-9]+$ ]]; then
@@ -257,7 +281,11 @@ _selecionar_programas_reversao() {
             fi
             indices+=("${token}")
         done
-        set +f  # ponytail: reativar glob depois do loop seguro
+        if [[ "${_old_noglob}" == *"-s"* ]]; then
+            set -f
+        else
+            set +f
+        fi
 
         if (( invalido )); then
             _erro "Opcao invalida. Informe numero(s) entre 1 e ${#programas[@]}."
@@ -543,13 +571,7 @@ _processar_atualizacao_programas() {
     local _old_nullglob
     _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
 
-    # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
-    _cleanupAtualizacao() {
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
-        _restaurar_nullglob "${_old_nullglob:-}"
-
-    }
+    # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
     # Criar diretorio temporario para extracao
     local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
@@ -662,13 +684,7 @@ _processar_atualizacao_pacotes() {
     local _old_nullglob
     _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
 
-    # Funcao local de cleanup: restaura cwd, remove temporario e restaura nullglob
-    _cleanupAtualizacao() {
-        cd "$_cwd" || true
-        rm -rf "${dir_temp_atualizacao}"
-        _restaurar_nullglob "${_old_nullglob:-}"
-
-    }
+    # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
     # Criar diretorio temporario para extracao isolada
     local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
@@ -819,7 +835,7 @@ _processar_reversao_programas() {
                 _erro "Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
-            ARQUIVOS_PROGRAMA[programa_indice]="${programa}${compilado}.zip"
+            ARQUIVOS_PROGRAMA[$programa_indice]="${programa}${compilado}.zip"
             _exibir_mensagem_centralizada "${VERDE}" "Backup validado e preparado para reversao: ${programa}"
         else
             _erro "Backup nao encontrado para: ${programa}"
