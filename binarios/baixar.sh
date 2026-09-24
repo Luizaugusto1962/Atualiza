@@ -66,9 +66,16 @@ _atualizando() {
         return 1
     }
 
+    # Salvar/restaurar nullglob (nao alterar o estado global do shell)
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob) || _old_nullglob='shopt -u nullglob'
     shopt -s nullglob
     local arquivos_sh=("${LIBS_DIR}"/*.sh)
-    shopt -u nullglob
+    if [[ "${_old_nullglob}" == *"-u"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
 
     for arquivo in "${arquivos_sh[@]}"; do
         local nome_base="${arquivo##*/}"
@@ -130,6 +137,14 @@ _atualizando() {
         origem_zip="${CFG_PORTALSAV}/${arquivo_zip}"
     else
         _erro "Arquivo ${arquivo_zip} nao encontrado para descompactacao."
+        return 1
+    fi
+
+    # SEGURANCA: validar integridade do zip ANTES de extrair/instalar.
+    # Um pacote corrompido extrairia arquivos parciais que seriam instalados
+    # como se fossem validos nas etapas abaixo.
+    if ! "${DEFAULT_UNZIP}" -t "$origem_zip" >>"$LOG_ATU" 2>&1; then
+        _erro "Arquivo de atualizacao corrompido ou invalido: ${arquivo_zip}"
         return 1
     fi
 
@@ -275,14 +290,24 @@ _voltar_sh_anterior() {
 
     # Localizar os backups .sh.bkp (avulsos ou dentro de um zip de backup)
     local dir_restauracao="${DEFAULT_BACKUP_DIR}"
+    local _old_nullglob
+    _old_nullglob=$(shopt -p nullglob) || _old_nullglob='shopt -u nullglob'
     shopt -s nullglob
     local backups_sh=("${DEFAULT_BACKUP_DIR}"/*.sh.bkp)
-    shopt -u nullglob
+    if [[ "${_old_nullglob}" == *"-u"* ]]; then
+        shopt -u nullglob
+    else
+        shopt -s nullglob
+    fi
 
     if (( ${#backups_sh[@]} == 0 )); then
         shopt -s nullglob
         local zips_backup=("${DEFAULT_BACKUP_DIR}"/*_backup.zip)
-        shopt -u nullglob
+        if [[ "${_old_nullglob}" == *"-u"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
         if (( ${#zips_backup[@]} == 0 )); then
             _erro "Nenhum backup anterior encontrado em ${DEFAULT_BACKUP_DIR}"
             _aguardar 2
@@ -331,7 +356,11 @@ _voltar_sh_anterior() {
         fi
         shopt -s nullglob
         backups_sh=("${dir_restauracao}"/*.sh.bkp)
-        shopt -u nullglob
+        if [[ "${_old_nullglob}" == *"-u"* ]]; then
+            shopt -u nullglob
+        else
+            shopt -s nullglob
+        fi
     fi
 
     if (( ${#backups_sh[@]} == 0 )); then
@@ -392,23 +421,38 @@ _atualizar_online() {
     local arquivo_zip="atualiza.zip"
     _exibir_mensagem_centralizada "${VERDE}" "Atualizando script via GitHub..."
 
-    # SEGURANCA: permitir apenas URLs http(s) para download
+    # SEGURANCA: permitir apenas URLs http(s) para download, sem espacos
+    # (espaco quebraria a linha de comando do wget/curl)
     if [[ ! "${link}" =~ ^https?:// ]]; then
         _erro "URL de atualizacao invalida: ${link}"
         return 1
     fi
+    if [[ "${link}" == *[[:space:]]* ]]; then
+        _erro "URL de atualizacao invalida (contem espacos)"
+        return 1
+    fi
 
-    # SEGURANCA: validar diretorio de download antes de usar wget
+    # SEGURANCA: validar diretorio de download antes de usar wget/curl
     if ! _validar_diretorio_operacao "${CFG_PORTALSAV}"; then
         _erro "Diretorio de download invalido ou inseguro: ${CFG_PORTALSAV}"
         return 1
     fi
 
     _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-    _erro "Ao criar diretorio de download"
-    return 1
+        _erro "Ao criar diretorio de download"
+        return 1
     }
-    if ! wget -q -c "$link" -O "${CFG_PORTALSAV}/${arquivo_zip}"; then
+    # wget e o padrao; curl e o fallback (servidores minimos podem nao ter wget)
+    local -a cmd_download=()
+    if command -v wget >/dev/null 2>&1; then
+        cmd_download=(wget -q -c "$link" -O "${CFG_PORTALSAV}/${arquivo_zip}")
+    elif command -v curl >/dev/null 2>&1; then
+        cmd_download=(curl -fsSL -o "${CFG_PORTALSAV}/${arquivo_zip}" "$link")
+    else
+        _erro "Nem wget nem curl disponiveis para download"
+        return 1
+    fi
+    if ! "${cmd_download[@]}"; then
         _erro "Ao baixar arquivo de atualizacao. Verifique a conexao."
         return 1
     fi
