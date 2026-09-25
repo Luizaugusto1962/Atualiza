@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/09/2026
+# Versao: 25/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -1451,7 +1451,7 @@ _executar_jutil() {
 
     # Remover PID do rastreador (processo ja concluido via wait no progresso)
     novos=()
-    local _p 
+    local _p
     for _p in "${PIDS_JUTIL[@]}"; do [[ "$_p" != "$pid_jutil" ]] && novos+=("$_p"); done
     PIDS_JUTIL=("${novos[@]+"${novos[@]}"}")
 
@@ -1479,14 +1479,14 @@ _enviar_arquivo_avulso() {
     read -rp "${AMARELO} -> ${NORMAL}" diretorio_origem
     diretorio_origem=$(_sanitizar_entrada "$diretorio_origem")
     _linha
- 
+
      # SEGURANÇA CRÍTICA: Validar caminho contra path traversal
     if [[ -n "$diretorio_origem" ]] && ! _validar_caminho_seguro "$diretorio_origem"; then
         _erro "Caminho de origem invalido ou malicioso: ${diretorio_origem}"
         _aguardar_tecla
         return 1
     fi
-    
+
     if [[ -z "$diretorio_origem" ]]; then
         diretorio_origem="${DEFAULT_ENVIA_DIR:-}"
         if [[ -z "$diretorio_origem" || ! -d "$diretorio_origem" ]]; then
@@ -1819,9 +1819,64 @@ _executar_expurgador() {
     done
     [[ -n "$dir_tmp_exp" ]] && rm -rf -- "$dir_tmp_exp" 2>/dev/null || true
 
+    # Limpar diretorios listados no arquivo limpadir (um diretorio por linha)
+    _executar_expurgador_lista_dirs
+
     printf "\n"
     _linha
     _aguardar_tecla
+    return 0
+}
+
+# Expurgo de arquivos em diretorios listados no arquivo configuracoes/limpadir
+# Cada linha valida e um caminho absoluto. Linhas em branco e comentarios (#)
+# sao ignorados. Remove arquivos de dados (.dat) e indices (.idx) tambem.
+# Retorna: 0 sempre (expurgo e tolerante a falhas individuais)
+_executar_expurgador_lista_dirs() {
+    local arquivo_lista="${CFG_DIR:-}${CFG_DIR:+/}limpadir"
+
+    if [[ ! -f "$arquivo_lista" ]]; then
+        _log "limpadir nao existe, expurgo de diretorios extras pulado: $arquivo_lista" "${LOG_LIMPA}"
+        return 0
+    fi
+
+    if [[ ! -r "$arquivo_lista" ]]; then
+        _log "AVISO: limpadir sem permissao de leitura, expurgo de diretorios extras ignorado: $arquivo_lista" "${LOG_LIMPA}"
+        return 0
+    fi
+
+    local linha diretorio arquivos_removidos
+    while IFS= read -r linha || [[ -n "$linha" ]]; do
+        # trim de espacos em volta
+        linha="${linha#"${linha%%[![:space:]]*}"}"
+        linha="${linha%"${linha##*[![:space:]]}"}"
+        # pular em branco e comentarios
+        [[ -z "$linha" || "$linha" == \#* ]] && continue
+
+        diretorio="$linha"
+
+        if ! _validar_diretorio_expurgavel "$diretorio"; then
+            _log "AVISO: diretorio invalido ou inseguro no limpadir, ignorado: $diretorio" "${LOG_LIMPA}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio invalido ou inseguro: ${diretorio}"
+            continue
+        fi
+
+        if [[ ! -d "$diretorio" ]]; then
+            _log "AVISO: diretorio nao encontrado no limpadir: ${diretorio}" "${LOG_LIMPA}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
+            continue
+        fi
+
+        # Limpar arquivos com mais de 7 dias, mesmo esquema do expurgo
+        arquivos_removidos=$(find "${diretorio}" -type f -mtime +7 \
+            -print -delete 2>/dev/null | wc -l)
+        arquivos_removidos="${arquivos_removidos//[[:space:]]/}"
+        [[ -z "$arquivos_removidos" ]] && arquivos_removidos="0"
+
+        _log "Expurgo (limpadir): ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
+        _exibir_mensagem_centralizada "${VERDE}" "Limpando diretorio extra: ${diretorio} (${arquivos_removidos} arquivos)"
+    done < "$arquivo_lista"
+
     return 0
 }
 
