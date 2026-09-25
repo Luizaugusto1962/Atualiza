@@ -86,7 +86,7 @@ _mostrar_versao_linux() {
     local ip_interno="Nao disponivel"
     if command -v ip >/dev/null 2>&1; then
         ip_interno=$(ip route get 1 2>/dev/null | awk '{print $7;exit}' || true)
-        [[ -z "$ip_interno" ]] && ip_interno="Nao disponivel"
+        if [[ -z "$ip_interno" ]]; then ip_interno="Nao disponivel"; fi
     fi
     printf '%s\n' "${VERDE}IP Interno: ${NORMAL}${ip_interno}${NORMAL}"
     printf "\n"
@@ -179,8 +179,12 @@ _mostrar_parametros() {
     printf '%b\n' "${VERDE}Diretorio RAIZ: ${NORMAL}${RAIZ}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do atualiza.sh: ${NORMAL}${SCRIPT_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio da base principal: ${NORMAL}${RAIZ}${CFG_BASE_DIR}${NORMAL}"
-    [[ -n "${CFG_BASE_DIR2:-}" ]] && printf '%b\n' "${VERDE}Diretorio da segunda base: ${NORMAL}${RAIZ}${CFG_BASE_DIR2}${NORMAL}"
-    [[ -n "${CFG_BASE_DIR3:-}" ]] && printf '%b\n' "${VERDE}Diretorio da terceira base: ${NORMAL}${RAIZ}${CFG_BASE_DIR3}${NORMAL}"
+    if [[ -n "${CFG_BASE_DIR2:-}" ]]; then
+        printf '%b\n' "${VERDE}Diretorio da segunda base: ${NORMAL}${RAIZ}${CFG_BASE_DIR2}${NORMAL}"
+    fi
+    if [[ -n "${CFG_BASE_DIR3:-}" ]]; then
+        printf '%b\n' "${VERDE}Diretorio da terceira base: ${NORMAL}${RAIZ}${CFG_BASE_DIR3}${NORMAL}"
+    fi
     printf '%b\n' "${VERDE}Diretorio dos executaveis: ${NORMAL}${E_EXEC}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio das telas: ${NORMAL}${T_TELAS}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio dos logs: ${NORMAL}${DEFAULT_LOGS_DIR}${NORMAL}"

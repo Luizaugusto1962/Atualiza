@@ -26,18 +26,23 @@ _limpar_interrupcao() {
     pids=()  # Limpar array
 
     # Limpeza de temporarios por caminhos absolutos: nao altera o cwd ativo.
-    if [[ -n "${VERSAO:-}" ]]; then
+    # Os downloads ficam em CFG_PORTALSAV (nao em SCRIPT_DIR); o backup fica em
+    # DEFAULT_BIBLIOTECA_DIR e nunca e apagado aqui (pode ser necessario rollback).
+    if [[ -n "${VERSAO:-}" && -n "${CFG_PORTALSAV:-}" ]]; then
         while IFS= read -r -d '' arquivo_temp; do
             rm -f -- "$arquivo_temp"
             _log "Arquivo temporario removido: $arquivo_temp"
-        done < <("${DEFAULT_FIND}" "${SCRIPT_DIR}" -maxdepth 1 -type f \( -name "*${VERSAO}.zip" -o -name "*${VERSAO}.tar" -o -name "*${VERSAO}.tar.gz" \) -print0)
+        done < <("${DEFAULT_FIND}" "${CFG_PORTALSAV}" -maxdepth 1 -type f \( -name "*${VERSAO}.zip" -o -name "*${VERSAO}.tar" -o -name "*${VERSAO}.tar.gz" \) -print0)
     fi
 
-    # Verificar se backup parcial existe e sugerir rollback, sem alterar nullglob.
+    # Verificar se backup desta versao existe e sugerir rollback, sem alterar nullglob.
+    # Prefixo correto e "backup_" (singular); -name ".*" cobre .tar, .tar.gz e .zip.
     local -a backups_parciais=()
-    while IFS= read -r -d '' arquivo_backup; do
-        backups_parciais+=("$arquivo_backup")
-    done < <("${DEFAULT_FIND}" "${DEFAULT_BIBLIOTECA_DIR}" -maxdepth 1 -type f \( -name "backups_biblioteca_antes_da_versao-*.zip" -o -name "backups_biblioteca_antes_da_versao-*.tar.gz" \) -print0)
+    if [[ -n "${VERSAO:-}" ]]; then
+        while IFS= read -r -d '' arquivo_backup; do
+            backups_parciais+=("$arquivo_backup")
+        done < <("${DEFAULT_FIND}" "${DEFAULT_BIBLIOTECA_DIR}" -maxdepth 1 -type f -name "backup_biblioteca_antes_da_versao-${VERSAO}.*" -print0)
+    fi
     if (( ${#backups_parciais[@]} > 0 )); then
         _aviso "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
     fi
@@ -334,7 +339,7 @@ _processar_atualizacao_biblioteca() {
 _executar_atualizacao_biblioteca() {
     # Validar diretorio de recebimento e a versao antes de montar arquivos ou atualizar .versao.
     if [[ -z "${CFG_PORTALSAV:-}" ]]; then
-        _erro "Diretorio $CFG_PORTALSAV nao configurado"
+        _erro "Diretorio ${CFG_PORTALSAV:-} nao configurado"
         return 1
     fi
     if ! _validar_versao_biblioteca "${VERSAO:-}"; then
@@ -379,8 +384,7 @@ _executar_atualizacao_biblioteca() {
             } &
             local pid_unzip=$!
             pids+=("$pid_unzip")  # Registrar PID para trap
-            _mostrar_progresso_backup "$pid_unzip" "Descompactando ${arquivo}"
-            if wait "$pid_unzip"; then
+            if _mostrar_progresso_backup "$pid_unzip" "Descompactando ${arquivo}"; then
                 _exibir_mensagem_centralizada "${VERDE}" "Descompactacao de ${arquivo} concluida com sucesso"
                 ((contador++)) || true
             else

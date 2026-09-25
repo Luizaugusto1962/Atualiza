@@ -305,15 +305,17 @@ _aguardar() {
 # Aguarda pressionar qualquer tecla com tempo_limite
 _aguardar_tecla() {
     local mensagem="${1:-... Pressione qualquer tecla para continuar ...}"
-    local tempo_limite="${2:-${DEFAULT_PRESS_TIMEOUT}}"
+    local tempo_limite="${2:-${DEFAULT_PRESS_TIMEOUT:-12}}"
     local colunas
 
     colunas=$(_obter_colunas)
 
     # Centralizar pela largura real da mensagem (antes usava 36 fixo)
     local msg_completa="<< $mensagem >>"
+    # %*s preenche ate a largura dada: com margem=(colunas+len)/2 o preenchimento
+    # liquido e (colunas-len)/2 espacos — centralizacao correta via largura do campo.
     local margem=$(( (colunas + ${#msg_completa}) / 2 ))
-    (( margem < 0 )) && margem=0
+    if (( margem < 0 )); then margem=0; fi
 
     printf "%s" "${CIANO}"
     printf "%*s\n" "$margem" "$msg_completa"
@@ -328,7 +330,7 @@ _opinvalida() {
     _linha "-" "${AMARELO:-}"
     # "Opcao Invalida" tem 14 caracteres (antes usava 18, deslocava 2 col)
     local espacos=$(( ($(_obter_colunas) - 14) / 2 ))
-    (( espacos < 0 )) && espacos=0
+    if (( espacos < 0 )); then espacos=0; fi
     printf "%*s%s\n" "$espacos" "" "${VERMELHO}Opcao Invalida${NORMAL}"
     _linha "-" "${AMARELO:-}"
 }
@@ -408,7 +410,7 @@ _formatar_tempo() {
     local min=$(( decorrido / 60 ))
     local seg=$(( decorrido % 60 ))
     local tempo_str=""
-    (( min > 0 )) && tempo_str="${min}m "
+    if (( min > 0 )); then tempo_str="${min}m "; fi
     tempo_str+="${seg}s"
     printf '%s' "$tempo_str"
 }
@@ -476,8 +478,14 @@ _mostrar_progresso_backup() {
     printf -v msg_format "%-25s" "$msg"
     printf -v tempo_format "%8s" "$(_formatar_tempo "$decorrido")"
 
-    printf "\r\033[K%s[OK]%s %s |%s| %s concluido\n" \
-        "${VERDE}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
+    if (( status_processo == 0 )); then
+        printf "\r\033[K%s[OK]%s %s |%s| %s concluido\n" \
+            "${VERDE}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
+    else
+        barra=" Falhou "
+        printf "\r\033[K%s[ERRO]%s %s |%s| %s falhou (codigo %s)\n" \
+            "${VERMELHO}" "${NORMAL}" "${msg_format}" "${VERMELHO}${barra}${NORMAL}" "${AMARELO}${tempo_format}" "${status_processo}"
+    fi
 
     return $status_processo
 }
@@ -576,7 +584,7 @@ _limpar_arquivos_antigos() {
     fi
 
     # Conta e remove em uma unica passada (find -delete evita um fork de rm por arquivo)
-    count=$(find "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" -print -delete 2>/dev/null | wc -l)
+    count=$("${DEFAULT_FIND:-find}" "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" -print -delete 2>/dev/null | wc -l)
     count="${count//[[:space:]]/}"
 
     if ((count > 0)); then
@@ -609,7 +617,7 @@ _executar_expurgador_diario() {
         fi
 
         # Remover flags antigas (mais de 3 dias)
-        find "${logs_dir}" -name ".expurgador_*" -mtime +3 -delete 2>/dev/null || true
+        "${DEFAULT_FIND:-find}" "${logs_dir}" -name ".expurgador_*" -mtime +3 -delete 2>/dev/null || true
     fi
 
     # Array de pares "dias:diretorio" (nao usar array associativo: chave vazia
@@ -652,7 +660,9 @@ _executar_expurgador_diario() {
 # Parametros: lista de programas a verificar (padrao: zip unzip rsync wget)
 _check_instalado() {
     local apps=("$@")
-    [[ ${#apps[@]} -eq 0 ]] && apps=(zip unzip rsync wget)
+    if (( ${#apps[@]} == 0 )); then
+        apps=(zip unzip rsync wget)
+    fi
 
     local faltand=()
     local install_cmd=""
