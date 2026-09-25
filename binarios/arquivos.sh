@@ -391,11 +391,6 @@ _limpar_base_especifica() {
             linha_limpa="${linha_limpa%"${linha_limpa##*[![:space:]]}"}"
             [[ -z "$linha_limpa" ]] && continue
             [[ "$linha_limpa" == \#* ]] && continue
-            # SEGURANCA: validar padrao antes de usa-lo no find/zip/rm
-            if ! _validar_padrao_limpeza "$linha_limpa"; then
-                _log "AVISO: padrao de limpeza invalido ignorado: ${linha_limpa}" "${LOG_LIMPA}"
-                continue
-            fi
             padroes_validos+=("$linha_limpa")
         done
     fi
