@@ -18,3 +18,5 @@ pacote.bat
 testsprite_tests/tmp/
 testsprite_tests/tmp/config.json
 *.py
+.npm-cache/
+npm-cache/
