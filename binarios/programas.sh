@@ -826,7 +826,9 @@ _processar_reversao_programas() {
 
         if [[ -f "$arquivo_anterior" ]]; then
             # SEGURANCA: Validar integridade do backup antes de reverter
-            if ! _validar_integridade_backup "$arquivo_anterior"; then
+            # Teste completo (3o parametro=1) independe de C_BACKUP_TESTE_INTEGRIDADE:
+            # reverter sobre zip nao validado nao pode depender de otimizacao do backup
+            if ! _validar_integridade_backup "$arquivo_anterior" 0 1; then
                 _erro "Backup invalido ou corrompido para ${programa}. Reversao abortada."
                 return 1
             fi
@@ -835,7 +837,10 @@ _processar_reversao_programas() {
                 _erro "Falha ao preparar backup para reversao de ${programa}"
                 return 1
             fi
-            ARQUIVOS_PROGRAMA[$programa_indice]="${programa}${compilado}.zip"
+            # Sem "$" no indice: ARQUIVOS_PROGRAMA e' array indexada (declare -a) e
+            # programa_indice e' numerico, entao o subindice e' contexto aritmetico
+            # (SC2004). Em array associativa o "$" seria obrigatorio.
+            ARQUIVOS_PROGRAMA[programa_indice]="${programa}${compilado}.zip"
             _exibir_mensagem_centralizada "${VERDE}" "Backup validado e preparado para reversao: ${programa}"
         else
             _erro "Backup nao encontrado para: ${programa}"
@@ -862,8 +867,17 @@ _validar_diretorio_backups() {
 }
 
 # Valida integridade de arquivo de backup
+# Parametros: $1=arquivo_backup
+#            $2=pular_tamanho (1=nao checar tamanho; use apos _validar_backup_criado)
+#            $3=teste_profundo (0=somente indice central do zip; 1=unzip -t completo.
+#               Default = C_BACKUP_TESTE_INTEGRIDADE)
+# O indice central (unzip -Z1) e proporcional ao numero de entradas e nao aos
+# dados: detecta zip truncado/invalido sem reler o conteudo. unzip -t relê e
+# descomprime o arquivo inteiro (CRC de tudo), praticamente dobrando o tempo.
 _validar_integridade_backup() {
     local arquivo_backup="${1:-}"
+    local pular_tamanho="${2:-0}"
+    local teste_profundo="${3:-${C_BACKUP_TESTE_INTEGRIDADE:-1}}"
 
     # Verificar se arquivo existe
     if [[ ! -f "${arquivo_backup}" ]]; then
@@ -873,19 +887,30 @@ _validar_integridade_backup() {
 
     # Verificar tamanho minimo (arquivo zip deve ter pelo menos 22 bytes)
     # Fallback para sistemas sem stat GNU (formato -c)
-    local tamanho
-    tamanho=$(stat -c%s "${arquivo_backup}" 2>/dev/null || true)
-    if [[ -z "${tamanho}" ]]; then
-        tamanho=$(stat -f%z "${arquivo_backup}" 2>/dev/null || true)
-    fi
-    if [[ -z "${tamanho}" || "${tamanho}" -lt 22 ]]; then
-        tamanho="${tamanho:-0}"
-        _erro "Arquivo de backup corrompido (tamanho: ${tamanho} bytes): ${arquivo_backup}"
-        return 1
+    if [[ "$pular_tamanho" != "1" ]]; then
+        local tamanho
+        tamanho=$(stat -c%s "${arquivo_backup}" 2>/dev/null || true)
+        if [[ -z "$tamanho" ]]; then
+            tamanho=$(stat -f%z "${arquivo_backup}" 2>/dev/null || true)
+        fi
+        if [[ -z "$tamanho" ]]; then
+            tamanho=0
+        fi
+        # Comparacao so com valor numerico: "stat -f" em GNU pode devolver lixo
+        if [[ ! "$tamanho" =~ ^[0-9]+$ ]] || (( tamanho < 22 )); then
+            _erro "Arquivo de backup corrompido (tamanho: ${tamanho} bytes): ${arquivo_backup}"
+            return 1
+        fi
     fi
 
-    # Testar integridade do arquivo zip
-    if ! "${DEFAULT_UNZIP}" -t "${arquivo_backup}" >/dev/null 2>&1; then
+    if [[ "$teste_profundo" == "0" ]]; then
+        # So o indice central: rapido, mas nao confere CRC do conteudo
+        if ! "${DEFAULT_UNZIP}" -Z1 "${arquivo_backup}" >/dev/null 2>&1; then
+            _erro "Arquivo de backup invalido ou corrompido: ${arquivo_backup}"
+            return 1
+        fi
+    elif ! "${DEFAULT_UNZIP}" -t "${arquivo_backup}" >/dev/null 2>&1; then
+        # Testar integridade do arquivo zip (rele e descomprime tudo)
         _erro "Arquivo de backup invalido ou corrompido: ${arquivo_backup}"
         return 1
     fi
@@ -960,7 +985,8 @@ _backup_programa_antigo() {
 
     # Validar integridade do backup criado
     if (( backup_criado )); then
-        if ! _validar_integridade_backup "$arquivo_backup"; then
+        # Teste completo (3o parametro=1) independe de C_BACKUP_TESTE_INTEGRIDADE
+        if ! _validar_integridade_backup "$arquivo_backup" 0 1; then
             _erro "CRITICO: Backup criado mas invalido para ${programa}"
             return 1
         fi

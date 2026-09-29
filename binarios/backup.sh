@@ -15,6 +15,11 @@ CFG_BASE_DIR3="${CFG_BASE_DIR3:-}"              # Caminho do diretorio da tercei
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
 
+# Estado interno compartilhado entre _coletar_arquivos_backup e _compactar_backup
+# (globais de proposito: sem declare -g, compativel com Bash 4.0+)
+_BACKUP_LISTA=()   # arquivos a compactar (relativos ao diretorio base)
+_BACKUP_BYTES=0    # soma dos tamanhos em bytes dos arquivos da lista
+
 # NOTA: trap INT/TERM registrado dentro de _executar_backup() e restaurado ao final
 _limpar_backup() {
     _log "Backup interrompido. Limpando temporarios..."
@@ -26,6 +31,8 @@ _limpar_backup() {
     # Remover arquivos parciais com validacao de caminho seguro
     if [[ -n "${DEFAULT_BASEBACKUP_DIR:-}" ]] && _validar_caminho_seguro "${DEFAULT_BASEBACKUP_DIR}"; then
         rm -f -- "${DEFAULT_BASEBACKUP_DIR}"/*.zip.tmp 2>/dev/null || true
+        # Lista de arquivos montada por _coletar_arquivos_backup (orfa em SIGINT)
+        rm -f -- "${DEFAULT_BASEBACKUP_DIR}"/.lista_backup_*.tmp 2>/dev/null || true
     fi
     # Remover zip parcial caso exista
     if [[ -n "${CAMINHO_BACKUP:-}" ]] && _validar_caminho_seguro "${CAMINHO_BACKUP}"; then
@@ -147,15 +154,12 @@ _validar_pre_backup() {
         _aguardar 3
         return 1
     fi
-    # Verificar espaco em disco (estimar via du -sk da base)
-    local tamanho_estimado
-    tamanho_estimado=$(_estimar_tamanho_backup "$_base_ref")
-    local espaco_necessario=$((tamanho_estimado * 2 / 1024))
-    if ! _verificar_espaco_disco "$DEFAULT_BASEBACKUP_DIR" "$espaco_necessario"; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Espaco em disco insuficiente em $DEFAULT_BASEBACKUP_DIR"
-        _aguardar 3
-        return 1
-    fi
+
+    # NOTA: a checagem de espaco em disco NAO e feita aqui de proposito.
+    # Estimar aqui exigiria "du -sk" (varredura completa da base) ANTES de
+    # listar os arquivos, e o resultado seria uma estimativa grosa: a base
+    # muda entre a estimate e o zip (e a limpeza de temporarios roda no meio).
+    # A verificacao precisa, feita sobre a lista real, esta em _compactar_backup.
 
     return 0
 }
@@ -294,6 +298,15 @@ _executar_backup() {
         _aviso "Nenhum arquivo modificado desde a data de referencia"
         _aguardar 3
         return 0
+    elif [[ $resultado -eq 3 ]]; then
+        # Codigo 3: zip integro, mas com arquivos que nao puderam ser lidos
+        trap '_encerrar_programa 130' INT TERM
+        _finalizar_backup_parcial "$nome_backup"
+        if ! _confirmar "Manter o backup parcial?" "S"; then
+            if rm -f -- "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}"; then
+                _exibir_mensagem_centralizada "$VERMELHO" "Backup parcial excluido"
+            fi
+        fi
     else
         trap '_encerrar_programa 130' INT TERM
         _erro "Erro ao criar backup"
@@ -375,21 +388,232 @@ _validar_backup_criado() {
     return 0
 }
 
+# Monta a lista de arquivos a compactar em UMA UNICA passada do find,
+# acumulando tambem o tamanho total em bytes (usado na checagem de espaco).
+# Antes eram duas operacoes separadas: "du -sk" (varredura completa) + "find"
+# (outra varredura completa) + a leitura em bash.
+# Parametros: $1=modo ("completo"|"incremental"|"multiplos") $2=data_referencia (opcional)
+# Saida: _BACKUP_LISTA (array) e _BACKUP_BYTES
+_coletar_arquivos_backup() {
+    local modo="${1:-completo}"
+    local data_referencia="${2:-}"
+    local _find="${DEFAULT_FIND:-find}"
+
+    _BACKUP_LISTA=()
+    _BACKUP_BYTES=0
+
+    # Um unico vetor de exclusoes, compartilhado por completo e incremental,
+    # para os dois modos nao poderem divergir. "*.tmp" tambem exclui o proprio
+    # zip em gravacao (.zip.tmp) e a lista temporaria (.lista_backup_*.tmp).
+    local -a find_args=(
+        -type f
+        ! -name "*.zip" ! -name "*.tar" ! -name "*.gz"
+        ! -name "*.log" ! -name "*.tmp" ! -name "*.old"
+    )
+    if [[ "$modo" == "incremental" && -n "$data_referencia" ]]; then
+        find_args=( -newermt "$data_referencia" "${find_args[@]}" )
+    fi
+
+    # SEGUROCAO: se o diretorio de backup estiver dentro da base, o zip em
+    # gravacao entraria na propria lista e cresceria durante a compactacao.
+    local _dir_backup
+    _dir_backup="${DEFAULT_BASEBACKUP_DIR:-}/"
+    if [[ "$_dir_backup" == "$(pwd)/"* ]]; then
+        local _rel
+        _rel=".${_dir_backup#"$(pwd)"}"
+        find_args=( \( -path "$_rel" -o -path "${_rel}*" \) -prune -o "${find_args[@]}" )
+    fi
+
+    # A lista vai para arquivo (nao pode ir para $( ) porque $( ) remove NUL)
+    local _lista_tmp="${DEFAULT_BASEBACKUP_DIR}/.lista_backup_$$.tmp"
+    "$_find" . "${find_args[@]}" -printf '%s\t%p\0' > "$_lista_tmp" 2>/dev/null || true
+
+    # find sem -printf (implementacao nao-GNU): refaz a listagem sem tamanhos
+    if [[ ! -s "$_lista_tmp" ]]; then
+        "$_find" . "${find_args[@]}" -print0 > "$_lista_tmp" 2>/dev/null || true
+    fi
+
+    local _registro _tam _nome
+    while IFS= read -r -d '' _registro; do
+        if [[ "$_registro" == *$'\t'* ]]; then
+            # Registro no formato "bytes<TAB>caminho"
+            _tam="${_registro%%$'\t'*}"
+            _nome="${_registro#*$'\t'}"
+        else
+            _tam=0
+            _nome="$_registro"
+        fi
+        if [[ ! "$_tam" =~ ^[0-9]+$ ]]; then
+            _tam=0
+        fi
+        _BACKUP_LISTA+=("$_nome")
+        _BACKUP_BYTES=$(( _BACKUP_BYTES + _tam ))
+    done < "$_lista_tmp"
+
+    rm -f -- "$_lista_tmp" 2>/dev/null || true
+}
+
+# Compacta _BACKUP_LISTA em um zip, de forma atomica e em uma unica passada.
+# Parametros: $1=arquivo_final (.zip) $2=modo (usado nas mensagens)
+# Retorna: 0 sucesso integral, 1 erro, 2 nada para compactar (incremental),
+#          3 parcial (zip integro, mas com arquivos que ficaram de fora)
+_compactar_backup() {
+    local arquivo_final="${1:-}"
+    local modo="${2:-completo}"
+
+    # Validar parametro
+    if [[ -z "$arquivo_final" ]]; then
+        _log_erro "Caminho do backup nao foi informado"
+        return 1
+    fi
+
+    if ((${#_BACKUP_LISTA[@]} == 0)); then
+        if [[ "$modo" == "incremental" ]]; then
+            _msg "Nenhum arquivo modificado desde a data de referencia"
+            return 2
+        fi
+        _aviso "Nenhum arquivo encontrado para backup"
+        return 1
+    fi
+
+    # Destino gravavel: checado ANTES do "> $log_parcial", senao o redirecionamento
+    # falha com erro cru do bash ("No such file or directory") no lugar de uma
+    # mensagem do sistema, e o usuario nao sabe o que aconteceu
+    local _dir_destino="${arquivo_final%/*}"
+    if [[ "$_dir_destino" == "$arquivo_final" ]]; then
+        _dir_destino="."
+    fi
+    if ! _validar_caminho_seguro "$_dir_destino" || [[ ! -d "$_dir_destino" ]]; then
+        _erro "Diretorio de destino do backup invalido ou inexistente: ${_dir_destino}"
+        return 1
+    fi
+    if [[ ! -w "$_dir_destino" ]]; then
+        _erro "Sem permissao de escrita no diretorio de destino: ${_dir_destino}"
+        return 1
+    fi
+
+    # Checagem de espaco sobre a lista real (nao sobre um "du -sk" da base),
+    # medida no disco onde o zip sera gravado
+    local necessario_kb
+    necessario_kb=$(_estimar_espaco_necessario_kb "$_BACKUP_BYTES")
+    if ! _verificar_espaco_disco "$_dir_destino" "$necessario_kb"; then
+        _erro "Espaco em disco insuficiente em $_dir_destino"
+        _erro "Necessario ~${necessario_kb}KB para ${#_BACKUP_LISTA[@]} arquivo(s)"
+        return 1
+    fi
+
+    # Gravacao atomica: compactar em .tmp e renomear so depois de validar.
+    # Zip interrompido/corrompido nunca aparece como backup restauravel.
+    local arquivo_tmp="${arquivo_final}.tmp"
+    rm -f -- "$arquivo_tmp" 2>/dev/null || true
+
+    # Nivel de compressao (C_ZIP_NIVEL): 1 = rapido, 6/9 = menor arquivo.
+    # -q silencia o "adding:" por arquivo (log massivo em bases grandes);
+    # -X nao grava campos extras de uid/gid: menor e mais rapido.
+    local nivel="${C_ZIP_NIVEL:-1}"
+    if [[ ! "$nivel" =~ ^[0-9]$ ]]; then
+        nivel=1
+    fi
+    local -a zip_flags=( -q -X "-${nivel}" )
+
+    local log_zip="${LOG_ATU:-/dev/null}"
+    local log_parcial="${arquivo_tmp}.log"
+    local rc_zip=0
+    # xargs em vez de "${arr[@]}" direto: respeita ARG_MAX (a versao anterior
+    # quebrava com "Argument list too long" em bases com muitos arquivos) e
+    # repete o zip em lotesautomaticos quando a lista nao cabe no argv.
+    printf '%s\0' "${_BACKUP_LISTA[@]}" \
+        | xargs -0 -r "$DEFAULT_ZIP" "${zip_flags[@]}" "$arquivo_tmp" > "$log_parcial" 2>&1 || rc_zip=$?
+
+    # Saida do zip vai para o log de verdade; aqui so a contagem de linhas
+    local qtd_erro=0
+    if [[ -s "$log_parcial" ]]; then
+        qtd_erro=$(wc -l < "$log_parcial" 2>/dev/null) || qtd_erro=0
+        cat "$log_parcial" >> "$log_zip" 2>/dev/null || true
+    fi
+    rm -f -- "$log_parcial" 2>/dev/null || true
+
+    # Definir permissao do arquivo backup
+    chmod "$PERM_FILE_BACKUP" "$arquivo_tmp" 2>/dev/null || true
+
+    # Validar backup criado
+    if ! _validar_backup_criado "$arquivo_tmp"; then
+        return 1
+    fi
+
+    # Validar integridade do zip (o tamanho ja foi conferido acima)
+    if ! _validar_integridade_backup "$arquivo_tmp" 1; then
+        _erro "Backup corrompido (falhou no teste de integridade)"
+        rm -f -- "$arquivo_tmp"
+        return 1
+    fi
+
+    # Conference final: entradas no zip x arquivos pretendidos. Detecta
+    # QUALQUER arquivo que ficou de fora (em uso, removido, sem permissao) e
+    # nao depende do texto do zip, que -q suprime (o aviso "name not matched"
+    # nao aparece com -q e o zip ainda devolve 0). Uma unica leitura do indice
+    # central: proporcional ao numero de entradas, nao aos dados.
+    # (Em modo raso de integridade, "unzip -Z1" e executado duas vezes: uma
+    # aqui e outra na validacao. Custo desprezivel diante da compactacao.)
+    local entradas_zip=0
+    entradas_zip=$("${DEFAULT_UNZIP}" -Z1 "$arquivo_tmp" 2>/dev/null | wc -l | tr -d ' ') || entradas_zip=0
+    local qtd_omitidos=$(( ${#_BACKUP_LISTA[@]} - entradas_zip ))
+
+    # Se algo faltou, identificar quais (comm exige as duas listas ordenadas;
+    # o zip grava o nome sem o "./" que o find devolve)
+    local -a _omitidos=()
+    if (( qtd_omitidos > 0 )); then
+        local _f
+        local -a _queridos=()
+        for _f in "${_BACKUP_LISTA[@]}"; do
+            _queridos+=( "${_f#./}" )
+        done
+        mapfile -t _omitidos < <(
+            comm -23 \
+                <(printf '%s\n' "${_queridos[@]}" | LC_ALL=C sort) \
+                <("${DEFAULT_UNZIP}" -Z1 "$arquivo_tmp" 2>/dev/null | LC_ALL=C sort) 2>/dev/null
+        ) || true
+    fi
+
+    if ! mv -f -- "$arquivo_tmp" "$arquivo_final"; then
+        _erro "Falha ao gravar o backup em ${arquivo_final}"
+        rm -f -- "$arquivo_tmp" 2>/dev/null || true
+        return 1
+    fi
+
+    # Zip integro, porem com arquivos que nao entraram (tipico de ISAM com o
+    # sistema em uso). O backup e aproveitavel, mas nao completo: avisar em
+    # vez de reportar sucesso silencioso, como fazia a versao anterior.
+    if (( qtd_omitidos > 0 )); then
+        _aviso "zip: ${qtd_omitidos} de ${#_BACKUP_LISTA[@]} arquivo(s) nao entraram no backup"
+        local _i
+        for ((_i = 0; _i < ${#_omitidos[@]} && _i < 5; _i++)); do
+            _exibir_mensagem_centralizada "${AMARELO}" "  omitido: ${_omitidos[$_i]}"
+        done
+        if (( ${#_omitidos[@]} > 5 )); then
+            _log "ZIP: ${#_omitidos[@]} arquivo(s) omitido(s) no total" "$log_zip"
+        fi
+        _log_sucesso "Backup ${modo} criado (PARCIAL): $arquivo_final"
+        return 3
+    fi
+
+    # Avisos do zip que NAO implicaram arquivo faltando: arquivo completo
+    if (( qtd_erro > 0 || rc_zip != 0 )); then
+        _log "ZIP: codigo ${rc_zip}, ${qtd_erro} aviso(s) no log; nenhum arquivo faltando" "$log_zip"
+    fi
+
+    _log_sucesso "Backup ${modo} criado: $arquivo_final"
+    return 0
+}
+
 # Executa backup completo ou incremental (funcoes auxiliares)
 # Parametros: $1=arquivo_destino $2=modo ("completo" ou "incremental") $3=data_referencia (opcional)
-# Retorna: 0 se sucesso, 1 se erro, 2 se nenhum arquivo encontrado (incremental)
+# Retorna: 0 sucesso, 1 erro, 2 se nenhum arquivo encontrado (incremental),
+#          3 se parcial (arquivos em uso ficaram de fora)
 _executar_backup_arquivo() {
     local arquivo_destino="${1:-}"
     local modo="${2:-}"
     local data_referencia="${3:-}"
-    local -a arquivos_para_zip=()
-    local arquivo_atual
-
-    # Validar parametro
-    if [[ -z "$arquivo_destino" ]]; then
-        _log_erro "Caminho do backup nao foi informado"
-        return 1
-    fi
 
     # Validar diretorio de trabalho
     if ! _diretorio_trabalho; then
@@ -397,60 +621,8 @@ _executar_backup_arquivo() {
         return 1
     fi
 
-    # Listar arquivos
-    if [[ "$modo" == "incremental" && -n "$data_referencia" ]]; then
-        while IFS= read -r -d "" arquivo_atual; do
-            arquivos_para_zip+=("$arquivo_atual")
-        done < <(find . -type f -newermt "$data_referencia" \
-             ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-             -print0)
-    else
-        while IFS= read -r -d "" arquivo_atual; do
-            arquivos_para_zip+=("$arquivo_atual")
-        done < <(find . -type f \
-             ! -name "*.zip" ! -name "*.tar" ! -name "*.gz" ! -name "*.log" ! -name "*.tmp" ! -name "*.old" \
-             -print0)
-    fi
-
-    if ((${#arquivos_para_zip[@]} == 0)); then
-        if [[ "$modo" == "incremental" ]]; then
-            _msg "Nenhum arquivo modificado desde $data_referencia"
-            return 2
-        fi
-        _aviso "Nenhum arquivo encontrado para backup"
-        return 1
-    fi
-
-    # Executar compactacao — ignorar erros de arquivo em uso (lock)
-    local resultado_zip=0
-    "$DEFAULT_ZIP" "$arquivo_destino" "${arquivos_para_zip[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
-
-    if [[ $resultado_zip -ne 0 ]]; then
-        _aviso "zip retornou erro $resultado_zip (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -f "$arquivo_destino" "${arquivos_para_zip[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip=$?
-    fi
-
-    if [[ $resultado_zip -ne 0 ]]; then
-        _aviso "Falha parcial ao criar backup (alguns arquivos podem estar em uso): $arquivo_destino"
-    fi
-
-    # Definir permissao do arquivo backup
-    chmod "$PERM_FILE_BACKUP" "$arquivo_destino" 2>/dev/null || true
-
-    # Validar backup criado
-    if ! _validar_backup_criado "$arquivo_destino"; then
-        return 1
-    fi
-
-    # Validar integridade do zip
-    if ! _validar_integridade_backup "$arquivo_destino"; then
-        _erro "Backup corrompido (falhou no teste de integridade)"
-        rm -f -- "$arquivo_destino"
-        return 1
-    fi
-
-    _log_sucesso "Backup ${modo} criado: $arquivo_destino"
-    return 0
+    _coletar_arquivos_backup "$modo" "$data_referencia"
+    _compactar_backup "$arquivo_destino" "$modo"
 }
 # Muda para o diretorio de trabalho
 # Retorna: 0 se sucesso, 1 se erro
@@ -625,14 +797,18 @@ _rotacionar_arquivos_base() {
     fi
 
     # Copiar arquivos existentes para backup de rotacao (nao move, para nao perder referencias)
-    local arquivo
-    find "$base_origem" -maxdepth 1 -type f -print0 2>/dev/null | while IFS= read -r -d '' arquivo; do
-        local nome_arquivo
-        nome_arquivo="${arquivo##*/}"
-        if [[ -n "$nome_arquivo" ]]; then
-            cp -p "$arquivo" "${backup_dir}/${nome_arquivo}.orig" 2>/dev/null || true
-        fi
-    done
+    # Em lote: um processo a cada 200 arquivos em vez de um "cp" por arquivo
+    # As aspas simples sao obrigatorias: o "$1"/"${arquivo##*/}" precisam ser
+    # expandidos pelo sh filho, nao pelo shell pai (SC2016 nao se aplica aqui).
+    # shellcheck disable=SC2016
+    find "$base_origem" -maxdepth 1 -type f -print0 2>/dev/null \
+        | xargs -0 -r -n 200 sh -c '
+            d="$1"
+            shift
+            for arquivo do
+                cp -p "$arquivo" "$d/${arquivo##*/}.orig" 2>/dev/null || true
+            done
+        ' sh "$backup_dir" 2>/dev/null || true
 
     _log_sucesso "Backup de seguranca criado em: $backup_dir"
     return 0
@@ -923,20 +1099,43 @@ _mover_backup_offline() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
+# Verifica espaco livre no disco. ATENCAO: as duas pontas estao em KB.
+# Parametros: $1=diretorio $2=espaco_minimo_kb (padrao 1048576 = 1GB)
+# A versao anterior comparava KB (df -kP) com um valor em bytes, o que tornava
+# a checagem ~512x mais fraca que a pretendida e so falhava em disco quase vazio.
 _verificar_espaco_disco() {
-    local diretorio="${1:-}" espaco_minimo="${2:-1048576}"
+    local diretorio="${1:-}" espaco_minimo_kb="${2:-1048576}"
+    if [[ ! "$espaco_minimo_kb" =~ ^[0-9]+$ ]]; then
+        espaco_minimo_kb=1048576
+    fi
     local espaco_disponivel
-    espaco_disponivel=$(df -kP "$diretorio" 2>/dev/null | awk 'NR==2 {print $4}')
-    [[ -n "$espaco_disponivel" ]] && (( espaco_disponivel >= espaco_minimo ))
+    espaco_disponivel=$(df -kP "$diretorio" 2>/dev/null | awk 'NR==2 {print $4}') || espaco_disponivel=""
+    if [[ ! "$espaco_disponivel" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+    (( espaco_disponivel >= espaco_minimo_kb ))
 }
 
-# Estima espaco em disco necessario para backup completo
-# Usa du -sk da base para estimar tamanho do backup
-_estimar_tamanho_backup() {
-    local base="${1:-}"
-    local tamanho_kb
-    tamanho_kb=$(du -sk "$base" 2>/dev/null | awk '{print $1}')
-    echo "${tamanho_kb:-0}"
+# Espaco necessario em KB para compactar uma lista de arquivos
+# Parametros: $1=bytes (soma dos tamanhos da lista)
+# Retorna: KB a exigir como espaco livre (C_BACKUP_ESPACO_RATIO % dos dados)
+_estimar_espaco_necessario_kb() {
+    local bytes="${1:-0}"
+    if [[ ! "$bytes" =~ ^[0-9]+$ ]]; then
+        bytes=0
+    fi
+    local ratio="${C_BACKUP_ESPACO_RATIO:-50}"
+    if [[ ! "$ratio" =~ ^[0-9]+$ ]]; then
+        ratio=50
+    fi
+    # Limites: 10% (nunca aceitar disco no limite) e 100% (pior caso: sem compressao)
+    if (( ratio > 100 )); then
+        ratio=100
+    fi
+    if (( ratio < 10 )); then
+        ratio=10
+    fi
+    echo $(( bytes * ratio / 100 / 1024 ))
 }
 
 # Verifica backups recentes (ultimos 2 dias)
@@ -1100,40 +1299,31 @@ _executar_backup_multiplos_padroes() {
     _aviso "Criando backup com multiplos padroes..."
     _linha
 
-    # Executar compactação com os arquivos especificados — ignorar erros de arquivo em uso
+    # Entregar a lista selecionada ao compactador compartilhado (gravacao
+    # atomica .tmp, lote via xargs, nivel de compressao e checagem de espaco).
+    # O tamanho sai de um unico "du -ck" (a lista e pequena e escolhida a mao).
+    _BACKUP_LISTA=("${arquivos_encontrados[@]}")
+    local _kb_total=0
+    _kb_total=$(du -ck -- "${_BACKUP_LISTA[@]}" 2>/dev/null | awk 'END {print $1}') || _kb_total=0
+    if [[ ! "$_kb_total" =~ ^[0-9]+$ ]]; then
+        _kb_total=0
+    fi
+    _BACKUP_BYTES=$(( _kb_total * 1024 ))
+
     resultado_zip_multi=0
-    "$DEFAULT_ZIP" "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_multi=$?
+    _compactar_backup "$caminho_backup" "multiplos" || resultado_zip_multi=$?
 
-    if [[ $resultado_zip_multi -ne 0 ]]; then
-        _aviso "zip multiplos retornou erro $resultado_zip_multi (possivel arquivo em uso), tentando forcar..."
-        "$DEFAULT_ZIP" -r -f "$caminho_backup" "${arquivos_encontrados[@]}" >>"${LOG_ATU:-/dev/null}" 2>&1 || resultado_zip_multi=$?
-    fi
-
-    if [[ $resultado_zip_multi -ne 0 ]]; then
-        _aviso "Falha parcial ao criar backup multiplos (alguns arquivos podem estar em uso): $caminho_backup"
-    fi
-
-    # Definir permissao do arquivo backup
-    chmod "$PERM_FILE_BACKUP" "$caminho_backup" 2>/dev/null || true
-
-    # Verificar se o backup foi criado
-    if [[ ! -f "$caminho_backup" ]]; then
+    if [[ $resultado_zip_multi -eq 0 ]]; then
+        _finalizar_backup_sucesso "$nome_backup"
+    elif [[ $resultado_zip_multi -eq 3 ]]; then
+        _finalizar_backup_parcial "$nome_backup"
+    else
         _erro "Backup nao foi criado"
         _aguardar 3
         return 1
     fi
 
-    # Validar integridade
-    if ! _validar_integridade_backup "$caminho_backup"; then
-        _erro "CRITICO: Backup criado mas invalido (corrompido)"
-        rm -f -- "$caminho_backup"
-        _aguardar 3
-        return 1
-    fi
-
-    # Finalizar com sucesso
-    _finalizar_backup_sucesso "$nome_backup"
-
+    _linha
 
     # Perguntar sobre envio
     if _confirmar "Deseja enviar backup para servidor?" "N"; then
@@ -1161,4 +1351,16 @@ _finalizar_backup_sucesso() {
         _exibir_mensagem_centralizada "$AMARELO" "Backup Concluido!"
         _linha
     fi
+}
+
+# Finaliza um backup PARCIAL: zip integro e utilizavel, porem com arquivos que
+# nao puderam ser lidos (normal em ISAM com o sistema em uso). A versao antiga
+# reportava "Backup Concluido!" sem avisar dos arquivos que faltaram.
+_finalizar_backup_parcial() {
+    local nome_backup="${1:-}"
+
+    _finalizar_backup_sucesso "$nome_backup"
+    _exibir_mensagem_centralizada "${VERMELHO}" "ATENCAO: backup PARCIAL - alguns arquivos estavam em uso e ficaram de fora"
+    _exibir_mensagem_centralizada "${AMARELO}" "Arquivos omitidos estao listados em ${LOG_ATU:-log do sistema}"
+    _linha
 }

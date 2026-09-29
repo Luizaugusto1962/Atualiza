@@ -258,6 +258,24 @@ C_JUTIL_PROGRESSO="${C_JUTIL_PROGRESSO:-1}"                    # 1=barra agregad
 C_LOG_LINHAS="${C_LOG_LINHAS:-200}"                            # Linhas exibidas por log em _listar_logs
 
 # =============================================================================
+# CONFIGURACOES DE BACKUP (backup.sh)
+# =============================================================================
+# 1 = "unzip -t" completo: relê e descomprime o arquivo inteiro, praticamente
+# dobrando o tempo total do backup. 0 = valida somente o indice central do zip
+# (proporcional ao numero de entradas, nao aos dados), detectando truncamento
+# mas nao erro de CRC. Use 0 em bases grandes quando tempo de compactacao for
+# mais critico que a conferencia imediata; o resto do processo ja validou o zip.
+C_BACKUP_TESTE_INTEGRIDADE="${C_BACKUP_TESTE_INTEGRIDADE:-1}"      # 1=unzip -t completo, 0=somente indice central
+# Percentual do tamanho CRU dos arquivos que precisa estar livre no disco de
+# backup antes de comecar (o zip e <= aos dados; a folga cobre o .tmp parcial).
+# 10-100, default 50 (ISAM costuma comprimir por bem mais que 2x).
+C_BACKUP_ESPACO_RATIO="${C_BACKUP_ESPACO_RATIO:-50}"              # % do tamanho cru exigido como espaco livre
+# Nivel de compressao do zip: 1 = mais rapido (default, ~2-3x mais rapido que 6
+# com 5-10% de tamanho extra), 6/9 = menor arquivo (use quando o gargalo for a
+# transferencia, nao a CPU). Aceita apenas um digito; valor invalido cai em 1.
+C_ZIP_NIVEL="${C_ZIP_NIVEL:-1}"                                   # Nivel de compressao do zip (0-9)
+
+# =============================================================================
 # CONFIGURACOES DE ATUALIZACAO DE PROGRAMAS
 # =============================================================================
 MAX_PROGRAMAS_SELECIONADOS="${MAX_PROGRAMAS_SELECIONADOS:-6}"  # Limite de programas por atualizacao
@@ -294,4 +312,5 @@ export SAVISC ISCCLIENT JUTIL REBUILD
 export LOG_ATU LOG_LIMPA LOG_TMP UMADATA compilado debugado
 export MAX_PROGRAMAS_SELECIONADOS EXTENSAO_CLASS EXTENSAO_TELAS VERSAO
 export C_JUTIL_PARALELO C_JUTIL_SEQUENCIAL C_JUTIL_PROGRESSO C_LOG_LINHAS
+export C_BACKUP_TESTE_INTEGRIDADE C_BACKUP_ESPACO_RATIO C_ZIP_NIVEL
 export MAX_LOGIN_ATTEMPTS C_BLOQUEIO_LOGIN HASH_ALGORITHM
