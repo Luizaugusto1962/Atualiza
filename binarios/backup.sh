@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/09/2026
+# Versao: 30/09/2026
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -222,7 +222,10 @@ _executar_backup() {
     _linha
 
     # Executar limpeza de temporarios antes do backup (modo automatico: so a base do backup, sem pausas)
-    _executar_limpeza_temporarios automatico || true
+    # _tentar_log em vez de "|| true": o backup nao pode ser bloqueado pela
+    # limpeza, mas a falha precisa ficar registrada. Ver _tentar_log (utils.sh)
+    # sobre o errexit ficar suspenso em qualquer chamada tolerante a falha.
+    _tentar_log "limpeza automatica de temporarios" "${LOG_LIMPA}" _executar_limpeza_temporarios automatico
 
     _linha
     _exibir_mensagem_centralizada "$AMARELO" "Criando Backup da pasta: ${base_trabalho}..."
@@ -1179,7 +1182,9 @@ _executar_backup_multiplos_padroes() {
     fi
 
     # Executar limpeza de temporarios antes do backup (modo automatico: so a base do backup, sem pausas)
-    _executar_limpeza_temporarios automatico || true
+    # _tentar_log em vez de "|| true": o backup nao pode ser bloqueado pela
+    # limpeza, mas a falha precisa ficar registrada. Ver _tentar_log (utils.sh).
+    _tentar_log "limpeza automatica de temporarios" "${LOG_LIMPA}" _executar_limpeza_temporarios automatico
 
     # Solicitar padrões de arquivos
     local padroes=()

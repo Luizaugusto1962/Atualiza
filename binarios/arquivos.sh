@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/09/2026
+# Versao: 30/09/2026
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -15,7 +15,16 @@ DEFAULT_PROGS_ATUAL_DIR="${DEFAULT_PROGS_ATUAL_DIR:-}"      # Caminho do diretor
 DEFAULT_PROGS_DIR="${DEFAULT_PROGS_DIR:-}"      # Caminho do diretorio de programas (ex: /savisc/programas/anterior)
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
-DATA_EXTENSIONS=()                              # Extensoes de arquivos de dados a processar
+# Idade minima (em dias) para expurgar os diretorios do arquivo limpadir.
+# Igual ao expurgo principal (+30). Ajustavel por quem opera a base.
+LIM_PADIR_DIAS="${LIM_PADIR_DIAS:-30}"
+[[ "$LIM_PADIR_DIAS" =~ ^[0-9]+$ ]] || LIM_PADIR_DIAS=30
+# Extensoes de arquivos de dados a processar em _recuperar_todos_arquivos.
+# Nao resetar aqui: um valor vindo de constantes.sh/.config precisa sobreviver
+# ao source. Vazio = fallback "*.dat" dentro da funcao.
+if ! declare -p DATA_EXTENSIONS >/dev/null 2>&1; then
+    DATA_EXTENSIONS=()
+fi
 
 # =============================================================================
 # GESTAO DE PROCESSOS EM SEGUNDO PLANO (jutil)
@@ -164,6 +173,12 @@ _selecionar_base_arquivos() {
 #   - sem pausas interativas (_aguardar_tecla)
 #   - erros de lista/diretorio sao apenas logged, nunca abortam o fluxo do backup
 # Retorna: 0 se a limpeza rodou, 1 se pre-requisitos invalidos (modo automatico nao deve bloquear o backup)
+#
+# IMPORTANTE (padrao de robustez): esta funcao e chamada de forma tolerante a
+# falha (_tentar_log em backup.sh/menus.sh). No Bash isso suspende o `set -e`
+# por todo o escopo dinamico da chamada, logo NENHUM comando aqui pode depender
+# do errexit para abortar — todos os falliveis sao guardados explicitamente
+# (return 1 + log). Ver _tentar_log em utils.sh.
 _executar_limpeza_temporarios() {
     local modo="${1:-}"
     local automatico=0
@@ -348,6 +363,15 @@ _limpar_base_especifica() {
         return 1
     fi
 
+    if [[ ! -r "${arquivo_lista}" ]]; then
+        _log "ERRO: arquivo de lista sem permissao de leitura: ${arquivo_lista}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 1
+        fi
+        _erro "Arquivo de lista sem permissao de leitura"
+        return 1
+    fi
+
     # Validar diretorio de backup (a menos que o chamador ja tenha validado)
     local backup_valido=0
     if [[ "${backup_ok}" == "1" ]]; then
@@ -369,7 +393,16 @@ _limpar_base_especifica() {
     fi
 
     # Ler lista de arquivos temporarios (ignora vazias e comentarios)
-    mapfile -t arquivos_temp < "${arquivo_lista}"
+    # Guarda explicita: o chamador (_tentar_log) suspende o errexit dentro
+    # desta funcao, entao nao se pode confiar em `set -e` para abortar aqui.
+    if ! mapfile -t arquivos_temp < "${arquivo_lista}"; then
+        _log "ERRO: falha ao ler a lista de temporarios: ${arquivo_lista}" "${LOG_LIMPA}"
+        if (( automatico )); then
+            return 1
+        fi
+        _erro "Falha ao ler a lista de temporarios"
+        return 1
+    fi
 
     if (( ! automatico )); then
         _aviso "Limpando arquivos temporarios do diretorio: ${caminho_base}"
@@ -383,7 +416,7 @@ _limpar_base_especifica() {
 
     # Filtrar padroes validos 1x (seguranca + evita N finds para lixo)
     local -a padroes_validos=()
-    local padrao_arquivo linha_limpa
+    local linha_limpa
     if (( ${#arquivos_temp[@]} > 0 )); then
         for padrao_arquivo in "${arquivos_temp[@]}"; do
             # trim simples sem fork
@@ -391,6 +424,13 @@ _limpar_base_especifica() {
             linha_limpa="${linha_limpa%"${linha_limpa##*[![:space:]]}"}"
             [[ -z "$linha_limpa" ]] && continue
             [[ "$linha_limpa" == \#* ]] && continue
+            # SEGURANCA: validar padrao antes de usa-lo no find/zip/rm. Sem
+            # isso, uma linha "*" no limpetmp faria o find casar com todo
+            # arquivo da base e o rm -f em lote apagaria dados.
+            if ! _validar_padrao_limpeza "$linha_limpa"; then
+                _log "AVISO: padrao de limpeza invalido ignorado: ${linha_limpa}" "${LOG_LIMPA}"
+                continue
+            fi
             padroes_validos+=("$linha_limpa")
         done
     fi
@@ -625,10 +665,22 @@ _recuperar_arquivo_especifico() {
 _recuperar_todos_arquivos() {
     local base_trabalho="${1:-}"
     local -a extensoes=()
-    if [[ ${#DATA_EXTENSIONS[@]} -gt 0 ]]; then
+# Sem extensoes configuradas = *.dat (unico). DATA_EXTENSIONS pode ser escalar
+# (string) ou array. O gate usa ${#arr[@]} (seguro com array vazio) e NAO
+# "${arr[@]}" direto: em Bash 4.0/4.1 (Ubuntu 10.04/12.04) expandir array vazio
+# sob set -u aborta o shell. Mesma razao dos guards ${x[@]+"${x[@]}"} no PIDS_JUTIL.
+local -a data_ext=()
+if declare -p DATA_EXTENSIONS 2>/dev/null | grep -q 'declare -a'; then
+    if (( ${#DATA_EXTENSIONS[@]} > 0 )); then
+        data_ext=("${DATA_EXTENSIONS[@]}")
+    fi
+elif [[ -n "${DATA_EXTENSIONS:-}" ]]; then
+    data_ext=("${DATA_EXTENSIONS}")
+fi
+    if (( ${#data_ext[@]} > 0 )); then
         # Filtrar padroes amplos/inseguros (ex: "*" varreria a base toda).
         local ext_candidata
-        for ext_candidata in "${DATA_EXTENSIONS[@]}"; do
+        for ext_candidata in "${data_ext[@]}"; do
             if _validar_padrao_limpeza "$ext_candidata"; then
                 extensoes+=("$ext_candidata")
             else
@@ -661,8 +713,8 @@ _recuperar_todos_arquivos() {
     local arquivo
     local -a lote_todos=()
     local qtd_links=0 qtd_vazios=0 qtd_outros=0
-    _JUTIL_LOTE_OK=0
-    _JUTIL_LOTE_FALHAS=0
+    # _JUTIL_LOTE_OK/_JUTIL_LOTE_FALHAS sao definidos por _executar_jutil_lote;
+    # o resumo usa ${var:-0} para o caso de lote vazio (funcao nao chamada).
     # 1 unica passada no diretorio: classifica alvo vs nao-alvo em memoria
     # (evita o 2o find so para contar qtd_outros).
     local nome_base nome_lower padrao_lower e_alvo ext
@@ -705,9 +757,11 @@ _recuperar_todos_arquivos() {
     fi
 
     _linha "-" "${AMARELO}"
-    _exibir_mensagem_centralizada "${CIANO}" "Resumo: ${#lote_todos[@]} alvo(s) (${_JUTIL_LOTE_OK:-0} recuperado(s), ${_JUTIL_LOTE_FALHAS:-0} falha(s), ${qtd_links} link(s), ${qtd_vazios} vazio(s), ${qtd_outros} nao-.dat ignorado(s))"
+    # Resumo em termos das extensoes realmente em uso (nao assumir ".dat").
+    local rotulo_ext="${extensoes[*]}"
+    _exibir_mensagem_centralizada "${CIANO}" "Resumo: ${#lote_todos[@]} alvo(s) (${_JUTIL_LOTE_OK:-0} recuperado(s), ${_JUTIL_LOTE_FALHAS:-0} falha(s), ${qtd_links} link(s), ${qtd_vazios} vazio(s), ${qtd_outros} fora de '${rotulo_ext}' ignorado(s))"
     _linha "-" "${AMARELO}"
-    _log "Recuperacao total em ${base_trabalho}: ${#lote_todos[@]} alvo(s), ${_JUTIL_LOTE_OK:-0} ok, ${_JUTIL_LOTE_FALHAS:-0} falhas, ${qtd_links} links, ${qtd_vazios} vazios, ${qtd_outros} nao-.dat" "${LOG_ATU:-/dev/null}"
+    _log "Recuperacao total em ${base_trabalho}: ${#lote_todos[@]} alvo(s), ${_JUTIL_LOTE_OK:-0} ok, ${_JUTIL_LOTE_FALHAS:-0} falhas, ${qtd_links} links, ${qtd_vazios} vazios, ${qtd_outros} fora de '${rotulo_ext}'" "${LOG_ATU:-/dev/null}"
     return "$rc"
 }
 
@@ -756,8 +810,9 @@ _recuperar_arquivo_individual() {
     # apenas NOME.*.dat, que exige dois pontos e nunca casa com NOME.dat.
     padroes_busca=("${nome_arquivo}" "${nome_arquivo}.dat" "${nome_arquivo}.*.dat")
 
-    old_nullglob=$(shopt -p nullglob)
-    old_nocaseglob=$(shopt -p nocaseglob)
+    # shopt -p retorna 1 com opção desligada — || true evita abortar sob set -e.
+    old_nullglob=$(shopt -p nullglob) || true
+    old_nocaseglob=$(shopt -p nocaseglob) || true
     # Usar nocaseglob apenas localmente para este loop
     shopt -s nullglob nocaseglob
     local -a lote_individual=()
@@ -825,6 +880,7 @@ _executar_lista_arquivos() {
     _linha
 
     local total=0
+    local linha
     local -A bases_lista=()
     local -a ordem_bases=()
 
@@ -1047,7 +1103,8 @@ _recuperar_arquivos_principais() {
     var_ano4=$(date +%Y)
 
     # Criar lista temporaria (glob seguro em vez de ls — evita quebra por nomes com espacos/glob)
-    old_nullglob=$(shopt -p nullglob)
+    # shopt -p retorna 1 com opção desligada — || true evita abortar sob set -e.
+    old_nullglob=$(shopt -p nullglob) || true
     shopt -s nullglob
     {
         local arquivo_ate arquivo_nfe
@@ -1066,24 +1123,34 @@ _recuperar_arquivos_principais() {
 
     _aguardar 1
 
-    # Verificar se indexar2 tem conteudo antes de processar
+    # Nao anunciar sucesso quando _processar_lista_arquivos reportou falhas.
+    local rc_geral=0
     if [[ -f "${CFG_DIR}/indexar2" && -s "${CFG_DIR}/indexar2" ]]; then
-        _processar_lista_arquivos "${CFG_DIR}/indexar2" "$base_trabalho"
+        if ! _processar_lista_arquivos "${CFG_DIR}/indexar2" "$base_trabalho"; then
+            rc_geral=1
+        fi
     fi
 
     # Verificar arquivos de lista
     if [[ -f "${CFG_DIR}/indexar" && -r "${CFG_DIR}/indexar" ]]; then
-        _processar_lista_arquivos "${CFG_DIR}/indexar" "$base_trabalho"
+        if ! _processar_lista_arquivos "${CFG_DIR}/indexar" "$base_trabalho"; then
+            rc_geral=1
+        fi
     fi
 
     # Limpar arquivo temporario
     [[ -f "${CFG_DIR}/indexar2" ]] && rm -f -- "${CFG_DIR}/indexar2"
 
-    _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
+    if (( rc_geral == 0 )); then
+        _exibir_mensagem_centralizada "${AMARELO}" "Arquivos principais recuperados"
+    else
+        _aviso "Recuperacao concluida com falhas — consulte o log de atualizacao"
+        _log "AVISO: recuperacao de arquivos principais terminou com falhas em ${base_trabalho}" "${LOG_ATU:-/dev/null}"
+    fi
 
     _aguardar_tecla
     cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
-    return 0
+    return "$rc_geral"
 }
 
 # Processa lista de arquivos para recuperacao
@@ -1100,23 +1167,31 @@ _processar_lista_arquivos() {
     # Coleta validada em lote (1 jutil paralelo no final em vez de N sequenciais)
     local -a lote_lista=()
     local -A vistos_lote=()
+    # Contadores separados: entradas ausentes/vazias na base NAO sao falha de
+    # recuperacao, sao lista desatualizada. Antes elas entravam no lote, viravam
+    # "Nao recuperou" e inflavam _JUTIL_LOTE_FALHAS.
+    local qtd_links=0 qtd_ausentes=0 qtd_vazios=0 qtd_invalidos=0
+    local listando
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
 
         # SEGURANCA: aceitar apenas nomes simples de arquivo .dat (sem caminho/glob/traversal)
         if [[ "$listando" != *.dat ]]; then
             _aviso "Entrada invalida ignorada na lista (nao e .dat): ${listando}"
+            ((qtd_invalidos++)) || true
             continue
         fi
 
         if ! _validar_padrao_limpeza "${listando%.dat}"; then
             _aviso "Entrada invalida ignorada na lista: ${listando}"
+            ((qtd_invalidos++)) || true
             continue
         fi
 
         caminho_arquivo="${base_trabalho}/${listando}"
         if ! _validar_caminho_seguro "$caminho_arquivo"; then
             _aviso "Caminho invalido ignorado: ${caminho_arquivo}"
+            ((qtd_invalidos++)) || true
             continue
         fi
         [[ -n "${vistos_lote[$caminho_arquivo]:-}" ]] && continue
@@ -1124,10 +1199,21 @@ _processar_lista_arquivos() {
 
         if [[ -L "$caminho_arquivo" ]]; then
             _aviso "Arquivo linkado, pulando: ${listando}"
+            ((qtd_links++)) || true
+        elif [[ ! -e "$caminho_arquivo" ]]; then
+            _log "Lista desatualizada: ${listando} nao existe em ${base_trabalho}" "${LOG_ATU:-/dev/null}"
+            ((qtd_ausentes++)) || true
+        elif [[ ! -s "$caminho_arquivo" ]]; then
+            _aviso "Arquivo vazio, pulando: ${listando}"
+            ((qtd_vazios++)) || true
         else
             lote_lista+=("$caminho_arquivo")
         fi
     done < "$arquivo_lista"
+
+    if (( qtd_ausentes > 0 || qtd_links > 0 || qtd_vazios > 0 || qtd_invalidos > 0 )); then
+        _log "Lista ${arquivo_lista}: ${#lote_lista[@]} p/ jutil, ${qtd_ausentes} ausente(s), ${qtd_links} link(s), ${qtd_vazios} vazio(s), ${qtd_invalidos} invalido(s)" "${LOG_ATU:-/dev/null}"
+    fi
 
     if (( ${#lote_lista[@]} > 0 )); then
         _executar_jutil_lote "${lote_lista[@]}" || return 1
@@ -1149,11 +1235,36 @@ _validar_rebuild() {
     return 0
 }
 
+# Lote sequencial legado: chama _executar_jutil em TODOS os itens (preserva as
+# mensagens exatas, inclusive os avisos de link/vazio/inexistente) e so classifica
+# o resultado depois. _executar_jutil devolve 0 tanto para sucesso quanto para
+# link/vazio — sem a classificacao, _JUTIL_LOTE_OK inflaria com pulados.
+# Parametros: lista de arquivos; Entrada: _JUTIL_LOTE_* ja zerados pelo chamador
+# Saida: atualiza _JUTIL_LOTE_OK/_JUTIL_LOTE_FALHAS/_JUTIL_LOTE_PULADOS
+# Retorna: 0 se todos ok, 1 se ao menos um falhou
+_executar_jutil_lote_sequencial() {
+    local arquivo rc=0
+    for arquivo in "$@"; do
+        if _executar_jutil "$arquivo"; then
+            if [[ -L "$arquivo" || ! -e "$arquivo" || ! -s "$arquivo" ]]; then
+                ((_JUTIL_LOTE_PULADOS++)) || true
+            else
+                ((_JUTIL_LOTE_OK++)) || true
+            fi
+        else
+            rc=1
+            ((_JUTIL_LOTE_FALHAS++)) || true
+        fi
+    done
+    return "$rc"
+}
+
 # Executa jutil em lote com paralelismo controlado (Bash 4.0+, sem wait -n)
 # Parametros: lista de arquivos (cada $1..$n um caminho)
 # Comportamento: C_JUTIL_SEQUENCIAL=1 ou C_JUTIL_PARALELO<=1 cai no legado
-#   sequencial via _executar_jutil (mesma saida). Caso contrario dispara ate
-#   N REBUILD em paralelo, espera todos e aplica chmod em lote unico.
+#   sequencial via _executar_jutil_lote_sequencial (mesma saida). Caso contrario
+#   dispara ate N REBUILD em paralelo, espera todos e aplica chmod em lote unico.
+# saida: _JUTIL_LOTE_OK/_JUTIL_LOTE_FALHAS/_JUTIL_LOTE_PULADOS (contadores)
 # Retorna: 0 se todos ok, 1 se ao menos um falhou
 _executar_jutil_lote() {
     local -a lista=("$@")
@@ -1161,6 +1272,7 @@ _executar_jutil_lote() {
     # Resultado do lote para o resumo do chamador (sempre definidos na saida)
     _JUTIL_LOTE_OK=0
     _JUTIL_LOTE_FALHAS=0
+    _JUTIL_LOTE_PULADOS=0
     if (( total == 0 )); then
         return 0
     fi
@@ -1175,18 +1287,10 @@ _executar_jutil_lote() {
         paralelo=1
     fi
 
-    # Fallback legado: sequencial preserva saida/Mensagens exatas
+    # Fallback legado: sequencial preserva saida/Mensagens exatas.
     if [[ "${C_JUTIL_SEQUENCIAL:-0}" == "1" ]] || (( paralelo <= 1 || total <= 1 )); then
-        local arquivo rc=0
-        for arquivo in "${lista[@]}"; do
-            if _executar_jutil "$arquivo"; then
-                ((_JUTIL_LOTE_OK++)) || true
-            else
-                rc=1
-                ((_JUTIL_LOTE_FALHAS++)) || true
-            fi
-        done
-        return "$rc"
+        _executar_jutil_lote_sequencial "${lista[@]}"
+        return "$?"
     fi
 
     if (( paralelo > total )); then
@@ -1197,16 +1301,8 @@ _executar_jutil_lote() {
     dir_status=$(mktemp -d -t jutil_lote.XXXXXX) || {
         # Fallback sem dir temporario: sequencial com os mesmos contadores do
         # caminho legado (o chamador usa _JUTIL_LOTE_OK/FALHAS no resumo).
-        local arquivo rc=0
-        for arquivo in "${lista[@]}"; do
-            if _executar_jutil "$arquivo"; then
-                ((_JUTIL_LOTE_OK++)) || true
-            else
-                rc=1
-                ((_JUTIL_LOTE_FALHAS++)) || true
-            fi
-        done
-        return "$rc"
+        _executar_jutil_lote_sequencial "${lista[@]}"
+        return "$?"
     }
 
     local mostrar="${C_JUTIL_PROGRESSO:-1}"
@@ -1220,7 +1316,7 @@ _executar_jutil_lote() {
     local -a fila=("${lista[@]}")
     local inicio=0
     local arquivo status_arquivo
-    local falhas=0 concluidos=0
+    local falhas=0 concluidos=0 pulados=0
     local -a pids_onda=()
     local -a idx_onda=()
 
@@ -1234,19 +1330,21 @@ _executar_jutil_lote() {
         idx_onda=()
         for ((indice = inicio; indice < fim; indice++)); do
             arquivo="${fila[$indice]}"
+            # Codigos de status: 0=ok, 1=falha, 2=pulado (link/vazio, ja avisado).
+            # "2" mantem pulados fora de _JUTIL_LOTE_OK, que antes inflava o resumo.
             if [[ -L "$arquivo" ]]; then
                 _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
-                printf '0' > "${dir_status}/${indice}.status"
+                printf '2' > "${dir_status}/${indice}.status"
                 continue
             fi
             if [[ ! -e "$arquivo" ]]; then
                 _aviso "Arquivo nao encontrado, pulando: ${arquivo##*/}"
-                printf '1' > "${dir_status}/${indice}.status"
+                printf '3' > "${dir_status}/${indice}.status"
                 continue
             fi
             if [[ ! -s "$arquivo" ]]; then
                 _aviso "Arquivo vazio, pulando: ${arquivo##*/}"
-                printf '0' > "${dir_status}/${indice}.status"
+                printf '2' > "${dir_status}/${indice}.status"
                 continue
             fi
             {
@@ -1284,12 +1382,17 @@ _executar_jutil_lote() {
             status_arquivo=1
         fi
         if [[ "$status_arquivo" == "0" ]]; then
-            # Pular os que ja foram avisados como link/vazio acima chegam como 0 sem log duplo
-            if [[ -e "$arquivo" && -s "$arquivo" && ! -L "$arquivo" ]]; then
-                _log_sucesso "Rebuild executado: ${arquivo##*/}"
-                ok_lista+=("$arquivo")
-            fi
+            # 0 so e escrito pelo subshell apos REBUILD retornar 0 — nao ha mais
+            # link/vazio mascarando sucesso (esses chegam como 2).
+            _log_sucesso "Rebuild executado: ${arquivo##*/}"
+            ok_lista+=("$arquivo")
             ((concluidos++)) || true
+        elif [[ "$status_arquivo" == "2" ]]; then
+            # Link ou vazio: ja avisado na onda, nao conta como recuperado nem falha.
+            ((pulados++)) || true
+        elif [[ "$status_arquivo" == "3" ]]; then
+            # Ausente na base: aviso especifico, conta como falha (pedido no indice).
+            ((falhas++)) || true
         elif [[ "$status_arquivo" == "137" || "$status_arquivo" == "143" ]]; then
             # SIGKILL/SIGTERM (ex: OOM-killer matou o jutil sob paralelismo).
             # Guarda para retry sequencial abaixo, que usa menos memoria.
@@ -1343,7 +1446,6 @@ _executar_jutil_lote() {
         # abortar sob set -e (AGENTS.md: set -euo pipefail obrigatorio).
         old_nullglob=$(shopt -p nullglob) || true
         shopt -s nullglob
-        local idx
         for dir_arquivo in "${!dirs_vistos[@]}"; do
             # shellcheck disable=SC2206
             local idx_lista=("${dir_arquivo}"/*.idx)
@@ -1356,7 +1458,6 @@ _executar_jutil_lote() {
         else
             shopt -s nullglob
         fi
-        unset -v idx || true
     fi
 
     # Limpar PIDs do rastreador que ja terminaram (manter so ainda-ativos)
@@ -1377,8 +1478,9 @@ _executar_jutil_lote() {
 
     _JUTIL_LOTE_OK="$concluidos"
     _JUTIL_LOTE_FALHAS="$falhas"
+    _JUTIL_LOTE_PULADOS="$pulados"
     _linha "-" "${VERDE}"
-    _log "Lote jutil concluido: ${concluidos} ok, ${falhas} falha(s)" "${LOG_ATU:-/dev/null}"
+    _log "Lote jutil concluido: ${concluidos} ok, ${falhas} falha(s), ${pulados} pulado(s)" "${LOG_ATU:-/dev/null}"
     if (( falhas > 0 )); then
         return 1
     fi
@@ -1412,7 +1514,8 @@ _executar_jutil() {
 
     local dir_arquivo base_arquivo arquivo_indice old_nullglob
     local pid_jutil resultado novos _p
-    old_nullglob=$(shopt -p nullglob)
+    # shopt -p retorna 1 com opção desligada — || true evita abortar sob set -e.
+    old_nullglob=$(shopt -p nullglob) || true
     shopt -s nullglob
 
     # Disparar jutil em segundo plano, com saida no log de atualizacao
@@ -1497,10 +1600,14 @@ _enviar_arquivo_avulso() {
         _linha
         _exibir_mensagem_centralizada "${AMARELO}" "Usando diretorio padrao: ${diretorio_origem}"
         # Verificar se há arquivos no diretório
-        old_nullglob=$(shopt -p nullglob)
+        # shopt -p retorna 1 quando a opção está desligada — || true evita
+        # abortar sob set -e (AGENTS.md: set -euo pipefail obrigatório).
+        old_nullglob=$(shopt -p nullglob) || true
         shopt -s nullglob
         arquivos=("${diretorio_origem}"/*)
-        if [[ "$old_nullglob" == *"off"* ]]; then
+        # shopt -p imprime "shopt -u <opt>" (desligado) ou "shopt -s <opt>"
+        # (ligado) — nunca a palavra "off".
+        if [[ "$old_nullglob" == *"-u"* ]]; then
             shopt -u nullglob
         else
             shopt -s nullglob
@@ -1526,6 +1633,16 @@ _enviar_arquivo_avulso() {
 
     if [[ -z "$arquivo_enviar" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nome do arquivo nao informado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # SEGURANCA: validar o caminho montado (dir + nome). _enviar_arquivo_multi
+    # valida so o diretorio e o destino — sem isto, ".." no nome escaparia da
+    # checagem (AGENTS.md: toda operacao de arquivo passa por
+    # _validar_caminho_seguro).
+    if ! _validar_caminho_seguro "${diretorio_origem}/${arquivo_enviar}"; then
+        _erro "Nome de arquivo invalido ou malicioso: ${arquivo_enviar}"
         _aguardar_tecla
         return 1
     fi
@@ -1636,6 +1753,15 @@ _receber_arquivo_avulso() {
         return 1
     fi
 
+    # SEGURANCA: validar o caminho remoto montado (origem + nome). A origem
+    # acima ja passou, mas ".." no nome permitiria ler fora dela — e o
+    # caminho concatenado nao e revalidado por _receber_scp.
+    if ! _validar_caminho_seguro "${origem_remota}/${arquivo_receber}"; then
+        _erro "Nome de arquivo invalido ou malicioso: ${arquivo_receber}"
+        _aguardar_tecla
+        return 1
+    fi
+
     # Solicitar destino local
     _linha
     _exibir_mensagem_centralizada "${AMARELO}" "3- Destino: Diretorio local para receber:"
@@ -1688,8 +1814,10 @@ _validar_diretorio_expurgavel() {
 
 # Executa expurgador de arquivos antigos
 _executar_expurgador() {
-    # A limpeza diaria (_executar_expurgador_diario) ja e executada no bootstrap
-    # (principal.sh), evitando expurgo duplicado e confuso nesta rotina manual.
+    # Esta varredura de +30 dias repete os mesmos diretorios de
+    # _executar_expurgador_diario (utils.sh, bootstrap) — o que ela acrescenta
+    # de exclusivo e o expurgo dos .zip em E_EXEC/T_TELAS e a lista limpadir.
+    # O diario e protegido por flag diaria e nao toca nesses dois.
     local savlog="${RAIZ}/portalsav/log"
     local err_isc="${RAIZ}/err_isc"
     local viewvix="${RAIZ}/savisc/viewvix/tmp"
@@ -1723,6 +1851,8 @@ _executar_expurgador() {
     local diretorio idx
     local -a dirs_validos=()
     local -a dirs_status=() # 1=valido 0=invalido
+    local -a pids_exp=()    # PIDs do expurgo (evita `wait` sem argumento esperar jobs alheios)
+    local _pe
     for diretorio in "${diretorios_limpeza[@]}"; do
         if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
             dirs_validos+=("$diretorio")
@@ -1733,6 +1863,7 @@ _executar_expurgador() {
         fi
     done
     if [[ -n "$dir_tmp_exp" ]]; then
+        pids_exp=()
         for idx in "${!dirs_validos[@]}"; do
             (( dirs_status[idx] == 1 )) || continue
             (
@@ -1740,8 +1871,13 @@ _executar_expurgador() {
                 find "${diretorio:-.}" -type f -mtime +30 \
                     ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>"${dir_tmp_exp}/${idx}.err" | wc -l > "${dir_tmp_exp}/${idx}.count"
             ) &
+            pids_exp+=("$!")
         done
-        wait 2>/dev/null || true
+        # Espera SOMENTE os jobs deste expurgo: `wait` sem argumento bloquearia
+        # tambem por PIDS_JUTIL/BACKUP_PID de rotinas anteriores.
+        for _pe in ${pids_exp[@]+"${pids_exp[@]}"}; do
+            wait "$_pe" 2>/dev/null || true
+        done
     fi
     local arquivos_removidos contagem
     for idx in "${!dirs_validos[@]}"; do
@@ -1786,14 +1922,18 @@ _executar_expurgador() {
         fi
     done
     if [[ -n "$dir_tmp_exp" ]]; then
+        pids_exp=()
         for idx in "${!zips_validos[@]}"; do
             (( zips_status[idx] == 1 )) || continue
             (
                 diretorio="${zips_validos[$idx]}"
                 find "${diretorio:-.}" -name "*.zip" -type f -mtime +15 -print -delete 2>"${dir_tmp_exp}/z${idx}.err" | wc -l > "${dir_tmp_exp}/z${idx}.count"
             ) &
+            pids_exp+=("$!")
         done
-        wait 2>/dev/null || true
+        for _pe in ${pids_exp[@]+"${pids_exp[@]}"}; do
+            wait "$_pe" 2>/dev/null || true
+        done
     fi
     local zips_removidos
     for idx in "${!zips_validos[@]}"; do
@@ -1830,7 +1970,13 @@ _executar_expurgador() {
 
 # Expurgo de arquivos em diretorios listados no arquivo configuracoes/limpadir
 # Cada linha valida e um caminho absoluto. Linhas em branco e comentarios (#)
-# sao ignorados. Remove arquivos de dados (.dat) e indices (.idx) tambem.
+# sao ignorados. Criterio: mais de 30 dias, igual ao expurgo principal — antes
+# eram 7, o que apagava recem-criados sem dar chance de reenvio.
+# Remove arquivos de dados (.dat) e indices (.idx) tambem — diferenca
+# deliberada em relacao ao expurgo de 30 dias acima, que os preserva.
+# Nao existe zip de resgate aqui: o backup diario e o unico caminho de volta,
+# por isso a remocao e precedida de uma confirmacao unica e cada arquivo
+# removido e registrado no log antes do -delete.
 # Retorna: 0 sempre (expurgo e tolerante a falhas individuais)
 _executar_expurgador_lista_dirs() {
     local arquivo_lista="${CFG_DIR:-}${CFG_DIR:+/}limpadir"
@@ -1845,7 +1991,8 @@ _executar_expurgador_lista_dirs() {
         return 0
     fi
 
-    local linha diretorio arquivos_removidos
+    local linha diretorio confirmacao
+    local -a dirs_limpar=()
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         # trim de espacos em volta
         linha="${linha#"${linha%%[![:space:]]*}"}"
@@ -1857,25 +2004,52 @@ _executar_expurgador_lista_dirs() {
 
         if ! _validar_diretorio_expurgavel "$diretorio"; then
             _log "AVISO: diretorio invalido ou inseguro no limpadir, ignorado: $diretorio" "${LOG_LIMPA}"
-            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio invalido ou inseguro: ${diretorio}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio invalido ou inseguro: $diretorio"
             continue
         fi
 
         if [[ ! -d "$diretorio" ]]; then
-            _log "AVISO: diretorio nao encontrado no limpadir: ${diretorio}" "${LOG_LIMPA}"
-            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: ${diretorio}"
+            _log "AVISO: diretorio nao encontrado no limpadir: $diretorio" "${LOG_LIMPA}"
+            _exibir_mensagem_centralizada "${AMARELO}" "Diretorio nao encontrado: $diretorio"
             continue
         fi
 
-        # Limpar arquivos com mais de 7 dias, mesmo esquema do expurgo
-        arquivos_removidos=$(find "${diretorio}" -type f -mtime +7 \
-            -print -delete 2>/dev/null | wc -l)
-        arquivos_removidos="${arquivos_removidos//[[:space:]]/}"
-        [[ -z "$arquivos_removidos" ]] && arquivos_removidos="0"
+        dirs_limpar+=("$diretorio")
+    done < "$arquivo_lista"
+
+    if (( ${#dirs_limpar[@]} == 0 )); then
+        return 0
+    fi
+
+    # Confirmacao unica: a remocao e irreversivel e inclui .dat/.idx.
+    _linha
+    _exibir_mensagem_centralizada "${VERMELHO}" "Expurgo IRREVERSIVEL (sem arquivo de resgate, inclui .dat e .idx) com mais de ${LIM_PADIR_DIAS} dias nos diretorios:"
+    for diretorio in "${dirs_limpar[@]}"; do
+        _exibir_mensagem_centralizada "${AMARELO}" "  - $diretorio"
+    done
+    read -rp "${AMARELO}Confirma o expurgo acima? [S/N]: ${NORMAL}" confirmacao
+    confirmacao=$(_sanitizar_entrada "${confirmacao:-}")
+    confirmacao="${confirmacao^^}"
+
+    if [[ "$confirmacao" != "S" ]]; then
+        _log "Expurgo (limpadir) cancelado pelo usuario (${#dirs_limpar[@]} diretorio(s) preservados)" "${LOG_LIMPA}"
+        _exibir_mensagem_centralizada "${AMARELO}" "Expurgo (limpadir) cancelado — diretorios preservados"
+        return 0
+    fi
+
+    # Contagem no proprio shell (sem fork de wc): find -print emite o nome antes
+    # do -delete do mesmo arquivo, entao o log sempre registra o que saiu.
+    local arquivos_removidos arquivo_removido
+    for diretorio in "${dirs_limpar[@]}"; do
+        arquivos_removidos=0
+        while IFS= read -r arquivo_removido; do
+            _log "Expurgo (limpadir): removendo ${arquivo_removido}" "${LOG_LIMPA}"
+            ((arquivos_removidos++)) || true
+        done < <(find "${diretorio}" -type f -mtime "+${LIM_PADIR_DIAS}" -print -delete 2>/dev/null)
 
         _log "Expurgo (limpadir): ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
         _exibir_mensagem_centralizada "${VERDE}" "Limpando diretorio extra: ${diretorio} (${arquivos_removidos} arquivos)"
-    done < "$arquivo_lista"
+    done
 
     return 0
 }
@@ -1896,12 +2070,21 @@ _exibir_log_arquivo() {
     local total_linhas
     total_linhas=$(wc -l < "$arquivo_log" 2>/dev/null || echo "?")
     total_linhas="${total_linhas//[[:space:]]/}"
-    # Arquivo pequeno: cat direto. Grande: tail + less (se TTY) ou tail simples.
-    if [[ "$total_linhas" =~ ^[0-9]+$ ]] && (( total_linhas <= max_linhas * 2 )); then
+    # Numero de linhas sozinho nao protege: um log de 5 linhas com linhas
+    # giganticas (stack trace / base64) passaria pelo cat e despejaria MBs no
+    # terminal. Teto em bytes ~ 512 por linha exibida.
+    local total_bytes
+    total_bytes=$(wc -c < "$arquivo_log" 2>/dev/null || echo "?")
+    total_bytes="${total_bytes//[[:space:]]/}"
+    local teto_bytes=$(( max_linhas * 512 ))
+
+    if [[ "$total_linhas" =~ ^[0-9]+$ ]] \
+        && [[ ! "$total_bytes" =~ ^[0-9]+$ || "$total_bytes" -le "$teto_bytes" ]] \
+        && (( total_linhas <= max_linhas * 2 )); then
         cat -- "$arquivo_log"
         return 0
     fi
-    _aviso "Arquivo grande (${total_linhas} linhas). Exibindo ultimas ${max_linhas}."
+    _aviso "Arquivo grande (${total_linhas:-?} linhas / ${total_bytes:-?} bytes). Exibindo ultimas ${max_linhas}."
     if [[ -t 1 ]] && command -v less >/dev/null 2>&1; then
         tail -n "$max_linhas" -- "$arquivo_log" | less -R
     else

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/09/2026-01
+# Versao: 30/09/2026
 # Autor: Luiz Augusto
 #
 
@@ -17,25 +17,42 @@ CFG_VERSAOCLASS="${CFG_VERSAOCLASS:-}"
 
 #---------- FUNCAO AUXILIAR DE LEITURA ----------#
 # Funcao auxiliar para leitura de opcao com suporte a ajuda contextual
-# Uso: _ler_opcao_menu "contexto"
-# Retorna: 0 se opcao normal, 1 se comando de ajuda processado
+# Uso: local opcao
+#      _ler_opcao_menu "contexto" opcao || continue
+#
+# O nome da variavel de destino e obrigatorio ($2) e atribuido com printf -v.
+# Nao da para devolver a opcao no stdout: a linha de ajuda e a interface
+# impressas aqui ja ocupam o stdout, e o valor viria misturado com elas.
+# Exigir o nome torna explicita a dependencia — antes ela era implicita
+# (a funcao escrevia em `opcao` do chamador e cada um dos 20 menus declarava
+# `local opcao` so por causa disso).
+#
+# Em timeout/EOF chama _encerrar_programa, que encerra o processo.
+# Retorna: 0 se opcao lida, 1 se foi ajuda/manual (o menu deve redesenhar)
 _ler_opcao_menu() {
     local contexto="${1:-geral}"
+    local destino="${2:-}"
+    local lida=""
+
+    if [[ -z "$destino" ]]; then
+        _erro "Variavel de destino nao informada em _ler_opcao_menu" >&2
+        return 1
+    fi
 
     _linha "=" "${BRANCO}"
     printf '%b\n' "${AZUL}Ajuda: Digite ${AMARELO}M${AZUL} (manual) | ${AMARELO}H${AZUL} (help)|| ${AZUL}Empresa: ${BRANCO}${CFG_EMPRESA}${AZUL}| Iscobol: ${CIANO}${CFG_VERSAOCLASS}${AZUL}|"
     _linha "=" "${VERDE}"
 
-    if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${AMARELO} Digite a opcao desejada -> ${NORMAL}" opcao; then
+    if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${AMARELO} Digite a opcao desejada -> ${NORMAL}" lida; then
         printf '\n'
         _linha "-" "${BRANCO}"
         _exibir_mensagem_centralizada "${VERMELHO}" "Estouro o tempo de espera na entrada. Saindo...${NORMAL}"
         _encerrar_programa 0
     fi
 
-    opcao=$(_trim "$opcao" 2>/dev/null || printf '%s' "$opcao")
+    lida=$(_trim "$lida" 2>/dev/null || printf '%s' "$lida")
 
-    case "${opcao,,}" in
+    case "${lida,,}" in
         "?"|"h"|"help"|"ajuda")
             _exibir_ajuda_contextual "$contexto"
             return 1
@@ -50,6 +67,7 @@ _ler_opcao_menu() {
             ;;
     esac
 
+    printf -v "$destino" '%s' "$lida"
     return 0
 }
 
@@ -119,7 +137,7 @@ _principal() {
 #        _exibir_mensagem_direita "${AZUL}" "${UPDATE:-}"
 
         local opcao
-        if ! _ler_opcao_menu "principal"; then
+        if ! _ler_opcao_menu "principal" opcao; then
             continue
         fi
 
@@ -159,15 +177,15 @@ _menu_programas() {
         fi
 
         local opcao
-        if ! _ler_opcao_menu "programas"; then
+        if ! _ler_opcao_menu "programas" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _atualizar_programa_online || true ;;
-            2) _atualizar_programa_offline || true ;;
-            3) _atualizar_programa_pacote || true ;;
-            4) _reverter_programa || true ;;
+            1) _tentar_log "menu: atualizar_programa_online" "${LOG_LIMPA}" _atualizar_programa_online ;;
+            2) _tentar_log "menu: atualizar_programa_offline" "${LOG_LIMPA}" _atualizar_programa_offline ;;
+            3) _tentar_log "menu: atualizar_programa_pacote" "${LOG_LIMPA}" _atualizar_programa_pacote ;;
+            4) _tentar_log "menu: reverter_programa" "${LOG_LIMPA}" _reverter_programa ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -200,14 +218,14 @@ _menu_biblioteca() {
         fi
 
         local opcao
-        if ! _ler_opcao_menu "biblioteca"; then
+        if ! _ler_opcao_menu "biblioteca" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _atualizar_transpc || true ;;
-            2) _atualizar_biblioteca_offline || true ;;
-            3) _reverter_biblioteca || true ;;
+            1) _tentar_log "menu: atualizar_transpc" "${LOG_LIMPA}" _atualizar_transpc ;;
+            2) _tentar_log "menu: atualizar_biblioteca_offline" "${LOG_LIMPA}" _atualizar_biblioteca_offline ;;
+            3) _tentar_log "menu: reverter_biblioteca" "${LOG_LIMPA}" _reverter_biblioteca ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -231,15 +249,15 @@ _menu_arquivos() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "arquivos"; then
+        if ! _ler_opcao_menu "arquivos" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _menu_recuperar_arquivos || true ;;
-            2) _menu_temporarios || true ;;
-            3) _executar_expurgador "arquivos" || true ;;
-            4) _menu_transferencia_arquivos || true ;;
+            1) _tentar_log "menu: menu_recuperar_arquivos" "${LOG_LIMPA}" _menu_recuperar_arquivos ;;
+            2) _tentar_log "menu: menu_temporarios" "${LOG_LIMPA}" _menu_temporarios ;;
+            3) _tentar_log "menu: executar_expurgador" "${LOG_LIMPA}" _executar_expurgador "arquivos" ;;
+            4) _tentar_log "menu: menu_transferencia_arquivos" "${LOG_LIMPA}" _menu_transferencia_arquivos ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -263,17 +281,17 @@ _menu_ferramentas() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "ferramentas"; then
+        if ! _ler_opcao_menu "ferramentas" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _menu_configs || true ;;
-            2) _executar_update || true ;;
-            3) _menu_lembretes || true ;;
-            4) _menu_avisos || true ;;
-            5) _menu_logs || true ;;
-            6) _voltar_sh_anterior || true ;;
+            1) _tentar_log "menu: menu_configs" "${LOG_LIMPA}" _menu_configs ;;
+            2) _tentar_log "menu: executar_update" "${LOG_LIMPA}" _executar_update ;;
+            3) _tentar_log "menu: menu_lembretes" "${LOG_LIMPA}" _menu_lembretes ;;
+            4) _tentar_log "menu: menu_avisos" "${LOG_LIMPA}" _menu_avisos ;;
+            5) _tentar_log "menu: menu_logs" "${LOG_LIMPA}" _menu_logs ;;
+            6) _tentar_log "menu: voltar_sh_anterior" "${LOG_LIMPA}" _voltar_sh_anterior ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -294,14 +312,16 @@ _menu_temporarios() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "temporarios"; then
+        if ! _ler_opcao_menu "temporarios" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _executar_limpeza_temporarios || true ;;
-            2) _adicionar_arquivo_lixo || true ;;
-            3) _lista_arquivos_lixo || true ;;
+            # _tentar_log em vez de "|| true": o menu nao pode quebrar por uma limpeza
+            # com falha, mas o erro precisa ficar registrado (ver utils.sh).
+            1) _tentar_log "limpeza de temporarios (menu)" "${LOG_LIMPA}" _executar_limpeza_temporarios ;;
+            2) _tentar_log "menu: adicionar_arquivo_lixo" "${LOG_LIMPA}" _adicionar_arquivo_lixo ;;
+            3) _tentar_log "menu: lista_arquivos_lixo" "${LOG_LIMPA}" _lista_arquivos_lixo ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -324,15 +344,15 @@ _menu_recuperar_arquivos() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "recuperacao"; then
+        if ! _ler_opcao_menu "recuperacao" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _recuperar_arquivo_especifico || true ;;
-            2) _recuperar_arquivos_principais || true ;;
-            3) _executar_lista_arquivos || true ;;
-            4) _editar_lista_arquivos || true ;;
+            1) _tentar_log "menu: recuperar_arquivo_especifico" "${LOG_LIMPA}" _recuperar_arquivo_especifico ;;
+            2) _tentar_log "menu: recuperar_arquivos_principais" "${LOG_LIMPA}" _recuperar_arquivos_principais ;;
+            3) _tentar_log "menu: executar_lista_arquivos" "${LOG_LIMPA}" _executar_lista_arquivos ;;
+            4) _tentar_log "menu: editar_lista_arquivos" "${LOG_LIMPA}" _editar_lista_arquivos ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -355,15 +375,15 @@ _menu_backup() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "backup"; then
+        if ! _ler_opcao_menu "backup" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _executar_backup || true ;;
-            2) _executar_backup_multiplos_padroes || true ;;
-            3) _restaurar_backup || true ;;
-            4) _enviar_backup_avulso || true ;;
+            1) _tentar_log "menu: executar_backup" "${LOG_LIMPA}" _executar_backup ;;
+            2) _tentar_log "menu: executar_backup_multiplos_padroes" "${LOG_LIMPA}" _executar_backup_multiplos_padroes ;;
+            3) _tentar_log "menu: restaurar_backup" "${LOG_LIMPA}" _restaurar_backup ;;
+            4) _tentar_log "menu: enviar_backup_avulso" "${LOG_LIMPA}" _enviar_backup_avulso ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -382,13 +402,13 @@ _menu_transferencia_arquivos() {
         _exibir_rodape_menu
         printf "\n"
         local opcao
-        if ! _ler_opcao_menu "transferencia"; then
+        if ! _ler_opcao_menu "transferencia" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _enviar_arquivo_avulso || true ;;
-            2) _receber_arquivo_avulso || true ;;
+            1) _tentar_log "menu: enviar_arquivo_avulso" "${LOG_LIMPA}" _enviar_arquivo_avulso ;;
+            2) _tentar_log "menu: receber_arquivo_avulso" "${LOG_LIMPA}" _receber_arquivo_avulso ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -410,15 +430,15 @@ _menu_configs() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "configs"; then
+        if ! _ler_opcao_menu "configs" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _menu_setups || true ;;
-            2) _mostrar_versao_iscobol || true ;;
-            3) _mostrar_versao_linux || true ;;
-            4) _consultar_variaveis || true ;;
+            1) _tentar_log "menu: menu_setups" "${LOG_LIMPA}" _menu_setups ;;
+            2) _tentar_log "menu: mostrar_versao_iscobol" "${LOG_LIMPA}" _mostrar_versao_iscobol ;;
+            3) _tentar_log "menu: mostrar_versao_linux" "${LOG_LIMPA}" _mostrar_versao_linux ;;
+            4) _tentar_log "menu: consultar_variaveis" "${LOG_LIMPA}" _consultar_variaveis ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -438,16 +458,16 @@ _menu_setups() {
         _exibir_rodape_menu
         printf "\n"
         local opcao
-        if ! _ler_opcao_menu "setups"; then
+        if ! _ler_opcao_menu "setups" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _mostrar_parametros || true ;;
+            1) _tentar_log "menu: mostrar_parametros" "${LOG_LIMPA}" _mostrar_parametros ;;
             2)
-                _manutencao_setup || true
+                _tentar_log "menu: manutencao_setup" "${LOG_LIMPA}" _manutencao_setup
                 ;;
-            3) _menu_configurar_ssh || true ;;
+            3) _tentar_log "menu: menu_configurar_ssh" "${LOG_LIMPA}" _menu_configurar_ssh ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -469,22 +489,22 @@ _menu_lembretes() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "lembretes"; then
+        if ! _ler_opcao_menu "lembretes" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _escrever_nova_nota || true ;;
+            1) _tentar_log "menu: escrever_nova_nota" "${LOG_LIMPA}" _escrever_nova_nota ;;
             2)
                 if [[ -f "${CFG_DIR}/lembrete" ]]; then
-                    _visualizar_notas_arquivo "${CFG_DIR}/lembrete" || true
+                    _tentar_log "menu: visualizar_notas" "${LOG_LIMPA}" _visualizar_notas_arquivo "${CFG_DIR}/lembrete"
                 else
                     _exibir_mensagem_centralizada "${AMARELO}" "Arquivo de notas nao encontrado"
                     _aguardar 1
                 fi
                 ;;
-            3) _editar_nota_existente || true ;;
-            4) _apagar_nota_existente || true ;;
+            3) _tentar_log "menu: editar_nota_existente" "${LOG_LIMPA}" _editar_nota_existente ;;
+            4) _tentar_log "menu: apagar_nota_existente" "${LOG_LIMPA}" _apagar_nota_existente ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -505,14 +525,14 @@ _menu_avisos() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "aviso"; then
+        if ! _ler_opcao_menu "aviso" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _gerar_aviso_entrada || true ;;
-            2) _editar_aviso_existente || true ;;
-            3) _apagar_aviso_entrada || true ;;
+            1) _tentar_log "menu: gerar_aviso_entrada" "${LOG_LIMPA}" _gerar_aviso_entrada ;;
+            2) _tentar_log "menu: editar_aviso_existente" "${LOG_LIMPA}" _editar_aviso_existente ;;
+            3) _tentar_log "menu: apagar_aviso_entrada" "${LOG_LIMPA}" _apagar_aviso_entrada ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -532,13 +552,13 @@ _menu_logs() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "logs"; then
+        if ! _ler_opcao_menu "logs" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _listar_logs_atualizacao || true ;;
-            2) _listar_logs_limpeza || true ;;
+            1) _tentar_log "menu: listar_logs_atualizacao" "${LOG_LIMPA}" _listar_logs_atualizacao ;;
+            2) _tentar_log "menu: listar_logs_limpeza" "${LOG_LIMPA}" _listar_logs_limpeza ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -567,17 +587,17 @@ _menu_ajuda_principal() {
         _linha "=" "${VERDE}"
 
         local opcao
-        if ! _ler_opcao_menu "ajuda"; then
+        if ! _ler_opcao_menu "ajuda" opcao; then
             continue
         fi
 
         case "${opcao}" in
-            1) _exibir_manual_completo || true ;;
-            2) _ajuda_rapida || true ;;
-            3) _ajuda_no_geral || true ;;
-            4) _buscar_manual || true ;;
-            5) _exportar_manual || true ;;
-            6) _menu_selecao_contexto || true ;;
+            1) _tentar_log "menu: exibir_manual_completo" "${LOG_LIMPA}" _exibir_manual_completo ;;
+            2) _tentar_log "menu: ajuda_rapida" "${LOG_LIMPA}" _ajuda_rapida ;;
+            3) _tentar_log "menu: ajuda_no_geral" "${LOG_LIMPA}" _ajuda_no_geral ;;
+            4) _tentar_log "menu: buscar_manual" "${LOG_LIMPA}" _buscar_manual ;;
+            5) _tentar_log "menu: exportar_manual" "${LOG_LIMPA}" _exportar_manual ;;
+            6) _tentar_log "menu: menu_selecao_contexto" "${LOG_LIMPA}" _menu_selecao_contexto ;;
             9) return ;;
             *) _processar_opcao_invalida ;;
         esac
@@ -606,21 +626,21 @@ _menu_selecao_contexto() {
     _linha "=" "${CIANO}"
 
     local opcao
-    if ! _ler_opcao_menu "contexto"; then
+    if ! _ler_opcao_menu "contexto" opcao; then
         return
     fi
 
     case "${opcao}" in
-        1) _exibir_ajuda_contextual "principal" || true ;;
-        2) _exibir_ajuda_contextual "programas" || true ;;
-        3) _exibir_ajuda_contextual "biblioteca" || true ;;
-        4) _exibir_ajuda_contextual "ferramentas" || true ;;
-        5) _exibir_ajuda_contextual "temporarios" || true ;;
-        6) _exibir_ajuda_contextual "recuperacao" || true ;;
-        7) _exibir_ajuda_contextual "backup" || true ;;
-        8) _exibir_ajuda_contextual "transferencia" || true ;;
-        9) _exibir_ajuda_contextual "setups" || true ;;
-        10) _exibir_ajuda_contextual "lembretes" || true ;;
+        1) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "principal" ;;
+        2) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "programas" ;;
+        3) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "biblioteca" ;;
+        4) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "ferramentas" ;;
+        5) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "temporarios" ;;
+        6) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "recuperacao" ;;
+        7) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "backup" ;;
+        8) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "transferencia" ;;
+        9) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "setups" ;;
+        10) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "lembretes" ;;
         *) _processar_opcao_invalida ;;
     esac
 }
@@ -642,7 +662,7 @@ _menu_escolha_base() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "base"; then
+        if ! _ler_opcao_menu "base" opcao; then
             continue
         fi
 
@@ -685,7 +705,7 @@ _menu_tipo_backup() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "tipobackup"; then
+        if ! _ler_opcao_menu "tipobackup" opcao; then
             continue
         fi
 
@@ -754,8 +774,16 @@ _menu_configurar_ssh() {
     printf "\n"
 
     _checar_dependencias
-    _preparar_diretorio_ssh
-    _verificar_ou_criar_chave
+    if ! _preparar_diretorio_ssh; then
+        _aviso "Configuracao de chave abortada: diretorio ~/.ssh indisponivel."
+        _aguardar_tecla
+        return 1
+    fi
+    if ! _verificar_ou_criar_chave; then
+        _aviso "Sem chave SSH valida, a conexao sem senha nao podera ser configurada."
+        _aguardar_tecla
+        return 1
+    fi
 
     local ENVIAR
     read -rp "${AMARELO} Deseja enviar a chave publica para o servidor principal agora? [s/N]  ${NORMAL}" ENVIAR
@@ -834,7 +862,7 @@ _menu_escolha_base_restauracao() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "baserestauracao"; then
+        if ! _ler_opcao_menu "baserestauracao" opcao; then
             continue
         fi
 
@@ -849,7 +877,9 @@ _menu_escolha_base_restauracao() {
                     continue
                 fi
 
-                local indice=$((opcao - 1))
+                # 10#: sem isso "$((010 - 1))" e lido como OCTAL e "010"
+                # selecionaria o 8o item em vez do 10o.
+                local indice=$((10#$opcao - 1))
                 if (( indice >= 0 && indice < ${#bases_disponiveis[@]} )); then
                     local base_escolhida="${bases_disponiveis[$indice]}"
                     if [[ -d "$base_escolhida" ]]; then

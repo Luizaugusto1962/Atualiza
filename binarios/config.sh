@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/09/2026
+# Versao: 30/09/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -496,15 +496,28 @@ _carregar_config_empresa() {
 
 # Funcao principal de carregamento de configuracoes
 _carregar_configuracoes() {
+    # O resto do sistema espera o CWD em SCRIPT_DIR (backup.sh/arquivos.sh
+    # gravam caminhos relativos a ele). Por isso o cd e restaurado ao final,
+    # mesmo em caso de falha.
     if ! cd "${SCRIPT_DIR}"; then
         _erro "Nao foi possivel acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
         return 1
     fi
 
-    _carregar_config_empresa || return 1
-    _configurar_comandos     || return 1
-    _configurar_diretorios   || return 1
-    _configurar_variaveis_sistema
+    local rc=0
+    _carregar_config_empresa || rc=1
+    (( rc == 0 )) && { _configurar_comandos || rc=1; }
+    (( rc == 0 )) && { _configurar_diretorios || rc=1; }
+    # _configurar_variaveis_sistema era chamada sem checar retorno, ao contrario
+    # das duas acima: uma falha ali sumia silenciosamente.
+    (( rc == 0 )) && { _configurar_variaveis_sistema || rc=1; }
+
+    cd "${SCRIPT_DIR}" 2>/dev/null || {
+        _erro "Nao foi possivel restaurar o diretorio %s\n" "${SCRIPT_DIR}" >&2
+        rc=1
+    }
+
+    return "$rc"
 }
 
 # Configurar ambiente final
@@ -547,7 +560,9 @@ _limpar_estado_variaveis() {
     unset -v VAR_CONTADOR_REGISTRO 2>/dev/null || true
 
     # Higiene de caches/estado interno de utils.sh (nao entram em REGISTRO_VARIAVEIS)
-    unset -v _COLUNAS_CACHE _LOG_DIR_CACHE _stty_size _JUTIL_PRONTO 2>/dev/null || true
+    # _JUTIL_* e arquivos.sh: cache de validacao do REBUILD e contadores do lote.
+    unset -v _COLUNAS_CACHE _LOG_DIR_CACHE _stty_size \
+        _JUTIL_PRONTO _JUTIL_LOTE_OK _JUTIL_LOTE_FALHAS _JUTIL_LOTE_PULADOS 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true
     return 0

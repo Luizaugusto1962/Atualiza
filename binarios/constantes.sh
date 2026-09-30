@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/09/2026
+# Versao: 30/09/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -24,10 +24,27 @@ RAIZ="${SCRIPT_DIR%/*}"
 # Carrega configuracao de forma segura sem sourcing direto
 # Parametros: $1 - arquivo de configuracao
 # Retorna: 0 se sucesso, 1 se erro
+#
+# Este e o UNICO ponto de entrada do .config no sistema (chamado de
+# constantes.sh, config.sh, sistema.sh, variaveis.sh e setup.sh), portanto e o
+# lugar onde a lista de chaves proibidas precisa viver. Nao basta o scanner
+# _validar_config_file (config.sh): constantes.sh e o PRIMEIRO modulo da
+# MODULOS_CARREGAR e carrega o .config antes de config.sh existir, e
+# sistema.sh/variaveis.sh/setup.sh tambem chamam este parser sem o scanner.
+#
+# O parser valida o FORMATO da chave (identificador) mas o `printf -v` abaixo
+# define QUALQUER identificador no shell. Sem a lista abaixo, uma linha
+# "PATH=/tmp/evil" ou "BASH_ENV=/tmp/evil/init.sh" no .config sequestrava o
+# proprio interpretador: todo comando externo do processo passaria a resolver
+# em /tmp/evil.
 # -----------------------------------------------------------------------------
 _carregar_config_seguro() {
     local CONFIG_FILE="${1:-}"
     local linha chave_analizada valor
+
+    # Chaves que controlam o interpretador/processo, nunca dados do SAV.
+    # Bloqueadas por nome, independentemente do valor.
+    local re_chave_bloqueada='^(PATH|IFS|CDPATH|GLOBIGNORE|ENV|TMPDIR|TMP|TEMP|HOME|SHELL|BASH_ENV|BASHOPTS|SHELLOPTS|BASH_XTRACEFD|BASH_ARGV|BASH_ARGC|LD_[A-Z_]+|LC_[A-Z_]+|LANG|LANGUAGE|PS1|PS2|PS3|PS4|HISTFILE|HISTSIZE|MAIL|MAILPATH|TZ|SHELL_SCRIPT|_[A-Za-z_]+)$'
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         # Pular linhas vazias e comentarios
@@ -51,14 +68,23 @@ _carregar_config_seguro() {
             chave_analizada="${BASH_REMATCH[1]}"
             valor="${BASH_REMATCH[2]}"
 
+            # SEGURANCA: rejeitar chaves que alteram o proprio interpretador
+            if [[ "$chave_analizada" =~ $re_chave_bloqueada ]]; then
+                printf 'ERRO: chave "%s" bloqueada por seguranca (ignorar linha).\n' "$chave_analizada" >&2
+                continue
+            fi
+
             # Remover aspas se presentes
             if [[ "$valor" =~ ^\"(.*)\"$ ]] || [[ "$valor" =~ ^\'(.*)\'$ ]]; then
                 valor="${BASH_REMATCH[1]}"
             fi
 
-            # Validar que o valor nao contem comandos perigosos
-            if [[ "$valor" =~ [\$\`\;] ]]; then
-                printf 'AVISO: Valor suspeito em variavel "%s", ignorando linha.\n' "$chave_analizada" >&2
+            # Validar que o valor nao contem metacaracteres perigosos. Mesmo
+            # conjunto de _validar_config_file (config.sh) para que as duas
+            # passagens nunca discordem sobre o que e perigoso.
+            local re_valor_perigoso='[`;|&<>(){}$]'
+            if [[ "$valor" =~ $re_valor_perigoso ]]; then
+                printf 'AVISO: valor suspeito em variavel "%s", ignorando linha.\n' "$chave_analizada" >&2
                 continue
             fi
 
@@ -150,8 +176,10 @@ CFG_OFFLINE="${CFG_OFFLINE:-${Offline}}"                       # Modo offline (s
 # =============================================================================
 PERM_DIR_SECURE="${PERM_DIR_SECURE:-0755}"                         # Diretorios seguros (rwxr-xr-x)
 PERM_FILE_PRIVATE="${PERM_FILE_PRIVATE:-0600}"                     # Arquivos privados (rw-------)
-PERM_FILE_EXEC="${PERM_FILE_EXEC-0755}"                            # Arquivos executaveis (rwxr-xr-x)
-PERM_FILE_BACKUP="${PERM_FILE_BACKUP-0644}"                        # Arquivos de backup (rw-r--r--)
+# ":-" (nao "-"): var vazia tambem e ausente. Com "-" unico, um .config trazes
+# "PERM_FILE_EXEC=" deixava a variavel VAZIA e o chmod seguinte falhava.
+PERM_FILE_EXEC="${PERM_FILE_EXEC:-0755}"                          # Arquivos executaveis (rwxr-xr-x)
+PERM_FILE_BACKUP="${PERM_FILE_BACKUP:-0644}"                      # Arquivos de backup (rw-r--r--)
 
 # =============================================================================
 # CONFIGURACOES DE REDE

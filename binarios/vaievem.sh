@@ -11,7 +11,7 @@ set -euo pipefail
 # (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/09/2026
+# Versao: 30/09/2026
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -23,11 +23,23 @@ CHAVE="${DEFAULT_CHAVE_SSH:-}"
 # Rejeita tambem raiz ("/", "//"): nenhum destino legitimo do SAV e a raiz
 # (paridade com _validar_diretorio_backup/_validar_diretorio_expurgavel).
 # Caminhos absolutos legitimos (/savisc/...) continuam aceitos.
+# Parametros: $1=caminho
+# Retorna: 0=seguro 1=inseguro
 _validar_caminho_seguro() {
     local caminho="${1:-}"
     local regex_perigoso=$'[;|&$`<>"\']'
 
     if [[ -z "$caminho" || "$caminho" == "/" || "$caminho" == "//" ]]; then
+        return 1
+    fi
+    # Item 10: teto de tamanho. Sem ele um payload gigante atravessava todas as
+    # outras verificacoes e ainda seria interpolado em log/linha de comando.
+    if (( ${#caminho} > 4096 )); then
+        return 1
+    fi
+    # Caracteres de controle (inclui \n e \r) permitiriam forjar uma linha de log
+    # e quebrar entradas baseadas em linha.
+    if [[ "$caminho" == *[$'\001'-$'\037'$'\177']* ]]; then
         return 1
     fi
     if [[ "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
@@ -142,6 +154,12 @@ _montar_cmd_scp() {
     # Publicar no array do chamador (mesma estrategia do _montar_cmd_ssh:
     # nameref em Bash 4.3+, serializacao IFS em 4.0-4.2). O ${var?} documenta
     # que o nome do array e intencionalmente dinamico (escopo do chamador).
+    # Item 11: o nome interno do nameref tambem precisa de guarda — se o chamador
+    # batesse nele, o Bash 4.3+ aborta com "circular name reference".
+    if [[ "$_cmd_ref" == "_scp_ref" || -z "$_cmd_ref" ]]; then
+        _erro "Nome de array invalido para _montar_cmd_scp: ${_cmd_ref:-vazio}"
+        return 1
+    fi
     if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3) )); then
         local -n _scp_ref="${_cmd_ref?}"
         _scp_ref=("${_opcoes_base[@]}")
@@ -193,6 +211,11 @@ _montar_cmd_ssh() {
     fi
 
     # Publicar no array do chamador (mesma estrategia do _montar_cmd_scp).
+    # Item 11: ver a nota sobre colisao de nome do nameref em _montar_cmd_scp.
+    if [[ "$_cmd_ref" == "_ssh_ref" || -z "$_cmd_ref" ]]; then
+        _erro "Nome de array invalido para _montar_cmd_ssh: ${_cmd_ref:-vazio}"
+        return 1
+    fi
     if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3) )); then
         # Bash 4.3+: nameref — publica o array diretamente, sem serializacao.
         local -n _ssh_ref="${_cmd_ref?}"
@@ -226,12 +249,16 @@ _proteger_arg_shell() {
 }
 
 # Junta um array de comando em uma unica string para o rsync -e (que exige
-# string, nao array). Em Bash 4.4+ usa printf %q para proteger cada argumento;
-# em versoes antigas usa _proteger_arg_shell (aspas POSIX), de modo que
-# caminho de chave com espacos nao quebra em nenhuma versao suportada.
+# string, nao array). Usa SEMPRE _proteger_arg_shell (aspas simples POSIX).
+# Uso: _juntar_comando <elemento...>
+#
+# Antes havia dois caminhos: `printf %q` em Bash 4.4+ e aspas POSIX em 4.0-4.2.
+# O caminho novo era o MENOS portavel dos dois — `%q` pode emitir $'...'
+# (ANSI-C quoting), que dash/sh nao interpreta, e o rsync entrega o valor de -e
+# a um shell. Em Ubuntu 10.04/12.04 o /bin/sh e dash, entao o caminho %q quebrava
+# justamente onde o fallback funcionaria. Agora so existe o caminho seguro.
 # SEGURANCA: sem eval/indirecao — recebe os elementos ja expandidos pelo
 # chamador, que e o dono do array (evita manipulacao de nome de variavel).
-# Uso: _juntar_comando <elemento...>
 _juntar_comando() {
     local -a _partes=("$@")
 
@@ -240,15 +267,72 @@ _juntar_comando() {
     fi
 
     local _cmd_junto=""
-    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )); then
-        printf -v _cmd_junto '%q ' "${_partes[@]}"
-    else
-        local _p
-        for _p in "${_partes[@]}"; do
-            _cmd_junto+="$(_proteger_arg_shell "$_p") "
-        done
-    fi
+    local _p
+    for _p in "${_partes[@]}"; do
+        _cmd_junto+="$(_proteger_arg_shell "$_p") "
+    done
     printf '%s' "${_cmd_junto% }"
+}
+
+# Verifica se um zip tem indice central legivel (ou seja: nao esta truncado).
+# Parametros: $1=caminho do zip
+# Retorna: 0=indice ok 1=zip invalido/truncado
+#
+# Usa "unzip -Z1" (so o indice central) e nao "unzip -t". O proprio projeto ja
+# registra o motivo em constantes.sh (C_BACKUP_TESTE_INTEGRIDADE) e em
+# programas.sh: "-t" rele e descomprime o arquivo inteiro, enquanto o indice
+# central e proporcional ao numero de entradas e nao aos dados. Como toda
+# extracao deste sistema ja descomprime o payload, usar "-t" antes dela dobrava
+# o I/O sem acrescentar deteccao util — e, em zip de biblioteca grande, acusava
+# corrupcao em arquivo que a extracao abre sem problema.
+#
+# A saida do unzip vai para o log (antes era >/dev/null 2>&1 e o motivo da
+# recusa ficava invisivel).
+_zip_indice_valido() {
+    local arquivo="${1:-}"
+
+    if [[ -z "$arquivo" ]]; then
+        _log_erro "Verificacao de zip sem caminho informado"
+        return 1
+    fi
+
+    local _saida
+    if ! _saida=$("${DEFAULT_UNZIP:-unzip}" -Z1 -- "$arquivo" 2>&1); then
+        _log "AVISO: unzip -Z1 reprovou ${arquivo##*/}: ${_saida//$'\n'/ | }" "${LOG_ATU:-/dev/null}"
+        return 1
+    fi
+    if [[ -z "${_saida//[[:space:]]/}" ]]; then
+        _log "AVISO: ${arquivo##*/} tem indice central vazio (zip sem entradas)" "${LOG_ATU:-/dev/null}"
+        return 1
+    fi
+
+    return 0
+}
+
+# Lista no log o que existe no diretorio de download, para diagnosticar um
+# scp que "terminou ok" mas nao Entregou o que o codigo esperava.
+# Parametros: $1=diretorio $2=padrao esperado
+_listar_arquivos_baixados() {
+    local dir="${1:-}"
+    local padrao="${2:-*}"
+    local _f _n=0
+
+    while IFS= read -r -d '' _f; do
+        _log "  presente: ${_f##*/}" "${LOG_ATU:-/dev/null}"
+        ((_n++)) || true
+    done < <(find "$dir" -maxdepth 1 -type f -name "${padrao}" -print0 2>/dev/null)
+
+    if (( _n == 0 )); then
+        # Nenhum casou com o padrao: mostrar o que tem la, para ver se o nome
+        # real difere (ex: servidor gravou com outra classe ou outra versao).
+        local _tot=0
+        while IFS= read -r -d '' _f; do
+            _log "  encontrado: ${_f##*/}" "${LOG_ATU:-/dev/null}"
+            ((_tot++)) || true
+        done < <(find "$dir" -maxdepth 1 -type f -print0 2>/dev/null)
+        _log "  (nenhum casou com '${padrao}'; ${_tot} arquivo(s) no diretorio)" "${LOG_ATU:-/dev/null}"
+    fi
+    return 0
 }
 
 #---------- FUNCOES AUXILIARES (BAIXO NIVEL) ----------#
@@ -286,7 +370,18 @@ _receber_scp() {
     _log "Iniciando download SCP: $arquivo_remoto"
 
     local -a cmd_scp=()
-    _montar_cmd_scp cmd_scp "$porta" "${SSH_TIMEOUT:-30}" "${SSH_ALIVE_INTERVAL:-15}" "${SSH_ALIVE_COUNT:-3}"
+    if ! _montar_cmd_scp cmd_scp "$porta" "${SSH_TIMEOUT:-30}" "${SSH_ALIVE_INTERVAL:-15}" "${SSH_ALIVE_COUNT:-3}"; then
+        _log_erro "Falha ao montar opcoes SCP para o download"
+        return 1
+    fi
+    # Invariante: daqui em diante o array NUNCA esta vazio. Sem esta checagem
+    # um array vazio seria expandido como comando e o bash tentaria executar a
+    # propria origem remota — e, no alvo (Bash 4.0/4.1), expandir array vazio
+    # sob `set -u` aborta o programa com "unbound variable".
+    if (( ${#cmd_scp[@]} == 0 )); then
+        _log_erro "Array de comandos SCP vazio apos _montar_cmd_scp (abortando)"
+        return 1
+    fi
 
     if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
         _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
@@ -373,13 +468,18 @@ _enviar_rsync() {
         _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
         return 1
     fi
+    # Invariante: nunca expandir array de comando vazio (ver _receber_scp).
+    if (( ${#ssh_cmd_parts[@]} == 0 )); then
+        _log_erro "Array de comandos SSH vazio apos _montar_cmd_ssh (abortando)"
+        return 1
+    fi
     local cmd_ssh
     cmd_ssh="$(_juntar_comando "${ssh_cmd_parts[@]}")"
 
     # Executa o upload (única chamada)
     if "${base_rsync[@]}" -e "${cmd_ssh}" "$arquivo_local" "$destino_completo"; then
         _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
-         return 0
+        return 0
     else
         _log_erro "Falha no upload RSYNC: ${arquivo_local}"
         return 1
@@ -399,6 +499,9 @@ _enviar_rsync_lote() {
         return 1
     fi
 
+    # `arquivo_local` era global (vazava para o chamador). Nomes genericos como
+    # este colidem com o escopo dinamico do bash e com variaveis de outros modulos.
+    local arquivo_local
     for arquivo_local in "${arquivos_locais[@]}"; do
         if [[ ! -f "$arquivo_local" ]]; then
             _log_erro "Arquivo local nao encontrado: ${arquivo_local}"
@@ -412,9 +515,11 @@ _enviar_rsync_lote() {
         return 1
     fi
 
-    local servidor="$DEFAULT_IP_SERVER"
-    local porta="$DEFAULT_SSH_PORTA"
-    local usuario_remoto="$DEFAULT_SSH_USER"
+    # Item 8: mesmos fallbacks de _enviar_rsync. Sem `${:-}`, uma variavel
+    # ausente aborta o programa sob `set -u` em vez de dar erro util.
+    local servidor="${DEFAULT_IP_SERVER:-}"
+    local porta="${DEFAULT_SSH_PORTA:-}"
+    local usuario_remoto="${DEFAULT_SSH_USER:-}"
     _log "Iniciando upload RSYNC em lote: ${#arquivos_locais[@]} arquivo(s)"
 
     if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
@@ -436,6 +541,11 @@ _enviar_rsync_lote() {
     local -a ssh_cmd_parts=()
     if ! _montar_cmd_ssh ssh_cmd_parts "$porta"; then
         _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
+        return 1
+    fi
+    # Invariante: nunca expandir array de comando vazio (ver _receber_scp).
+    if (( ${#ssh_cmd_parts[@]} == 0 )); then
+        _log_erro "Array de comandos SSH vazio apos _montar_cmd_ssh (abortando)"
         return 1
     fi
     local cmd_ssh
@@ -481,7 +591,19 @@ _baixar_biblioteca_sincroniza() {
     fi
 
     if _usar_chave_ssh; then
-        local arquivo_biblioteca="${DESTINO_BIBLIOTECA}${SAVATU:-}${VERSAO:-}.zip"
+        # Item 7: ${VERSAO:-} silencioso montava "tempSAV….zip" sem a versao e o
+        # download falhava com mensagem generica, longe da causa. Versao vazia
+        # e erro de configuracao, nao um nome alternativo.
+        if [[ -z "${VERSAO:-}" ]]; then
+            _log_erro "VERSAO nao definida — nao e possivel montar o nome do zip da biblioteca"
+            return 1
+        fi
+        local destino_biblioteca="${DESTINO_BIBLIOTECA:-}"
+        if [[ -z "$destino_biblioteca" ]]; then
+            _log_erro "DESTINO_BIBLIOTECA nao definida (verifique constantes.sh)"
+            return 1
+        fi
+        local arquivo_biblioteca="${destino_biblioteca}${SAVATU:-}${VERSAO}.zip"
 
         # SEGURANCA: Validar caminho construido
         if ! _validar_caminho_seguro "$arquivo_biblioteca"; then
@@ -489,7 +611,14 @@ _baixar_biblioteca_sincroniza() {
             return 1
         fi
         local -a cmd_scp_lib=()
-        _montar_cmd_scp cmd_scp_lib "$porta"
+        if ! _montar_cmd_scp cmd_scp_lib "$porta"; then
+            _log_erro "Falha ao montar opcoes SCP para a biblioteca"
+            return 1
+        fi
+        if (( ${#cmd_scp_lib[@]} == 0 )); then
+            _log_erro "Array de comandos SCP vazio apos _montar_cmd_scp (abortando)"
+            return 1
+        fi
         local origem="${usuario_remoto}@${servidor}:${arquivo_biblioteca}"
 
         if ! _validar_origem_remota "$origem"; then
@@ -498,18 +627,49 @@ _baixar_biblioteca_sincroniza() {
         fi
 
         if "${cmd_scp_lib[@]}" "$origem" "${CFG_PORTALSAV:-}/"; then
-            local nome_bib="${SAVATU:-}${VERSAO:-}.zip"
-            local destino_bib="${CFG_PORTALSAV:-}/${nome_bib}"
-            if [[ ! -f "$destino_bib" ]]; then
-                _log_erro "Arquivo nao encontrado apos download: ${destino_bib}"
+            # SAVATU contem um curinga POR DESIGN (ex: "tempSAV_IS2025_*_", em
+            # config.sh: classX="IS${CFG_VERSAOCLASS}_*_"). O shell remoto do
+            # scp expande esse padrao e baixa TODOS os arquivos que casam
+            # (classA_, classB_, tel_isc_, xml_...), cada um gravado com o nome
+            # REAL. Por isso nao existe — e nunca existiu — um arquivo local
+            # chamado "tempSAV_IS2025_*_2109.zip": a checagem antiga por esse
+            # nome literal falhava sempre, mesmo com o download completo.
+            # Aqui resolve-se o padrao no destino e confere-se cada arquivo.
+            local padrao_bib="${SAVATU:-}${VERSAO}.zip"
+            local -a baixados=()
+            local _arq_bib
+            while IFS= read -r -d '' _arq_bib; do
+                baixados+=("$_arq_bib")
+            done < <(find "${CFG_PORTALSAV:-}" -maxdepth 1 -type f -name "${padrao_bib}" -print0 2>/dev/null)
+
+            if (( ${#baixados[@]} == 0 )); then
+                _log_erro "Nenhum arquivo '${padrao_bib}' encontrado em ${CFG_PORTALSAV:-} apos o download"
+                _log_erro "Conteudo atual do diretorio:"
+                _listar_arquivos_baixados "${CFG_PORTALSAV:-}" "${padrao_bib}"
                 return 1
             fi
-            if [[ ! -s "$destino_bib" ]]; then
-                _log_erro "Arquivo recebido vazio: ${destino_bib}"
-                rm -f -- "$destino_bib"
-                return 1
-            fi
-            _log_sucesso "Download da biblioteca concluido: ${nome_bib}"
+
+            for _arq_bib in "${baixados[@]}"; do
+                if [[ ! -s "$_arq_bib" ]]; then
+                    _log_erro "Arquivo recebido vazio: ${_arq_bib##*/}"
+                    rm -f -- "$_arq_bib"
+                    return 1
+                fi
+                # Integridade do zip. Usa "unzip -Z1" (indice central), NAO "-t":
+                # o codigo do projeto ja documenta em constantes.sh/programas.sh
+                # que "-t" rele e descomprime o arquivo INTEIRO, e por isso o
+                # indice central e o padrao e o "-t" e modo profundo opt-in
+                # (C_BACKUP_TESTE_INTEGRIDADE). Como a extracao em biblioteca.sh
+                # ja descomprime tudo, o "-t" aqui dobrava o trabalho e ainda
+                # assim acusava corrupcao em zip que a extracao abre bem.
+                if ! _zip_indice_valido "$_arq_bib"; then
+                    _log_erro "Arquivo corrompido ou download incompleto: ${_arq_bib##*/}"
+                    rm -f -- "$_arq_bib"
+                    return 1
+                fi
+            done
+
+            _log_sucesso "Download da biblioteca concluido: ${#baixados[@]} arquivo(s) [${padrao_bib}]"
             return 0
         else
             _log_erro "Falha no download da biblioteca: ${SAVATU:-}${VERSAO:-}.zip"
@@ -527,6 +687,11 @@ _baixar_biblioteca_sincroniza() {
         # Cada origem deve ser um argumento separado "user@host:caminho"
         # (concatenar tudo em um unico token quebra o SCP moderno/SFTP:
         #  "protocol error: filename does not match request")
+        # Itens 3 e 7: `arquivo` e `destino_bib` sao locais (evitam vazar para
+        # o chamador), e `destino_bib` recebe o padrao de constantes.sh — sem
+        # `${:-}` a expansao aborta o programa sob `set -u` se faltar.
+        local destino_bib="${DESTINO_BIBLIOTECA:-}"
+        local arquivo
         local -a origens=()
         for arquivo in "${arquivos_update[@]}"; do
             # SEGURANCA: Validar cada nome de arquivo antes do uso
@@ -534,20 +699,27 @@ _baixar_biblioteca_sincroniza() {
                 _log_erro "Erro: Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
                 return 1
             fi
-            if ! _validar_caminho_seguro "${DESTINO_BIBLIOTECA}${arquivo}"; then
-                _log_erro "Erro: Caminho de atualizacao invalido ou malicioso: ${DESTINO_BIBLIOTECA}${arquivo}"
+            if ! _validar_caminho_seguro "${destino_bib}${arquivo}"; then
+                _log_erro "Erro: Caminho de atualizacao invalido ou malicioso: ${destino_bib}${arquivo}"
                 return 1
             fi
-            origens+=("${usuario_remoto}@${servidor}:${DESTINO_BIBLIOTECA}${arquivo}")
+            origens+=("${usuario_remoto}@${servidor}:${destino_bib}${arquivo}")
         done
 
         local -a cmd_scp=()
-        _montar_cmd_scp cmd_scp "$porta"
+        if ! _montar_cmd_scp cmd_scp "$porta"; then
+            _log_erro "Falha ao montar opcoes SCP para o download em lote"
+            return 1
+        fi
+        if (( ${#cmd_scp[@]} == 0 )); then
+            _log_erro "Array de comandos SCP vazio apos _montar_cmd_scp (abortando)"
+            return 1
+        fi
 
-        local origem_remota
-        for origem_remota in "${origens[@]}"; do
-            if ! _validar_origem_remota "$origem_remota"; then
-                _log_erro "Origem remota invalida: ${origem_remota}"
+        local origem
+        for origem in "${origens[@]}"; do
+            if ! _validar_origem_remota "$origem"; then
+                _log_erro "Origem remota invalida: ${origem}"
                 return 1
             fi
         done
@@ -562,6 +734,12 @@ _baixar_biblioteca_sincroniza() {
                 fi
                 if [[ ! -s "$destino_baixado" ]]; then
                     _log_erro "Arquivo recebido vazio: ${arquivo_baixado}"
+                    rm -f -- "$destino_baixado"
+                    return 1
+                fi
+                # Mesmo criterio do download com chave: indice central, nao -t.
+                if ! _zip_indice_valido "$destino_baixado"; then
+                    _log_erro "Arquivo corrompido ou download incompleto: ${arquivo_baixado}"
                     rm -f -- "$destino_baixado"
                     return 1
                 fi
@@ -614,6 +792,10 @@ _baixar_programas_vaievem() {
     fi
 
     # Montar origens remotas em uma unica conexao SCP (lote)
+    # Itens 3 e 7: `arquivo` e `destino_prog` locais; `destino_prog` com padrao
+    # de constantes.sh (sem `${:-}` a expansao aborta sob `set -u`).
+    local destino_prog="${DESTINO_SERVER:-}"
+    local arquivo
     local -a origens=()
     local -a nomes_arquivos=()
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
@@ -622,13 +804,13 @@ _baixar_programas_vaievem() {
             _log_erro "Nome de arquivo de atualizacao invalido ou malicioso: ${arquivo}"
             return 1
         fi
-        if ! _validar_caminho_seguro "${DESTINO_SERVER}${arquivo}"; then
-            _log_erro "Caminho de atualizacao invalido ou malicioso: ${DESTINO_SERVER}${arquivo}"
+        if ! _validar_caminho_seguro "${destino_prog}${arquivo}"; then
+            _log_erro "Caminho de atualizacao invalido ou malicioso: ${destino_prog}${arquivo}"
             return 1
         fi
         _linha
         _exibir_mensagem_centralizada "${VERDE}" "Transferindo: $arquivo"
-        origens+=("${usuario_remoto}@${servidor}:${DESTINO_SERVER}${arquivo}")
+        origens+=("${usuario_remoto}@${servidor}:${destino_prog}${arquivo}")
         nomes_arquivos+=("$arquivo")
     done
 
@@ -641,7 +823,14 @@ _baixar_programas_vaievem() {
     done
 
     local -a cmd_scp=()
-    _montar_cmd_scp cmd_scp "$porta"
+    if ! _montar_cmd_scp cmd_scp "$porta"; then
+        _log_erro "Falha ao montar opcoes SCP para o download dos programas"
+        return 1
+    fi
+    if (( ${#cmd_scp[@]} == 0 )); then
+        _log_erro "Array de comandos SCP vazio apos _montar_cmd_scp (abortando)"
+        return 1
+    fi
 
     if ! "${cmd_scp[@]}" "${origens[@]}" "${caminho}/"; then
         _log_erro "Falha no download em lote dos programas"
@@ -649,9 +838,13 @@ _baixar_programas_vaievem() {
     fi
 
     # Integridade de cada zip recebido (existe no destino absoluto ${caminho}/)
+    # Item 4: usar o BASENAME, como ja fazia _baixar_biblioteca_sincroniza. O
+    # scp grava em "${caminho}/" com o basename; com o caminho completo, um
+    # nome contendo "/" (permitido por _validar_caminho_seguro) apontaria para
+    # um arquivo que nunca existiu e a checagem falharia com falso negativo.
     local arquivo_destino
     for arquivo in "${nomes_arquivos[@]}"; do
-        arquivo_destino="${caminho%/}/${arquivo}"
+        arquivo_destino="${caminho%/}/${arquivo##*/}"
         if [[ ! -f "$arquivo_destino" ]]; then
             _log_erro "Arquivo nao encontrado apos download: $arquivo"
             return 1
@@ -664,7 +857,11 @@ _baixar_programas_vaievem() {
             return 1
         fi
         _linha
-        if ! "${DEFAULT_UNZIP:-unzip}" -t "$arquivo_destino" >/dev/null 2>&1; then
+        # Mesmo criterio dos demais downloads: indice central. Este teste com
+        # "-t" era pre-existente aqui, mas dobrava a descompressao do payload
+        # (que a extracao em programas.sh faz logo em seguida) e nao logava o
+        # motivo da recusa. Agora registra em LOG_ATU.
+        if ! _zip_indice_valido "$arquivo_destino"; then
             _erro "Arquivo corrompido: $arquivo"
             # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
             rm -f -- "$arquivo_destino"
@@ -714,11 +911,21 @@ _enviar_arquivo_multi() {
 
     # Verificar se esta enviando multiplos arquivos ou apenas um
     if [[ "$arquivo_enviar" == *"*"* ]]; then
+        # Item 13: o nome/curinga tambem passa por _validar_caminho_seguro. O
+        # caminho de arquivo unico (abaixo) ja validava; o de curinga nao, e o
+        # nome ia direto para o `find -name`. Hoje o caller em arquivos.sh
+        # tambem valida, mas a funcao nao deve depender disso.
+        if ! _validar_caminho_seguro "$arquivo_enviar"; then
+            _erro "Padrao de arquivo invalido ou malicioso: ${arquivo_enviar}"
+            _aguardar 2
+            return 1
+        fi
         # Localizar arquivos que correspondem ao padrao
         local -a arquivos_encontrados=()
+        local arquivo_item
         while IFS= read -r -d '' arquivo_item; do
             arquivos_encontrados+=("$arquivo_item")
-        done < <(find "${diretorio_origem:-.}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0)
+        done < <(find "${diretorio_origem:-.}" -maxdepth 1 -type f -name "${arquivo_enviar}" -print0 2>/dev/null)
 
         if (( ${#arquivos_encontrados[@]} == 0 )); then
             _erro "Nenhum arquivo encontrado para envio multiplo"

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/09/2026
+# Versao: 30/09/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -337,13 +337,20 @@ _opinvalida() {
 
 #---------- FUNCOES DE VALIDACAO ----------#
 
-# Valida nome de programa (letras maiúsculas, números e underscore)
+# Valida nome de programa (letras maiusculas, numeros e underscore)
 # Parametros: $1=nome_programa
 # Retorna: 0=valido 1=invalido
+#
+# NAO confundir com a validacao de nome de ARQUIVO DE DADOS em arquivos.sh
+# (_recuperar_arquivo_individual, `^[A-Z0-9_-]+$`): nome de programa vira nome
+# de classe/tela e nao aceita hifen, enquanto o arquivo de dados aceita. Sao
+# dominios diferentes de proposito; o que importa e que ambos sejam estritos.
+# Teto de 64: nome de programa IsCOBOL nao passa disso, e sem o teto um input
+# gigante atravessaria a regex e viraria nome de arquivo absurdo.
 _validar_nome_programa() {
     local programa="${1:-}"
 
-    if [[ -z "$programa" ]]; then
+    if [[ -z "$programa" || ${#programa} -gt 64 ]]; then
         return 1
     fi
 
@@ -501,7 +508,15 @@ _log() {
 
     # Validação do arquivo de log
     if [[ -z "$arquivo_log" ]]; then
-        arquivo_log="/var/log/sav.log"
+        # Fallback no $TMPDIR do usuario, nao em /var/log: o SAV roda como
+        # usuario comum e /var/log/sav.log seria inacessivel, fazendo cada
+        # chamada a _log falhar e emitir _erro em stderr. Se nem o TMPDIR
+        # servir, /dev/null e sempre valido.
+        arquivo_log="${TMPDIR:-/tmp}/sav.log"
+        if [[ ! -d "${arquivo_log%/*}" || ! -w "${arquivo_log%/*}" ]]; then
+            printf '%s\n' "$mensagem" >> /dev/null
+            return 0
+        fi
     fi
 
     # Caminho sem barra (ex: "sav.log"): log_dir seria o proprio nome —
@@ -561,14 +576,54 @@ _log_sucesso() {
     _log "SUCESSO: $sucesso" "$arquivo_log" || true
 }
 
+# Executa um comando obrigatoriamente tolerante a falha, REGISTRANDO o erro.
+# Parametros: $1=rotulo para o log $2=arquivo_log $3..=comando + argumentos
+# Retorna: sempre 0
+#
+# Por que este helper existe:
+#   O Bash suspende o `errexit` (`set -e`) por TODO o escopo dinamico de um
+#   comando usado em lista `||` ou como condicao de `if !`. Logo tanto
+#   `cmd || true` quanto `if ! cmd; then ...; fi` desabilitam o set -e DENTRO
+#   da funcao chamada — nao existe forma de manter o errexit ativo nesse caso.
+#   Consequencia pratica: um `|| true` no chamador esconde falhas reais da
+#   cadeia inteira. Este helper troca o silencio por registro e mantem o fluxo.
+#   A correcao complementar e a funcao chamada guardar os proprios comandos
+#   falliveis (nao depender do errexit estar desligado dentro dela).
+_tentar_log() {
+    local rotulo="${1:-operacao}"
+    local arquivo_log="${2:-${LOG_LIMPA:-/dev/null}}"
+    shift 2 || true
+
+    if (($# == 0)); then
+        _log "AVISO: ${rotulo} — nenhum comando informado" "${arquivo_log}" || true
+        return 0
+    fi
+
+    local rc=0
+    "$@" || rc=$?
+    if (( rc != 0 )); then
+        _log "AVISO: ${rotulo} falhou (rc=${rc}) — prosseguindo" "${arquivo_log}" || true
+    fi
+    return 0
+}
+
 #---------- FUNCOES DE ARQUIVO ----------#
 
 # Remove arquivos antigos de um diretorio
 # Parametros: $1=diretorio $2=dias $3=padrao(opcional)
+# Remove arquivos antigos de um diretorio
+# Parametros: $1=diretorio $2=dias $3=padrao(opcional) $4=nao_apagar(opcional)
+#   $4: lista separada por espaco de globs que NUNCA podem ser removidos.
+#       Padrao "*.dat *.idx": dados e indices do SAV nao sao temporarios, mesmo
+#       que o padrao $3 case com eles. O expurgo manual de arquivos.sh aplica a
+#       mesma protecao; sem ela aqui o expurgo DIARIO (que roda sozinho no
+#       bootstrap) era o mais agressivo dos tres.
+# Retorna: 0 se ok, 1 se diretorio/dias invalidos
 _limpar_arquivos_antigos() {
     local diretorio="${1:-}"
     local dias="${2:-}"
     local padrao="${3:-*}"
+    local nao_apagar="${4:-*.dat *.idx}"
     local count=0
 
     # Validação do diretório e segurança contra limpeza na RAIZ
@@ -583,9 +638,29 @@ _limpar_arquivos_antigos() {
         return 1
     fi
 
-    # Conta e remove em uma unica passada (find -delete evita um fork de rm por arquivo)
-    count=$("${DEFAULT_FIND:-find}" "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" -print -delete 2>/dev/null | wc -l)
-    count="${count//[[:space:]]/}"
+    # Montar as exclusoes em array (nomes com espaco/glob preservados).
+    # read -a e obrigatorio: `arr=($var)` sem aspas sofre expansao de pathname
+    # e o padrao "*.dat" viraria os .dat existentes no CWD, deixando a
+    # exclusao inerte e os dados serem apagados.
+    local -a find_exclusoes=()
+    local -a _nao_apagar=()
+    read -r -a _nao_apagar <<< "$nao_apagar"
+    local _excl
+    for _excl in ${_nao_apagar[@]+"${_nao_apagar[@]}"}; do
+        [[ -z "$_excl" ]] && continue
+        find_exclusoes+=("!" -iname "$_excl")
+    done
+
+    # Conta e remove em uma unica passada (find -delete evita um fork de rm por arquivo).
+    # O "|| true" e obrigatorio: utils.sh roda sob `set -euo pipefail`, e o find
+    # retorna 1 quando nao consegue descer em um subdiretorio (permissao). Sem
+    # isso a atribuicao falha e o errexit mata o programa inteiro. O 2>/dev/null
+    # ja esconde o aviso do find; o log abaixo registra o resultado real.
+    local contagem
+    contagem=$("${DEFAULT_FIND:-find}" "${diretorio:-.}" -name "$padrao" -type f -mtime +"$dias" \
+        ${find_exclusoes[@]+"${find_exclusoes[@]}"} -print -delete 2>/dev/null | wc -l) || true
+    count="${contagem//[[:space:]]/}"
+    [[ "$count" =~ ^[0-9]+$ ]] || count=0
 
     if ((count > 0)); then
         _log "Remocao concluida: $count arquivos antigos removidos de $diretorio"
@@ -623,26 +698,32 @@ _executar_expurgador_diario() {
     # Array de pares "dias:diretorio" (nao usar array associativo: chave vazia
     # e fatal em Bash 4.0-4.3 e 5.2+, e dirs duplicados descartariam regras).
     # Pares duplicados sao inofensivos: _limpar_arquivos_antigos e idempotente.
+    # 30 dias em todos: antes eram 10/15, mais agressivos que o expurgo manual
+    # de arquivos.sh, e sem proteger .dat/.idx. Este daily roda sozinho no
+    # bootstrap (principal.sh), ou seja, era o expurgo mais destrutivo e o
+    # menos visivel dos tres. Agora usa o mesmo criterio do manual.
     local -a pares_limpeza=(
-        "10:${DEFAULT_LOGS_DIR:-}"
-        "15:${DEFAULT_BACKUP_DIR:-}"
-        "15:${DEFAULT_BASEBACKUP_DIR:-}"
-        "15:${DEFAULT_PROGS_DIR:-}"
-        "15:${DEFAULT_PROGS_ATUAL_DIR:-}"
-        "10:${DEFAULT_ENVIA_DIR:-}"
-        "10:${CFG_PORTALSAV:-}"
+        "30:${DEFAULT_LOGS_DIR:-}"
+        "30:${DEFAULT_BACKUP_DIR:-}"
+        "30:${DEFAULT_BASEBACKUP_DIR:-}"
+        "30:${DEFAULT_PROGS_DIR:-}"
+        "30:${DEFAULT_PROGS_ATUAL_DIR:-}"
+        "30:${DEFAULT_ENVIA_DIR:-}"
+        "30:${CFG_PORTALSAV:-}"
         "30:${savlog}"
         "30:${err_isc}"
         "30:${viewvix}"
     )
 
-    # Loop otimizado para limpeza
+    # Loop otimizado para limpeza. O $4 explicita a protecao de .dat/.idx
+    # (tambem o default do helper) para deixar a decisao visivel aqui.
     local _par_limpeza
     for _par_limpeza in "${pares_limpeza[@]}"; do
         local _dias_limpeza="${_par_limpeza%%:*}"
         local _dir_limpeza="${_par_limpeza#*:}"
         if [[ -n "$_dir_limpeza" && -d "$_dir_limpeza" ]]; then
-            _limpar_arquivos_antigos "$_dir_limpeza" "$_dias_limpeza" "*.*" 2>/dev/null || true
+            _tentar_log "expurgo diario em ${_dir_limpeza}" "${LOG_LIMPA}" \
+                _limpar_arquivos_antigos "$_dir_limpeza" "$_dias_limpeza" "*.*" "*.dat *.idx"
         fi
     done
 
@@ -767,19 +848,31 @@ _checar_dependencias() {
 # Garante que ~/.ssh existe com as permissoes corretas
 # -------------------------------------------------------------------------
 _preparar_diretorio_ssh() {
-    if [ ! -d "$HOME/.ssh" ]; then
-        mkdir -p "$HOME/.ssh"
-        # 0700: padrao exigido pelo ssh para o diretorio de chaves
-        chmod 700 "$HOME/.ssh"
-        _ok "Diretorio ~/.ssh criado."
+    if [[ -d "$HOME/.ssh" ]]; then
+        return 0
     fi
+
+    if ! mkdir -p "$HOME/.ssh"; then
+        _erro "Nao foi possivel criar $HOME/.ssh (verifique permissao de escrita em $HOME)."
+        return 1
+    fi
+    # 0700: padrao exigido pelo ssh para o diretorio de chaves. mkdir acima já
+    # cria com o umask vigente, entao o chmod corrige sem janela de exposicao.
+    if ! chmod 700 "$HOME/.ssh"; then
+        _erro "Diretorio $HOME/.ssh criado, mas chmod 700 falhou."
+        return 1
+    fi
+    _ok "Diretorio ~/.ssh criado."
+    return 0
 }
 
 # -------------------------------------------------------------------------
 # Verifica se a chave ja existe; pergunta se quer criar caso nao exista
 # -------------------------------------------------------------------------
+# Verifica se a chave ja existe; pergunta se quer criar caso nao exista
+# Retorna: 0 se a chave existe (ou foi criada com sucesso), 1 se nao ha chave
 _verificar_ou_criar_chave() {
-    if [ -f "$SSH_CHAVE" ] && [ -f "$SSH_CHAVE_PUB" ]; then
+    if [[ -f "$SSH_CHAVE" && -f "$SSH_CHAVE_PUB" ]]; then
         _ok "Chave SSH encontrada: $SSH_CHAVE"
         return 0
     fi
@@ -793,14 +886,21 @@ _verificar_ou_criar_chave() {
     case "$RESPOSTA" in
         [sS]|[sS][iI][mM])
             _msg "Gerando par de chaves RSA 4096 bits..."
-            if ssh-keygen -t rsa -b 4096 -f "$SSH_CHAVE" -C "${SSH_USUARIO}@$(hostname)-$(date +%Y%m%d)"; then
-                _ok "Chave criada com sucesso: $SSH_CHAVE"
-            else
-                _erro "Falha ao criar a chave SSH."
+            if ! ssh-keygen -t rsa -b 4096 -f "$SSH_CHAVE" -C "${SSH_USUARIO:-sav}@$(hostname)-$(date +%Y%m%d)"; then
+                _erro "Falha ao criar a chave SSH em $SSH_CHAVE."
+                return 1
             fi
+            # Confirmar que os dois arquivos existem: ssh-keygen pode terminar
+            # com rc=0 e deixar o par incompleto (ex: disco cheio no .pub).
+            if [[ ! -f "$SSH_CHAVE" || ! -f "$SSH_CHAVE_PUB" ]]; then
+                _erro "ssh-keygen terminou, mas o par de chaves esta incompleto em $SSH_CHAVE."
+                return 1
+            fi
+            _ok "Chave criada com sucesso: $SSH_CHAVE"
             ;;
         *)
             _aviso "Operacao cancelada. Sem chave SSH nao e possivel conectar sem senha."
+            return 1
             ;;
     esac
     return 0
