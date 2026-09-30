@@ -207,8 +207,14 @@ _menu_biblioteca() {
         _exibir_rodape_menu
 
         if [[ -f "${CFG_DIR}/.versao" ]]; then
-            if ! "." "${CFG_DIR}/.versao" 2>/dev/null; then
-                _aviso "Falha ao carregar ${CFG_DIR}/.versao" >&2
+            # Parser com whitelist (sistema.sh): um .versao adulterado nao
+            # consegue sobrescrever PATH/HOME nem executar codigo neste shell.
+            # O guard mantem o menu vivo se o modulo nao foi carregado.
+            if command -v _carregar_versao_seguro >/dev/null 2>&1; then
+                _carregar_versao_seguro "${CFG_DIR}/.versao" ||
+                    _aviso "Falha ao carregar ${CFG_DIR}/.versao" >&2
+            else
+                _aviso "Modulo sistema.sh ausente: versao da biblioteca nao carregada" >&2
             fi
         fi
 

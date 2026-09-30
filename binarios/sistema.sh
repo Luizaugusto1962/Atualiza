@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/09/2026
+# Versao: 30/09/2026
 #
 
 # Variaveis globais esperadas
@@ -29,8 +29,9 @@ _mostrar_versao_iscobol() {
         _linha
         _erro "${SAVISC}${ISCCLIENT} nao encontrado ou nao executavel"
         _linha
-        _aguardar 2
     fi
+    # Unico ponto de pausa: _aguardar 2 antes de _aguardar_tecla só somava
+    # espera morta (o _aguardar_tecla abaixo já bloqueia).
     _aguardar_tecla
 }
 
@@ -47,6 +48,10 @@ _mostrar_versao_linux() {
     # Checando se conecta com a internet ou nao (pula em modo offline)
     if [[ "${CFG_OFFLINE:-n}" == "s" ]]; then
         printf '%s\n' "${VERDE}Internet: ${NORMAL}Nao verificada (modo OFF-Line)${NORMAL}"
+    elif ! command -v ping >/dev/null 2>&1; then
+        # Sem ping instalado o teste e impossivel: reportar isso e melhor do
+        # que afirmar "Desconectada" (o mesmo guard existe para ip/curl/uptime).
+        printf '%s\n' "${VERDE}Internet: ${NORMAL}Nao verificavel (comando 'ping' ausente)${NORMAL}"
     elif ping -c 1 -W 3 google.com &>/dev/null; then
         printf '%s\n' "${VERDE}Internet: ${NORMAL}Conectada${NORMAL}"
     else
@@ -54,25 +59,37 @@ _mostrar_versao_linux() {
     fi
 
     # Checando tipo de OS
+    # uname -o nao e POSIX (GNU coreutils); sem o guard, `os=$(uname -o)` que
+    # falha aborta o programa inteiro sob set -e.
     local os
-    os=$(uname -o)
+    os=$(uname -o 2>/dev/null || uname -s)
     printf '%s%s%s%s\n' "${VERDE}" "Sistema Operacional :" "${NORMAL}" "${os}${NORMAL}"
 
     # Checando OS Versao e nome
+    # /etc/os-release nao existe no Ubuntu 10.04 (alvo legado do AGENTS.md);
+    # /etc/lsb-release existe nessa versao. Um unico loop sobre o arquivo
+    # escolhido cobre os dois formatos (NAME=/DISTRIB_ID=, VERSION=/DISTRIB_RELEASE=).
+    local _osr_arq=""
     if [[ -f /etc/os-release ]]; then
+        _osr_arq="/etc/os-release"
+    elif [[ -f /etc/lsb-release ]]; then
+        _osr_arq="/etc/lsb-release"
+    fi
+
+    if [[ -n "$_osr_arq" ]]; then
         local os_nome="" os_versao="" _osr_linha=""
         while IFS= read -r _osr_linha; do
             case "$_osr_linha" in
-                NAME=*) os_nome="${_osr_linha#NAME=}" ;;
-                VERSION=*) os_versao="${_osr_linha#VERSION=}" ;;
+                NAME=* | DISTRIB_ID=*) os_nome="${_osr_linha#*=}" ;;
+                VERSION=* | DISTRIB_RELEASE=*) os_versao="${_osr_linha#*=}" ;;
             esac
-        done </etc/os-release
+        done <"$_osr_arq"
         os_nome="${os_nome//\"/}"
         os_versao="${os_versao//\"/}"
         printf '%s\n' "${VERDE}OS Nome :${NORMAL}${os_nome:-desconhecido}${NORMAL}"
         printf '%s\n' "${VERDE}OS Versao: ${NORMAL}${os_versao:-desconhecida}${NORMAL}"
     else
-        _aviso "Arquivo /etc/os-release nao encontrado."
+        _aviso "Arquivos /etc/os-release e /etc/lsb-release nao encontrados."
     fi
     printf "\n"
 
@@ -83,19 +100,25 @@ _mostrar_versao_linux() {
     printf "\n"
 
     # Checando Interno IP (fallback "Nao disponivel" se iproute2 ausente)
+    # O IP e o campo apos o token "src": fixar posicao ($7) quebra em rota
+    # direta ("1 dev lo src 127.0.0.1 uid 0"), onde $7 devolve "uid".
     local ip_interno="Nao disponivel"
     if command -v ip >/dev/null 2>&1; then
-        ip_interno=$(ip route get 1 2>/dev/null | awk '{print $7;exit}' || true)
+        ip_interno=$(ip route get 1 2>/dev/null |
+            awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}' || true)
         if [[ -z "$ip_interno" ]]; then ip_interno="Nao disponivel"; fi
     fi
     printf '%s\n' "${VERDE}IP Interno: ${NORMAL}${ip_interno}${NORMAL}"
     printf "\n"
 
     # Checando Externo IP (o padrao "${CFG_OFFLINE:-n}" cobre config ausente/vazia)
+    # -f faz curl falhar tambem em HTTP 4xx/5xx; sem isso o -s engolia o erro e
+    # o resultado saia vazio em vez do fallback "Nao disponivel".
     local ip_externo="Nao disponivel"
     if [[ "${CFG_OFFLINE:-n}" != "s" ]]; then
         if command -v curl >/dev/null 2>&1; then
-            ip_externo=$(curl -s --max-time 5 ipecho.net/plain || printf "Nao disponivel")
+            ip_externo=$(curl -fs --max-time 5 https://ipecho.net/plain 2>/dev/null ||
+                printf "Nao disponivel")
         else
             ip_externo="curl nao instalado"
         fi
@@ -112,16 +135,25 @@ _mostrar_versao_linux() {
     who 2>/dev/null || _aviso "Comando 'who' nao disponivel."
     printf "\n"
 
-    # Checando uso de memoria RAM e SWAP — direto, sem arquivo temporario
-    printf '%s\n' "${VERDE}Uso de Memoria Ram: ${NORMAL}"
-    free | grep -v -E '^Swap' || true
-    printf '%s\n' "${VERDE}Uso de Swap: ${NORMAL}"
-    free | grep -E '^Swap' || true
+    # Checando uso de memoria RAM e SWAP — 'free' chamado uma vez e
+    # reaproveitado (um grep para RAM, outro para SWAP)
+    if command -v free >/dev/null 2>&1; then
+        local _mem
+        _mem=$(free)
+        printf '%s\n' "${VERDE}Uso de Memoria Ram: ${NORMAL}"
+        grep -v -E '^Swap' <<<"${_mem}" || true
+        printf '%s\n' "${VERDE}Uso de Swap: ${NORMAL}"
+        grep -E '^Swap' <<<"${_mem}" || true
+    else
+        printf '%s\n' "${VERDE}Uso de Memoria Ram: ${NORMAL}${AMARELO}indisponivel${NORMAL}"
+        printf '%s\n' "${VERDE}Uso de Swap: ${NORMAL}${AMARELO}indisponivel${NORMAL}"
+    fi
     printf "\n"
 
-    # Checando uso de disco — direto, sem arquivo temporario
+    # Checando uso de disco — sem filtro: o grep '^/dev/' escondia filesystems
+    # fora de /dev (overlay, tmpfs, 'map auto_home') e so mantinha o cabecalho.
     printf '%s\n' "${VERDE}Espaco em Disco: ${NORMAL}"
-    df -h 2>/dev/null | grep -E 'Filesystem|^/dev/' || true
+    df -h 2>/dev/null || _aviso "Comando 'df' nao disponivel."
     printf "\n"
 
     # Checando o Sistema Uptime
@@ -149,6 +181,11 @@ _carregar_versao_seguro() {
     local arquivo_versao="${1:-}"
     local linha
 
+    # Sem este guard, `done <""` aborta o shell (redirecionamento invalido).
+    if [[ -z "$arquivo_versao" || ! -r "$arquivo_versao" ]]; then
+        return 1
+    fi
+
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         case "$linha" in
             VERSAOANT=*)
@@ -172,7 +209,8 @@ _mostrar_parametros() {
     # Carregar versao antes de exibir (parser seguro + whitelist, sem
     # sourcing direto do arquivo)
     if [[ -f "${CFG_DIR}/.versao" ]]; then
-        _carregar_versao_seguro "${CFG_DIR}/.versao"
+        _carregar_versao_seguro "${CFG_DIR}/.versao" ||
+            _aviso "Falha ao carregar ${CFG_DIR}/.versao"
     fi
     clear
     _linha "=" "${CIANO}"
@@ -208,6 +246,9 @@ _mostrar_parametros() {
     printf '%b\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Diretorio do backup da biblioteca anterior: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}${NORMAL}"
     printf '%b\n' "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT:-desconhecida}${NORMAL}"
+    # VERSAO era parseada acima mas nunca exibida; e a versao alvo do .versao
+    # (biblioteca.sh monta os *.zip com ela e a grava em VERSAOANT ao gravar).
+    printf '%b\n' "${VERDE}Versao da biblioteca em uso: ${NORMAL}${VERSAO:-desconhecida}${NORMAL}"
     printf '%b\n' "${VERDE}Servidor OFF: ${NORMAL}${CFG_OFFLINE}${NORMAL}"
     printf '%b\n' "${VERDE}Acessa as chaves: ${NORMAL}${CFG_CHAVE_SSH}${NORMAL}"
     printf '%b\n' "${VERDE}Variavel do compilado: ${NORMAL}${compilado}${NORMAL}"
@@ -227,6 +268,15 @@ _manutencao_setup() {
 
     if [[ ! -f "${atualiza}" ]]; then
         _erro "atualiza.sh nao encontrado em ${SCRIPT_DIR}"
+        _aguardar 2
+        return 1
+    fi
+
+    # O repositorio executa os scripts diretamente (o contrato e o bit +x). Perder
+    # a permissao no scp daria rc=126 reportado como falha generica no log.
+    if [[ ! -x "${atualiza}" ]]; then
+        _erro "atualiza.sh sem permissao de execucao: ${atualiza}"
+        _erro "Corrija com: chmod +x ${atualiza}"
         _aguardar 2
         return 1
     fi
