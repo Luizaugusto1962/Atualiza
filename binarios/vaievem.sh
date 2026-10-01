@@ -11,7 +11,7 @@ set -euo pipefail
 # (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026
+# Versao: 01/10/2026
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -678,7 +678,7 @@ _baixar_biblioteca_sincroniza() {
     else
         _definir_variaveis_biblioteca
         local arquivos_update
-        read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
+        read -ra arquivos_update <<< "$LISTA_ARQUIVOS_BIBLIOTECA"
         if [[ ${#arquivos_update[@]} -eq 0 ]]; then
             _erro "Nenhum arquivo de atualizacao encontrado"
             return 1

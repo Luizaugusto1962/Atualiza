@@ -561,7 +561,7 @@ _limpar_estado_variaveis() {
 
     # Higiene de caches/estado interno de utils.sh (nao entram em REGISTRO_VARIAVEIS)
     # _JUTIL_* e arquivos.sh: cache de validacao do REBUILD e contadores do lote.
-    unset -v _LOG_DIR_CACHE _stty_size \
+    unset -v _LOG_DIR_CACHE _stty_size _TEMPO_FORMATADO \
         _JUTIL_PRONTO _JUTIL_LOTE_OK _JUTIL_LOTE_FALHAS _JUTIL_LOTE_PULADOS 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true

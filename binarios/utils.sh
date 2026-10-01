@@ -392,7 +392,13 @@ _confirmar() {
 # =============================================================================
 # Formata tempo decorrido em segundos para exibicao
 # Parametros: $1=decorrido seconds
-# Retorna: string formatada (ex: "2m 30s" ou "45s")
+# Resultado: _TEMPO_FORMATADO = string formatada (ex: "2m 30s" ou "45s")
+#
+# ATENCAO: grava em _TEMPO_FORMATADO em vez de imprimir. Era `printf '%s'` e os
+# callers faziam `$(_formatar_tempo ...)` — um fork de subshell por chamada, e
+# _mostrar_progresso_backup chama isto uma vez por SEGUNDO de cada etapa com
+# barra (tar, gzip, unzip...). Nao reintroduza a captura por $( ).
+_TEMPO_FORMATADO=""
 _formatar_tempo() {
     local decorrido="${1:-}"
     local min=$(( decorrido / 60 ))
@@ -400,7 +406,7 @@ _formatar_tempo() {
     local tempo_str=""
     if (( min > 0 )); then tempo_str="${min}m "; fi
     tempo_str+="${seg}s"
-    printf '%s' "$tempo_str"
+    _TEMPO_FORMATADO="$tempo_str"
 }
 
 # Exibe barra de progresso visual enquanto processo esta em andamento
@@ -446,7 +452,8 @@ _mostrar_progresso_backup() {
         # Formatar campos com tamanho fixo para que \r sobrescreva corretamente
         local msg_format tempo_format
         printf -v msg_format "%-25s" "$msg"
-        printf -v tempo_format "%8s" "$(_formatar_tempo "$decorrido")"
+        _formatar_tempo "$decorrido"
+        printf -v tempo_format "%8s" "$_TEMPO_FORMATADO"
 
         printf "\r\033[K%s[INFORMATIVO]%s %s |%s| %s" \
             "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
@@ -464,7 +471,8 @@ _mostrar_progresso_backup() {
     # Formatar e exibir resultado final
     local msg_format tempo_format
     printf -v msg_format "%-25s" "$msg"
-    printf -v tempo_format "%8s" "$(_formatar_tempo "$decorrido")"
+    _formatar_tempo "$decorrido"
+    printf -v tempo_format "%8s" "$_TEMPO_FORMATADO"
 
     if (( status_processo == 0 )); then
         printf "\r\033[K%s[OK]%s %s |%s| %s concluido\n" \

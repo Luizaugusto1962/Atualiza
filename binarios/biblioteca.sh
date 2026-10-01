@@ -6,10 +6,11 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/09/2026
+# Versao: 01/10/2026
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
+declare LISTA_ARQUIVOS_BIBLIOTECA=""                 # Lista de arquivos, separada por espaco
 
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
@@ -196,7 +197,7 @@ _processar_biblioteca_offline() (
     _definir_variaveis_biblioteca
 
     local -a arquivos_update
-    read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
+    read -ra arquivos_update <<< "$LISTA_ARQUIVOS_BIBLIOTECA"
 
     local arquivos_encontrados=0
     for arquivo in "${arquivos_update[@]}"; do
@@ -234,7 +235,7 @@ _salvar_atualizacao_biblioteca() (
 
     # Verificar arquivos de atualizacao
     local -a arquivos_verificar
-    read -ra arquivos_verificar <<< "$(_obter_arquivos_atualizacao)"
+    read -ra arquivos_verificar <<< "$LISTA_ARQUIVOS_BIBLIOTECA"
 
     for arquivo in "${arquivos_verificar[@]}"; do
         if [[ ! -r "${arquivo}" ]]; then
@@ -353,7 +354,7 @@ _executar_atualizacao_biblioteca() {
     _definir_variaveis_biblioteca
 
     local -a arquivos_update
-    read -ra arquivos_update <<< "$(_obter_arquivos_atualizacao)"
+    read -ra arquivos_update <<< "$LISTA_ARQUIVOS_BIBLIOTECA"
     # Contar arquivos a processar
     local total_arquivos=0
     for arquivo in "${arquivos_update[@]}"; do
@@ -517,7 +518,7 @@ _reverter_programa_especifico_biblioteca() {
         _aguardar_tecla
         return 1
     fi
-    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)        
+    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
     read -rp "${AMARELO}Informe o nome do programa em MAIÚSCULO: ${NORMAL}" programa_reverter
 
     if ! _validar_nome_programa "${programa_reverter}"; then
@@ -575,12 +576,14 @@ _solicitar_versao_biblioteca() {
 }
 
 # Define variaveis da biblioteca baseado na versao
+# Monta tambem LISTA_ARQUIVOS_BIBLIOTECA (nomes separados por espaco) para os
+# callers fazerem `read -ra x <<< "$LISTA_ARQUIVOS_BIBLIOTECA"` sem fork.
+# Antes a lista era obtida por `$(_obter_arquivos_atualizacao)`: um subshell por
+# chamada (3x em biblioteca.sh + 1x em vaievem.sh) so para concatenar 3
+# variaveis que ja estavam em memoria.
 _definir_variaveis_biblioteca() {
     ATUALIZA1="${SAVATU1:-}${VERSAO}.zip"
     ATUALIZA2="${SAVATU2:-}${VERSAO}.zip"
     ATUALIZA3="${SAVATU3:-}${VERSAO}.zip"
-}
-
-_obter_arquivos_atualizacao() {
-    printf "%s %s %s" "${ATUALIZA1}" "${ATUALIZA2}" "${ATUALIZA3}"
+    LISTA_ARQUIVOS_BIBLIOTECA="${ATUALIZA1} ${ATUALIZA2} ${ATUALIZA3}"
 }
