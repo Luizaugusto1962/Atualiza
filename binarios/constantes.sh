@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026-01
+# Versao: 01/10/2026-02
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -179,6 +179,7 @@ PERM_FILE_PRIVATE="${PERM_FILE_PRIVATE:-0600}"                     # Arquivos pr
 # ":-" (nao "-"): var vazia tambem e ausente. Com "-" unico, um .config trazes
 # "PERM_FILE_EXEC=" deixava a variavel VAZIA e o chmod seguinte falhava.
 PERM_FILE_EXEC="${PERM_FILE_EXEC:-0755}"                          # Arquivos executaveis (rwxr-xr-x)
+PERM_FILE_CONFIG="${PERM_FILE_CONFIG:-0644}"                      # Arquivos de configuracao/dados (rw-r--r--)
 PERM_FILE_BACKUP="${PERM_FILE_BACKUP:-0644}"                      # Arquivos de backup (rw-r--r--)
 
 # =============================================================================
@@ -233,6 +234,22 @@ DEFAULT_UNZIP="${DEFAULT_UNZIP:-/usr/bin/unzip}"
 DEFAULT_ZIP="${DEFAULT_ZIP:-/usr/bin/zip}"
 DEFAULT_TAR="${DEFAULT_TAR:-tar}"
 DEFAULT_FIND="${DEFAULT_FIND:-/usr/bin/find}"
+
+# =============================================================================
+# ATUALIZACAO (baixar.sh)
+# =============================================================================
+# Nome do pacote de atualizacao e diretorios/sufixos derivados dele. Antes
+# "atualiza.zip", "dir_temp_atualizacao" e ".sh.bkp" cram nos modulos e
+# qualquer renomeacao exigia varrer baixar.sh inteiro.
+ARQUIVO_ZIP_ATU="${ARQUIVO_ZIP_ATU:-atualiza.zip}"                # Pacote de atualizacao
+ATU_DIR_TEMP="${ATU_DIR_TEMP:-dir_temp_atualizacao}"               # Subdiretorio temporario de extracao do ZIP
+ATU_DIR_STAGING="${ATU_DIR_STAGING:-dir_stage_atualizacao}"         # Staging: extrai e valida antes de instalar
+ATU_DIR_RESTAURAR="${ATU_DIR_RESTAURAR:-dir_restaurar_sh}"         # Subdiretorio temporario de restauracao de backup
+ATU_SUFIXO_BACKUP="${ATU_SUFIXO_BACKUP:-.sh.bkp}"                  # Sufixo dos backups de script
+ATU_SUFFIXO_PARCIAL="${ATU_SUFFIXO_PARCIAL:-.part}"                # Download incompleto (so vira ZIP apos validar)
+ATU_TENTATIVAS_DOWNLOAD="${ATU_TENTATIVAS_DOWNLOAD:-3}"            # Tentativas (wget --tries / curl --retry)
+ATU_TIMEOUT_CONEXAO="${ATU_TIMEOUT_CONEXAO:-30}"                   # Timeout de conexao do download (s)
+ATU_TIMEOUT_DOWNLOAD="${ATU_TIMEOUT_DOWNLOAD:-300}"                # Tempo maximo total do download (s)
 
 # =============================================================================
 # DIRETORIOS DE DESTINO

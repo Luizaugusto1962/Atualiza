@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026
+# Versao: 01/10/2026-01
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -100,6 +100,15 @@ declare -A _MAPA_VARIAVEIS=(
     ["CFG_BACKUP_PATH"]="ATUALIZACAO"
     ["CFG_EMPRESA"]="ATUALIZACAO"
     ["VERSAOANT"]="ATUALIZACAO"
+    ["ARQUIVO_ZIP_ATU"]="ATUALIZACAO"
+    ["ATU_DIR_TEMP"]="ATUALIZACAO"
+    ["ATU_DIR_STAGING"]="ATUALIZACAO"
+    ["ATU_DIR_RESTAURAR"]="ATUALIZACAO"
+    ["ATU_SUFIXO_BACKUP"]="ATUALIZACAO"
+    ["ATU_SUFFIXO_PARCIAL"]="ATUALIZACAO"
+    ["ATU_TENTATIVAS_DOWNLOAD"]="ATUALIZACAO"
+    ["ATU_TIMEOUT_CONEXAO"]="ATUALIZACAO"
+    ["ATU_TIMEOUT_DOWNLOAD"]="ATUALIZACAO"
 
     # CAMINHOS
     ["SCRIPT_DIR"]="CAMINHOS"
@@ -167,6 +176,7 @@ declare -A _MAPA_VARIAVEIS=(
     ["PERM_DIR_SECURE"]="SEGURANCA"
     ["PERM_FILE_PRIVATE"]="SEGURANCA"
     ["PERM_FILE_EXEC"]="SEGURANCA"
+    ["PERM_FILE_CONFIG"]="SEGURANCA"
 
     # LOGS
     ["LOG_ATU"]="LOGS"
