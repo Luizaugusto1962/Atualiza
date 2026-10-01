@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026
+# Versao: 01/10/26
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -2021,19 +2021,98 @@ _executar_expurgador_lista_dirs() {
         return 0
     fi
 
+    # Extensoes alvo do expurgo. Edite esta lista para incluir ou alterar o que
+    # e excluido. Padrao "todas": apaga qualquer tipo de arquivo com mais de
+    # LIM_PADIR_DIAS dias. Outro valor restringe o find aos tipos listados
+    # (ponto opcional, minusculas ou maiusculas).
+    local -a extensoes_limpar=("todas")
+    # local -a extensoes_limpar=("txt" "xml")
+    # local -a extensoes_limpar=("DAT" "IDX" "bak" "log" "tmp" "jnl")
+    # local -a extensoes_limpar=()   # vazio equivale a "todas"
+
+    # Monta o filtro do find: ( -iname "*.dat" -o -iname "*.idx" ).
+    # O agrupamento e obrigatorio — sem ele o -o faz o -print -delete
+    # valer apenas para a ultima extensao.
+    local -a filtro_ext=()
+    local ext
+    if (( ${#extensoes_limpar[@]} > 0 )); then
+        for ext in "${extensoes_limpar[@]}"; do
+            ext="${ext//[[:space:]]/}"
+            [[ -z "$ext" ]] && continue
+            [[ "$ext" == "todas" || "$ext" == "*" ]] && continue
+            [[ "$ext" == .* ]] || ext=".${ext}"
+            if (( ${#filtro_ext[@]} > 0 )); then
+                filtro_ext+=(-o)
+            fi
+            filtro_ext+=(-iname "*${ext}")
+        done
+    fi
+    if (( ${#filtro_ext[@]} > 0 )); then
+        # Parenteses literais (sem barra): find e executado direto, sem shell
+        # intermediario para remover o escape.
+        filtro_ext=('(' "${filtro_ext[@]}" ')')
+    fi
+
+    # Pre-contagem por extensao: mostra o que sera apagado ANTES da
+    # confirmacao. Sem isso nao ha como distinguir "filtro nao casou" de
+    # "arquivo recente demais" — as duas situacoes produzem zeroremovidos.
+    # Busca sem -delete: apenas conta, nao altera nada.
+    local -A contagem_ext=()
+    local total_apagar=0
+    local nome_arq ext_chave
+    for diretorio in "${dirs_limpar[@]}"; do
+        while IFS= read -r nome_arq; do
+            [[ -z "$nome_arq" ]] && continue
+            ext_chave="${nome_arq##*/}"
+            if [[ "$ext_chave" == *.* && "$ext_chave" != .* ]]; then
+                ext_chave=".${ext_chave##*.}"
+            else
+                ext_chave="(sem-extensao)"
+            fi
+            ext_chave="${ext_chave,,}"
+            contagem_ext["$ext_chave"]=$(( ${contagem_ext["$ext_chave"]:-0} + 1 ))
+            ((total_apagar++)) || true
+        done < <(find "${diretorio}" -type f -mtime "+${LIM_PADIR_DIAS}" \
+            ${filtro_ext[@]+"${filtro_ext[@]}"} -print 2>/dev/null)
+    done
+
     # Confirmacao unica: a remocao e irreversivel e inclui .dat/.idx.
     _linha
-    _exibir_mensagem_centralizada "${VERMELHO}" "Expurgo IRREVERSIVEL (sem arquivo de resgate, inclui .dat e .idx) com mais de ${LIM_PADIR_DIAS} dias nos diretorios:"
+    if (( total_apagar > 0 )); then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Expurgo IRREVERSIVEL (sem arquivo de resgate) de ${total_apagar} arquivo(s) com mais de ${LIM_PADIR_DIAS} dias:"
+    else
+        _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo elegivel (extensoes filtradas + mais de ${LIM_PADIR_DIAS} dias) — nada sera apagado:"
+    fi
+
+    if (( ${#contagem_ext[@]} > 0 )); then
+        _exibir_mensagem_centralizada "${CIANO}" "  Por extensao:"
+        # mapfile + loop, nunca $(...) sem aspas: o word-split quebraria
+        # qualquer chave que contenha espaco.
+        local -a chaves_ext=()
+        mapfile -t chaves_ext < <(printf '%s\n' "${!contagem_ext[@]}" | sort)
+        local chave_ext
+        for chave_ext in ${chaves_ext[@]+"${chaves_ext[@]}"}; do
+            _exibir_mensagem_centralizada "${CIANO}" "    ${chave_ext} : ${contagem_ext[${chave_ext}]} arquivo(s)"
+        done
+    fi
+
+    _exibir_mensagem_centralizada "${AMARELO}" "  Diretorios:"
     for diretorio in "${dirs_limpar[@]}"; do
-        _exibir_mensagem_centralizada "${AMARELO}" "  - $diretorio"
+        _exibir_mensagem_centralizada "${AMARELO}" "    - $diretorio"
     done
+
+    if (( total_apagar == 0 )); then
+        _log "Expurgo (limpadir): nenhum arquivo elegivel para remocao" "${LOG_LIMPA}"
+        return 0
+    fi
+
     read -rp "${AMARELO}Confirma o expurgo acima? [S/N]: ${NORMAL}" confirmacao
     confirmacao=$(_sanitizar_entrada "${confirmacao:-}")
     confirmacao="${confirmacao^^}"
 
     if [[ "$confirmacao" != "S" ]]; then
-        _log "Expurgo (limpadir) cancelado pelo usuario (${#dirs_limpar[@]} diretorio(s) preservados)" "${LOG_LIMPA}"
-        _exibir_mensagem_centralizada "${AMARELO}" "Expurgo (limpadir) cancelado — diretorios preservados"
+        _log "Expurgo (limpadir) cancelado pelo usuario (${total_apagar} arquivo(s) preservados)" "${LOG_LIMPA}"
+        _exibir_mensagem_centralizada "${AMARELO}" "Expurgo (limpadir) cancelado — ${total_apagar} arquivo(s) preservados"
         return 0
     fi
 
@@ -2045,7 +2124,8 @@ _executar_expurgador_lista_dirs() {
         while IFS= read -r arquivo_removido; do
             _log "Expurgo (limpadir): removendo ${arquivo_removido}" "${LOG_LIMPA}"
             ((arquivos_removidos++)) || true
-        done < <(find "${diretorio}" -type f -mtime "+${LIM_PADIR_DIAS}" -print -delete 2>/dev/null)
+        done < <(find "${diretorio}" -type f -mtime "+${LIM_PADIR_DIAS}" \
+            ${filtro_ext[@]+"${filtro_ext[@]}"} -print -delete 2>/dev/null)
 
         _log "Expurgo (limpadir): ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"
         _exibir_mensagem_centralizada "${VERDE}" "Limpando diretorio extra: ${diretorio} (${arquivos_removidos} arquivos)"
