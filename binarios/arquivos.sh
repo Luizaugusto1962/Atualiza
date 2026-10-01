@@ -2025,8 +2025,8 @@ _executar_expurgador_lista_dirs() {
     # e excluido. Padrao "todas": apaga qualquer tipo de arquivo com mais de
     # LIM_PADIR_DIAS dias. Outro valor restringe o find aos tipos listados
     # (ponto opcional, minusculas ou maiusculas).
-    local -a extensoes_limpar=("todas")
-    # local -a extensoes_limpar=("txt" "xml")
+    # local -a extensoes_limpar=("todas")
+    local -a extensoes_limpar=("txt" "xml" "err")
     # local -a extensoes_limpar=("DAT" "IDX" "bak" "log" "tmp" "jnl")
     # local -a extensoes_limpar=()   # vazio equivale a "todas"
 
