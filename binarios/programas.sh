@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 25/09/2026
+# Versao: 01/10/2026
 #
 
 # Variaveis globais esperadas
@@ -21,28 +21,26 @@ declare arquivo_compilado_atual=""
 declare -a PROGRAMAS_SELECIONADOS=()
 declare -a ARQUIVOS_PROGRAMA=()
 
-# Restaura nullglob a partir do estado salvo por `shopt -p nullglob`.
-# Uso: _restaurar_nullglob "${_old_nullglob}"
-# Argumento vazio/ausente desliga (padrao seguro); nunca aborta sob `set -u`.
-_restaurar_nullglob() {
-    if [[ "${1:-}" == *"-s"* ]]; then
-        shopt -s nullglob
-    else
-        shopt -u nullglob
-    fi
-}
+# Coleta arquivos por glob SEM depender de nullglob e SEM fork.
+# Sem nullglob, um glob sem match se expande para o proprio padrao (ex: "*.class"),
+# entao o filtro `[[ -e "$f" ]] || continue` e o que substitui o shopt -s/u.
+# Funciona nos dois estados: com nullglob ligado o glob nao produz nada; com ele
+# desligado produz o literal do padrao, que o teste descarta.
+#
+# O padrao fica em UMA palavra (as partes do caminho vao entre aspas), igual no
+# codigo anterior — assim um diretorio com espaco nao sofre word splitting.
+# Nao extraia isto para um helper com `local -n`: nameref exige Bash 4.4+ e o
+# modulo precisa rodar em 4.0 (Ubuntu 10.04). Ver comentario em backup.sh:75.
 
 # Cleanup compartilhado por _processar_atualizacao_programas e
-# _processar_atualizacao_pacotes: restaura cwd, remove o temporario e restaura
-# nullglob. Definida uma unica vez no modulo (as copias internas foram
-# removidas para evitar divergencia). Usa escopo dinamico: le _cwd,
-# dir_temp_atualizacao e _old_nullglob do chamador — chamar somente apos
-# essas locais existirem. Comportamento identico as definicoes anteriores.
+# _processar_atualizacao_pacotes: restaura cwd e remove o temporario.
+# Definida uma unica vez no modulo. Usa escopo dinamico: le _cwd e
+# dir_temp_atualizacao do chamador — chamar somente apos essas locais existirem.
+# Nao restaura nullglob: nenhum glob deste modulo liga mais o shopt (ver nota
+# acima), entao nao ha estado de shell a reverter.
 _cleanupAtualizacao() {
     cd "$_cwd" || true
     rm -rf "${dir_temp_atualizacao}"
-    _restaurar_nullglob "${_old_nullglob:-}"
-
 }
 #---------- FUNCOES DE ATUALIZACAO ONLINE ----------#
 
@@ -183,11 +181,12 @@ _selecionar_programas_reversao() {
         return 1
     fi
 
-    local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
-    shopt -s nullglob
-    local backups=("${DEFAULT_PROGS_DIR}"/*.zip)
-    _restaurar_nullglob "${_old_nullglob:-}"
+    local backups=()
+    local bkp
+    for bkp in "${DEFAULT_PROGS_DIR}"/*.zip; do
+        [[ -e "$bkp" ]] || continue
+        backups+=("$bkp")
+    done
 
     if (( ${#backups[@]} == 0 )); then
         _aviso "Nenhum backup de programa encontrado em ${DEFAULT_PROGS_DIR}"
@@ -567,10 +566,6 @@ _processar_atualizacao_programas() {
     local _cwd
     _cwd="$(pwd)"
 
-    # Salvar estado original de nullglob para restauracao segura
-    local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
-
     # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
     # Criar diretorio temporario para extracao
@@ -625,17 +620,13 @@ _processar_atualizacao_programas() {
     # SEGURANCA: Validar integridade pos-extracao (cada programa deve ter gerado arquivos)
     local programa_verif
     for programa_verif in "${PROGRAMAS_SELECIONADOS[@]}"; do
-        local _old_nullglob_glob
-        _old_nullglob_glob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob_glob='shopt -u nullglob'
-        shopt -s nullglob
         local arquivos_programa=()
-        for f in "${programa_verif}"*."${EXTENSAO_CLASS}"; do
-            arquivos_programa+=("$f")
+        local f_verif
+        for f_verif in "${programa_verif}"*."${EXTENSAO_CLASS}" \
+                       "${programa_verif}"*."${EXTENSAO_TELAS}"; do
+            [[ -e "$f_verif" ]] || continue
+            arquivos_programa+=("$f_verif")
         done
-        for f in "${programa_verif}"*."${EXTENSAO_TELAS}"; do
-            arquivos_programa+=("$f")
-        done
-        _restaurar_nullglob "${_old_nullglob_glob:-}"
 
         if (( ${#arquivos_programa[@]} == 0 )); then
             _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
@@ -679,10 +670,6 @@ _processar_atualizacao_pacotes() {
     # #1: salvar cwd para restaurar ao final (evitar vazamento de diretorio)
     local _cwd
     _cwd="$(pwd)"
-
-    # Salvar estado original de nullglob para restauracao segura
-    local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
 
     # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
@@ -751,14 +738,12 @@ _processar_atualizacao_pacotes() {
     # Extrair nomes dos programas dos arquivos descompactados e fazer backup dos antigos
     local -A programas_encontrados=()
     local nome_base programa
-    local _old_nullglob_glob
-    _old_nullglob_glob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob_glob='shopt -u nullglob'
-    shopt -s nullglob
-    for f in *."${EXTENSAO_CLASS}" *."${EXTENSAO_TELAS}"; do
-        nome_base="${f%%.*}"
+    local f_pacote
+    for f_pacote in *."${EXTENSAO_CLASS}" *."${EXTENSAO_TELAS}"; do
+        [[ -e "$f_pacote" ]] || continue
+        nome_base="${f_pacote%%.*}"
         programas_encontrados["$nome_base"]=1
     done
-    _restaurar_nullglob "${_old_nullglob_glob:-}"
 
     if (( ${#programas_encontrados[@]} == 0 )); then
         _erro "Nenhum arquivo .${EXTENSAO_CLASS}/.${EXTENSAO_TELAS} encontrado nos pacotes"
@@ -944,13 +929,11 @@ _backup_programa_antigo() {
     if [[ -f "${E_EXEC}/${programa}.${EXTENSAO_CLASS}" ]]; then
         class_files+=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}")
     fi
-    local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
-    shopt -s nullglob
-    for f in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
-        class_files+=("$f")
+    local f_class
+    for f_class in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
+        [[ -e "$f_class" ]] || continue
+        class_files+=("$f_class")
     done
-    _restaurar_nullglob "${_old_nullglob:-}"
 
     if (( ${#class_files[@]} > 0 )); then
         if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
@@ -966,13 +949,11 @@ _backup_programa_antigo() {
     if [[ -f "${T_TELAS}/${programa}.${EXTENSAO_TELAS}" ]]; then
         tel_files+=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}")
     fi
-    local _old_nullglob
-    _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
-    shopt -s nullglob
-    for f in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
-        tel_files+=("$f")
+    local f_tel
+    for f_tel in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
+        [[ -e "$f_tel" ]] || continue
+        tel_files+=("$f_tel")
     done
-    _restaurar_nullglob "${_old_nullglob:-}"
 
     if (( ${#tel_files[@]} > 0 )); then
         if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
@@ -1002,13 +983,14 @@ _backup_programa_antigo() {
 # Reutilizado por _processar_atualizacao_programas e _processar_atualizacao_pacotes
 # Retorna: 0 sucesso, 1 falha (erro ja exibido e logado)
 _mover_arquivos_extraidos() {
-    local extensao arquivos_encontrados
+    local extensao
     for extensao in ".${EXTENSAO_CLASS}" ".${EXTENSAO_TELAS}"; do
-        local _old_nullglob
-        _old_nullglob=$(shopt -p nullglob 2>/dev/null) || _old_nullglob='shopt -u nullglob'
-        shopt -s nullglob
-        arquivos_encontrados=(*"${extensao}")
-        _restaurar_nullglob "${_old_nullglob:-}"
+        local -a arquivos_encontrados=()
+        local f_extraido
+        for f_extraido in *"${extensao}"; do
+            [[ -e "$f_extraido" ]] || continue
+            arquivos_encontrados+=("$f_extraido")
+        done
 
         if (( ${#arquivos_encontrados[@]} > 0 )); then
             local arquivo

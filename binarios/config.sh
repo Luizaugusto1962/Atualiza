@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026-01
+# Versao: 01/10/2026
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -561,7 +561,7 @@ _limpar_estado_variaveis() {
 
     # Higiene de caches/estado interno de utils.sh (nao entram em REGISTRO_VARIAVEIS)
     # _JUTIL_* e arquivos.sh: cache de validacao do REBUILD e contadores do lote.
-    unset -v _COLUNAS_CACHE _LOG_DIR_CACHE _stty_size \
+    unset -v _LOG_DIR_CACHE _stty_size \
         _JUTIL_PRONTO _JUTIL_LOTE_OK _JUTIL_LOTE_FALHAS _JUTIL_LOTE_PULADOS 2>/dev/null || true
 
     tput sgr0 2>/dev/null || true

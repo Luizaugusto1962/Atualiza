@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026
+# Versao: 01/10/2026
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -27,57 +27,35 @@ if [[ -t 1 || -t 0 ]]; then
     # Se COLUMNS não está definido, tentar obter do terminal
     if [[ -z "${COLUMNS:-}" ]] && command -v stty >/dev/null 2>&1; then
         _stty_size=$(stty size 2>/dev/null)
-        COLUMNS=$(printf '%s\n' "$_stty_size" | awk '{print $2}' 2>/dev/null)
-        LINES=$(printf '%s\n' "$_stty_size" | awk '{print $1}' 2>/dev/null)
+        # "24 80" -> LINES=24 COLUMNS=80 por split do bash (evita 2 forks de awk)
+        LINES=${_stty_size%% *}
+        COLUMNS=${_stty_size##* }
         export COLUMNS LINES
     fi
 fi
 
-# Garantir que COLUMNS tenha um valor válido
+# Garantir que COLUMNS/LINES tenham um valor válido NUMERICO.
+# Este é o invariante que permite ler ${COLUMNS} direto (sem fork) em todas as
+# funções de exibição abaixo. Sem o teste numérico, um COLUMNS herdado do
+# ambiente (ex.: "abc") faria printf "%*s" falhar; com ele, o fallback é o mesmo
+# DEFAULT_COLUMNS que _obter_colunas usava.
 COLUMNS="${COLUMNS:-$DEFAULT_COLUMNS}"
+[[ "$COLUMNS" =~ ^[0-9]+$ && "$COLUMNS" -gt 0 ]] || COLUMNS="$DEFAULT_COLUMNS"
 LINES="${LINES:-$DEFAULT_LINES}"
+[[ "$LINES" =~ ^[0-9]+$ && "$LINES" -gt 0 ]] || LINES="$DEFAULT_LINES"
 export COLUMNS LINES
 
 # =============================================================================
 # Funcoes de Utilitarios Basicos
 # =============================================================================
-# Obtem largura do terminal com fallback seguro
-# Retorna: numero de colunas
-# Obtem largura do terminal usando variavel de ambiente COLUMNS
-# Estrategia: COLUMNS (já definida) > Fallback padrão
-# Esta funcao garante que sempre retorna um valor válido
-# Retorna: numero de colunas (garantido ser positivo)
-_COLUNAS_CACHE=""
-_obter_colunas() {
-    local colunas="${COLUMNS:-}"
-
-    # Se COLUMNS está definido e é um numero positivo, usar
-    if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
-        printf '%s' "$colunas"
-        return 0
-    fi
-
-    # Reutilizar ultimo valor valido sem reprovar stty
-    if [[ -n "$_COLUNAS_CACHE" ]]; then
-        printf '%s' "$_COLUNAS_CACHE"
-        return 0
-    fi
-
-    # Fallback: tentar atualizar COLUMNS via stty se disponível
-    if [[ -t 1 ]] && command -v stty >/dev/null 2>&1; then
-        colunas=$(stty size 2>/dev/null | awk '{print $2}' 2>/dev/null)
-        if [[ -n "$colunas" && "$colunas" =~ ^[0-9]+$ && "$colunas" -gt 0 ]]; then
-            export COLUMNS="$colunas"
-            _COLUNAS_CACHE="$colunas"
-            printf '%s' "$colunas"
-            return 0
-        fi
-    fi
-
-    # Ultima alternativa: usar valor padrão
-    printf '%s' "$DEFAULT_COLUMNS"
-    return 0
-}
+# Largura do terminal: leia ${COLUMNS} direto.
+#
+# As funcoes de exibicao deste modulo NAO usam mais um helper tipo
+# `_obter_colunas`: aquele exigia `colunas=$(_obter_colunas)`, e cada `$()` e um
+# fork de subshell (~3,5 ms) executado uma vez por linha exibida. Com
+# `checkwinsize` ligado (linha 19) e o invariante numerico garantido no topo
+# deste arquivo, ${COLUMNS} ja e a largura correta — ler a variavel e o custo
+# zero. Nao reintroduza o helper.
 
 # Configuracao de alertas
 # Helper comum: aplica formato printf (%s/%d) quando ha argumentos extras e
@@ -126,8 +104,11 @@ _atualizar_tamanho_terminal() {
         local tamanho
         tamanho=$(stty size 2>/dev/null)
         if [[ -n "$tamanho" ]]; then
-            LINES=$(echo "$tamanho" | awk '{print $1}')
-            COLUMNS=$(echo "$tamanho" | awk '{print $2}')
+            # "24 80" -> LINES=24 COLUMNS=80 por split do bash.
+            # Media de 2 forks de awk por chamada; _meio_da_tela roda isso a cada
+            # iteracao do loop de selecao de programas.
+            LINES=${tamanho%% *}
+            COLUMNS=${tamanho##* }
             export LINES COLUMNS
         fi
     fi
@@ -149,7 +130,7 @@ _exibir_mensagem_centralizada_a_esquerda() {
     local margem_esquerda
 
     # Obter largura do terminal
-    colunas=$(_obter_colunas)
+    colunas="$COLUMNS"
 
     # Calcular a margem para centralizar o BLOCO inteiro na tela
     if [[ "$colunas" -le "$largura_bloco" ]]; then
@@ -171,7 +152,7 @@ _exibir_mensagem_centralizada() {
     local mensagem="${2:-}"
     local colunas
 
-    colunas=$(_obter_colunas)
+    colunas="$COLUMNS"
     local tamanho_mensagem=${#mensagem}
 
     if [[ "$colunas" -lt "$tamanho_mensagem" ]]; then
@@ -192,7 +173,7 @@ _exibir_mensagem_direita() {
     local largura_terminal largura_mensagem posicao_inicio
 
     # Obter largura do terminal com fallback seguro
-    largura_terminal=$(_obter_colunas)
+    largura_terminal="$COLUMNS"
 
     largura_mensagem=${#mensagem}
     posicao_inicio=$((largura_terminal - largura_mensagem))
@@ -212,7 +193,7 @@ _exibir_mensagem_corrida() {
     local i
 
     # Obter largura do terminal com fallback seguro
-    largura_terminal=$(_obter_colunas)
+    largura_terminal="$COLUMNS"
 
     largura_mensagem=${#mensagem}
     posicao_inicio=$(( (largura_terminal - largura_mensagem) / 2 ))
@@ -239,7 +220,7 @@ _linha() {
     local cor="${2:-}"
     local colunas
 
-    colunas=$(_obter_colunas)
+    colunas="$COLUMNS"
 
     if [[ "$colunas" -lt 10 ]]; then
         colunas=10
@@ -264,7 +245,7 @@ _meia_linha() {
     local largura="${3:-50}"
     local espacos linhas colunas
 
-    colunas=$(_obter_colunas)
+    colunas="$COLUMNS"
 
     printf -v espacos "%${largura}s" ""
     linhas=${espacos// /$traco}
@@ -308,7 +289,7 @@ _aguardar_tecla() {
     local tempo_limite="${2:-${DEFAULT_PRESS_TIMEOUT:-12}}"
     local colunas
 
-    colunas=$(_obter_colunas)
+    colunas="$COLUMNS"
 
     # Centralizar pela largura real da mensagem (antes usava 36 fixo)
     local msg_completa="<< $mensagem >>"
@@ -329,7 +310,7 @@ _aguardar_tecla() {
 _opinvalida() {
     _linha "-" "${AMARELO:-}"
     # "Opcao Invalida" tem 14 caracteres (antes usava 18, deslocava 2 col)
-    local espacos=$(( ($(_obter_colunas) - 14) / 2 ))
+    local espacos=$(( (COLUMNS - 14) / 2 ))
     if (( espacos < 0 )); then espacos=0; fi
     printf "%*s%s\n" "$espacos" "" "${VERMELHO}Opcao Invalida${NORMAL}"
     _linha "-" "${AMARELO:-}"
