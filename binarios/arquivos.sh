@@ -2081,7 +2081,7 @@ _executar_expurgador_lista_dirs() {
     if (( total_apagar > 0 )); then
         _exibir_mensagem_centralizada "${VERMELHO}" "Expurgo IRREVERSIVEL (sem arquivo de resgate) de ${total_apagar} arquivo(s) com mais de ${LIM_PADIR_DIAS} dias:"
     else
-        _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo elegivel (extensoes filtradas + mais de ${LIM_PADIR_DIAS} dias) — nada sera apagado:"
+        _exibir_mensagem_centralizada "${AMARELO}" "Nenhum arquivo elegivel (extensoes filtradas + mais de ${LIM_PADIR_DIAS} dias), nada sera apagado:"
     fi
 
     if (( ${#contagem_ext[@]} > 0 )); then
