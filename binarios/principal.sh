@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 10/09/2026
+# Versao: 02/10/2026
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -29,8 +29,13 @@ SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 LIBS_DIR="${LIBS_DIR:-${SCRIPT_DIR}/binarios}"                           # Diretorio dos modulos de biblioteca
 CFG_DIR="${CFG_DIR:-${SCRIPT_DIR}/configuracoes}"                        # Diretorio de configuracoes
 PERM_DIR_SECURE="${PERM_DIR_SECURE:-0755}"                               # Diretórios seguros (rwxr-xr-x)
+# Diretório de logs precisa existir ANTES do carregamento dos módulos: auth.sh
+# chama _log no proprio source (ao criar .senhas) e _log aborta quando o
+# diretório não existe — o programa morria antes de qualquer menu. Definido
+# aqui porque constantes.sh (que tem o mesmo default) só entra depois.
+DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"
 
-export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE
+export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE DEFAULT_LOGS_DIR
 
 # =============================================================================
 # VERSAO DO SISTEMA
@@ -86,7 +91,7 @@ _criar_diretorio_seguro() {
 # =============================================================================
 
 # Lista de diretórios obrigatórios
-declare -a AUX_DIRS=("${LIBS_DIR}" "${CFG_DIR}")
+declare -a AUX_DIRS=("${LIBS_DIR}" "${CFG_DIR}" "${DEFAULT_LOGS_DIR}")
 
 # Nota: exit 1 direto (e nao _encerrar_programa) porque este bloco roda
 # ANTES do carregamento dos modulos, quando _encerrar_programa ainda nao existe.

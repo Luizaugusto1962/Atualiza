@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/09/2026
+# Versao: 02/10/2026
 #
 # Uso:
 #   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
@@ -22,6 +22,26 @@ set -euo pipefail
 _encerrar_programa() {
     local status="${1:-0}"
     exit "$status"
+}
+
+# Define em `alvo_usuario` o usuario cuja senha sera alterada.
+# Usa o global `usuario` quando o programa esta logado (fluxo principal) e
+# pergunta na stdin quando nao esta (este cadastro standalone).
+# Padrao: global `usuario` ja preenchido; senao, pergunta. Retorna 1 se o
+# usuario nao foi informado (stdin fechada ou entrada vazia).
+_pedir_usuario_alvo() {
+    if [[ -n "${usuario:-}" ]]; then
+        alvo_usuario="$usuario"
+        return 0
+    fi
+    local digitado
+    read -rp "Usuario: " digitado || digitado=""
+    digitado=$(_upper "$(_trim "$digitado")")
+    if [[ -z "$digitado" ]]; then
+        return 1
+    fi
+    alvo_usuario="$digitado"
+    return 0
 }
 
 # Diretorio do script (compativel com chamada direta ou via atualiza.sh)
@@ -93,7 +113,15 @@ main() {
                 ;;
             2)
                 printf "\n"
-                _alterar_senha || true
+                # O cadastro standalone nao faz login, entao o global `usuario`
+                # chega vazio: sem perguntar o alvo, _alterar_senha abortava
+                # sempre em "Voce precisa estar logado".
+                if _pedir_usuario_alvo; then
+                    _alterar_senha "$alvo_usuario" || true
+                else
+                    _exibir_mensagem_centralizada "${VERMELHO:-}" "Operacao cancelada."
+                fi
+                unset -v alvo_usuario 2>/dev/null || true
                 printf "\n"
                 read -rp "Pressione ENTER para continuar..." -t 5 || true
                 ;;

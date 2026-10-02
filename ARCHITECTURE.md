@@ -39,7 +39,7 @@ Três entry points, um binário lógico:
 |---|------|-----------|------------------|
 | 0 | Entry / Bootstrap | `atualiza.sh`, `principal.sh` | `case` de args, `SCRIPT_DIR/PLIBS_DIR`, `_criar_diretorio_seguro`, `MODULOS_CARREGAR`, `_main`, `_inicializar_sistema`, traps `EXIT/INT/TERM/HUP` |
 | 1 | Fundação | `constantes.sh`, `config.sh`, `utils.sh` | Defaults (`DEFAULT_*`, `DESTINO_*`, `SAVISC/REBUILD`, `C_JUTIL_*`), `_carregar_config_seguro`, `REGISTRO_VARIAVEIS`, `_encerrar_programa/_resetando/_limpeza_emergencia`, `_msg/_ok/_aviso/_erro/_log`, cores `tput`, `_check_instalado`, `_ssh_aceitar_novo`, `_executar_expurgador_diario` |
-| 2 | Segurança / Identidade | `auth.sh`, `cadastro.sh`, `setup.sh` | `_login` (3 tentativas, SHA-256, `.senhas` 0600), `_cadastrar_usuario`, `_validar_config_file` antes de carregar `.config`, `_validar_ssh`, `_ssh_contexto` |
+| 2 | Segurança / Identidade | `auth.sh`, `cadastro.sh`, `setup.sh` | `_login` (3 tentativas + rate limiting em `.tentativas_login`, hash `algoritmo$salt$hash` com salt, `.senhas` 0600), `_hash_senha`/`_hash_senha_simples` + allowlist de algoritmo, `_alterar_senha [usuario]`, `_cadastrar_usuario`, `_validar_config_file` antes de carregar `.config`, `_validar_ssh`, `_ssh_contexto` |
 | 3 | Transporte | `vaievem.sh` (+ `utils.sh` SSH) | `_validar_caminho_seguro` (toda op. arquivo passa aqui), `_montar_cmd_ssh/scp`, `_receber_scp`, `_enviar_rsync(_lote)`, `_baixar_programas_vaievem`, `_baixar_biblioteca_sincroniza`, `_enviar_arquivo_multi`; `_ssh_aceitar_novo` em vez de `StrictHostKeyChecking` inline; fallback senha/sem chave |
 | 4 | Domínio IsCOBOL | `programas.sh`, `biblioteca.sh` | Programas: online/offline/pacote, `_solicitar_programas_atualizacao` (limite 6), `_backup_programa_antigo`, `_processar_atualizacao_programas` (**restrição AGENTS.md: não alterar fluxo/saída/arquivos**), `_processar_reversao_programas`; Biblioteca: `_executar_atualizacao_biblioteca`, `_atualizar_transpc` → `DESTINO_BIBLIOTECA=/u/varejo/trans_pc/` |
 | 5 | Operações de arquivo | `arquivos.sh`, `backup.sh`, `baixar.sh`, `sistema.sh` | `arquivos.sh`: expurgo, jutil/rebuild em lote (ondas de N jobs + `wait $pid`, `C_JUTIL_PARALELO=1` default), `_listar_logs`; `backup.sh`: completo/incremental/multi-padrão, `_enviar_backup_{servidor,rede,avulso}`; `baixar.sh`: self-update online/offline (`GITHUB_UPDATE_URL`), `_voltar_sh_anterior`; `sistema.sh`: versões Linux/IsCOBOL, parâmetros, `_manutencao_setup` |
@@ -98,11 +98,11 @@ flowchart TB
 
     subgraph Standalone["Fluxos standalone"]
         S[setup.sh<br/>_carregar_constantes_setup<br/>_configure_ssh_access]
-        C[cadastro.sh<br/>_cadastrar_usuario]
+        C[cadastro.sh<br/>_cadastrar_usuario<br/>_alterar_senha]
     end
 
     subgraph Bootstrap["Bootstrap — principal.sh"]
-        P1[_criar_diretorio_seguro<br/>LIBS_DIR + CFG_DIR]
+        P1[_criar_diretorio_seguro<br/>LIBS_DIR + CFG_DIR + logs]
         P2[source 15 módulos<br/>escopo global, ordem fixa]
         P3[_main<br/>traps EXIT/INT/TERM/HUP<br/>_inicializar_sistema → _login → _principal]
     end
@@ -114,7 +114,7 @@ flowchart TB
     end
 
     subgraph Seguranca["Segurança"]
-        AUTH[auth.sh<br/>_login, SHA-256<br/>.senhas 0600]
+        AUTH[auth.sh<br/>_login, SHA-256, rate limiting<br/>.senhas 0600]
     end
 
     subgraph Transporte["Transporte — vaievem.sh"]

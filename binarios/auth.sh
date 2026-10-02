@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 24/09/2026
+# Versao: 02/10/2026-02
 # Autor: Luiz Augusto
 #
 # =============================================================================
@@ -18,6 +18,13 @@ set -euo pipefail
 # - Migração automática de hashes legados (sem salt)
 # - Criação automática do arquivo .senhas se não existir
 # =============================================================================
+#
+# ATENCAO: este arquivo NAO pode abortar o programa no carregamento. Todo
+# comando avulso aqui roda com `set -e` ativo (principal.sh ja ligou strict
+# mode antes do source), e `_log` retorna 1 quando o diretorio de log nao
+# existe ou nao e gravavel. Sem o `|| true` do lado de cada chamada, uma
+# instalacao nova sem `logs/` derrubava o utilitario antes do primeiro menu.
+#
 #
 # Arquivo de senhas oculto — avaliado sob demanda em vez de tempo de source
 arquivo_senhas="${CFG_DIR:-}/.senhas"
@@ -33,7 +40,7 @@ if [[ -n "${CFG_DIR:-}" ]]; then
             _erro "Não foi possível criar diretório de configuração: ${CFG_DIR}" >&2
         else
             chmod "${PERM_DIR_SECURE:-0700}" "${CFG_DIR}" 2>/dev/null || true
-            _log "Diretório de configuração criado: ${CFG_DIR}" "${LOG_ATU:-/dev/null}"
+            _log "Diretório de configuração criado: ${CFG_DIR}" "${LOG_ATU:-/dev/null}" || true
         fi
     fi
     
@@ -41,7 +48,7 @@ if [[ -n "${CFG_DIR:-}" ]]; then
     if [[ ! -f "$arquivo_senhas" ]]; then
         if touch "$arquivo_senhas" 2>/dev/null; then
             chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_senhas" 2>/dev/null || true
-            _log "Arquivo de senhas criado: ${arquivo_senhas}" "${LOG_ATU:-/dev/null}"
+            _log "Arquivo de senhas criado: ${arquivo_senhas}" "${LOG_ATU:-/dev/null}" || true
         else
             _erro "Não foi possível criar arquivo de senhas: ${arquivo_senhas}" >&2
         fi
@@ -103,17 +110,37 @@ _usuario_existe() {
 # FUNÇÕES DE HASH COM SALT (SEGURANÇA CRÍTICA)
 # =============================================================================
 
+# Allowlist de algoritmos de hash.
+# O algoritmo pode vir do proprio .senhas (campo 1 do formato
+# algoritmo$salt$hash) e esse arquivo pertence ao usuario dono: sem allowlist,
+# um registro adulterado viraria execucao de comando arbitrario com a senha
+# no stdin. md5sum/sha1sum ficam aqui so para conference de registros
+# legados; gravacao nova usa sempre HASH_ALGORITHM.
+_hash_algoritmo_permitido() {
+    case "${1:-}" in
+        sha256sum|sha512sum|sha1sum|md5sum|b2sum) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 # Funcao para hash da senha com salt usando algoritmo configuravel
 # Formato de saida: $algoritmo$salt$hash (compativel com verificacao)
 # Parametros:
 #   $1 - senha a ser hasheada
 #   $2 - salt existente (opcional, para verificar senha armazenada)
+#   $3 - algoritmo do registro (opcional; padrao HASH_ALGORITHM)
 # Retorna: string no formato "algoritmo$salt$hash"
 _hash_senha() {
     local senha="${1:-}"
     local salt_existente="${2:-}"
-    local algoritmo="${HASH_ALGORITHM:-sha256sum}"
-    
+    local algoritmo="${3:-}"
+    [[ -n "$algoritmo" ]] || algoritmo="${HASH_ALGORITHM:-sha256sum}"
+
+    if ! _hash_algoritmo_permitido "$algoritmo"; then
+        _erro "Algoritmo de hash '%s' nao permitido." "$algoritmo" >&2
+        return 1
+    fi
+
     if ! command -v "$algoritmo" >/dev/null 2>&1; then
         _erro "Algoritmo de hash '%s' nao encontrado." "$algoritmo" >&2
         return 1
@@ -138,6 +165,30 @@ _hash_senha() {
     hash=$(printf '%s%s' "$salt" "$senha" | "$algoritmo" | cut -d' ' -f1)
     
     printf '%s$%s$%s' "$algoritmo" "$salt" "$hash"
+}
+
+# Hash SEM salt e SEM prefixo de algoritmo — apenas o digest cru da senha.
+# E o formato gravado pelas versoes antigas deste modulo (verificado no
+# historico: `printf '%s' "$senha" | "$algoritmo" | cut -d' ' -f1`), e o
+# unico jeito de comparar um registro legado. Usado so na verificacao; quem
+# grava senha nova passa por _hash_senha, que sempre cria salt.
+# Como o registro legado nao guarda o algoritmo, aqui so vale o padrao atual.
+_hash_senha_simples() {
+    local senha="${1:-}"
+    local algoritmo="${2:-}"
+    [[ -n "$algoritmo" ]] || algoritmo="${HASH_ALGORITHM:-sha256sum}"
+
+    if ! _hash_algoritmo_permitido "$algoritmo"; then
+        _erro "Algoritmo de hash '%s' nao permitido." "$algoritmo" >&2
+        return 1
+    fi
+
+    if ! command -v "$algoritmo" >/dev/null 2>&1; then
+        _erro "Algoritmo de hash '%s' nao encontrado." "$algoritmo" >&2
+        return 1
+    fi
+
+    printf '%s' "$senha" | "$algoritmo" | cut -d' ' -f1
 }
 
 # Extrai o salt de um hash armazenado (formato: algoritmo$salt$hash)
@@ -196,6 +247,14 @@ _verificar_bloqueio_usuario() {
     tentativas="${linha%%|*}"
     timestamp_bloqueio="${linha##*|}"
     
+    # O arquivo e do usuario dono, entao os campos podem vir corrompidos ou
+    # adulterados. Sem esta guarda, `(( tentativas >= ... ))` com texto
+    # disparava "unbound variable" e o set -e derrubava a tela de login.
+    if [[ ! "$tentativas" =~ ^[0-9]+$ || ! "$timestamp_bloqueio" =~ ^[0-9]+$ ]]; then
+        _remover_registro_tentativas "$usuario"
+        return 0
+    fi
+    
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
     
     if (( tentativas >= max_tentativas )); then
@@ -234,19 +293,28 @@ _registrar_tentativa_falha() {
     local agora
     agora=$(date +%s)
     
-    if awk -F: -v u="$usuario" '$1 == u {exit 0} END {exit 1}' "$arquivo_tentativas" 2>/dev/null; then
+    # O teste de existencia precisa do mesmo padrao usado em _usuario_existe:
+    # `exit 0` no corpo do awk dispara o END, e `END {exit 1}` sobrescreve o
+    # status — o ramo de incremento nunca era alcancado e cada falha gerava
+    # uma linha nova (u:1:agora). O bloqueio nunca era atingido.
+    if awk -F: -v u="$usuario" '$1 == u {encontrado=1; exit} END {exit !encontrado}' "$arquivo_tentativas" 2>/dev/null; then
         local tmp_tent
         tmp_tent=$(mktemp) || return 0
         trap 'rm -f -- "$tmp_tent"' RETURN
-        
+
+        # `visto` evita multiplicar a linha quando o arquivo ja ficou
+        # corrompido com duplicatas (versoes antigas deste modulo).
         awk -F: -v u="$usuario" -v agora="$agora" -v max="$max_tentativas" '
         BEGIN { OFS=":" }
         $1 == u {
-            tentativas = $2 + 1
-            if (tentativas >= max) {
-                print $1, tentativas, agora
-            } else {
-                print $1, tentativas, $3
+            if (!visto) {
+                visto = 1
+                tentativas = $2 + 1
+                if (tentativas >= max) {
+                    print $1, tentativas, agora
+                } else {
+                    print $1, tentativas, $3
+                }
             }
             next
         }
@@ -295,11 +363,22 @@ _forcar_reset_senha_legado() {
     _linha
     
     local nova_senha confirm_senha hash_nova
+    # Teto de tentativas: sem ele, um `read` que falha (stdin fechada, pipe
+    # sem dados) mantinha a senha vazia e o while girava para sempre.
+    local tentativas_reset="${MAX_LOGIN_ATTEMPTS:-3}"
+    local rodada=0
     
-    while true; do
-        read -rsp "${AMARELO}Digite a nova senha: ${NORMAL}" nova_senha
+    while (( rodada < tentativas_reset )); do
+        ((rodada++)) || true
+        read -rsp "${AMARELO}Digite a nova senha: ${NORMAL}" nova_senha || {
+            _exibir_mensagem_centralizada "${VERMELHO}" "Entrada encerrada. Alteracao cancelada."
+            return 1
+        }
         printf "\n"
-        read -rsp "${AMARELO}Confirme a nova senha: ${NORMAL}" confirm_senha
+        read -rsp "${AMARELO}Confirme a nova senha: ${NORMAL}" confirm_senha || {
+            _exibir_mensagem_centralizada "${VERMELHO}" "Entrada encerrada. Alteracao cancelada."
+            return 1
+        }
         printf "\n"
         
         if [[ -z "$nova_senha" ]]; then
@@ -342,6 +421,9 @@ _forcar_reset_senha_legado() {
             return 1
         fi
     done
+    
+    _exibir_mensagem_centralizada "${VERMELHO}" "Numero maximo de tentativas excedido."
+    return 1
 }
 
 # =============================================================================
@@ -400,6 +482,13 @@ _cadastrar_usuario() {
         _exibir_mensagem_centralizada "${VERMELHO}" "Erro ao processar senha."
         return 1
     }
+    # Garante newline final antes do append: se a ultima linha do arquivo
+    # estiver sem \n, o `>>` grudaria nela e o usuario novo nem seria criado
+    # (o hash anterior viraria lixo). $( ) remove o \n final, entao a
+    # condicao abaixo e verdadeira exatamente quando falta o terminador.
+    if [[ -s "$arquivo_senhas" && -n "$(tail -c 1 -- "$arquivo_senhas")" ]]; then
+        printf '\n' >> "$arquivo_senhas"
+    fi
     printf '%s:%s\n' "${usuario}" "${resumo_senha}" >> "$arquivo_senhas"
     chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_senhas" 2>/dev/null || {
         _exibir_mensagem_centralizada "${AMARELO}" "AVISO: Nao foi possivel restringir permissoes de ${arquivo_senhas}"
@@ -493,7 +582,10 @@ _login() {
                         if _hash_precisa_migracao "$hash_armazenado"; then
                             _exibir_mensagem_centralizada "${AMARELO}" "Migracao de seguranca necessaria..."
                             _log "Migracao de hash legado iniciada: ${usuario}" "${LOG_ATU:-/dev/null}"
-                            resumo_senha=$(_hash_senha "$senha")
+                            # Registro legado = digest puro, sem salt: comparar
+                            # com _hash_senha (salt aleatorio) nunca casaria e a
+                            # migracao ficaria inalcancavel.
+                            resumo_senha=$(_hash_senha_simples "$senha")
                             if [[ "$resumo_senha" == "$hash_armazenado" ]]; then
                                 clear
                                 _linha "=" "${VERDE}"
@@ -515,11 +607,16 @@ _login() {
                             fi
                         else
                             # SEGURANÇA: Hash com salt - extrair salt e recalcular
-                            local salt_armazenado hash_esperado
+                            # O algoritmo vem do registro: usar sempre
+                            # HASH_ALGORITHM trancava todos os usuarios se a
+                            # constante mudasse (e deixava _extrair_algoritmo
+                            # sem uso). _hash_senha valida a allowlist.
+                            local salt_armazenado hash_esperado alg_armazenado
                             salt_armazenado=$(_extrair_salt "$hash_armazenado")
                             hash_esperado=$(_extrair_hash "$hash_armazenado")
+                            alg_armazenado=$(_extrair_algoritmo "$hash_armazenado")
                             
-                            resumo_senha=$(_hash_senha "$senha" "$salt_armazenado")
+                            resumo_senha=$(_hash_senha "$senha" "$salt_armazenado" "$alg_armazenado")
                             local hash_calculado
                             hash_calculado=$(_extrair_hash "$resumo_senha")
                             
@@ -560,11 +657,19 @@ _login() {
 }
 
 # Funcao para alterar senha com hash salt e limpeza segura
+# Parametro opcional $1: usuario alvo. Se omitido, usa o global `usuario`
+# (fluxo logado). O cadastro standalone (`atualiza.sh --cadastro`) nao faz
+# login, entao o global chega vazio e a opcao 2 do menu seria inacessivel.
 _alterar_senha() {
-    local senha_atual nova_senha confirm_senha hash_atual hash_nova hash_armazenado
-    # CORREÇÃO: Usar ${usuario:-} para evitar unbound variable
-    if [[ -z "${usuario:-}" ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Voce precisa estar logado para alterar a senha."
+    local senha_atual nova_senha confirm_senha hash_nova hash_armazenado
+    local alvo_usuario
+    alvo_usuario=$(_upper "$(_trim "${1:-${usuario:-}}")")
+    if [[ -z "$alvo_usuario" ]]; then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Informe o usuario ou faca login para alterar a senha."
+        return 1
+    fi
+    if ! _usuario_valido "$alvo_usuario"; then
+        _exibir_mensagem_centralizada "${VERMELHO}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         return 1
     fi
     
@@ -578,7 +683,7 @@ _alterar_senha() {
     _linha "=" "${VERMELHO}"
     read -rsp "${AMARELO}Digite a senha atual: ${NORMAL}" senha_atual
     printf "\n"
-    hash_armazenado=$(_obter_hash_usuario "$usuario")
+    hash_armazenado=$(_obter_hash_usuario "$alvo_usuario")
     if [[ -z "$hash_armazenado" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao encontrado."
         _linha "-" "${VERMELHO}"
@@ -587,19 +692,24 @@ _alterar_senha() {
     
     local senha_correta=0
     if _hash_tem_salt "$hash_armazenado"; then
-        local salt_armazenado hash_esperado
+        local salt_armazenado hash_esperado alg_armazenado
         salt_armazenado=$(_extrair_salt "$hash_armazenado")
         hash_esperado=$(_extrair_hash "$hash_armazenado")
+        # Algoritmo do registro, nao o default: caso contrario trocar
+        # HASH_ALGORITHM em constantes.sh invalidasse todas as senhas.
+        alg_armazenado=$(_extrair_algoritmo "$hash_armazenado")
         
         local hash_atual_completo hash_atual_calculado
-        hash_atual_completo=$(_hash_senha "$senha_atual" "$salt_armazenado")
+        hash_atual_completo=$(_hash_senha "$senha_atual" "$salt_armazenado" "$alg_armazenado")
         hash_atual_calculado=$(_extrair_hash "$hash_atual_completo")
         
         if [[ "$hash_atual_calculado" == "$hash_esperado" ]]; then
             senha_correta=1
         fi
     else
-        hash_atual=$(_hash_senha "$senha_atual")
+        # Registro legado: digest puro, sem salt (ver _hash_senha_simples).
+        local hash_atual
+        hash_atual=$(_hash_senha_simples "$senha_atual")
         if [[ "$hash_atual" == "$hash_armazenado" ]]; then
             senha_correta=1
         fi
@@ -636,8 +746,8 @@ _alterar_senha() {
     trap 'rm -f -- "$tmp_senhas"' RETURN
     
     while IFS= read -r linha || [[ -n "$linha" ]]; do
-        if [[ "$linha" == "${usuario}:"* ]]; then
-            printf '%s:%s\n' "${usuario}" "${hash_nova}"
+        if [[ "$linha" == "${alvo_usuario}:"* ]]; then
+            printf '%s:%s\n' "${alvo_usuario}" "${hash_nova}"
         else
             printf '%s\n' "$linha"
         fi
@@ -647,7 +757,7 @@ _alterar_senha() {
         chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_senhas" 2>/dev/null || true
         trap - RETURN
         _exibir_mensagem_centralizada "${VERDE}" "Senha alterada com sucesso."
-        _log "Senha alterada: ${usuario}" "${LOG_ATU:-/dev/null}"
+        _log "Senha alterada: ${alvo_usuario}" "${LOG_ATU:-/dev/null}"
     else
         rm -f -- "$tmp_senhas"
         trap - RETURN
