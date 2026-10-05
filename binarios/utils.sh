@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026
+# Versao: 05/10/2026-01
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -902,14 +902,36 @@ _enviar_chave_para_servidor() {
     _msg "Enviando chave publica para ${SSH_USUARIO}@${SSH_SERV}:${SSH_PORTA}..."
     _aviso "Sera solicitada a senha do usuario '${SSH_USUARIO}' no servidor (ultima vez)."
 
-    # ssh-copy-id moderno aceita -p/-o; clientes legados (RHEL/CentOS 6,
-    # OpenSSH 5.x) rejeitam. Detectar suporte e montar o comando adequado.
-    local ssh_copy_cmd
-    if ssh-copy-id -h 2>&1 | grep -qE '\-p|\-o'; then
-        ssh_copy_cmd=(ssh-copy-id -i "$SSH_CHAVE_PUB" -p "$SSH_PORTA" "${SSH_USUARIO}@${SSH_SERV}")
-    else
-        ssh_copy_cmd=(ssh-copy-id -i "$SSH_CHAVE_PUB" "${SSH_USUARIO}@${SSH_SERV}")
+    # O proprio ssh-copy-id executa tres ssh internos antes do prompt de senha
+    # (sonda da versao remota, filtro de chaves ja instaladas e a instalacao).
+    # Sem repassar -o, o PRIMEIRO desses ssh para no prompt de confirmacao da
+    # chave do host ("Are you sure you want to continue connecting (yes/no)?")
+    # e o programa fica congelado na linha "INFO: Source of key(s)..." sem
+    # avancar. Sem ConnectTimeout, um pacote descartado no caminho segura o
+    # fluxo por minutos. Mesmo tratamento ja usado em _testar_conexao,
+    # config.sh e vaievem.sh — nunca escreva StrictHostKeyChecking literal.
+    #
+    # ssh-copy-id moderno aceita -p/-o; o de OpenSSH 5.x (RHEL/CentOS 6) aceita
+    # SO -i: sem -p ele cairia na porta 22 e, em firewall com DROP, travaria
+    # ali tambem. Suporta -p e -o sao detectados separadamente porque nao
+    # apareceram juntos na mesma versao.
+    local uso_ssh_copy_id
+    uso_ssh_copy_id="$(ssh-copy-id -h 2>&1 || true)"
+
+    local -a ssh_copy_cmd=(ssh-copy-id -i "$SSH_CHAVE_PUB")
+    if grep -qE '\-p' <<< "$uso_ssh_copy_id"; then
+        ssh_copy_cmd+=(-p "$SSH_PORTA")
+    elif [[ -n "$SSH_PORTA" ]]; then
+        _erro "ssh-copy-id desta maquina nao aceita -p (OpenSSH antigo): ele cairia na porta 22 e travaria ali."
+        _msg "  Envie a chave pela porta ${SSH_PORTA} direto:"
+        _msg "  ssh -p ${SSH_PORTA} ${SSH_USUARIO}@${SSH_SERV} 'cat >> ~/.ssh/authorized_keys' < ${SSH_CHAVE_PUB}"
+        return 0
     fi
+    if grep -qE '\-o' <<< "$uso_ssh_copy_id"; then
+        ssh_copy_cmd+=(-o "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+        ssh_copy_cmd+=(-o "ConnectTimeout=${SSH_TIMEOUT:-15}")
+    fi
+    ssh_copy_cmd+=("${SSH_USUARIO}@${SSH_SERV}")
 
     if "${ssh_copy_cmd[@]}"; then
         _ok "Chave enviada com sucesso!"
