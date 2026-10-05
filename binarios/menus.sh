@@ -590,7 +590,6 @@ _menu_ajuda_principal() {
         _exibir_opcao_menu "5" "Exportar Manual"
         _exibir_opcao_menu "6" "Ajuda por Contexto"
         _exibir_rodape_menu
-        _linha "=" "${VERDE}"
 
         local opcao
         if ! _ler_opcao_menu "ajuda" opcao; then
