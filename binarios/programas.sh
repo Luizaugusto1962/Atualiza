@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026
+# Versao: 06/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -102,6 +102,7 @@ _atualizar_programa_offline() {
     _exibir_mensagem_centralizada "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${CFG_PORTALSAV}"
     _linha
     _aguardar_tecla
+    return 0
 
     # Verificar arquivos do servidor offline se configurado
     if ! _verificar_arquivos_offline; then
