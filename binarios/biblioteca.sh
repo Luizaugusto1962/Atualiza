@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026
+# Versao: 06/10/2026-01
 #
 declare pids=()                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -74,6 +74,8 @@ _atualizar_transpc() {
         if [[ "${CFG_OFFLINE}" == "s" ]]; then
             _linha
             _exibir_mensagem_centralizada "${AMARELO}" "Parametro de biblioteca do servidor OFF ativo"
+            _linha
+            _aviso "Use a opcao 2 (Atualizacao OFF-Line) com os arquivos ja em ${CFG_PORTALSAV}."
             _linha
             _aguardar_tecla
             return 0

@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-01
+# Versao: 06/10/2026-02
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -993,7 +993,10 @@ _editar_lista_arquivos() {
         printf "\n"
 
         local opcao
-        if ! _ler_opcao_menu "variosarquivos"; then
+        # O destino ("opcao") e obrigatorio: sem ele _ler_opcao_menu retorna 1
+        # sem ler nada e o "continue" redesenha o menu para sempre, sem nunca
+        # chegar ao case. Foi o unico call site do sistema que esqueceu o arg.
+        if ! _ler_opcao_menu "variosarquivos" opcao; then
             continue
         fi
 

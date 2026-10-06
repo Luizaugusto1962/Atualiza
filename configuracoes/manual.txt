@@ -5,77 +5,207 @@
 
 INDICE:
 ---------------------------------------------------------------
-1. Introducao
-2. Menu Principal
-3. Atualizacao de Programas
-4. Atualizacao de Biblioteca
-5. Ferramentas
-6. Limpeza de Temporarios
-7. Recuperacao de Arquivos
-8. Backups
-9. Transferencia de Arquivos
-10. Configuracoes (Setup)
-11. Lembretes
-12. Resolucao de Problemas
+ 1. Ajuda Rapida
+ 2. Ajuda no Geral
+ 3. Menu Principal
+ 4. Atualizacao de Programas
+ 5. Atualizacao de Biblioteca
+ 6. Rotinas de Backup
+ 7. Gerenciar Arquivos
+ 8. Recuperacao de Arquivo(s)
+ 9. Limpeza de Temporarios
+10. Transferencia de Arquivos
+11. Ferramentas
+12. Menu das Configuracoes
+13. Setup do Sistema
+14. Lembretes (Bloco de Notas)
+15. Avisos de Entrada
+16. Logs do Sistema
+17. Sistema de Ajuda
+18. Ajuda por Contexto
+19. Escolha de Base / Tipo de Backup / Lista de Arquivos
+
+---------------------------------------------------------------
+[AJUDA_RAPIDA]
+AJUDA RAPIDA
+---------------------------------------------------------------
+
+COMO CHAMAR A AJUDA:
+---------------------------------------------------------------
+ ?  /  H  /  HELP  /  AJUDA   = Ajuda do menu em que voce esta
+ M  /  MANUAL                 = Manual completo (este documento)
+
+NAVEGACAO:
+---------------------------------------------------------------
+ [Numero]   = Selecionar a opcao
+ 9          = Voltar ao menu anterior
+ Q / SAIR   = Encerrar o sistema com seguranca
+ Ctrl+C     = Interromper a operacao em andamento
+ ENTER      = Confirmar / usar o valor padrao
+
+CONFIRMACOES:
+---------------------------------------------------------------
+ S          = Sim
+ N          = Nao
+ ENTER      = Usa o valor padrao [indicado em maiusculo]
+ (letras minusculas tambem sao aceitas: s/sim, n/nao)
+
+LEITURA DO MENUAL:
+---------------------------------------------------------------
+ ENTER      = Proxima pagina (25 linhas por pagina)
+ A          = Exibir o restante sem pausar
+ Q          = Interromper a exibicao
+
+REGRAS RAPIDAS:
+---------------------------------------------------------------
+ * Nomes de programas e de arquivos sempre em MAIUSCULAS
+ * Nao use espaco em nome de programa ou arquivo
+ * Toda confirmacao e registrada em log
+ * Faca backup antes de qualquer atualizacao da biblioteca
+ * Em caso de duvida, volte ao menu principal e chame o suporte
+
+---------------------------------------------------------------
+[AJUDA_NO_GERAL]
+AJUDA GERAL - SISTEMA SAV
+---------------------------------------------------------------
+
+O QUE E:
+---------------------------------------------------------------
+O Sistema SAV e uma ferramenta de atualizacao e manutencao de
+sistemas SAV (IsCOBOL/ISAM) instalados em servidores Linux.
+Ele atualiza programas e bibliotecas, faz backup e restauracao
+da base, recupera indices, limpa temporarios, expurga arquivos
+antigos, transfere arquivos e atualiza o proprio utilitario.
+
+COMO ENTRAR NO SISTEMA:
+---------------------------------------------------------------
+ Comando                  Funcao
+ ------------------------------------------------------------
+ ./atualiza.sh            Abre o programa principal (menu)
+ ./atualiza.sh --setup    Configuracao inicial do sistema
+ ./atualiza.sh --setup --edit   Edita a configuracao existente
+ ./atualiza.sh --cadastro Cadastra usuario / altera senha
+
+Requisitos: Bash 4.0 ou superior, zip, unzip, rsync e wget
+(cursor). O programa exige sessao interativa (terminal ou pipe)
+e apaga o arquivo instalador.sh se ele existir ao lado do
+atualiza.sh.
+
+LOGIN:
+---------------------------------------------------------------
+ * O login pede USUARIO e SENHA antes de abrir o menu
+ * Ha 3 tentativas por sessao
+ * Apos falhas repetidas o usuario fica bloqueado por 5 minutos
+ * As senhas ficam em configuracoes/.senhas com permissao 0600
+ * O hash usa o formato algoritmo$salt$hash (sha256 por padrao)
+ * As tentativas sao registradas em .tentativas_login
+ * O ultimo acesso fica em .ultimo_acesso e aparece na saudacao
+
+ESTRUTURA DE DIRETORIOS:
+---------------------------------------------------------------
+RAIZ/
+  atualiza.sh              Programa principal (ponto de entrada)
+  binarios/                Modulos do sistema (15 arquivos .sh)
+  configuracoes/           Configuracoes, listas, notas e manual
+  logs/                    Logs de atualizacao e de limpeza
+  backups/anterior/        Backup dos scripts (.sh.bkp) e Temps-*.zip
+  backups/base/            Backups da base de dados (.zip)
+  biblioteca/anterior/     Backup da biblioteca (backup_biblioteca_*)
+  biblioteca/atual/        Zips da biblioteca applied (.bkp)
+  programas/anterior/     Backup dos programas (-anterior.zip)
+  programas/atual/        Zips aplicados dos programas (.bkp)
+  enviar/                  Arquivos prontos para envio ao servidor
+  classes/                 Executaveis do sistema (.class)
+  tel_isc/                 Telas do sistema (.TEL)
+  portalsav/atualiza/      Recebimento de pacotes e atualizacoes
+  portalsav/Atualiza/      Caminho offline padrao do SAV
+  savisc/iscobol/bin/      iscclient e jutil do IsCOBOL
+
+ARQUIVOS DE CONFIGURACAO (configuracoes/):
+---------------------------------------------------------------
+ .config        Parametros do sistema (chave=valor)
+ .senhas        Usuarios e hashes de senha (0600)
+ .versao        Versao anterior e versao em uso da biblioteca
+ manual.txt     Este manual
+ limpetmp       Lista de padroes de temporarios (padrao do SAV)
+ limpetmp2      Padroes de temporarios adicionados localmente
+ indexar        Lista de arquivos principais para rebuild
+ indexar2       Lista temporaria gerada na execucao
+ variosarquivos Lista de arquivos para rebuild em lote
+ limpadir       Diretorios extras para expurgo
+ lembrete       Bloco de notas do usuario
+ avisos         Mensagem exibida ao entrar no sistema
+
+CONEXAO COM O SERVIDOR:
+---------------------------------------------------------------
+ Servidor padrao : 191.34.12.223
+ Porta SSH       : 41122
+ Usuario         : atualiza
+ Chave           : ~/.ssh/id_rsa_atualiza
+ Modo offline    : Offline=s (sem servidor) / Offline=n (com servidor)
+
+Quando Offline=n, o utilitario pede a senha do usuario remoto a
+cada transferencia. Com o acesso por chave configurado
+(acessossh=s e chavessh=s), a conexao passa a ser feita sem senha.
+
+SEGURANCA:
+---------------------------------------------------------------
+ * Toda operacao de arquivo valida o caminho antes de agir
+ * Caminhos com "..", "/" ou caracteres especiais sao rejeitados
+ * Nenhum diretorio "/" pode ser alvo de limpeza ou restauracao
+ * Os backups sao testados antes de serem usados
+ * .senhas e .sh.bkp nunca recebem permissao de grupo ou mundo
+
+LOGS:
+---------------------------------------------------------------
+ logs/atualiza.AAAA-MM-DD.log   Operacoes de atualizacao
+ logs/limpando.AAAA-MM-DD.log   Operacoes de limpeza
+
+Cada linha traz data, hora, usuario e mensagem. As telas de log
+exibem as ultimas 200 linhas (C_LOG_LINHAS) de cada arquivo.
+
+MAIS INFORMACOES:
+---------------------------------------------------------------
+ * Pressione M a qualquer momento para o manual completo
+ * Pressione H dentro de um menu para a ajuda daquele menu
+ * Menu 0 > 6 mostra a ajuda por contexto
+* Suporte: suporte@sav.com.br
 
 ---------------------------------------------------------------
 [MENU_PRINCIPAL]
 MENU PRINCIPAL
 ---------------------------------------------------------------
 
-O Menu Principal e o ponto de entrada do sistema SAV. A partir dele
-voce pode acessar todas as funcionalidades disponiveis.
+Ponto de entrada do Sistema SAV. Todas as areas do sistema
+partem daqui.
 
 OPCOES DISPONIVEIS:
 ---------------------------------------------------------------
 
 1 - ATUALIZAR PROGRAMA(S)
-    Permite baixar e instalar programas individuais ou em pacote.
-
-    * Use esta opcao quando precisar atualizar programas especificos
-    * Suporta atualizacoes online (via servidor) ou offline (via arquivo)
-    * Permite compilacao normal ou em modo de depuracao
-    * Cria backup automatico antes de atualizar
-
-    QUANDO USAR:
-    - Correcao de bugs em programas especificos
-    - Instalacao de novos recursos
-    - Atualizacao de modulos individuais
+    Atualiza programas individuais ou pacotes, on-line ou off-line.
+    Detalhes em [MENU_PROGRAMAS].
 
 2 - ATUALIZAR BIBLIOTECA
-    Atualiza o conjunto completo de bibliotecas do sistema.
+    Atualiza a biblioteca (TRANSPC) completa do sistema.
+    Detalhes em [MENU_BIBLIOTECA].
 
-    * Transpc: Biblioteca do diretorio /u/varejo/transpc
-    * Modo Offline: Para ambientes sem conexao os arquivos .zip devem estar
-      no diretorio configurado para offline (geralmente /portalsav/Atualiza)
+3 - ROTINAS DE BACKUP
+    Backup completo, incremental ou por multiplos padroes,
+    restauracao e envio do backup ao servidor.
+    Detalhes em [MENU_BACKUP].
 
-    QUANDO USAR:
-    - Atualizacao em massa de programas
-    - Mudanca de versao do sistema
-    - Sincronizacao com versao do servidor
+4 - GERENCIAR ARQUIVOS
+    Recuperacao de indices (jutil), limpeza de temporarios,
+    expurgador e transferencia de arquivos.
+    Detalhes em [MENU_ARQUIVOS].
 
-    <<<  IMPORTANTE: Esta operacao e mais abrangente e pode levar
-         mais tempo que a atualizacao de programas individuais.  >>>
+5 - FERRAMENTAS
+    Configuracoes, atualizacao do utilitario, lembretes,
+    avisos, logs e retorno a versao anterior dos scripts.
+    Detalhes em [MENU_FERRAMENTAS].
 
-
-3- GERENCIAR ARQUIVOS
-    Acesso ao menu de controle de arquivos.
-
-    * Limpeza de arquivos temporarios
-    * Recuperacao de arquivos de dados
-    * Rotinas de backup
-    * Transferencia de arquivos
-    * Expurgador automatico
-
-4 - FERRAMENTAS
-    Acesso ao menu de ferramentas administrativas.
-    * Versao do Iscobol
-    * Versao do Linux
-    * Configuracoes do sistema
-    * Atualizacao do sistema
-    * Sistema de lembretes e notas
-
-0 - Sistema de Ajuda
+0 - SISTEMA DE AJUDA
     1. Manual Completo
     2. Ajuda Rapida
     3. Ajuda no Geral
@@ -84,1953 +214,1373 @@ OPCOES DISPONIVEIS:
     6. Ajuda por Contexto
 
 9 - SAIR DO SISTEMA
-    Encerra o sistema SAV de forma segura.
+    Encerra o sistema com seguranca (grava o ultimo acesso e
+    limpa as variaveis de sessao).
 
-DICAS:
+COMO USAR:
 ---------------------------------------------------------------
-* Use as setas do teclado para navegar (se disponivel)
-* Digite o numero da opcao desejada
-* Pressione ? a qualquer momento para ajuda contextual
-* Use Ctrl+C para cancelar operacoes em andamento
-
-ATALHOS:
----------------------------------------------------------------
-* ? = Ajuda contextual
-* 9 = Sair/Voltar
-* Ctrl+C = Cancelar operacao
+ * Digite o numero da opcao e pressione ENTER
+ * Digite M para o manual e H para a ajuda deste menu
+ * Nenhuma opcao numerada executa algo sem confirmacao quando
+   a operacao alterar arquivos
 
 ---------------------------------------------------------------
 [MENU_PROGRAMAS]
 MENU DE PROGRAMAS
 ---------------------------------------------------------------
 
-Este menu permite atualizar programas individuais do sistema SAV.
+Atualiza programas individuales do sistema SAV.
 
 OPCOES DISPONIVEIS:
 ---------------------------------------------------------------
 
 1 - PROGRAMA(S) ON-LINE
-    Baixa e instala programas diretamente do servidor.
+    Baixa do servidor SAV e instala ate 6 programas.
 
     PROCESSO:
-    1. Informe o nome do programa (em MAIUSCULAS)
+    1. Informe o nome do programa (MAIUSCULAS)
     2. Escolha o tipo de compilacao:
-       * 1 = Normal (producao)
-       * 2 = Depuracao (debug)
-    3. Repita para ate 6 programas
-    4. Pressione ENTER para finalizar selecao
-    5. Aguarde o download e instalacao
+       1 = Normal (producao)  ->  NOME-class24.zip
+       2 = Depuracao (testes) ->  NOME-mclass24.zip
+    3. Repita ate 6 programas
+    4. ENTER para finalizar a selecao
+    5. Confirme a selecao exibida
+    6. Aguarde o backup, o download e a instalacao
 
     EXEMPLO:
     Nome do programa: ADV000
     Tipo de compilacao: 1
-    ( Exemplo do nome do programa ADV000-CLASS(versao) )
-
-    Nome do programa: ADV000
-    Tipo de compilacao: 2
-    ( Exemplo do nome do programa ADV000-MCLASS(versao) )
-
     Nome do programa: [ENTER para finalizar]
 
+    Bloqueado quando Offline=s no .config.
+
 2 - PROGRAMA(S) OFF-LINE
-    Instala programas a partir de arquivos locais.
+    Trabalha com pacotes ja baixados, sem conexao com o servidor.
 
-    QUANDO USAR:
-    - Servidor sem acesso a internet
-    - Instalacao em ambiente isolado
-    - Uso de arquivos previamente baixados
-
-    <<  PRE-REQUISITO: >>
-    Os arquivos .zip dos programas devem estar no diretorio
-    configurado para modo offline (geralmente /portalsav/Atualiza)
-
-3 - PROGRAMA(S) EM PACOTE
-    Instala multiplos programas de uma vez atraves de pacotes.
-
-    VANTAGENS:
-    * Mais rapido para multiplas atualizacoes
-    * Garante compatibilidade entre programas relacionados
-    * Menor chance de erros de dependencia
-
-    EXEMPLO DE PACOTE:
-    - PACK-CLASS(versao) (contem: ADVA000, ADC001, TRS002, etc)
-
-4 - VOLTAR PROGRAMA ATUALIZADO
-    Reverte programa para versao anterior.
+    PRE-REQUISITO:
+    Os arquivos .zip devem estar em portalsav/atualiza, com o
+    nome <PROGRAMA>-class24.zip ou <PROGRAMA>-mclass24.zip.
 
     PROCESSO:
-    1. Informe o nome do programa a reverter
-    2. Sistema busca backup automatico
-    3. Restaura versao anterior
+    1. Informe os programas e o tipo de compilacao (igual ao
+       modo on-line)
+    2. O sistema informa o diretorio de recebimento
+    3. Cada arquivo e procurado e o resultado e mostrado um a um
+    4. Se algum faltar, a operacao e abortada
+    5. Se todos existirem, o backup, a descompactacao e a
+       instalacao seguem o mesmo fluxo do modo on-line
 
-    << IMPORTANTE: >>
-    * Apenas programas com backup podem ser revertidos
-    * Backup e criado automaticamente em cada atualizacao
-    * Backup fica em: tools/back_programas/[PROGRAMA]-anterior.zip
+3 - PROGRAMA(S) EM PACOTE
+    Atualiza varios programas de uma vez, usando o nome de um
+    pacote publicado pela SAV.
 
-INFORMACOES IMPORTANTES:
+    VANTAGENS:
+    * Mais rapido para varias atualizacoes
+    * Garante compatibilidade entre programas relacionados
+    * Menos chance de erro de dependencia
+
+    Em modo off-line o pacote e procurado em portalsav/atualiza;
+    em modo on-line ele e baixado do servidor.
+
+4 - VOLTAR PROGRAMA ATUALIZADO
+    Reverte programas para a versao anterior usando os backups
+    automaticos.
+
+    PROCESSO:
+    1. O sistema lista os backups em programas/anterior
+    2. Informe os numeros dos backups (ex: 1 3) ou 0 para sair
+    3. Cada backup e validado antes de ser aplicado
+    4. Ao final, pergunta se deseja reverter mais algum
+
+    LIMITACOES:
+    * So e possivel reverter o que tem backup
+    * Um mesmo programa nao pode ser revertido duas vezes
+
+REGRAS DE NOME:
 ---------------------------------------------------------------
+ * Somente letras maiusculas, numeros e underscore
+ * Ate 64 caracteres
+ * Sem espaco, ponto, barra ou caractere especial
 
-NOMES DE PROGRAMAS:
-* Sempre em MAIUSCULAS (ex: ADVA00, nao adva00)
-* Apenas letras e numeros
-* Sem espacos ou caracteres especiais
+O QUE ACONTECE EM CADA ATUALIZACAO:
+---------------------------------------------------------------
+ 1. Validacao dos diretorios e do espaco em disco
+ 2. Backup do programa atual em programas/anterior
+    (o backup anterior e rotacionado com data/hora)
+ 3. Download ou leitura do pacote em portalsav/atualiza
+ 4. Descompactacao e verificacao de que os arquivos extraidos
+    correspondem ao programa
+ 5. Instalacao: .class em classes/ e .TEL em tel_isc/
+ 6. Arquivamento do .zip em programas/atual como .bkp
+ 7. Registro no log de atualizacao
 
-TIPOS DE COMPILACAO:
-* Normal (1): Para uso em producao
-  - [PROGRAMA]-CLASS
-* Depuracao (2): Para desenvolvimento/testes
-  - [PROGRAMA]-MCLASS
-
-BACKUP AUTOMATICO:
-* Criado antes de cada atualizacao
-* Inclui: .CLASS, .TEL
-* Localizacao: tools/back_programas/
-* Formato: [PROGRAMA]-anterior.zip
+LOCALIZACAO DOS BACKUPS:
+---------------------------------------------------------------
+ programas/anterior/<PROGRAMA>-anterior.zip
+ programas/anterior/<AAAAMMDD_HHMMSS>-<PROGRAMA>-anterior.zip
 
 SOLUCAO DE PROBLEMAS:
 ---------------------------------------------------------------
+PROBLEMA: "Nome invalido"
+SOLUCAO: Use apenas letras maiusculas, numeros e underscore
 
-PROBLEMA: "Arquivo nao encontrado"
-SOLUCAO: Verifique se o nome esta correto e em MAIUSCULAS
+PROBLEMA: "Parametro do servidor OFF ativo"
+SOLUCAO: A opcao 1 exige servidor. Com Offline=s use a opcao 2
 
-PROBLEMA: "Erro ao descompactar"
-SOLUCAO: Arquivo pode estar corrompido, baixe novamente
+PROBLEMA: "Arquivo(s) nao encontrado(s) no diretorio offline"
+SOLUCAO: Copie os .zip para portalsav/atualiza com o nome exato
+         (<PROGRAMA>-class24.zip ou <PROGRAMA>-mclass24.zip)
 
-PROBLEMA: "Falha no backup"
-SOLUCAO: Verifique espaco ou permissao no disco no diretorio tools/back_programas/
+PROBLEMA: "Nenhum arquivo extraido para <PROGRAMA>"
+SOLUCAO: O pacote veio vazio ou corrompido; baixe novamente
 
-PROBLEMA: "Programa nao encontrado no servidor"
-SOLUCAO: Verifique com suporte se programa esta disponivel
+PROBLEMA: "Espaco em disco insuficiente"
+SOLUCAO: Limpe temporarios ou libere espaco no disco de destino
+
+PROBLEMA: "jutil nao encontrado"
+SOLUCAO: Verifique se o IsCOBOL esta instalado em
+         savisc/iscobol/bin
 
 ---------------------------------------------------------------
 [MENU_BIBLIOTECA]
 MENU DA BIBLIOTECA
 ---------------------------------------------------------------
 
-Bibliotecas sao conjuntos completos de programas que formam o
-sistema SAV. Atualizar a biblioteca e uma operacao mais ampla que
+A biblioteca e o conjunto completo de programas e telas do
+sistema. Atualiza-la e uma operacao mais ampla e mais lenta que
 atualizar programas individuais.
 
 OPCOES DISPONIVEIS:
 ---------------------------------------------------------------
 
 1 - ATUALIZACAO DO TRANSPC
-    Atualiza a biblioteca de TRANSPC.
+    Baixa e instala a biblioteca do servidor.
 
-    O QUE E:
-    Biblioteca responsavel pela atualizacao programas
-    entre diferentes modulos do sistema.
+    PROCESSO:
+    1. Informe o numero da versao (somente digitos)
+    2. Se Offline=n, informe a senha do usuario remoto
+    3. Sistema verifica espaco em disco em classes/
+    4. Download dos tres pacotes da versao
+    5. Backup automatico de classes/ e tel_isc/
+    6. Descompactacao e instalacao
+    7. Grava a versao anterior em .versao
 
-    CONTEUDO:
-    * Programas de interface
-    * Rotinas de conversao
-    * CLASSes compiladas (.CLASS)
-    * Telas de interface (.TEL)
-    * Arquivos XML de configuracao
-
-    VERSOES DISPONIVEIS:
-    * IsCOBOL 2018, 2020, 2023, 2024
-    * MicroFocus COBOL
-
-    QUANDO ATUALIZAR:
-    - Mudanca de versao principal
-    - Problemas de comunicacao
-    - Orientacao do suporte tecnico
+    ARQUIVOS DA BIBLIOTECA (exemplo IsCOBOL 2024):
+     tempSAV_IS2024_classA_5280.zip
+     tempSAV_IS2024_classB_5280.zip
+     tempSAV_IS2024_tel_isc_5280.zip
 
     IMPORTANTE:
-    Esta e a atualizacao mais usada e completa do sistema.
+    Esta opcao exige conexao com o servidor. Com Offline=s ela
+    fica bloqueada e o sistema orienta a usar a opcao 2.
 
 2 - ATUALIZACAO OFF-LINE
-    Instala biblioteca a partir de arquivos locais.
+    Instala a biblioteca a partir dos arquivos locais.
 
     PROCESSO:
-    1. Copie os arquivos de atualizacao para o diretorio offline
-    2. Informe a versao da biblioteca
-    3. Sistema localiza e instala os arquivos
+    1. Confira o diretorio de recebimento exibido na tela
+    2. Copie os tres .zip da versao para portalsav/atualiza
+    3. Informe o numero da versao
+    4. Sistema confere a existencia dos tres arquivos
+    5. Instala e grava a versao anterior em .versao
 
-    ARQUIVOS NECESSARIOS (IsCOBOL):
-    * tempSAV_IS[ANO]_CLASSA_[VERSAO].zip
-    * tempSAV_IS[ANO]_CLASSB_[VERSAO].zip
-    * tempSAV_IS[ANO]_tel_isc_[VERSAO].zip
-    * tempSAV_IS[ANO]_xml_[VERSAO].zip
-
-    EXEMPLO:
-    * tempSAV_IS2024_CLASSA_5280.zip
-    * tempSAV_IS2024_CLASSB_5280.zip
-    * tempSAV_IS2024_tel_isc_5280.zip
-    * tempSAV_IS2024_xml_5280.zip
-
-3 - VOLTAR PROGRAMA(S) DA BIBLIOTECA
-    Reverte biblioteca para versao anterior.
+3 - VOLTAR O(S) PROGRAMA(S)
+    Reverte a biblioteca para uma versao anterior.
 
     PROCESSO:
-    1. Informe a versao a reverter
-    2. Sistema busca backup dessa versao
-    3. Escolha entre:
-       * Reverter todos os programas
-       * Reverter programa especifico
+    1. Informe a versao a reverter (somente digitos)
+    2. Sistema procura o backup em biblioteca/anterior
+       (backup_biblioteca_antes_da_versao-<VERSAO>.tar.gz
+        ou .zip)
+    3. Escolha entre reverter todos os programas ou apenas
+       um programa especifico
 
-    BACKUP DA BIBLIOTECA:
-    * Local: tools/back_programas/backups-[VERSAO].zip
-    * Criado automaticamente antes de atualizar
-    * Contem todos os arquivos antigos
-
-PROCESSO DE ATUALIZACAO DA BIBLIOTECA:
+QUANDO ATUALIZAR A BIBLIOTECA:
 ---------------------------------------------------------------
-
-PASSO 1: INFORMAR VERSAO
-Digite apenas o numero da versao (ex: 0601, 0105, etc)
-
-PASSO 2: VALIDACAO
-Sistema verifica:
-* Conectividade (modo online)
-* Disponibilidade dos arquivos
-* Espaco em disco
-
-PASSO 3: BACKUP AUTOMATICO
-Sistema cria backup completo:
-* CLASSes (.CLASS)
-* Telas (.TEL)
-* XML (.xml)
-
-PASSO 4: DOWNLOAD (modo online)
-Baixa arquivos do servidor:
-* Exibe progresso
-* Valida integridade
-* Verifica checksums
-
-PASSO 5: INSTALACAO
-* Descompacta arquivos
-* Move para diretorios corretos
-* Atualiza registros de versao
-* Remove temporarios
-
-PASSO 6: VERIFICACAO
-Sistema verifica:
-* Arquivos instalados corretamente
-* Permissoes adequadas
-* Integridade dos dados
-
-INFORMACOES IMPORTANTES:
----------------------------------------------------------------
-
-VERSAO:
-* Use apenas numeros (ex: 0601, 0105, etc)
-* Nao use pontos ou espacos
-* Confirme versao com o suporte
-
-TEMPO DE ATUALIZACAO:
-* Depende do tamanho da biblioteca
-* Conexao de internet (modo online)
-* IsCOBOL: aproximadamente 5-15 minutos
-* MicroFocus: aproximadamente 3-10 minutos
-
-ESPACO NECESSARIO:
-* Backup: ~500MB - 2GB
-* Biblioteca: ~500MB - 2GB
-* Total recomendado: 5GB livres
-
-INTERROMPER ATUALIZACAO:
-* Use Ctrl+C com cuidado
-* Sistema tenta fazer cleanup
-* Pode deixar instalacao inconsistente
-* Recomenda-se reverter se interrompido
-
-POS-ATUALIZACAO:
-* Teste funcionalidades criticas
-* Verifique relatorios
-* Confirme acesso aos modulos
-* Em caso de problemas, reverta
-
-SOLUCAO DE PROBLEMAS:
----------------------------------------------------------------
-
-PROBLEMA: "Erro na compactacao de backup"
-SOLUCAO: Verifique espaco em disco, pode estar cheio
-
-PROBLEMA: "Falha no download"
-SOLUCAO: Verifique conexao internet e firewall
-
-PROBLEMA: "Erro ao descompactar"
-SOLUCAO: Arquivo corrompido, baixe novamente
-
-PROBLEMA: "Sistema lento apos atualizacao"
-SOLUCAO: Normal nos primeiros acessos (cache)
-
-PROBLEMA: "Programa nao inicia apos atualizacao"
-SOLUCAO: Reverta para versao anterior e contate suporte
-
----------------------------------------------------------------
-[MENU_ARQUIVOS]
-MENU DE GERENCIAMENTO DE ARQUIVOS
----------------------------------------------------------------
-
-O menu de Arquivos do sistema fornece utilitarios administrativos para
-manutencao e gestao dos arquivos do sistema SAV.
----------------------------------------------------------------
-
-1 - RECUPERAR ARQUIVOS
-    Executa rebuild em arquivos de dados.
-
-    O QUE FAZ:
-    Reconstroi indices e reorganiza arquivos de dados,
-    corrigindo possiveis inconsistencias.
-
-    QUANDO USAR:
-    - Apos queda de sistema
-    - Erros de "arquivo corrompido"
-    - Performance degradada
-    - Manutencao preventiva
-
-    DISPONIVEL APENAS PARA: Sistemas IsCOBOL
-
-2 - ROTINAS DE BACKUP
-    Gerencia backups da base de dados.
-
-    TIPOS:
-    * Completo: Todos os arquivos
-    * Incremental: Apenas alteracoes
-
-    OPCOES:
-    - Criar novo backup
-    - Restaurar backup
-    - Enviar para servidor
-
-3 - ENVIAR E RECEBER ARQUIVOS
-    Transfere arquivos entre cliente e servidor.
-
-    USOS:
-    * Envio de relatorios
-     * Transferencia de logs
-
-    PROTOCOLOS: SFTP, RSYNC
-
-
-4 - TEMPORARIOS
-    Gerencia arquivos temporarios do sistema.
-
-    FUNCOES:
-    * Limpeza automatica de arquivos antigos
-    * Compactacao antes de remover
-    * Manutencao da lista de temporarios
-
-    BENEFICIOS:
-    - Libera espaco em disco
-    - Melhora performance
-    - Organiza base de dados
-
-5 - EXPURGADOR DE ARQUIVOS
-    Remove automaticamente arquivos antigos.
-
-    DIRETORIOS LIMPOS:
-    * Backups (>30 dias)
-    * Logs (>30 dias)
-    * Programas antigos (>30 dias)
-    * Erros IsCOBOL (>30 dias)
-    * Arquivos ZIP (>15 dias)
-
-    EXECUCAO:
-    * Manual: Via menu
-    * Automatica: Diaria (primeira execucao)
-
----------------------------------------------------------------
-[MENU_FERRAMENTAS]
-MENU DE FERRAMENTAS
----------------------------------------------------------------
-
-O menu de Ferramentas fornece utilitarios administrativos para
-manutencao e gestao do sistema SAV.
-
-OPCOES DISPONIVEIS:
----------------------------------------------------------------
-
-
-1 - CONFIGURACOES DOS SISTEMAS
-    Exibe informacoes sobre as versoes instalada.
-
-    * Mostra os paramentros do sistema
-    * Versao usado do IsCobol
-    * Versao do linux do servidor
-
-2 - UPDATE
-    Atualiza o proprio sistema de atualizacao.
-
-    O QUE ATUALIZA:
-    * Scripts do atualiza.sh
-    * Modulos de biblioteca
-    * Arquivos de configuracao
-    * Sistema de ajuda
-
-    FONTES:
-    * Online: Via o GitHub
-    * Offline: Arquivo "atualiza.zip deve ser salvo em /portalsav/Atualiza
-
-3 - LEMBRETES
-    Sistema de notas e lembretes.
-
-    FUNCOES:
-    * Criar novas notas
-    * Visualizar notas
-    * Editar notas existentes
-    * Apagar notas
-
-    USO:
-    - Registrar pendencias
-    - Anotacoes de manutencao
-    - Lembretes de atualizacoes
-
-4 - AVISO
-    Sistema de avisos.
-
-    FUNCOES:
-    * Criar novas notas
-    * Editar notas existentes
-    * Apagar notas
-
-    USO:
-    - Registrar alerta para o sistema
-    - Anotacoes de manutencao
-    - Aviso sobre atualizacoes
-
-5 - LOGS
-    Mostra os logs do sistema.
-
-    FUNCOES:
-    * Exibir logs de atualizacao
-    * Exibir logs de limpeza
-
-    USO:
-    - Verificar atualizacao
-    - Verificar limpeza
-
-DICAS DE USO:
----------------------------------------------------------------
-
-MANUTENCAO REGULAR:
-1. Consulta dos parametro do progrma
-2. Atualizacao do sistema
-3. Cadastro no lembretes
-4. Cadastro de Avisos
-5. Logs do sistema
-
-ORGANIZACAO:
-* Use lembretes para agendar tarefas
-* Documentar alteracoes importantes
-* Verificar logs
-* Atualiza do programa
-
-
----------------------------------------------------------------
-[MENU_CONFIGS]
-MENU DE CONFIGURACOES
----------------------------------------------------------------
-
-Valida as configuracoes dos sistemas
-
-OPCOES DISPONIVEIS:
----------------------------------------------------------------
-
-
-1 - PARAMETROS DO SISTEMA
-    Visualiza e edita configuracoes do sistema.
-
-    ACESSO:
-    * Consulta: Visualizacao apenas
-    * Manutencao: Edicao de valores
-    * Validacao: Testa configuracoes
-
-2 - VERSAO DO ISCOBOL
-    Exibe informacoes sobre a versao do IsCOBOL instalada.
-
-    * Mostra numero da versao
-    * Exibe data de compilacao
-    * Lista recursos disponiveis
-
-    Nota: Disponivel apenas para sistemas IsCOBOL.
-
-3- VERSAO DO LINUX
-    Mostra informacoes detalhadas do sistema operacional.
-
-    INFORMACOES EXIBIDAS:
-    * Distribuicao e versao do Linux
-    * Hostname do servidor
-    * IP interno e externo
-    * Usuarios logados
-    * Uso de memoria RAM e SWAP
-    * Uso de disco
-    * Tempo de atividade (uptime)
-
-
----------------------------------------------------------------
-[MENU_TEMPORARIOS]
-MENU DE LIMPEZA - TEMPORARIOS
----------------------------------------------------------------
-
-Gerencia arquivos temporarios criados durante operacao do sistema.
-
-OPCOES DISPONIVEIS:
----------------------------------------------------------------
-
-1 - LIMPEZA DOS ARQUIVOS TEMPORARIOS
-    Remove arquivos temporarios de todas as bases.
-
-    PROCESSO:
-    1. Le lista de padroes (arquivo limpetmp)
-    2. Busca arquivos correspondentes
-    3. Compacta arquivos encontrados
-    4. Move para backup
-    5. Remove originais
-
-    ARQUIVOS PROCESSADOS:
-    * Relatorios temporarios
-    * Arquivos de trabalho
-    * Impressoes antigas
-    * Cache de sistema
-
-    DESTINO:
-    Arquivos sao compactados em:
-    tools/backups/Temps-[DATA].zip
-
-2 - ADICIONAR ARQUIVOS NO LIMPETMP
-    Adiciona novo padrao a lista de limpeza.
-
-    COMO USAR:
-    1. Informe o nome/padrao do arquivo
-    2. Use * para coringas
-
-    EXEMPLOS:
-    * REL*.TMP = Todos arquivos REL com extensao .TMP
-    * TEMP* = Todos arquivos comecando com TEMP
-    * *.bkp = Todos arquivos .bkp
-
-    ARQUIVO:
-    Padroes sao salvos em: configuracoes/limpetmp
-
-3 - LISTAR ARQUIVOS DO limpetmp
-    Exibe lista de padroes configurados.
-
-    VISUALIZACAO:
-    * Numerada para referencia
-    * Um padrao por linha
-    * Formato legivel
-
-ARQUIVO limpetmp:
----------------------------------------------------------------
-
-LOCALIZACAO:
-configuracoes/limpetmp
-
-FORMATO:
-Um padrao por linha, sem comentarios
-Exemplo:
-REL*.TMP
-TEMP*
-*.BKp
-WORK*.DAT
-
-PADROES COMUNS:
-* REL*.TMP - Relatorios temporarios
-* TEMP* - Arquivos de trabalho
-* *.BKP - Backups automaticos
-* WORK* - Arquivos de processamento
-* PRINT*.SPL - Filas de impressao
-
-INFORMACOES IMPORTANTES:
----------------------------------------------------------------
-
-SEGURANCA:
-* Arquivos sao compactados antes de remover
-* Backup mantido por 10 dias
-* Pode recuperar se necessario
-
-PERFORMANCE:
-* Execute regularmente (mensal)
-* Libera espaco em disco
-* Melhora velocidade de acesso
-* Reduz fragmentacao
-
-MULTIPLAS BASES:
-Se configurado com multiplas bases (base2, base3),
-a limpeza processa todas automaticamente.
-
-RECUPERACAO:
-Para recuperar arquivo removido:
-1. Localize backup: tools/backups/Temps-[DATA].zip
-2. Descompacte o arquivo necessario
-3. Restaure para local original
-
----------------------------------------------------------------
-[MENU_RECUPERACAO]
-MENU DE RECUPERACAO DE ARQUIVO(S)
----------------------------------------------------------------
-
-Executa rebuild (reconstrucao) em arquivos de dados IsCOBOL,
-corrigindo indices e reorganizando registros.
-
-DISPONIVEL APENAS PARA: Sistemas IsCOBOL
-
-OPCOES DISPONIVEIS:
----------------------------------------------------------------
-
-1 - UM ARQUIVO OU TODOS
-    Recupera arquivo especifico ou todos.
-
-    PROCESSO:
-    * Nome especifico: Digite nome do arquivo (ex: CADCLI)
-    * Todos: Pressione ENTER sem digitar nada
-
-    ARQUIVOS PROCESSADOS (todos):
-    * *.ARQ.dat - Arquivos de dados
-    * *.DAT.dat - Arquivos de dados
-    * *.LOG.dat - Logs do sistema
-    * *.PAN.dat - Paineis/Telas
-
-    COMANDO UTILIZADO:
-    jutil -rebuild [ARQUIVO] -a -f
-
-    PARAMETROS:
-    * -rebuild: Reconstroi arquivo
-    * -a: Modo automatico
-    * -f: Forca reconstrucao
-
-2 - ARQUIVOS PRINCIPAIS
-    Recupera conjunto de arquivos principais.
-
-    CRITERIOS:
-    * Arquivos do ano atual (ATE[AA]*.dat)
-    * Notas fiscais eletrônicas do ano (NFE?[AAAA].*.dat)
-    * Arquivos da lista indexar
-
-    LISTA indexar:
-    Local: configuracoes/indexar
-    Contem: Nomes de arquivos criticos do sistema
-
-O QUE E REBUILD:
----------------------------------------------------------------
-
-DEFINICAO:
-Rebuild (reconstrucao) e o processo de reorganizar um arquivo
-de dados indexed, reconstruindo seus indices e corrigindo
-possiveis inconsistencias.
-
-O QUE FAZ:
-1. Le todos os registros do arquivo
-2. Verifica integridade de cada registro
-3. Reconstroi indices do zero
-4. Reorganiza dados no disco
-5. Remove registros marcados para exclusao
-6. Otimiza espaco fisico
-
-QUANDO USAR:
----------------------------------------------------------------
-
 OBRIGATORIO:
-* Erro "File is locked" persistente
-* Erro "Invalid key" ao acessar dados
-* Mensagem "Corrupt index"
-* Apos queda abrupta do sistema
-* Apos falha de disco ou energia
+ * Mudanca de versao principal do sistema
+ * Orientacao do suporte tecnico
+ * Correcao critica de seguranca
 
 RECOMENDADO:
-* Performance degradada
-* Arquivo cresceu muito sem reorganizacao
-* Manutencao preventiva mensal
-* Apos importacao em massa de dados
-* Antes de backup importante
+ * Atualizacoes mensais
+ * Novos recursos liberados
+ * Performance degradada
 
-PREVENCAO:
-* Semanalmente nos arquivos principais
-* Mensalmente em todos os arquivos
-* Sempre apos erros de acesso
+EVITE:
+ * Horario comercial (use a noite ou o fim de semana)
+ * Sem backup recente da base
+ * Com problemas em aberto
 
-PROCESSO DE RECUPERACAO:
+BACKUP DA BIBLIOTECA:
 ---------------------------------------------------------------
+ Nome      : biblioteca/anterior/backup_biblioteca_antes_da_versao-<VERSAO>.tar.gz
+ Conteudo : classes/ (.class, .jpg, .png, .dll) e tel_isc/ (.TEL)
+ Observacao: e criado antes de sobrescrever os arquivos
 
-PASSO 1: IDENTIFICACAO
-Sistema identifica arquivos a processar
-
-PASSO 2: VALIDACAO
-Verifica se arquivo existe e nao esta vazio
-
-PASSO 3: VERIFICACAO JUTIL
-Confirma disponibilidade do utilitario jutil
-
-PASSO 4: EXECUCAO
-Executa rebuild com progress indicator
-
-PASSO 5: VERIFICACAO
-Confirma sucesso da operacao
-
-PASSO 6: LOG
-Registra operacao em arquivo de log
-
-TEMPO DE PROCESSAMENTO:
+O QUE E GRAVADO AO FINAL:
 ---------------------------------------------------------------
+ * Os .zip aplicados viram .bkp em biblioteca/atual
+ * A versao anterior fica registrada em .versao
+ * O menu da biblioteca mostra a versao anterior ao abrir
 
-FATORES:
-* Tamanho do arquivo
-* Quantidade de registros
-* Estado de fragmentacao
-* Performance do disco
-
-ESTIMATIVAS:
-* Arquivo pequeno (<10MB): Segundos
-* Arquivo medio (10-100MB): 1-5 minutos
-* Arquivo grande (100MB-1GB): 5-30 minutos
-* Arquivo muito grande (>1GB): 30+ minutos
-
-MULTIPLAS BASES:
-Se sistema possui multiplas bases (base2, base3),
-sera solicitado escolher qual base processar.
-
-INFORMACOES IMPORTANTES:
+INTERROMPER A ATUALIZACAO:
 ---------------------------------------------------------------
-
-USUARIOS:
-* Sistema deve estar sem usuarios
-* Ou pelo menos sem usar arquivo especifico
-* Rebuild em arquivo em uso pode falhar
-
-BACKUP:
-* Recomenda-se backup antes de rebuild
-* Principalmente em arquivos criticos
-* Pode usar: Menu Ferramentas > Backup
-
-ESPACO EM DISCO:
-* Necessario espaco = tamanho do arquivo
-* Rebuild cria arquivo temporario
-* Depois substitui o original
-
-LOGS:
-Operacoes registradas em:
-tools/logs/atualiza.[DATA].log
+ * Use Ctrl+C com cuidado
+ * O sistema tenta limpar os arquivos temporarios
+ * Uma atualizacao interrompida pode deixar a base inconsistente
+ * Se isso acontecer, reverta para a versao anterior
 
 SOLUCAO DE PROBLEMAS:
 ---------------------------------------------------------------
+PROBLEMA: "Versao invalida"
+SOLUCAO: Informe somente digitos (ex: 5280)
 
-PROBLEMA: "jutil not encontrado"
-SOLUCAO: Verificar instalacao IsCOBOL
+PROBLEMA: "Atualizacao nao encontrada ou incompleta"
+SOLUCAO: Faltou um dos tres .zip; copie todos para
+         portalsav/atualiza
 
-PROBLEMA: "File is locked"
-SOLUCAO: Fechar sistema e tentar novamente
+PROBLEMA: "Espaco em disco insuficiente"
+SOLUCAO: O backup da biblioteca precisa de espaco livre antes
+         de comecar
 
-PROBLEMA: "Permission denied"
-SOLUCAO: Verificar permissoes do arquivo
+PROBLEMA: "Falha na compactacao de backup"
+SOLUCAO: Verifique permissao de escrita em biblioteca/anterior
 
-PROBLEMA: "No space left on device"
-SOLUCAO: Liberar espaco em disco
-
-PROBLEMA: Rebuild travou
-SOLUCAO: Aguardar ou verificar se processo esta ativo
+PROBLEMA: O sistema ficou lento depois da atualizacao
+SOLUCAO: Normal nos primeiros acessos (reorganizacao de cache)
 
 ---------------------------------------------------------------
 [MENU_BACKUP]
 MENU DE BACKUP(S)
 ---------------------------------------------------------------
 
-Sistema completo de backup e restauracao da base de dados.
+Backup e restauracao da base de dados ISAM. Todas as rotinas
+geram o arquivo em backups/base e registram o resultado no log.
 
 OPCOES DISPONIVEIS:
 ---------------------------------------------------------------
 
 1 - BACKUP DA BASE DE DADOS
-    Cria backup completo ou incremental.
+    Cria um backup completo ou incremental da base escolhida.
 
-    TIPOS:
+    PROCESSO:
+    1. Se houver mais de uma base configurada, escolha a base
+    2. Escolha o tipo: Completo ou Incremental
+    3. O sistema avisa se ja existe backup nos ultimos 2 dias
+    4. Limpeza automatica dos temporarios da base
+    5. Compactacao com barra de progresso
+    6. Pergunta se deseja enviar o backup ao servidor
 
     COMPLETO:
-    * Todos os arquivos da base
-    * Exclui: *.zip, *.tar, *.tar.gz
-    * Formato: [empresa]_completo_[DATA_HORA].zip
+    * Todos os arquivos da base, exceto *.zip, *.tar, *.gz,
+      *.log, *.tmp e *.old
 
     INCREMENTAL:
-    * Apenas arquivos modificados
-    * Baseado em data de referencia
-    * Formato: [empresa]_incremental_[DATA_HORA].zip
+    * Somente arquivos modificados depois da data informada
+    * Informe o mes (01-12) e o ano (AAAA)
+    * A data de referencia e o primeiro dia do mes informado
+    * Se nada foi modificado, nada e gerado
+
+    NOME DO ARQUIVO:
+    [EMPRESA]_[TIPO]_[BASE]_[AAAAMMDDHHMMSS].zip
+    Exemplo: MINHAEMP_completo_dados_jisam_20260108120000.zip
+
+2 - BACKUP COM MULTIPLOS PADROES
+    Compacta apenas os arquivos informados por voce.
 
     PROCESSO:
-    1. Escolher base (se multiplas)
-    2. Escolher tipo de backup
-    3. Verificar backups recentes
-    4. Criar backup com progresso
-    5. Opcionalmente enviar para servidor
+    1. Escolha a base
+    2. Informe um padrao por linha (ex: CAD, REL*.txt, *.idx)
+    3. ENTER para finalizar a lista
+    4. O sistema expande os padroes e mostra os arquivos achados
+    5. Confirme para compactar
+    6. Pergunta se deseja enviar ao servidor
 
-    DESTINO:
-    tools/backups/
+    NOME DO ARQUIVO:
+    [EMPRESA]_multiplos_[BASE]_[AAAAMMDDHHMMSS].zip
 
-2 - RESTAURAR BASE DE DADOS
-    Restaura backup anterior.
+    Observacao: padroes sao expandidos no proprio diretorio da
+    base; um padrao sem correspondencia e simplesmente ignorado.
 
-    OPCOES:
-    * Restauracao completa (todos arquivos)
-    * Restauracao especifica (um arquivo)
+3 - RESTAURAR BASE DE DADOS
+    Restaura um backup existente.
 
-    PROCESSO COMPLETO:
-    1. Listar backups disponiveis
-    2. Selecionar backup
-    3. Confirmar operacao
-    4. Descompactar para base
+    PROCESSO:
+    1. Escolha o backup na lista (0 cancela)
+       Se houver apenas um, o sistema pergunta se deve usa-lo
+    2. Responda se deseja restaurar TODOS os arquivos ou apenas
+       alguns
+    3. Se houver mais de uma base, escolha o destino
+    4. Antes de sobrescrever, os arquivos atuais sao copiados
+       para backups/base/restauracao_<DATA>/ com sufixo .orig
+    5. O conteudo do zip e validado antes da restauracao
 
-    PROCESSO ESPECIFICO:
-    1. Listar backups disponiveis
-    2. Selecionar backup
-    3. Informar nome do arquivo
-    4. Extrair apenas esse arquivo
+    RESTAURACAO DE ALGUNS ARQUIVOS:
+    * Informe o nome em MAIUSCULAS e sem extensao
+    * Exemplo: CADCLI restaura CADCLI.ARQ.dat e CADCLI.ARQ.idx
+    * Pode repetir para varios arquivos
 
     IMPORTANTE:
-    Restauracao sobrescreve arquivos existentes!
+    A restauracao sobrescreve arquivos existentes.
 
-3 - ENVIAR BACKUP
-    Envia backup para servidor remoto.
+4 - ENVIAR BACKUP
+    Envia um backup ja gravado em backups/base.
 
     PROCESSO:
-    1. Listar backups locais
-    2. Selecionar backup
-    3. Confirmar envio
-    4. Transferir via rsync/sftp
-    5. Opcionalmente remover local
+    1. Escolha o backup na lista (0 cancela)
+    2. Se Offline=s, o arquivo e movido para
+       portalsav/atualiza para envio manual
+    3. Se Offline=n, confirme o envio pela rede
+    4. Se houver caminho configurado em enviabackup, ele e usado
+    5. Ao final, o sistema pergunta se mantem o backup local
 
-BACKUP COMPLETO:
+CONFIGURACAO DE BACKUP (constantes.sh):
 ---------------------------------------------------------------
-
-O QUE INCLUI:
-* Todos arquivos de dados (.dat)
-* Arquivos de indice (.indice, .key)
-* Arquivos de configuracao (.configuracoes)
-* Logs importantes
-
-O QUE EXCLUI:
-* Arquivos ja compactados (.zip, .tar)
-* Backups antigos (*.bkp)
-* Temporarios do sistema
-
-QUANDO FAZER:
-* Antes de atualizacoes importantes
-* Diariamente (final do dia)
-* Antes de manutencoes
-* Semanalmente (minimo)
-
-BACKUP INCREMENTAL:
--------------------------------------------------------------------
-
-O QUE INCLUI:
-Apenas arquivos modificados apos data especificada
-
-VANTAGENS:
-* Mais rapido
-* Menor espaco
-* Backup frequente viavel
-
-QUANDO FAZER:
-* Durante o dia (varias vezes)
-* Entre backups completos
-* Para dados em constante mudanca
-
-ESTRATEGIA RECOMENDADA:
-* Completo: Diario (noite)
-* Incremental: A cada 2-4 horas
-
-FORMATO DOS ARQUIVOS:
--------------------------------------------------------------------
-
-NOMENCLATURA:
-[empresa]_[TIPO]_[AAAAMMDDHHMMSS].zip
-
-EXEMPLO:
-MINHAEMP_completo_20260108120000.zip
-MINHAEMP_incremental_20260108150000.zip
-
-COMPONENTES:
-* empresa: Nome configurado no setup
-* TIPO: completo ou incremental
-* DATA: Ano, mes, dia, hora, minuto, segundo
-
-LOCALIZACAO:
-tools/back_bases/
-
-RETENCAO:
-* Local: 30 dias (expurgador)
-* Servidor: Conforme politica empresa
-
-PROCESSO DE BACKUP:
--------------------------------------------------------------------
-
-PASSO 1: VERIFICACAO PREVIA
-* Verifica backups recentes (ultimos 2 dias)
-* Alerta se ja existe
-* Permite criar adicional
-
-PASSO 2: PREPARACAO
-* Muda para diretorio da base
-* Define nome do arquivo
-* Prepara comando de compactacao
-
-PASSO 3: COMPACTACAO
-* Executa em background
-* Mostra progresso (spinner)
-* Registra em log
-
-PASSO 4: VERIFICACAO
-* Confirma criacao do arquivo
-* Verifica integridade do ZIP
-* Valida tamanho minimo
-
-PASSO 5: ENVIO (opcional)
-* Oferece enviar para servidor
-* Usa rsync ou sftp
-* Mantem ou remove local
-
-PROCESSO DE RESTAURACAO:
--------------------------------------------------------------------
-
-PASSO 1: SELECAO
-* Lista backups disponiveis
-* Mostra data/hora e tamanho
-* Permite filtrar por nome
-
-PASSO 2: CONFIRMACAO
-* Exibe backup selecionado
-* Alerta sobre sobrescrita
-* Solicita confirmacao
-
-PASSO 3: DESCOMPACTACAO
-* Extrai arquivos
-* Mostra progresso
-* Sobrescreve existentes
-
-PASSO 4: VERIFICACAO
-* Confirma arquivos restaurados
-* Verifica integridade
-* Registra em log
-
-INFORMACOES IMPORTANTES:
--------------------------------------------------------------------
-
-ESPACO NECESSARIO:
-* Backup: igual ao tamanho da base
-* Compactacao reduz para 30-50%
-* Manter espaco livre minimo: 5GB
-
-TEMPO DE PROCESSAMENTO:
-* Completo: 5-30 minutos
-* Incremental: 1-5 minutos
-* Depende: tamanho, velocidade disco
-
-MULTIPLAS BASES:
-Se configurado multiplas bases:
-* Sistema solicita escolher qual
-* Pode fazer backup de cada uma
-* Nome do arquivo inclui identificacao
+ C_BACKUP_ESPACO_RATIO       = 50  (% do tamanho bruto exigido)
+ C_BACKUP_TESTE_INTEGRIDADE  = 1   (teste completo do zip)
+ C_ZIP_NIVEL                 = 1   (1 = rapido, 9 = menor arquivo)
 
 SEGURANCA:
-* Backups nao criptografados
-* Proteja com permissoes adequadas
-* Servidor remoto deve ser seguro
+---------------------------------------------------------------
+ * Backups sao testados (leitura) antes de qualquer uso
+ * Zips com caminho inseguro bloqueiam a restauracao
+ * Backups nao sao criptografados: proteja o diretorio
+ * A rotacao (.orig) e a unica rede de seguranca da restauracao
 
-AUTOMACAO:
-Para backup automatico, use cron:
-0 22 * * * /caminho/atualiza.sh --backup-auto
+LOCALIZACAO:
+---------------------------------------------------------------
+ backups/base/[EMPRESA]_[TIPO]_[BASE]_[DATA].zip
+ backups/base/restauracao_<DATA>/*.orig
 
 SOLUCAO DE PROBLEMAS:
--------------------------------------------------------------------
+---------------------------------------------------------------
+PROBLEMA: "Nenhum backup encontrado"
+SOLUCAO: Nao existe [EMPRESA]_*.zip em backups/base
+
+PROBLEMA: "Ja existe backup recente"
+SOLUCAO: Responda S para criar um backup adicional
+
+PROBLEMA: "Nenhum arquivo modificado desde a data"
+SOLUCAO: Normal em backup incremental sem movimento na base
+
+PROBLEMA: "Espaco em disco insuficiente"
+SOLUCAO: Libere espaco ou exclua backups antigos
 
 PROBLEMA: "Backup muito lento"
-SOLUCAO: Base muito grande, considere incremental
+SOLUCAO: Use backup incremental ou multiplos padroes
 
-PROBLEMA: "No space left on device"
-SOLUCAO: Limpe backups antigos ou aumente disco
+PROBLEMA: "Falha ao enviar backup"
+SOLUCAO: Verifique conectividade, porta 41122 e credenciais
 
-PROBLEMA: "Arquivo corrompido"
-SOLUCAO: Backup pode ter falhado, use anterior
+---------------------------------------------------------------
+[MENU_ARQUIVOS]
+MENU GERENCIAL DOS ARQUIVOS
+---------------------------------------------------------------
 
-PROBLEMA: "Erro ao enviar para servidor"
-SOLUCAO: Verifique conectividade e credenciais
-
--------------------------------------------------------------------
-[MENU_TRANSFERENCIA]
-MENU DE ENVIAR E RECEBER ARQUIVO(S)
--------------------------------------------------------------------
-
-Sistema de transferencia de arquivos entre cliente e servidor.
+Utilitarios de manutencao dos arquivos do sistema SAV.
 
 OPCOES DISPONIVEIS:
--------------------------------------------------------------------
+---------------------------------------------------------------
 
-1 - ENVIAR ARQUIVO(S)
-    Envia arquivo para servidor remoto.
+1 - RECUPERAR INDEX (JUTIL)
+    Executa rebuild (reconstrucao de indice) nos arquivos de dados.
+    Detalhes em [MENU_RECUPERACAO].
 
-    PROCESSO:
-    1. Informar diretorio de origem
-       * Caminho completo ou
-       * ENTER para usar padrao (tools/enviar)
+2 - ARQUIVOS TEMPORARIOS
+    Limpa os temporarios, permite incluir novos padroes e listar
+    os padroes cadastrados.
+    Detalhes em [MENU_TEMPORARIOS].
 
-    2. Informar nome do arquivo
-       * Nome completo com extensao
-       * Ex: relatorio.pdf
+3 - EXPURGADOR DE ARQUIVOS
+    Remove arquivos antigos com mais de 30 dias.
 
-    3. Informar diretorio destino no servidor
-       * Caminho completo no servidor
-       * Ex: /home/usuario/documentos
+4 - ENVIAR & RECEBER ARQUIVOS
+    Transfere arquivos entre a maquina e o servidor SAV.
+    Detalhes em [MENU_TRANSFERENCIA].
 
-    4. Fornecer senha do usuario remoto
+EXPURGADOR - DETALHES:
+---------------------------------------------------------------
 
-    5. Transferencia via rsync
-       * Mostra progresso
-       * Mantem permissoes
-       * Compressao automatica
+EXECUCAO MANUAL (esta opcao):
+ * Remove arquivos com mais de 30 dias
+ * NUNCA remove arquivos *.dat e *.idx
 
-    PROTOCOLOS:
-    * RSYNC: Transferencia eficiente
-    * SSH: Seguranca na conexao
-    * Porta: Configuravel (padrao 41122)
+ DIRETORIOS VARREDOS:
+  backups/anterior/          biblioteca/anterior/
+  biblioteca/atual/          programas/atual/
+  programas/anterior/        enviar/
+  portalsav/atualiza/        backups/base/
+  logs/                      portalsav/log/
+  err_isc/                   savisc/viewvix/tmp/
 
-2 - RECEBER ARQUIVO(S)
-    Baixa arquivo do servidor.
+ * Nos diretorios de executaveis (classes/ e tel_isc/) remove
+   apenas *.zip com mais de 15 dias
 
-    PROCESSO:
-    1. Informar diretorio de origem (servidor)
-       * Caminho completo no servidor
-       * Ex: /home/usuario/backups
+EXECUCAO AUTOMATICA (na inicializacao):
+ * Roda uma vez por dia na abertura do sistema
+ * Usa o mesmo criterio de 30 dias e tambem protege *.dat/*.idx
+ * Fica registrada em logs/limpando.AAAA-MM-DD.log
 
-    2. Informar nome do arquivo
-       * Nome completo com extensao
-       * Ex: dados.zip
-
-    3. Informar diretorio destino (local)
-       * Caminho completo ou
-       * ENTER para usar padrao (tools/receber)
-
-    4. Fornecer senha do usuario remoto
-
-    5. Transferencia via sftp
-       * Mostra progresso
-       * Verifica integridade
-
-    PROTOCOLOS:
-    * SFTP: Protocolo seguro
-    * SSH: Criptografia
-    * Porta: Configuravel
-
-USO DE DIRETORIOS PADRAO:
--------------------------------------------------------------------
-
-ENVIO:
-Origem padrao: tools/enviar/
-* Coloque arquivo neste diretorio
-* Pressione ENTER ao solicitar origem
-* Sistema usa automaticamente
-
-RECEBIMENTO:
-Destino padrao: tools/receber/
-* Arquivo baixado neste diretorio
-* Pressione ENTER ao solicitar destino
-* Facilita localizacao
-
-VANTAGENS:
-* Organizacao centralizada
-* Facil localizacao de arquivos
-* Limpeza automatica (expurgador)
-
-CONFIGURACOES DE CONEXAO:
--------------------------------------------------------------------
-
-SERVIDOR:
-* IP: Configurado no setup
-* Porta: Padrao 41122 (SSH)
-* Usuario: Configurado no setup
-
-CREDENCIAIS:
-* Senha solicitada em cada operacao
-* Por seguranca, nao e armazenada
-* Ou use SSH keys (modo facilitado)
-
-MODO FACILITADO:
-Se configurado acessossh=s:
-* Usa chaves SSH
-* Sem solicitacao de senha
-* Conexao persistente
-* Mais rapido e seguro
-
-TIPOS DE ARQUIVO:
--------------------------------------------------------------------
-
-SUPORTADOS:
-* Documentos: .pdf, .doc, .docx, .txt
-* Planilhas: .xls, .xlsx, .csv
-* Imagens: .jpg, .png, .gif
-* Compactados: .zip, .tar, .gz
-* Backups: .bkp, .backup
-* Logs: .log
-* Executaveis: .sh, .exe
-* Todos os demais formatos
-
-LIMITACOES:
-* Tamanho: Limitado por disco
-* Permissoes: Requer acesso adequado
-* Rede: Depende de conectividade
-
-CASOS DE USO:
--------------------------------------------------------------------
-
-ENVIAR:
-* Relatorios para analise
-* Logs para suporte tecnico
-* Backups para servidor
-* Documentacao atualizada
-* Arquivos de configuracao
-* Exports de dados
-
-RECEBER:
-* Atualizacoes do sistema
-* Arquivos de configuracao
-* Manuais e documentacao
-* Templates e modelos
-* Imports de dados
-* Patches e correcoes
-
-SEGURANCA:
--------------------------------------------------------------------
-
-CRIPTOGRAFIA:
-* SSH: Todos dados criptografados
-* Senhas: Nunca em texto claro
-* Conexao: Protocolo seguro
-
-VALIDACAO:
-* Integridade: Checksums automaticos
-* Permissoes: Preservadas na transferencia
-* Sobrescrita: Confirmacao requerida
-
-AUDITORIA:
-* Logs: Todas operacoes registradas
-* Data/Hora: Timestamp completo
-* Usuario: Identificacao preservada
+LISTA limpadir (diretorios extras):
+ * Um diretorio absoluto por linha; linhas em branco e comentadas
+   com # sao ignoradas
+ * Criterio: mais de 30 dias (LIM_PADIR_DIAS)
+ * Extensoes alvo Padrao: txt, xml, err (definido em arquivos.sh)
+ * A remocao e IRREVERSIVEL e inclui *.dat e *.idx
+ * O sistema mostra a contagem por extensao e pede confirmacao
 
 SOLUCAO DE PROBLEMAS:
--------------------------------------------------------------------
+---------------------------------------------------------------
+PROBLEMA: "Diretorio nao encontrado ou inseguro"
+SOLUCAO: O caminho nao existe ou e a raiz; confira o .config
 
-PROBLEMA: "Connection refused"
-SOLUCAO: Verificar IP, porta e firewall
+PROBLEMA: O expurgador do limpadir nao apagou nada
+SOLUCAO: Os arquivos tem menos de 30 dias ou a extensao nao esta
+         na lista de extensoes alvo
+
+---------------------------------------------------------------
+[MENU_RECUPERACAO]
+MENU DE RECUPERACAO DE ARQUIVO(S)
+---------------------------------------------------------------
+
+Executa o jutil para reconstruir indices de arquivos de dados.
+
+DISPONIVEL APENAS PARA: sistemas IsCOBOL
+
+O QUE E REBUILD:
+---------------------------------------------------------------
+O rebuild le todos os registros, reconstroi o indice, corrige
+inconsistencias e reorganiza o espaco fisico do arquivo.
+
+COMANDO EXECUTADO:
+ jutil -rebuild <arquivo> -a -f
+   -rebuild : reconstroi o indice do arquivo
+   -a       : modo automatico
+   -f       : forca a reconstrucao
+
+QUANDO USAR:
+---------------------------------------------------------------
+OBRIGATORIO:
+ * Erro "File is locked" persistente
+ * Erro "Invalid key" ao acessar dados
+ * Mensagem "Corrupt index"
+ * Apos queda abrupta, falha de disco ou falta de energia
+
+RECOMENDADO:
+ * Performance degradada
+ * Arquivo cresceu muito sem reorganizacao
+ * Antes de um backup importante
+ * Mensalmente, em manutencao preventiva
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - UM ARQUIVO OU TODOS
+    Recupera um arquivo pelo nome ou todos os arquivos da base.
+
+    PROCESSO:
+    1. Escolha a base (se houver mais de uma)
+    2. Informe o nome do arquivo (ex: CADCLI) ou ENTER para
+       todos os arquivos
+    3. Se pediu todos, confirme a operacao
+    4. Ao final, o sistema pergunta se deseja recuperar mais
+
+    COMO O NOME E INTERPRETADO:
+    * Convertido para MAIUSCULAS e sem espacos
+    * E reduzido ao texto antes do primeiro ponto
+    * Sao procurados: NOME, NOME.dat e NOME.*.dat
+    * Exemplo: CADCLI, CADCLI.dat e CADCLI.ARQ.dat
+
+    NA RECUPERACAO DE TODOS:
+    * Extensoes processadas: as de DATA_EXTENSIONS
+      (padrao *.dat)
+    * Arquivos vazios e links simbolicos sao ignorados
+    * Ao final, e exibido um resumo com recuperados, falhas,
+      links, vazios e arquivos fora do padrao
+
+2 - ARQUIVOS PRINCIPAIS
+    Recupera o conjunto de arquivos criticos do ano corrente.
+
+    ARQUIVOS GERADOS AUTOMATICAMENTE (indexar2):
+     ATE<AA>*.dat    arquivos do ano corrente (2 digitos)
+     NFE?<AAAA>.*.dat  notas fiscais eletronicas do ano
+
+    ARQUIVOS DA LISTA indexar:
+     configuracoes/indexar, com os arquivos criticos do SAV
+     (ex: ADCCNF.ARQ.dat, ADCCON.ARQ.dat, ADVENC.DAT.dat)
+
+3 - LISTA DE ARQUIVOS
+    Recupera os arquivos listados em configuracoes/variosarquivos.
+
+    PROCESSO:
+    1. Escolha a base
+    2. O sistema le a lista, ignora linhas em branco e espaco
+    3. Entradas que nao terminam em .dat sao avisadas e puladas
+    4. Entradas inexistentes na base sao consideradas lista
+       desatualizada (nao contam como falha)
+    5. Todos os arquivos validos sao recuperados em um lote
+
+4 - EDITAR LISTA DE ARQUIVOS
+    Mantem a lista variosarquivos sem editor externo.
+
+    OPERACOES:
+     1 - Adicionar nova entrada
+     2 - Alterar uma entrada (pelo numero da linha)
+     3 - Remover uma entrada
+     4 - Zerar a lista (remove todas as entradas)
+     9 - Voltar ao menu anterior
+
+    FORMATO ACEITO:
+     Um nome de arquivo por linha
+     Letras, numeros, ponto e hifen
+     Exemplo: CADCLI.ARQ.dat
+
+EXECUCAO EM LOTE:
+---------------------------------------------------------------
+ * Os arquivos sao recuperados em ondas, com paralelismo
+   controlado por C_JUTIL_PARALELO (padrao 1 = sequencial)
+ * C_JUTIL_SEQUENCIAL=1 forca o modo sequencial legado
+ * Servidor com pouca memoria: mantenha o padroo (1)
+ * Arquivo interrompido pelo sistema (sinal 137/143) e
+   reprocessado sequencialmente; se falhar de novo, reduza o
+   paralelismo
+ * Ao final, as permissoes sao ajustadas em lote
+
+USUARIOS E CUIDADOS:
+---------------------------------------------------------------
+ * O sistema deve estar sem usuarios usando o arquivo
+ * Rebuild em arquivo em uso pode falhar
+ * E necessario espaco livre para o rebuild
+ * O resultado fica registrado em logs/atualiza.AAAA-MM-DD.log
+
+ESTIMATIVA DE TEMPO:
+---------------------------------------------------------------
+ Arquivo pequeno (ate 10MB)      segundos
+ Arquivo medio (10MB a 100MB)     1 a 5 minutos
+ Arquivo grande (100MB a 1GB)     5 a 30 minutos
+ Arquivo muito grande (acima 1GB) mais de 30 minutos
+
+SOLUCAO DE PROBLEMAS:
+---------------------------------------------------------------
+PROBLEMA: "REBUILD nao configurada ou nao executavel"
+SOLUCAO: Verifique se jutil existe em savisc/iscobol/bin
+
+PROBLEMA: "File is locked"
+SOLUCAO: Feche o sistema e execute novamente
 
 PROBLEMA: "Permission denied"
-SOLUCAO: Verificar credenciais e permissoes
+SOLUCAO: Verifique a permissao do arquivo e da base
 
-PROBLEMA: "No such file or directory"
-SOLUCAO: Confirmar caminho completo e correto
+PROBLEMA: "No space left on device"
+SOLUCAO: Libere espaco em disco
 
-PROBLEMA: "Disk quota exceeded"
-SOLUCAO: Liberar espaco no destino
+PROBLEMA: Rebuild parece travado
+SOLUCAO: Aguarde; o progresso aparece a cada segundo. Se o jutil
+         foi morto pelo sistema, reduza C_JUTIL_PARALELO
 
-PROBLEMA: Transferencia muito lenta
-SOLUCAO: Verificar velocidade da rede
+---------------------------------------------------------------
+[MENU_TEMPORARIOS]
+MENU DE LIMPEZA - TEMPORARIOS
+---------------------------------------------------------------
 
-PROBLEMA: "Host key verification failed"
-SOLUCAO: Limpar ~/.ssh/known_hosts ou aceitar novo
+Gerencia os arquivos temporarios gerados durante a operacao.
 
--------------------------------------------------------------------
-[MENU_SETUPS]
-MENU DE SETUP DO SISTEMA
--------------------------------------------------------------------
+COMO A LIMPEZA FUNCIONA:
+---------------------------------------------------------------
+ 1. Le os padroes de configuracoes/limpetmp
+ 2. Le tambem configuracoes/limpetmp2 (se existir)
+ 3. Procura os arquivos correspondentes na base
+ 4. Compacta todos em um unico Temps-<DATA>.zip
+ 5. Remove os arquivos originais
+ 6. Apaga os Temps com mais de 10 dias de backups/anterior
 
-Gerenciamento de configuracoes do sistema SAV.
+Os arquivos processados sao os modificados ha mais de 24 horas: o
+que foi mexido hoje e preservado. A limpeza percorre todas as
+bases configuradas.
 
 OPCOES DISPONIVEIS:
--------------------------------------------------------------------
+---------------------------------------------------------------
 
-1 - CONSULTA DE SETUP
-    Visualiza todas as configuracoes atuais.
+1 - LIMPEZA DOS ARQUIVOS TEMPORARIOS
+    Executa a limpeza descrita acima, em modo interativo.
 
-    INFORMACOES EXIBIDAS:
-    * Sistema e versao
-    * Diretorios configurados
-    * Bibliotecas em uso
-    * Conexao de rede
-    * Modo online/offline
-    * Parametros de backup
+2 - ADICIONAR ARQUIVOS TEMPORARIOS
+    Inclui um novo padrao na lista limpetmp2.
 
-    USO:
-    * Verificar configuracao atual
-    * Documentar instalacao
-    * SOLUCAO DE PROBLEMAS
-    * Auditoria
+    COMO USAR:
+    1. Informe o nome ou padrao do arquivo
+    2. Use * como coringa
 
-2 - MANUTENCAO DE SETUP
-    Permite editar configuracoes existentes.
+    EXEMPLOS:
+     REL*.TMP   todos os arquivos REL com extensao .TMP
+     TEMP*      arquivos que comecam com TEMP
+     *.bkp      arquivos com extensao .bkp
 
-    PARAMETROS EDITAVEIS:
-    * verclass: Versao do IsCOBOL
-    * acessossh: Modo facilitado (s/n)
-    * Offline: Modo offline (s/n)
-    * enviabackup: Diretorio backup servidor
-    * empresa: Nome da empresa
-    * base, base2, base3: Diretorios dados
+    REGRAS DO PADRAO:
+     * Letras, numeros, ponto, hifen, espaco e *
+     * Precisa ter parte literal: * sozinho e recusado
+     * Padroes amplos demais (ex: *.*, **.*) sao recusados
+     * Nao e permitido caminho (/), ".." ou metacaracteres
 
-    PROCESSO:
-    1. Sistema carrega valores atuais
-    2. Para cada parametro:
-       * Mostra valor atual
-       * Pergunta se deseja alterar
-       * Solicita novo valor
-    3. Recria arquivos de configuracao
-    4. Recarrega configuracoes
+3 - LISTAR OS REGISTROS DOS ARQUIVOS
+    Mostra numerados o conteudo de limpetmp e de limpetmp2.
 
-    BACKUP AUTOMATICO:
-    Sistema cria .config.bkp antes de editar
+ARQUIVO limpetmp:
+---------------------------------------------------------------
+ LOCALIZACAO: configuracoes/limpetmp
+ FORMATO    : um padrao por linha; linhas em branco e comentadas
+              com # sao ignoradas
 
-3 - VALIDAR CONFIGURACAO
-    Testa todas as configuracoes.
+ EXEMPLOS DE PADROES USADOS PELO SAV:
+  REL*.TMP    relatorios temporarios
+  TEMP*       arquivos de trabalho
+  *.BKP       backups automaticos
+  PRINT*      filas de impressao
+  WRKMVE*     arquivos de trabalho do sistema
 
-    VALIDACOES:
-    * Arquivos de configuracao existem
-    * Variaveis obrigatorias definidas
-    * Diretorios existem e acessiveis
-    * Comandos disponiveis
-    * Conectividade (modo online)
+SEGURANCA DA LIMPEZA:
+---------------------------------------------------------------
+ * Os arquivos sao compactados antes de serem removidos
+ * O Temps-<DATA>.zip permite recuperar o conteudo
+ * Os Temps com mais de 10 dias sao apagados automaticamente
 
-    RESULTADO:
-    * Erros: Problemas criticos
-    * Avisos: Problemas nao criticos
-    * OK: Tudo correto
+RECOMENDACAO:
+---------------------------------------------------------------
+ * Execute a limpeza periodicamente (mensal)
+ * Antes de um backup completo da base
+ * Quando o disco estiver perto do limite
 
-    RECOMENDACAO:
-    Execute apos alteracoes ou problemas
-
-ARQUIVO DE CONFIGURACAO:
--------------------------------------------------------------------
-
-LOCALIZACAO:
-configuracoes/.config
-
-FORMATO:
-Arquivo texto com pares chave=valor
-
-EXEMPLO:
-verclass=2024
-empresa=MINHAEMP
-base=/dados_jisam
-ipserver=192.168.1.100
-Offline=n
-
-IMPORTANTE:
-* Nao adicionar espacos em volta do =
-* Valores sensiveis a maiusculas/minusculas
-* Sem aspas nos valores
-* Comentarios com #
-
-PARAMETROS PRINCIPAIS:
--------------------------------------------------------------------
-
-verclass:
-* 2018, 2020, 2023, 2024
-* Versao do IsCOBOL
-* Define compatibilidade biblioteca
-
-base:
-* Diretorio principal de dados
-* Caminho relativo a RAIZ
-* Ex: /dados_jisam
-
-empresa:
-* Nome da empresa (sem espacos)
-* Usado em backups
-* Identificacao de instalacao
-
-ipserver:
-* IP do servidor SAV
-* Para atualizacoes e backups
-* Ex: 192.168.1.100
-
-Offline:
-* s: Modo offline (sem servidor)
-* n: Modo online (com servidor)
-* Determina fonte de atualizacoes
-
-BIBLIOTECAS:
--------------------------------------------------------------------
-
-SAVATU1, SAVATU2, SAVATU3:
-Padroes de nome dos arquivos de biblioteca
-
-FORMATO:
-tempSAV_IS[ANO]_[TIPO]_
-
-EXEMPLO (IsCOBOL 2024):
-SAVATU1=tempSAV_IS2024_CLASSA_
-SAVATU2=tempSAV_IS2024_CLASSB_
-SAVATU3=tempSAV_IS2024_tel_isc_
-
-ATUALIZACAO AUTOMATICA:
-Ao mudar verclass, SAVATUs sao atualizados
-
-DIRETORIOS FIXOS:
--------------------------------------------------------------------
-
-Definidos automaticamente em tools/:
-* /savprogramas - Programas atualizados
-* /back_programas - Backups de reversao
-* /logs - Arquivos de log
-* /configuracoes - Configuracoes
-* /backups - Backups da base
-* /enviar - Arquivos para enviar
-* /receber - Arquivos recebidos
-* /binarios - Bibliotecas do sistema
-
-NAO MODIFICAR estes diretorios!
-
-CONFIGURACAO INICIAL:
--------------------------------------------------------------------
-
-Para nova instalacao, use:
-./binarios/setup.sh
-
-WIZARD INTERATIVO:
-1. Escolhe sistema (IsCOBOL/Cobol)
-2. Define versao
-3. Configura banco de dados
-4. Define diretorios
-5. Configura rede
-6. Define backup
-7. Informacoes empresa
-8. Cria configuracoes
-9. Configura SSH (opcional)
-
-RECONFIGURACAO:
-Para modificar instalacao existente:
-./binarios/setup.sh --edit
+RECUPERACAO DE UM TEMPORARIO:
+---------------------------------------------------------------
+ 1. Localize o arquivo em backups/anterior/Temps-<DATA>.zip
+ 2. Descompacte o arquivo desejado
+ 3. Copie de volta para a base
 
 SOLUCAO DE PROBLEMAS:
--------------------------------------------------------------------
+---------------------------------------------------------------
+PROBLEMA: "Arquivo limpetmp nao existe"
+SOLUCAO: Restaure configuracoes/limpetmp pelo update ou
+         recrie o arquivo com um padrao por linha
 
-PROBLEMA: "Arquivo .config nao encontrado"
-SOLUCAO: Execute ./processos/setup.sh
+PROBLEMA: "Padrao invalido ou amplo demais"
+SOLUCAO: Use prefixo ou sufixo concreto (ex: NOME*, *.tmp)
 
-PROBLEMA: "Variavel nao definida"
-SOLUCAO: Execute manutencao de setup
+PROBLEMA: A limpeza nao removeu nada
+SOLUCAO: Os temporarios ainda nao tem 24 horas de modificacao,
+         ou os padroes nao casam com os arquivos da base
 
-PROBLEMA: "Diretorio nao encontrado"
-SOLUCAO: Verifique paths no .config
+---------------------------------------------------------------
+[MENU_TRANSFERENCIA]
+MENU DE ENVIAR E RECEBER ARQUIVO(S)
+---------------------------------------------------------------
 
-PROBLEMA: Alteracoes nao surtem efeito
-SOLUCAO: Saia e entre novamente no sistema
-
--------------------------------------------------------------------
-[MENU_LEMBRETES]
-MENU DE LEMBRETES - BLOCO DE NOTAS
--------------------------------------------------------------------
-
-Sistema simples de anotacoes e lembretes.
+Transferencia de arquivos entre a maquina do cliente e o servidor
+SAV, com criptografia SSH.
 
 OPCOES DISPONIVEIS:
--------------------------------------------------------------------
+---------------------------------------------------------------
+
+1 - ENVIAR ARQUIVO(S)
+    Envia um ou mais arquivos para o servidor.
+
+    PROCESSO:
+    1. Informe o diretorio de origem
+       * Caminho completo, ou
+       * ENTER para usar o padrao (enviar/)
+    2. Informe o nome do arquivo
+       * Use * para enviar varios (ex: REL*.txt)
+    3. Se houver varios arquivos, confirme o envio
+    4. Informe o diretorio de destino no servidor
+    5. Informe a senha do usuario remoto (sem eco)
+
+    EXEMPLOS DE USO:
+     Relatorios para analise
+     Logs para o suporte tecnico
+     Backups e arquivos de configuracao
+
+2 - RECEBER ARQUIVO(S)
+    Baixa um arquivo do servidor.
+
+    PROCESSO:
+    1. Informe o diretorio de origem no servidor
+    2. Informe o nome do arquivo com extensao
+    3. Informe o diretorio local de destino
+       * ENTER para usar o padrao (portalsav/atualiza)
+    4. Informe a senha do usuario remoto (sem eco)
+
+    EXEMPLOS DE USO:
+     Atualizacoes do sistema
+     Pacotes de atualizacao e de biblioteca
+     Importacao de dados
+
+CONFIGURACAO DE CONEXAO:
+---------------------------------------------------------------
+ Servidor     : 191.34.12.223
+ Porta SSH    : 41122 (configuravel)
+ Usuario      : atualiza
+ Modo         : rsync no envio, scp no recebimento
+ Com chave    : quando o acesso por chave esta configurado
+
+SEGURANCA:
+---------------------------------------------------------------
+ * Toda transferencia usa SSH (conexao criptografada)
+ * Origem, nome e destino sao validados antes do uso
+ * Caminhos com "..", "/" ou metacaracteres sao recusados
+ * As operacoes ficam registradas no log de atualizacao
+
+SOLUCAO DE PROBLEMAS:
+---------------------------------------------------------------
+PROBLEMA: "Connection refused"
+SOLUCAO: Verifique IP, porta liberada e firewall
+
+PROBLEMA: "Permission denied"
+SOLUCAO: Verifique usuario, senha e permissao do destino
+
+PROBLEMA: "No such file or directory"
+SOLUCAO: Confirme o caminho completo e o nome do arquivo
+
+PROBLEMA: "Host key verification failed"
+SOLUCAO: Conecte uma vez manualmente e aceite a chave do host
+
+PROBLEMA: Transferencia muito lenta
+SOLUCAO: Verifique a velocidade da rede e use filtro por padrao
+
+---------------------------------------------------------------
+[MENU_FERRAMENTAS]
+MENU DAS FERRAMENTAS
+---------------------------------------------------------------
+
+Utilitarios administrativos do sistema SAV.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - CONFIGURACOES
+    Abre o menu das configuracoes (parametros, versoes e
+    consulta de variaveis).
+    Detalhes em [MENU_CONFIGS].
+
+2 - UPDATE
+    Atualiza o proprio utilitario (atualiza.sh e modulos).
+
+    FONTES:
+     Online : baixa o pacote do repositorio oficial
+     Offline: usa o arquivo atualiza.zip em
+              portalsav/atualiza/dir_temp_atualizacao
+
+    PROCESSO:
+     1. Copia os scripts atuais para backups/anterior
+        (arquivos .sh.bkp e um zip de backup)
+     2. Valida a integridade do zip
+     3. Extrai para uma area de staging
+     4. Verifica a sintaxe (bash -n) de TODOS os scripts
+     5. Instala os scripts e os arquivos de configuracao
+     6. Remove a area temporaria
+     7. Encerra o sistema
+
+     NADA E INSTALADO se algum script estiver com sintaxe
+     invalida: o sistema continua na versao anterior.
+
+     Arquivos de configuracao atualizados:
+      manual.txt, avisos, indexar, limpetmp, variosarquivos,
+      limpadir e .senhas
+
+     IMPORTANTE: ao final, entre novamente no sistema.
+
+3 - LEMBRETES
+    Bloco de notas do usuario.
+    Detalhes em [MENU_LEMBRETES].
+
+4 - AVISOS INICIAIS
+    Mensagem exibida a todos os usuarios ao entrar no sistema.
+    Detalhes em [MENU_AVISO].
+
+5 - LOGS DO SISTEMA
+    Consulta dos logs de atualizacao e de limpeza.
+    Detalhes em [MENU_LOGS].
+
+6 - VOLTA .SH ANTERIOR
+    Retorna os scripts para a versao anterior.
+
+    PROCESSO:
+    1. O sistema localiza os backups .sh.bkp em
+       backups/anterior (ou dentro de um zip de backup)
+    2. Confirma a restauracao
+    3. atualiza.sh volta para a raiz; os demais, para binarios/
+    4. Ao final, entre novamente no sistema
+
+    USE QUANDO:
+     * O update trouxe um modulo com problema
+     * Precisa desfazer a ultima atualizacao do utilitario
+
+DICAS DE USO:
+---------------------------------------------------------------
+ * Consulte os parametros do sistema depois de qualquer update
+ * Registre em Lembretes as pendencias da manutencao
+ * Use Avisos para comunicar mudancas a todos os usuarios
+ * Confira os Logs quando algo se comportar de forma inesperada
+
+---------------------------------------------------------------
+[MENU_CONFIGS]
+MENU DAS CONFIGURACOES
+---------------------------------------------------------------
+
+Consulta de informacoes do sistema e das suas configuracoes.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - PARAMETROS DO SISTEMA
+    Exibe diretorios, versoes, bibliotecas e parametros de rede.
+    Detalhes em [MENU_SETUPS].
+
+2 - VERSAO DO ISCOBOL
+    Executa o iscclient -v e mostra a versao do IsCOBOL,
+    a data de compilacao e os recursos disponiveis.
+
+    Se o executavel nao existir em savisc/iscobol/bin,
+    o sistema avisa que o recurso nao esta disponivel.
+
+3 - VERSAO DO LINUX
+    Mostra informacoes do servidor:
+
+     * Estado da conexao com a internet
+     * Sistema operacional e versao do Linux
+     * Nome do servidor (hostname)
+     * IP interno e IP externo
+     * Usuarios conectados no momento
+     * Uso de memoria RAM e de SWAP
+     * Espaco em disco (df)
+     * Tempo de uso do sistema (uptime)
+
+    Em modo off-line, o teste de internet e omitido.
+
+4 - CONSULTAR VARIAVEIS
+    Lista as constantes e variaveis do sistema em tabela.
+
+    USO:
+    1. Informe um filtro por categoria (ex: DIRETORIOS, REDE,
+       SEGURANCA) ou ENTER para listar todas
+    2. O sistema mostra o valor atual de cada variavel
+    3. As colunas VARIAVEL e VALOR sao ajustadas ao terminal
+
+    CATEGORIAS DISPONIVEIS:
+     DIRETORIOS E CAMINHOS        DIRETORIOS PADRAO
+     CONFIGURACOES DO SISTEMA    CONFIGURACOES DE REDE
+     FLAGS BOOLEANAS             ACESSO OFFLINE
+     BASES DE DADOS              SAVISC - DIRETORIO E UTILITARIOS
+     SEGURANCA E PERMISSOES      COMANDOS EXTERNOS
+     TEMPOS E LIMITES            LOGS
+     ATUALIZACAO
+
+    A listagem recarrega o .config, entao mostra edicoes feitas
+    durante a sessao.
+
+    QUANDO USAR:
+     * Antes de reportar um problema ao suporte
+     * Para conferir caminho, porta, usuario ou timeout
+     * Para descobrir o nome exato de uma constante
+
+---------------------------------------------------------------
+[MENU_SETUPS]
+MENU DE SETUP DO SISTEMA
+---------------------------------------------------------------
+
+Gerencia os parametros do sistema SAV.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - CONSULTA DE SETUP
+    Apenas exibe os parametros atuais, em duas telas:
+
+     Diretorio RAIZ e diretorio do atualiza.sh
+     Diretorios das bases (principal, segunda e terceira)
+     Diretorio dos executaveis e das telas
+     Diretorios de logs, olds, progs, backup e configuracoes
+     Diretorios de receber e de enviar
+     Versao em uso do IsCOBOL e as tres bibliotecas
+     Diretorio offline e caminho de envio de backup
+     Versao anterior e versao em uso da biblioteca
+     Situacao do servidor OFF e do acesso por chaves
+     Sufixos de compilado e de debugado
+     Porta, usuario e IP do servidor
+
+2 - MANUTENCAO DE SETUP
+    Edita os parametros existentes.
+
+    VARIAVEIS EDITAVEIS:
+     verclass    versao do IsCOBOL (2020, 2023, 2024, 2025, 2026)
+     acessossh   uso do acesso remoto facilitado (s/n)
+     chavessh    uso de chaves SSH (s/n)
+     Offline     servidor OFF (s/n)
+     enviabackup caminho de envio do backup no servidor
+     empresa     nome da empresa (sem espaco, em maiusculas)
+     base        diretorio da base principal
+     base2       diretorio da segunda base (opcional)
+     base3       diretorio da terceira base (opcional)
+
+    PROCESSO:
+    1. O sistema executa o setup em modo de edicao
+    2. Para cada variavel, mostra o valor atual e pergunta
+       se deseja alterar
+    3. Um backup do arquivo .config e criado antes da edicao
+    4. Ao final, as configuracoes sao recarregadas na sessao
+    5. Escolha sair e entre novamente para o menu principal
+
+    Normalizacao automatica:
+     base, base2, base3 e enviabackup em minusculas
+     empresa em maiusculas
+
+    COMANDO EQUIVALENTE:
+     ./atualiza.sh --setup --edit
+
+3 - CONFIGURAR ACESSO SSH
+    Configura a conexao sem senha com o servidor SAV.
+
+    PROCESSO:
+    1. Verifica as dependencias (ssh, ssh-keygen, ssh-copy-id)
+    2. Cria o diretorio ~/.ssh com permissao 0700
+    3. Procura a chave em ~/.ssh/id_rsa_atualiza
+       Se nao existir, pergunta se deseja criar (RSA 4096)
+    4. Pergunta se deseja enviar a chave publica agora
+    5. Pergunta se deseja testar a conexao imediatamente
+
+    Em servidores antigos, o ssh-copy-id pode nao aceitar a opcao
+    de porta; nesse caso o sistema mostra o comando manual:
+     ssh -p 41122 atualiza@191.34.12.223 'cat >> ~/.ssh/authorized_keys'
+     < ~/.ssh/id_rsa_atualiza.pub
+
+    APOS CONFIGURAR:
+     * O teste usa ssh sem senha (BatchMode)
+     * Se falhar: chmod 700 ~/.ssh e chmod 600 ~/.ssh/authorized_keys
+
+CONFIGURACAO INICIAL (primeira instalacao):
+---------------------------------------------------------------
+ Use: ./atualiza.sh --setup
+
+ O assistente pergunta, nesta ordem:
+  1. Versao do IsCOBOL (2020, 2023, 2024, 2025 ou 2026)
+  2. Nome da pasta da base de dados (ex: /dados_jisam)
+  3. Nome da segunda base (opcional)
+  4. Nome da terceira base (opcional)
+  5. Ativar o acesso remoto facilitado (S/N)
+  6. Permitir chaves de acesso (S/N)
+  7. Servidor OFF (S/N)
+  8. Nome da pasta de backup no servidor da SAV
+  9. Nome da empresa (sem espacos)
+
+ Como root, tambem cria o atalho /usr/local/bin/atualiza.
+
+ARQUIVO .config:
+---------------------------------------------------------------
+ LOCALIZACAO: configuracoes/.config
+ FORMATO    : uma variavel por linha, no formato chave=valor
+ EXEMPLO:
+  verclass=2024
+  acessossh=s
+  chavessh=s
+  Offline=n
+  enviabackup=/cliente/minhaemp_jisam
+  empresa=MINHAEMP
+  base=/dados_jisam
+
+ REGRAS:
+  * Sem espacos em volta do =
+  * Sem aspas nos valores
+  * Comentarios com # em linha propria ou apos o valor
+  * Variaveis que controlam o shell (PATH, HOME, IFS, TZ, LANG,
+    BASH_*) sao ignoradas por seguranca
+  * Valores com acentos graves, barrasvertical, &, <, >, parenteses,
+    chaves ou $ sao recusados
+
+ BIBLIOTECAS DERIVADAS DA VERSAO (exemplo 2024):
+  SAVATU1 = tempSAV_IS2024_classA_
+  SAVATU2 = tempSAV_IS2024_classB_
+  SAVATU3 = tempSAV_IS2024_tel_isc_
+
+SOLUCAO DE PROBLEMAS:
+---------------------------------------------------------------
+PROBLEMA: "Arquivo .config nao encontrado"
+SOLUCAO: Execute ./atualiza.sh --setup
+
+PROBLEMA: Alteracoes do setup nao surtiram efeito
+SOLUCAO: Saia do sistema e entre novamente
+
+PROBLEMA: "Variavel de destino nao informada"
+SOLUCAO: Informe o caminho completo do diretorio
+
+PROBLEMA: Erro de conexao SSH
+SOLUCAO: Refaca a configuracao de acesso SSH e teste de novo
+
+---------------------------------------------------------------
+[MENU_LEMBRETES]
+BLOCO DE NOTAS (LEMBRETES)
+---------------------------------------------------------------
+
+Anotacoes pessoais do usuario, gravadas em
+configuracoes/lembrete e exibidas ao entrar no sistema.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
 
 1 - ESCREVER NOVA NOTA
-    Cria nova anotacao.
+    Acrescenta texto ao arquivo de notas.
 
     PROCESSO:
     1. Digite o conteudo da nota
-    2. Pode ser multiplas linhas
+    2. Pode ocupar varias linhas
     3. Pressione Ctrl+D para finalizar
-    4. Nota e salva automaticamente
+    4. A nota e gravada e o sistema confirma a inclusao
 
-    FORMATO:
-    Texto livre, sem formatacao especial
-
-    EXEMPLO:
-    Atualizar sistema dia 15/01
-    Pendente: Testar modulo vendas
-    Lembrar: Backup completo sexta
+    EXEMPLOS:
+     Atualizar sistema dia 15/01
+     Pendente: testar modulo de vendas
+     Lembrar: backup completo na sexta
 
 2 - VISUALIZAR NOTA
-    Exibe notas salvas.
-
-    APRESENTACAO:
-    * Moldura ao redor do texto
-    * Formatacao preservada
-    * Facil leitura
-
-    USO:
-    Consultar anotacoes e lembretes
+    Exibe todas as notas em moldura, com quebra de linha
+    conforme a largura do terminal.
 
 3 - EDITAR NOTA
-    Modifica nota existente.
+    Abre o arquivo de notas no editor.
 
-    EDITOR:
-    * nano (padrao)
-    * ou editor definido em $EDITOR
+    EDITOR USADO:
+     nano por padrao, ou o editor definido em $EDITOR
 
-    COMANDOS NANO:
-    * Ctrl+O = Salvar
-    * Ctrl+X = Sair
-    * Ctrl+K = Recortar linha
-    * Ctrl+U = Colar
-
-    MODIFICACAO:
-    * Adicionar linhas
-    * Remover linhas
-    * Alterar texto
+    COMANDOS DO NANO:
+     Ctrl+O = salvar
+     Ctrl+X = sair
+     Ctrl+K = cortar linha
+     Ctrl+U = colar
 
 4 - APAGAR NOTA
-    Remove todas as notas.
-
-    PROCESSO:
-    1. Sistema solicita confirmacao
-    2. Se confirmar (S), apaga tudo
-    3. Se negar (N), cancela
+    Remove o arquivo de notas apos confirmacao.
 
     IMPORTANTE:
-    Acao irreversivel! Notas sao perdidas.
-
+    Acao irreversivel: todas as notas serao perdidas.
 
 ARQUIVO DE NOTAS:
--------------------------------------------------------------------
+---------------------------------------------------------------
+ LOCALIZACAO: configuracoes/lembrete
+ FORMATO    : texto simples, uma anotacao apos a outra
+ PERSISTENCIA: as notas permanecem entre sessoes
 
-LOCALIZACAO:
-configuracoes/lembrete
-
-FORMATO:
-Arquivo texto simples
-
-CONTEUDO:
-Todas as notas em sequencia
-
-PERSISTENCIA:
-Notas sao mantidas entre sessoes
-
-CASOS DE USO:
--------------------------------------------------------------------
-
-HISTORICO DE MANUTENCAO:
-10/01 - Atualizado programa ADV000
-11/01 - Backup completo realizado
-12/01 - Limpeza de temporarios
-
-PROBLEMAS CONHECIDOS:
-- Programa ADV000 lento (investigar)
-- Erro esporadico no ADV000
-- Aguardando correcao do suporte
-
-CONTATOS IMPORTANTES:
-Email: suporte@sav.com.br
-Horario: 8h as 18h
-
-SENHAS E ACESSOS:
-(Nao recomendado para informacoes sensiveis!)
-
-INFORMACOES IMPORTANTES:
--------------------------------------------------------------------
+COMO USAR:
+---------------------------------------------------------------
+ * Use separadores para organizar:
+     === PENDENCIAS ===
+     === HISTORICO ===
+     === CONTATOS ===
+ * Sempre inclua a data: [10/01/2026] Atualizacao da biblioteca
+ * Marque prioridades:
+     !!! Urgente
+     !!  Importante
+     !   Normal
+ * Remova informacoes antigas periodicamente
 
 SEGURANCA:
-* Notas em texto simples
-* Sem criptografia
-* Evite dados sensiveis
-* Qualquer usuario pode ler
+---------------------------------------------------------------
+ * As notas nao sao criptografadas
+ * Evite dados sensiveis (senhas, chaves)
+ * Qualquer usuario do servidor pode ler o arquivo
 
-TAMANHO:
-* Sem limite de caracteres
-* Sem limite de linhas
-* Cuidado com arquivo muito grande
+ATUALIZACAO DO SISTEMA:
+---------------------------------------------------------------
+ O arquivo lembrete NAO e sobrescrito pelo update: ele e dado
+ do usuario. O mesmo vale para limpetmp2 e indexar2, que sao
+ gerados em tempo de execucao.
 
-BACKUP:
-* Arquivo nao e automaticamente backupado
-* Inclua em backup manual se necessario
-* Ou copie manualmente
-
-ALTERNATIVAS:
-Para anotacoes mais complexas:
-* Use sistema externo de notas
-* Software de gestao de tarefas
-* Wiki ou documentacao colaborativa
-
-EXIBICAO AUTOMATICA:
-Na inicializacao do sistema:
-* Se arquivo existe
-* Notas sao exibidas automaticamente
-* util para lembretes importantes
-* Configure para nao exibir se preferir
-
-MENSAGEM DE ENTRADA:
-* Arquivo separado (${CFG_DIR}/entrada)
-* Pode ser gerado pelo menu de lembretes (opcao 0)
-* Exibido sempre que o programa inicia
-* Apresenta pergunta para excluir logo apos a leitura
-* Ideal para comunicados temporarios a todos os usuarios
-
-DICAS:
--------------------------------------------------------------------
-
-ORGANIZACAO:
-Use marcadores e secoes:
-=== PENDENCIAS ===
-=== HISTORICO ===
-=== CONTATOS ===
-
-DATAS:
-Sempre inclua data nas anotacoes:
-[10/01/2026] Descricao do evento
-
-PRIORIDADES:
-Use marcadores:
-!!! Urgente
-!! Importante
-! Normal
-
-LIMPEZA:
-Remova informacoes antigas periodicamente
-
--------------------------------------------------------------------
+---------------------------------------------------------------
 [MENU_AVISO]
-MENU DE AVISO- BLOCO DE NOTAS
--------------------------------------------------------------------
+MENU DE AVISO(S)
+---------------------------------------------------------------
 
-Sistema simples de anotacoes e lembretes.
+Mensagem exibida a todos os usuarios no momento do login,
+antes do menu principal.
+
+ARQUIVO DE AVISO:
+---------------------------------------------------------------
+ LOCALIZACAO: configuracoes/avisos
+ FORMATO    : texto simples, exibido com quebra de linha
+ PERSISTENCIA: a mensagem permanece ate ser apagada
+
+COMO A MENSAGEM E EXIBIDA:
+---------------------------------------------------------------
+ 1. Apos o login, se o arquivo existir e tiver conteudo,
+    a mensagem aparece em moldura
+ 2. O sistema pergunta se a mensagem deve ser excluida
+ 3. Respondendo S o arquivo e removido; em N, ela reaparece
+    na proxima entrada
 
 OPCOES DISPONIVEIS:
--------------------------------------------------------------------
+---------------------------------------------------------------
 
-1 - ESCREVER NOVO AVISO
-    Cria um novo aviso ao entrar no sistema.
+1 - GERAR AVISO AO INICIAR
+    Cria a mensagem de entrada.
 
     PROCESSO:
     1. Digite o conteudo do aviso
-    2. Pode ser multiplas linhas
+    2. Pode ocupar varias linhas
     3. Pressione Ctrl+D para finalizar
-    4. Nota e salva automaticamente
 
-    FORMATO:
-    Texto livre, sem formatacao especial
+    O texto so substitui o aviso anterior se tiver conteudo;
+    uma entrada vazia mantem a mensagem atual.
 
-    EXEMPLO:
-    Atualizar sistema dia 15/01
-    Pendente: Testar modulo vendas
-    Lembrar: Backup completo sexta
+2 - EDITAR AVISO EXISTENTE
+    Abre o arquivo de avisos no editor (nano ou $EDITOR)
+    para ajustar o texto.
 
-2 - VISUALIZAR AVISO
-    Exibe aviso salvo.
+3 - APAGAR AVISO EXISTENTE
+    Remove o arquivo de avisos apos confirmacao.
 
-    APRESENTACAO:
-    * Moldura ao redor do texto
-    * Formatacao preservada
-    * Facil leitura
+USO RECOMENDADO:
+---------------------------------------------------------------
+ * Mudanca de versao da biblioteca
+ * Manutencao programada ou indisponibilidade
+ * Comunicado de fim de suporte
+ * Orientacao para o usuario final
 
-    USO:
-    Consultar avisos
+EXEMPLO DE AVISO:
+---------------------------------------------------------------
+    AVISO: Sistema atualizado para a versao 5280
+    Acesso ao menu Biblioteca bloqueado ate as 18h.
+    Em caso de problema, contate o suporte.
 
-3 - EDITAR AVISO
-    Modifica avisos existente.
-
-    EDITOR:
-    * nano (padrao)
-    * ou editor definido em $EDITOR
-
-    COMANDOS NANO:
-    * Ctrl+O = Salvar
-    * Ctrl+X = Sair
-    * Ctrl+K = Recortar linha
-    * Ctrl+U = Colar
-
-    MODIFICACAO:
-    * Adicionar linhas
-    * Remover linhas
-    * Alterar texto
-
-4 - APAGAR NOTA
-    Remove todas as notas.
-
-    PROCESSO:
-    1. Sistema solicita confirmacao
-    2. Se confirmar (S), apaga tudo
-    3. Se negar (N), cancela
-
-    IMPORTANTE:
-    Acao irreversivel! Notas sao perdidas.
-
-
-ARQUIVO DE AVISO:
--------------------------------------------------------------------
-
-LOCALIZACAO:
-configuracoes/avisos
-
-FORMATO:
-Arquivo texto simples
-
-CONTEUDO:
-Todas os avisos em sequencia
-
-PERSISTENCIA:
-Aviso sao mantidas entre sessoes
-
-CASOS DE USO:
--------------------------------------------------------------------
-
-HISTORICO DE MANUTENCAO:
-- Rodar o programa de setupo que esta em /tools/binarios/setup.sh
-
-PROBLEMAS CONHECIDOS:
-- Programa ADV000 lento (investigar)
-- Erro esporadico no ADV000
-- Aguardando correcao do suporte
-
-SENHAS E ACESSOS:
-(Nao recomendado para informacoes sensiveis!)
-
-INFORMACOES IMPORTANTES:
--------------------------------------------------------------------
-
-SEGURANCA:
-* Avisos em texto simples
-* Sem criptografia
-* Evite dados sensiveis
-* Qualquer usuario pode ler
-
-TAMANHO:
-* Sem limite de caracteres
-* Sem limite de linhas
-* Cuidado com arquivo muito grande
-
-BACKUP:
-* Arquivo nao e automaticamente backupado
-* Inclua em backup manual se necessario
-* Ou copie manualmente
-
-ALTERNATIVAS:
-Para anotacoes mais complexas:
-* Use sistema externo de notas
-* Software de gestao de tarefas
-* Wiki ou documentacao colaborativa
-
-EXIBICAO AUTOMATICA:
-Na inicializacao do sistema:
-* Se arquivo existe
-* Notas sao exibidas automaticamente
-* util para lembretes importantes
-* Configure para nao exibir se preferir
-
-MENSAGEM DE ENTRADA:
-* Arquivo separado (${CFG_DIR}/entrada)
-* Pode ser gerado pelo menu de lembretes (opcao 0)
-* Exibido sempre que o programa inicia
-* Apresenta pergunta para excluir logo apos a leitura
-* Ideal para comunicados temporarios a todos os usuarios
-
-DICAS:
--------------------------------------------------------------------
-
-ORGANIZACAO:
-Use marcadores e secoes:
-=== PENDENCIAS ===
-=== HISTORICO ===
-=== CONTATOS ===
-
-DATAS:
-Sempre inclua data nas anotacoes:
-[10/01/2026] Descricao do evento
-
-PRIORIDADES:
-Use marcadores:
-!!! Urgente
-!! Importante
-! Normal
-
-LIMPEZA:
-Remova informacoes antigas periodicamente
--------------------------------------------------------------------
+---------------------------------------------------------------
 [MENU_LOGS]
 MENU DE LOGS
--------------------------------------------------------------------
-Mostra os logs do sistema de atualizacao
-Mostra os logs do sistema de limpeza
-
--------------------------------------------------------------------
-[AJUDA_NO_GERAL]
-AJUDA GERAL - SISTEMA SAV
--------------------------------------------------------------------
-
-Sistema de Atualizacao SAV - Gerenciamento completo de programas,
-bibliotecas e manutencao do sistema.
-
-NAVEGACAO:
--------------------------------------------------------------------
-
-MENUS:
-* Digite o numero da opcao desejada
-* Pressione ENTER para confirmar
-* 9 = Voltar ao menu anterior
-* Ctrl+C = Cancelar operacao
-
-AJUDA CONTEXTUAL:
-* Pressione H a qualquer momento
-* Ou digite  para ajuda
-* M = Manual completo
-
-COMANDOS GERAIS:
--------------------------------------------------------------------
-
-CONFIRMACOES:
-* S ou s = Sim
-* N ou n = Nao
-* ENTER = Usa valor padrao [maiusculo]
-
-ENTRADA DE DADOS:
-* ENTER vazio = Cancelar ou usar padrao
-* ESC = Cancelar (quando disponivel)
-* Ctrl+C = Interromper processo
-
-ESTRUTURA DO SISTEMA:
--------------------------------------------------------------------
-
-DIRETORIOS PRINCIPAIS:
-/RAIZ/
-  CLASSes/      - Programas compilados
-  tel_isc/      - Telas do sistema
-  xml/          - Configuracoes XML
-  dados_jisam/  - Base de dados
-
-tools/
-  binarios/         - Bibliotecas do atualiza
-  configuracoes/    - Configuracoes
-  logs/             - Arquivos de log
-  backup/           - Backups da base
-  olds/             - Backups de programas
-  progs/            - Programas atualizados
-  envia/            - Para envio
-  recebe/           - Recebidos
-
-ARQUIVOS IMPORTANTES:
--------------------------------------------------------------------
-
-configuracoes/.config           - Configuracao principal
-configuracoes/limpetmp          - Lista de temporarios
-configuracoes/indexar           - Arquivos principais para o rodar e rebuild
-configuracoes/lembrete          - Notas/lembretes
-configuracoes/avisos            - Aviso de entrada
-logs/atualiza.log               - Log de operacoes
-logs/limpando.log               - Log de limpeza
-
-CONCEITOS IMPORTANTES:
--------------------------------------------------------------------
-
-PROGRAMA:
-Arquivo executavel individual (.CLASS)
-
-BIBLIOTECA:
-Conjunto completo de programas do sistema
-
-BACKUP:
-Copia de seguranca de dados
-
-REBUILD:
-Reorganizacao de arquivo de dados
-
-TEMPORARIOS:
-Arquivos gerados durante operacao
-
-EXPURGADOR:
-Limpeza automatica de arquivos antigos
-
-PARA MAIS INFORMACOES:
--------------------------------------------------------------------
-
-* Pressione M para manual completo
-* Use H em cada menu para ajuda especifica
-* Consulte documentacao online
-* Entre em contato com suporte SAV
-
-
--------------------------------------------------------------------
-
-INDICE:
--------------------------------------------------------------------
-1. Introducao
-2. Menu Principal
-3. Atualizacao de Programas
-4. Atualizacao de Biblioteca
-5. Gerenciamento de Arquivos
-6. Ferramentas
-7. Configuracoes
-8. Resolucao de Problemas
-9. Contatos e Suporte
-
--------------------------------------------------------------------
-1. INTRODUCAO
--------------------------------------------------------------------
-
-O Sistema SAV e uma ferramenta completa para gerenciamento,
-atualizacao e manutencao de sistemas de gestao empresarial.
-
-
-PRINCIPAIS FUNCIONALIDADES:
-* Atualizacao de programas individuais ou em pacote
-* Atualizacao completa de bibliotecas
-* Backup e restauracao de dados
-* Recuperacao de arquivos corrompidos
-* Limpeza de arquivos temporarios
-* Transferencia de arquivos cliente/servidor
-* Gestao de configuracoes
-
-REQUISITOS DO SISTEMA:
-* Linux (qualquer distribuicao moderna)
-* Bash 4.0 ou superior
-* Utilitarios: zip, unzip, rsync, ssh
-* Espaco em disco: minimo 5GB livres
-* IsCOBOL ou Micro Focus COBOL (conforme instalacao)
-
--------------------------------------------------------------------
-2. MENU PRINCIPAL
--------------------------------------------------------------------
-
-Ponto de entrada do sistema com acesso a todas funcionalidades.
-
-2.1 OPCOES DO MENU PRINCIPAL
-
-Para conteudo detalhado, use ? no menu
-
-1 - Atualizar Programa(s)
-2 - Atualizar Biblioteca
-3 - Versao do IsCOBOL
-4 - Versao do Linux
-5 - Gerenciar Arquivos
-6 - Ferramentas
-9 - Sair do Sistema
-
--------------------------------------------------------------------
-3. ATUALIZACAO DE PROGRAMAS
--------------------------------------------------------------------
-
-3.1 PROGRAMAS ONLINE
-
-Atualiza programas diretamente do servidor SAV.
-
-PASSO A PASSO:
-1. Menu Principal > 1 > 1
-2. Informe nome do programa (MAIUSCULAS)
-3. Escolha tipo compilacao (1=Normal, 2=Debug)
-4. Repita para ate 6 programas
-5. ENTER para finalizar
-6. Aguarde download e instalacao
-
-EXEMPLO PRATICO:
-Nome do programa: CADCLI [ENTER]
-Tipo de compilacao: 1 [ENTER]
-Nome do programa: CADFOR [ENTER]
-Tipo de compilacao: 2 [ENTER]
-Nome do programa: [ENTER - finaliza]
-
-3.2 PROGRAMAS OFFLINE
-
-Para ambientes sem conexao com servidor.
-
-PREPARACAO:
-1. Copie arquivos .zip para diretorio offline
-2. Arquivos devem seguir padrao: [PROG]-CLASS[VER].zip
-
-PROCESSO:
-1. Menu Principal > 1 > 2
-2. Informe programas (igual modo online)
-3. Sistema busca em diretorio offline
-4. Instala programas encontrados
-
-3.3 PROGRAMAS EM PACOTE
-
-Atualizacao em massa atraves de pacotes pre-definidos.
-
-VANTAGENS:
-* Mais rapido
-* Garante compatibilidade
-* Menos propenso a erros
-
-PROCESSO:
-Similar ao online/offline, mas usa nome do pacote.
-
-3.4 REVERTER PROGRAMA
-
-Volta programa para versao anterior usando backup automatico.
-
-QUANDO USAR:
-* Problema apos atualizacao
-* Incompatibilidade detectada
-* Necessidade de versao especifica
-
-LIMITACAO:
-Apenas ultimo backup disponivel (ultima atualizacao).
-
--------------------------------------------------------------------
-4. ATUALIZACAO DE BIBLIOTECA
--------------------------------------------------------------------
--------------------------------------------------------------------
-
-Atualizacao completa do sistema, incluindo todos programas,
-telas, configuracoes XML e componentes auxiliares.
-
-4.1 QUANDO ATUALIZAR BIBLIOTECA
-
-OBRIGATORIO:
-* Mudanca de versao principal do sistema
-* Orientacao do suporte tecnico
-* Correcoes criticas de seguranca
-
-RECOMENDADO:
-* Atualizacoes mensais
-* Novos recursos disponiveis
-* Performance degradada
-
-EVITAR:
-* Horario comercial (usar noite/fim de semana)
-* Sem backup recente
-* Problemas nao resolvidos
-
-4.2 TIPOS DE BIBLIOTECA
-
-TRANSPC:
-Biblioteca de transporte e comunicacao
-
-SAVATU:
-Biblioteca principal do sistema SAV
-* Mais comum
-* Mais abrangente
-* Usado na maioria das atualizacoes
-
-4.3 PROCESSO DE ATUALIZACAO
-
-PREPARACAO:
-1. Fazer backup completo
-2. Verificar espaco em disco (5GB minimo)
-3. Avisar usuarios (sistema ficara indisponivel)
-
- "Manual padrao criado em: manual_sav.txt
-
-
-[AJUDA_RAPIDA]
-AJUDA RAPIDA
 ---------------------------------------------------------------
 
-COMANDOS DE AJUDA:
--------------------------------------------------------------------
-? ou help    = Ajuda contextual do menu atual
-M ou manual  = Manual completo do sistema
+Consulta dos arquivos de log gerados pelo sistema.
 
-NAVEGACAO:
--------------------------------------------------------------------
-[Numero]     = Selecionar opcao
-9            = Voltar ao menu anterior
-Ctrl+C       = Cancelar operacao
-ENTER        = Confirmar ou usar padrao
+ARQUIVOS DE LOG:
+---------------------------------------------------------------
+ logs/atualiza.AAAA-MM-DD.log   atualizacoes de programas,
+                                biblioteca, backups e operacoes
+ logs/limpando.AAAA-MM-DD.log   limpeza de temporarios e expurgo
 
-CONFIRMACOES:
--------------------------------------------------------------------
-S ou s       = Sim
-N ou n       = Nao
-ENTER vazio  = Usa valor padrao [indicado em maiuscula]
+FORMATO DE CADA LINHA:
+---------------------------------------------------------------
+ [AAAA-MM-DD HH:MM:SS] [USUARIO] mensagem
 
-DICAS:
--------------------------------------------------------------------
-* Nomes de programas sempre em MAIUSCULAS
-* Leia mensagens com atencao
-* Faca backup antes de atualizacoes importantes
-* Em caso de duvida, consulte o manual completo
+ Exemplo:
+  [2026-10-06 09:15:22] [SAV] Rebuild executado: CADCLI.ARQ.dat
 
-SUPORTE:
--------------------------------------------------------------------
-Email: suporte@sav.com.br
-Horario: Segunda a Sexta, 8h as 18h
+LIMITE DE EXIBICAO:
+---------------------------------------------------------------
+ Por padrao sao exibidas as ultimas 200 linhas de cada arquivo
+ (constante C_LOG_LINHAS). Arquivos maiores sao avisados antes
+ da exibicao.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - LOG DE ATUALIZACAO
+    Lista os arquivos atualiza.* e permite abrir um deles.
+
+2 - LOG DE LIMPEZA
+    Lista os arquivos limpando.* e permite abrir um deles.
+
+COMO CONSULTAR:
+---------------------------------------------------------------
+ 1. Escolha a opcao 1 ou 2
+ 2. Escolha o numero do arquivo, ou 0 para ver todos
+ 3. Pressione ENTER para voltar ao menu
+
+SOLUCAO DE PROBLEMAS:
+---------------------------------------------------------------
+PROBLEMA: "Nenhum log encontrado"
+SOLUCAO: A operacao procurada ainda nao foi executada hoje
+
+PROBLEMA: "Diretorio de logs nao configurado"
+SOLUCAO: Verifique DEFAULT_LOGS_DIR em Consultar Variaveis
+
+---------------------------------------------------------------
+[MENU_AJUDA]
+SISTEMA DE AJUDA
+---------------------------------------------------------------
+
+Este menu da acesso ao manual e a busca por conteudo.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - MANUAL COMPLETO
+    Exibe este arquivo inteiro, 25 linhas por pagina.
+
+    NAVEGACAO:
+     ENTER = proxima pagina
+     A     = exibir o restante sem pausar
+     Q     = interromper a exibicao
+
+2 - AJUDA RAPIDA
+    Lista os comandos de ajuda, navegacao e confirmacoes.
+
+3 - AJUDA NO GERAL
+    Descreve o sistema, o login, a estrutura de diretorios, os
+    arquivos de configuracao, a conexao e a seguranca.
+
+4 - BUSCAR NO MANUAL
+    Procura um termo em todo o manual e destaca as ocorrencias.
+
+    PROCESSO:
+    1. Digite o termo a procurar
+    2. As linhas encontradas aparecem com o termo destacado
+    3. Se nada for encontrado, o sistema avisa
+
+5 - EXPORTAR MANUAL
+    Copia o manual para manual_sav.txt na raiz do sistema,
+    para leitura fora do programa.
+
+6 - AJUDA POR CONTEXTO
+    Escolhe um contexto e mostra a ajuda correspondente.
+    Detalhes em [MENU_SELECAO_CONTEXTO].
+
+ONDE O MANUAL FICA:
+---------------------------------------------------------------
+ O arquivo deve estar em configuracoes/manual.txt
+ Se ele nao existir, o sistema avisa e indica o caminho
+
+O QUE O UPDATE FAZ COM O MANUAL:
+---------------------------------------------------------------
+ O manual.txt faz parte dos arquivos de configuracao
+ atualizados pelo Update (Ferramentas > 2).
+
+---------------------------------------------------------------
+[MENU_SELECAO_CONTEXTO]
+AJUDA POR CONTEXTO
+---------------------------------------------------------------
+
+Escolha o assunto para ver a ajuda correspondente.
+
+TEMAS DISPONIVEIS:
+---------------------------------------------------------------
+
+ 1 - Menu Principal
+ 2 - Programas
+ 3 - Biblioteca
+ 4 - Ferramentas
+ 5 - Temporarios
+ 6 - Recuperacao
+ 7 - Backup
+ 8 - Transferencia
+ 9 - Setups
+10 - Lembretes
+11 - Arquivos
+12 - Configuracoes
+13 - Avisos
+14 - Logs
+
+USE TAMBEM:
+---------------------------------------------------------------
+ Em qualquer menu, digite H (ou ?) para a ajuda da tela em que
+ voce esta. A ajuda por contexto e util quando voce quer saber
+ sobre um assunto sem estar na tela correspondente.
+
+---------------------------------------------------------------
+[MENU_ESCOLHA_BASE]
+MENU DE ESCOLHA DA BASE
+---------------------------------------------------------------
+
+Aparece nas operacoes de arquivo e de backup quando existe mais
+de uma base configurada no .config.
+
+COMO A BASE E ESCOLHIDA:
+---------------------------------------------------------------
+ 1 - Base em [RAIZ][base]        (CFG_BASE_DIR)
+ 2 - Base em [RAIZ][base2]       (CFG_BASE_DIR2)
+ 3 - Base em [RAIZ][base3]       (CFG_BASE_DIR3)
+ 9 - Menu anterior (cancela a operacao)
+
+A base 3 so aparece quando base3 esta preenchida no .config.
+Com uma unica base configurada, a selecao e automatica.
+
+APOS ESCOLHER:
+---------------------------------------------------------------
+ O caminho e validado antes do uso: precisa existir, ser
+ legivel e nao conter travessia de diretorio. O caminho
+ resultante fica disponivel como base de trabalho.
+
+---------------------------------------------------------------
+[MENU_TIPO_BACKUP]
+MENU DE TIPO DE BACKUP
+---------------------------------------------------------------
+
+Aparece na opcao 1 (Backup da base de dados), logo apos a escolha
+da base e antes da compactacao.
+
+OPCOES DISPONIVEIS:
+---------------------------------------------------------------
+
+1 - BACKUP COMPLETO
+    Compacta todos os arquivos da base, exceto *.zip, *.tar,
+    *.gz, *.log, *.tmp e *.old.
+
+2 - BACKUP INCREMENTAL
+    Compacta somente os arquivos modificados depois da data
+    informada (mes e ano). A data de referencia e o primeiro
+    dia do mes. Se nada foi modificado, nenhum arquivo e gerado.
+
+9 - MENU ANTERIOR
+    Cancela o backup e volta ao menu.
+
+---------------------------------------------------------------
+[MENU_BASE_RESTAURACAO]
+MENU DE ESCOLHA DA BASE DE DESTINO
+---------------------------------------------------------------
+
+Aparece na restauracao de backup quando existe mais de uma base
+configurada. Se houver apenas uma base, ela e usada sem pergunta.
+
+COMO A BASE DE RESTAURACAO E DEFINIDA:
+---------------------------------------------------------------
+ * As bases sao listadas como Principal, Segunda e Terceira
+ * A lista mostra o caminho completo de cada uma
+ * 9 cancela a restauracao
+ * O sistema tambem pode deduzir a base pelo nome do arquivo de
+   backup ([EMPRESA]_[TIPO]_[BASE]_[DATA].zip)
+
+ANTES DE SOBRESCREVER:
+---------------------------------------------------------------
+ Os arquivos existentes no destino sao copiados para
+ backups/base/restauracao_<DATA>/ com sufixo .orig.
+
+---------------------------------------------------------------
+[MENU_VARIOSARQUIVOS]
+EDITAR LISTA DE ARQUIVOS (variosarquivos)
+---------------------------------------------------------------
+
+Mantem a lista de arquivos usada na recuperacao em lote
+(Menu de Recuperacao > 3) sem precisar de editor externo.
+
+A LISTA:
+---------------------------------------------------------------
+ LOCALIZACAO: configuracoes/variosarquivos
+ FORMATO    : um nome de arquivo por linha
+ ACEITO     : letras, numeros, ponto e hifen
+ EXEMPLO    : CADCLI.ARQ.dat
+
+OPERACOES:
+---------------------------------------------------------------
+
+1 - ADICIONAR NOVA ENTRADA
+    Digite o nome e confirme a inclusao no fim da lista.
+
+2 - ALTERAR UMA ENTRADA
+    Informe o numero da linha e o novo valor.
+
+3 - REMOVER UMA ENTRADA
+    Informe o numero da linha a remover.
+
+4 - ZERAR LISTA
+    Remove todas as entradas apos confirmacao.
+
+9 - VOLTAR AO MENU ANTERIOR
+
+OBSERVACOES:
+---------------------------------------------------------------
+ * Ao abrir o menu, a lista atual aparece numerada
+ * Entradas invalidas sao recusadas com mensagem
+ * O arquivo variosarquivos e atualizado pelo Update

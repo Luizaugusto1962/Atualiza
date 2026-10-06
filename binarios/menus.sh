@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/10/2026-01
+# Versao: 06/10/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -627,6 +627,11 @@ _menu_selecao_contexto() {
     printf "%s\n" "${VERDE}8${NORMAL}  - Transferencia"
     printf "%s\n" "${VERDE}9${NORMAL}  - Setups"
     printf "%s\n" "${VERDE}10${NORMAL} - Lembretes"
+    printf "%s\n" "${VERDE}11${NORMAL} - Arquivos"
+    printf "%s\n" "${VERDE}12${NORMAL} - Configuracoes"
+    printf "%s\n" "${VERDE}13${NORMAL} - Avisos"
+    printf "%s\n" "${VERDE}14${NORMAL} - Logs"
+    printf "%s\n" "${BRANCO}15${VERMELHO} -|: Menu Anterior "
     printf "\n"
     _linha "=" "${CIANO}"
 
@@ -646,6 +651,11 @@ _menu_selecao_contexto() {
         8) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "transferencia" ;;
         9) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "setups" ;;
         10) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "lembretes" ;;
+        11) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "arquivos" ;;
+        12) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "configs" ;;
+        13) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "aviso" ;;
+        14) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "logs" ;;
+        15) return ;;
         *) _processar_opcao_invalida ;;
     esac
 }

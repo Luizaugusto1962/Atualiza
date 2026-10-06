@@ -6,13 +6,15 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 02/09/2026-01
+# Versao: 06/10/2026-02
 #
 
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
 
 # Arquivo de manual principal
-arquivo_manual="${CFG_DIR}/manual.txt"
+# ${CFG_DIR:-} evita "unbound variable" no source isolado do modulo (padrao dos
+# testes). Mesma defesa de auth.sh:30.
+arquivo_manual="${CFG_DIR:-}/manual.txt"
 
 # Exibe conteúdo com paginaçao automática
 # Parâmetros:
@@ -23,6 +25,13 @@ _exibir_paginado() {
     local linhas_por_pagina="${2:-25}"
     local linha_atual=1
     local total_linhas
+
+    # $2 vem de qualquer chamador: em [[ -le ]] um valor nao numerico e resolvido
+    # como variavel e aborta sob set -u ("abc: unbound variable"). Valida e ainda
+    # impoe piso, como arquivos.sh:_exibir_log_arquivo faz com C_LOG_LINHAS.
+    if ! [[ "$linhas_por_pagina" =~ ^[0-9]+$ ]] || (( linhas_por_pagina < 5 )); then
+        linhas_por_pagina=25
+    fi
 
     # Se conteúdo vazio, lê do stdin
     if [[ -z "$conteudo" ]]; then
@@ -49,7 +58,9 @@ _exibir_paginado() {
             printf "\n"
             _linha "=" "${CIANO}"
             printf "%s" "${AMARELO}Pressione ENTER para continuar, 'q' para sair, 'a' para ver tudo: ${NORMAL}"
-            read -rsn1 resposta
+            # read sem guarda aborta o programa em EOF (modo pipe, aceito por
+            # atualiza.sh) ou no estouro do tempo; nesse caso trata como 'q'.
+            read -rsn1 -t "${DEFAULT_PRESS_TIMEOUT:-12}" resposta || resposta="q"
 
             case "${resposta,,}" in
                 q)
@@ -65,7 +76,7 @@ _exibir_paginado() {
                     ;;
                 *)
                     # ENTER ou qualquer outra tecla continua
-                    clear
+                    tput clear 2>/dev/null || true
                     ;;
             esac
         fi
@@ -95,7 +106,9 @@ _ler_secao_manual() {
     fi
 
     # Encontra linha de início da seçao
-    linha_inicio=$(grep -n "^\[${secao}\]$" "$arquivo_manual" | cut -d: -f1)
+    # head -1: cabecalho duplicado no manual.txt geraria "1\n3" e mataria a
+    # aritmetica logo abaixo (arithmetic syntax error).
+    linha_inicio=$(grep -n "^\[${secao}\]$" "$arquivo_manual" | cut -d: -f1 | head -1)
 
     if [[ -z "$linha_inicio" ]]; then
         _exibir_mensagem_centralizada "${AMARELO}" "Seçao [$secao] nao encontrada no manual."
@@ -132,7 +145,7 @@ _exibir_manual_completo() {
         return 1
     fi
 
-    clear
+    tput clear 2>/dev/null || true
     # Reutiliza _exibir_paginado com o conteudo completo do manual
     _exibir_paginado "$(cat "$arquivo_manual")" 25
     return 0
@@ -145,7 +158,7 @@ _exibir_secao_manual() {
     local nome_secao="${2:-}"
     local conteudo
 
-    clear
+    tput clear 2>/dev/null || true
     _linha "=" "${CIANO}"
     _exibir_mensagem_centralizada "${CIANO}" "AJUDA - ${contexto^^}"
     _linha "=" "${CIANO}"
@@ -164,7 +177,7 @@ _exibir_secao_manual() {
     _linha "-" "${VERDE}"
 
     local resposta
-    read -rsn1 resposta
+    read -rsn1 -t "${DEFAULT_PRESS_TIMEOUT:-12}" resposta || resposta=""
     if [[ "${resposta,,}" == "m" ]]; then
         _exibir_manual_completo
     fi
@@ -191,6 +204,14 @@ _exibir_ajuda_contextual() {
         lembretes)     nome_secao="MENU_LEMBRETES" ;;
         aviso)         nome_secao="MENU_AVISO" ;;
         logs)          nome_secao="MENU_LOGS" ;;
+        ajuda)         nome_secao="MENU_AJUDA" ;;
+        contexto)      nome_secao="MENU_SELECAO_CONTEXTO" ;;
+        base)          nome_secao="MENU_ESCOLHA_BASE" ;;
+        tipobackup)    nome_secao="MENU_TIPO_BACKUP" ;;
+        baserestauracao) nome_secao="MENU_BASE_RESTAURACAO" ;;
+        variosarquivos) nome_secao="MENU_VARIOSARQUIVOS" ;;
+        # Contexto nao mapeado cai no menu principal: e a unica tela que
+        # sempre existe, entao "H" nunca fica sem resposta.
         *)             nome_secao="MENU_PRINCIPAL" ;;
     esac
 
@@ -237,14 +258,14 @@ _buscar_manual() {
         return 1
     fi
 
-    read -rp "${AMARELO}Termo para buscar: ${NORMAL}" termo
+    read -rp "${AMARELO}Termo para buscar: ${NORMAL}" -t "${DEFAULT_READ_TIMEOUT:-60}" termo || true
 
     if [[ -z "$termo" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum termo informado"
         return 1
     fi
 
-    clear
+    tput clear 2>/dev/null || true
     _linha "=" "${CIANO}"
     _exibir_mensagem_centralizada "${CIANO}" "RESULTADOS DA BUSCA: $termo"
     _linha "=" "${CIANO}"

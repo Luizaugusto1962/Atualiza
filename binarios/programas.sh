@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-01
+# Versao: 06/10/2026-02
 #
 
 # Variaveis globais esperadas
@@ -49,6 +49,8 @@ _atualizar_programa_online() {
     if [[ "${CFG_OFFLINE}" == "s" ]]; then
         _linha
         _aviso "Parametro do servidor OFF ativo"
+        _linha
+        _aviso "Use a opcao 2 (Programa(s) OFF-Line) para instalar do diretorio local."
         _linha
         _aguardar_tecla
         return 0
@@ -98,13 +100,7 @@ _atualizar_programa_offline() {
         return 0
     fi
 
-    _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Os programas devem estar no diretorio ${NORMAL}${CFG_PORTALSAV}"
-    _linha
-    _aguardar_tecla
-    return 0
-
-    # Verificar arquivos do servidor offline se configurado
+    # Verificar arquivos no diretorio de recebimento (off-line)
     if ! _verificar_arquivos_offline; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo(s) nao encontrado(s) no diretorio offline"
         _linha
