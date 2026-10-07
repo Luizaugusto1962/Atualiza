@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 02/10/2026-02
+# Versao: 07/10/2026-03
 # Autor: Luiz Augusto
 #
 # =============================================================================
@@ -499,6 +499,7 @@ _cadastrar_usuario() {
 }
 
 # Mostrar tela de boas-vindas apos login bem-sucedido
+# Chamada por principal.sh:_main, depois de _login e antes de _validar_ssh.
 _mostrar_boas_vindas() {
     local nome_usuario="${1:-}"
     local arquivo_ultimo_acesso="${CFG_DIR}/.ultimo_acesso"
@@ -529,6 +530,8 @@ _mostrar_boas_vindas() {
 }
 
 # Funcao para login com rate limiting e migração automática de hashes
+# Não exibe a tela de boas-vindas: quem chama é principal.sh:_main, que a
+# mostra logo apos o retorno bem-sucedido.
 _login() {
     local senha resumo_senha hash_armazenado
     local tentativas=1
@@ -595,7 +598,6 @@ _login() {
                                     usuario=""
                                     return 1
                                 }
-                                _mostrar_boas_vindas "$usuario"
                                 _remover_registro_tentativas "$usuario"
                                 return 0
                             else
@@ -625,7 +627,6 @@ _login() {
                                 _linha "=" "${VERDE}"
                                 _exibir_mensagem_centralizada "${VERDE}" "Login bem-sucedido."
                                 export usuario
-                                _mostrar_boas_vindas "$usuario"
                                 _remover_registro_tentativas "$usuario"
                                 return 0
                             else

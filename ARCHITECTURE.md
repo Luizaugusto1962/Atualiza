@@ -61,8 +61,9 @@ Como o graph não registra processos, os fluxos são os caminhos reais no códig
 ### F1 — Boot → Login → Menu (caminho feliz)
 `atualiza.sh[""]` → `principal.sh` → dirs+`source` 15 módulos → `_main`
 → `_inicializar_sistema` (`_inicializar_sistema_variaveis` → `_carregar_configuracoes`
-→ `_check_instalado` → `_configurar_ambiente` → `_executar_expurgador_diario`
-→ `_validar_ssh`) → `_login` → `_mostrar_aviso`/`_mostrar_notas_iniciais`
+→ `_check_instalado` → `_configurar_ambiente` → `_executar_expurgador_diario`)
+→ `_login` → `_mostrar_boas_vindas` → `_validar_ssh`
+→ `_mostrar_aviso`/`_mostrar_notas_iniciais`
 → `_principal` (loop) → `_finalizar_sistema`.
 
 ### F2 — Setup / Cadastro (standalone, sem menu)
@@ -104,7 +105,7 @@ flowchart TB
     subgraph Bootstrap["Bootstrap — principal.sh"]
         P1[_criar_diretorio_seguro<br/>LIBS_DIR + CFG_DIR + logs]
         P2[source 15 módulos<br/>escopo global, ordem fixa]
-        P3[_main<br/>traps EXIT/INT/TERM/HUP<br/>_inicializar_sistema → _login → _principal]
+        P3[_main<br/>traps EXIT/INT/TERM/HUP<br/>_inicializar_sistema → _login<br/>→ _mostrar_boas_vindas → _validar_ssh → _principal]
     end
 
     subgraph Fundacao["Fundação"]

@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 02/10/2026
+# Versao: 07/10/2026
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -40,7 +40,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE DEFAULT_LOGS_DIR
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="02/10/26"
+declare -rx UPDATE="07/10/26"
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
@@ -230,11 +230,8 @@ _inicializar_sistema() {
     # Executar limpeza automatica diaria (nao-critico: apenas avisa)
     _executar_expurgador_diario || _erro "Aviso: limpeza diaria falhou." >&2
 
-    # Configura acesso SSH se necessario
-    if ! _validar_ssh; then
-        _erro "Falha na validacao SSH." >&2
-        return 1
-    fi
+    # A validacao SSH NAO acontece aqui: a entrada no sistema passou a ser
+    # _login -> _mostrar_boas_vindas -> _validar_ssh, orquestrada em _main.
 
     return 0
 }
@@ -260,6 +257,18 @@ _main() {
     # Autenticacao
     if ! _login; then
         _erro "Autenticacao falhou. Saindo..." >&2
+        _encerrar_programa 1
+    fi
+
+    # Tela de boas-vindas: saiu de dentro de _login para ficar entre a
+    # autenticacao e a validacao SSH.
+    if command -v _mostrar_boas_vindas >/dev/null 2>&1; then
+        _mostrar_boas_vindas "${usuario:-}"
+    fi
+
+    # Configura acesso SSH se necessario
+    if ! _validar_ssh; then
+        _erro "Falha na validacao SSH." >&2
         _encerrar_programa 1
     fi
 
