@@ -112,8 +112,8 @@ RAIZ/
   backups/base/            Backups da base de dados (.zip)
   biblioteca/anterior/     Backup da biblioteca (backup_biblioteca_*)
   biblioteca/atual/        Zips da biblioteca applied (.bkp)
-  programas/anterior/     Backup dos programas (-anterior.zip)
-  programas/atual/        Zips aplicados dos programas (.bkp)
+  programas/anterior/      Backup dos programas (-anterior.zip)
+  programas/atual/         Zips aplicados dos programas (.bkp)
   enviar/                  Arquivos prontos para envio ao servidor
   classes/                 Executaveis do sistema (.class)
   tel_isc/                 Telas do sistema (.TEL)
