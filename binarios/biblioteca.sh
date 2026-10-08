@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-01
+# Versao: 08/10/2026-02
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -257,6 +257,30 @@ _salvar_atualizacao_biblioteca() (
     for arquivo in "${arquivos_verificar[@]}"; do
         if [[ ! -r "${arquivo}" ]]; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Atualizacao nao encontrada ou incompleta: ${arquivo}"
+            _linha
+            _aguardar_tecla
+            return 1
+        fi
+    done
+
+    # SEGURANCA: validar as entradas de cada pacote ANTES de qualquer extracao.
+    # Aqui a checagem e obrigatoria, e nao apenas defensiva: o unzip desta
+    # atualizacao roda com "-d ${principal_local}", que em producao e "/" (RAIZ
+    # termina em /sav). O UnZip nao bloqueia escape por sozinho nesse caso —
+    # ele so avisa "stripped absolute path spec" e, com -d /, o "strip" equivale
+    # a escrever no caminho absoluto. Verificado com UnZip 6.00: uma entrada
+    # "/etc/x" no ZIP e criada em /etc/x. Ja a entrada "../" e barrada pelo
+    # proprio unzip ("skipped ../ path component(s)").
+    #
+    # A validacao fica aqui, e nao junto do unzip, porque este e o portao UNICO
+    # dos tres fluxos de atualizacao de biblioteca (online, offline e
+    # _processar_biblioteca_offline chamam todos _salvar_atualizacao_biblioteca):
+    # barrar antes de _processar_atualizacao_biblioteca evita compactar o
+    # backup da versao atual e entrar nos diretorios de destino. Para pacote
+    # legitimo nada muda — o validador e silencioso.
+    for arquivo in "${arquivos_verificar[@]}"; do
+        if ! _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo}"; then
+            _exibir_mensagem_centralizada "${VERMELHO}" "Atualizacao abortada: pacote com entradas inseguras: ${arquivo}"
             _linha
             _aguardar_tecla
             return 1
