@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026
+# Versao: 08/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -177,9 +177,17 @@ _mostrar_versao_linux() {
 # as chaves que o arquivo legitimo contem (VERSAOANT/VERSAO, gravadas por
 # biblioteca.sh). Whitelist estrita: um .versao adulterado nao consegue
 # sobrescrever PATH/HOME/outras variaveis do ambiente.
+# Os valores tambem sao validados como ^[0-9]+$, o mesmo criterio de
+# biblioteca.sh:_validar_versao_biblioteca. Sem isso, um VERSAOANT com
+# "\033[2J" sobrevivia ao strip de aspas e era interpretado como ESCAPE por
+# _mostrar_parametros (que imprime com "printf '%b\n'") — ou seja, um .versao
+# adulterado limpava a tela e desalinhavo o menu, em vez de so "polui-lo".
+# Valor fora do padrao e descartado em silencio, como ja acontece com uma chave
+# fora da whitelist: a funcao nao deve depender de _log/_aviso para ser
+# testavel isolada (testes/test_sistema.sh so source este modulo).
 _carregar_versao_seguro() {
     local arquivo_versao="${1:-}"
-    local linha
+    local linha valor
 
     # Sem este guard, `done <""` aborta o shell (redirecionamento invalido).
     if [[ -z "$arquivo_versao" || ! -r "$arquivo_versao" ]]; then
@@ -189,14 +197,16 @@ _carregar_versao_seguro() {
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         case "$linha" in
             VERSAOANT=*)
-                VERSAOANT="${linha#VERSAOANT=}"
-                VERSAOANT="${VERSAOANT#\"}"
-                VERSAOANT="${VERSAOANT%\"}"
+                valor="${linha#VERSAOANT=}"
+                valor="${valor#\"}"
+                valor="${valor%\"}"
+                [[ "$valor" =~ ^[0-9]+$ ]] && VERSAOANT="$valor"
                 ;;
             VERSAO=*)
-                VERSAO="${linha#VERSAO=}"
-                VERSAO="${VERSAO#\"}"
-                VERSAO="${VERSAO%\"}"
+                valor="${linha#VERSAO=}"
+                valor="${valor#\"}"
+                valor="${valor%\"}"
+                [[ "$valor" =~ ^[0-9]+$ ]] && VERSAO="$valor"
                 ;;
         esac
     done <"$arquivo_versao"

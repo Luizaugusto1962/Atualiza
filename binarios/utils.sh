@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/10/2026-01
+# Versao: 08/10/2026-01
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -336,6 +336,26 @@ _validar_nome_programa() {
     fi
 
     [[ "$programa" =~ ^[A-Z0-9_]+$ ]]
+}
+
+# Valida a flag de modo offline (CFG_OFFLINE, vinda de "Offline" no .config)
+# Retorna: 0=valor valido ('s' ou 'n') 1=ausente ou invalido
+#
+# Motivo de existir: cada modulo testava essa flag por conta propria e cada um
+# errava de um jeito. Com `if [[ "$CFG_OFFLINE" =~ ^[sn]$ ]]` e valor invalido
+# (vazio, "S", lixo), o bloco inteiro era pulado em silencio — em
+# biblioteca.sh:_atualizar_biblioteca_offline a funcao caia no fim e devolvia 0
+# sem ter feito nada, e em _atualizar_transpc e programas.sh:_atualizar_programa_pacote
+# o "else" cairia na descarga pela REDE. Agora o chamador decide o que fazer
+# com o valor invalido (em geral: _erro + return 1).
+_offline_valido() {
+    [[ "${CFG_OFFLINE:-}" =~ ^[sn]$ ]]
+}
+
+# Mensagem de erro padronizada para CFG_OFFLINE invalido
+# Parametros: $1=contexto (rotulo do fluxo, ex.: "atualizacao de biblioteca")
+_offline_erro() {
+    _erro "Valor invalido em 'offline': '${CFG_OFFLINE:-vazio}' (esperado 's' ou 'n')${1:+ - $1}"
 }
 
 # Solicita confirmacao S/N

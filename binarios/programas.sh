@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-02
+# Versao: 08/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -132,7 +132,19 @@ _atualizar_programa_pacote() {
         return 0
     fi
 
-    if [[ -n "${CFG_OFFLINE:-}" && "${CFG_OFFLINE}" == "s" ]]; then
+    # Antes: `[[ -n "${CFG_OFFLINE:-}" && "${CFG_OFFLINE}" == "s" ]]`. Com a
+    # flag vazia, "S" maiusculo ou lixo, o teste falhava e o fluxo caia no
+    # ELSE — _baixar_pacotes_vaievem, isto e, descarga pela REDE num menu que
+    # o usuario usaria justamente por estar OFF-LINE. Agora o valor invalido
+    # aborta com mensagem, como nos demais modulos (_offline_valido, utils.sh).
+    if ! _offline_valido; then
+        _offline_erro "atualizacao de pacotes"
+        _linha
+        _aguardar_tecla
+        return 1
+    fi
+
+    if [[ "$CFG_OFFLINE" == "s" ]]; then
         _linha
         _exibir_mensagem_centralizada "${AMARELO}" "Parametro do servidor OFF ativo"
         if ! _verificar_arquivos_offline; then

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026-01
+# Versao: 08/10/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -18,17 +18,18 @@ set -euo pipefail
 _executar_update() {
     local rc=0
 
-    case "${CFG_OFFLINE:-}" in
-        n) _atualizar_online || rc=$? ;;
-        s) _atualizar_offline || rc=$? ;;
-        *)
-            # Antes: valor fora de [sn] caia direto no _aguardar_tecla e o
-            # menu ficava 12s parado sem nenhuma mensagem. CFG_OFFLINE ausente
-            # (variavel nao exportada pelo .config) tambem cai aqui.
-            _erro "Valor invalido em 'offline': '${CFG_OFFLINE:-vazio}' (esperado 's' ou 'n')"
-            rc=1
-            ;;
-    esac
+    # Antes: `case "${CFG_OFFLINE:-}"` com n/s/* — o ramo * nao cobria
+    # "S"/"N" maiusculos, que caiam no mesmo erro de valor invalido. A flag
+    # e validada uma unica vez por _offline_valido (utils.sh), o mesmo
+    # criterio usado em biblioteca.sh, programas.sh e backup.sh.
+    if ! _offline_valido; then
+        _offline_erro "atualizacao do sistema"
+        rc=1
+    elif [[ "$CFG_OFFLINE" == "s" ]]; then
+        _atualizar_offline || rc=$?
+    else
+        _atualizar_online || rc=$?
+    fi
 
     _aguardar_tecla
     # Propaga o rc: o menu embrulha em _tentar_log (utils.sh), mas um chamador
@@ -134,8 +135,11 @@ _coletar_backups() {
 }
 
 # Remove os artefatos da atualizacao aplicada: o ZIP original, o subdiretorio
-# temporario de extracao e qualquer residuo da extracao. A pasta principal de
-# recepcao (CFG_PORTALSAV) e preservada.
+# temporario de extracao, o staging e o ".part" de download interrompido. O
+# conteudo restante da recepcao (CFG_PORTALSAV) e PRESERVADO — o topo dessa
+# pasta e compartilhado com backups offline, ZIPs de biblioteca e o ZIP de
+# reversao de programas, e nada aqui pode inferir que esses arquivos sao
+# residuo da atualizacao.
 # IMPORTANTE: so chame no caminho de SUCESSO. Num caminho de erro o ZIP e a
 # unica copia do pacote que o usuario tem — apagar isso impediria a retentativa
 # em modo offline, que nao depende de rede.
@@ -150,7 +154,9 @@ _limpar_recepcao_atualizacao() {
     # Esta e a unica funcao que faz `rm -rf` de caminho derivado, entao ela
     # mesma valida a entrada: com ATU_DIR_STAGING vazio, "$staging" resolveria
     # para "CFG_PORTALSAV/" e o rm apagaria o diretorio de recepcao inteiro.
-    for nome_derivado in "$ATU_DIR_TEMP" "$ATU_DIR_STAGING" "$ARQUIVO_ZIP_ATU"; do
+    # ATU_SUFFIXO_PARCIAL entra na lista porque o ".part" do download
+    # interrompido e derivado do nome do ZIP (passo 4).
+    for nome_derivado in "$ATU_DIR_TEMP" "$ATU_DIR_STAGING" "$ARQUIVO_ZIP_ATU" "$ATU_SUFFIXO_PARCIAL"; do
         if [[ ! "$nome_derivado" =~ ^[A-Za-z0-9._-]+$ ]]; then
             _erro "Nome invalido para limpeza da atualizacao: '${nome_derivado}'"
             return 1
@@ -186,8 +192,7 @@ _limpar_recepcao_atualizacao() {
     fi
 
     # 3. Staging e subdiretorio temporario, por inteiro (so contem restos da
-    #    extracao). O staging tem remocao explicita para o log ficar legivel;
-    #    o residual abaixo pegaria os dois de qualquer maneira.
+    #    extracao).
     #    A guarda contra "$dir == $CFG_PORTALSAV" e o que impede um ATU_DIR_*
     #    vazio/malformado de resolver para o proprio diretorio de recepcao e
     #   apologar tudo: e o mesmo risco de `mv -f x /` tratado em _atualizando.
@@ -204,13 +209,26 @@ _limpar_recepcao_atualizacao() {
         fi
     done
 
-    # 4. Residuo da extracao. -exec com '+' faz o find propagar o erro das
-    #    invocacoes; o stderr vai para o log em vez de sumir em /dev/null,
-    #    que escondia a falha e deixava o usuario sem saber o que sobrou.
-    if ! "${DEFAULT_FIND}" "${CFG_PORTALSAV:?}" -mindepth 1 -maxdepth 1 \
-        -exec rm -rf {} + 2>>"${LOG_ATU:-/dev/null}"; then
-        _log "ERRO: limpeza residual incompleta em ${CFG_PORTALSAV}"
+    # 4. Download interrompido: o "<zip>.part" de uma transmissao cortada fica
+    #    no topo da recepcao. Antes era um "find -mindepth 1 -exec rm -rf {} +"
+    #    que pegava esse residuo — junto com TUDO mais que estivesse ali.
+    if [[ -n "$arquivo_zip" && -f "${CFG_PORTALSAV}/${arquivo_zip}${ATU_SUFFIXO_PARCIAL}" ]] \
+        && ! rm -f -- "${CFG_PORTALSAV}/${arquivo_zip}${ATU_SUFFIXO_PARCIAL}" 2>/dev/null; then
+        _log "ERRO: nao foi possivel remover ${CFG_PORTALSAV}/${arquivo_zip}${ATU_SUFFIXO_PARCIAL}"
         rc=1
+    fi
+
+    # O que sobrou NAO e removido: o topo da recepcao e compartilhado com
+    # backups offline (_mover_backup_offline), ZIPs de biblioteca aguardando
+    # processamento e o ZIP de reversao de programas (programas.sh). O "find
+    # -exec rm -rf {} +" anterior apagava esses arquivos junto, sem aviso.
+    # O residuo agora e registrado no log, nao destruido.
+    local -a residuo=()
+    while IFS= read -r -d '' item_residuo; do
+        residuo+=("${item_residuo##*/}")
+    done < <("${DEFAULT_FIND}" "${CFG_PORTALSAV}" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+    if ((${#residuo[@]} > 0)); then
+        _log "AVISO: itens preservados em ${CFG_PORTALSAV} apos a atualizacao: ${residuo[*]}"
     fi
 
     if (( rc == 0 )); then

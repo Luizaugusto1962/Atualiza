@@ -6,11 +6,11 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-01
+# Versao: 08/10/2026-01
 #
-declare pids=()                     # Array global para rastrear PIDs de background
+declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
-declare LISTA_ARQUIVOS_BIBLIOTECA=""                 # Lista de arquivos, separada por espaco
+declare LISTA_ARQUIVOS_BIBLIOTECA=""                # Lista de arquivos, separada por espaco
 
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
@@ -70,25 +70,34 @@ _atualizar_transpc() {
         return 1
     fi
 
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            _linha
-            _exibir_mensagem_centralizada "${AMARELO}" "Parametro de biblioteca do servidor OFF ativo"
-            _linha
-            _aviso "Use a opcao 2 (Atualizacao OFF-Line) com os arquivos ja em ${CFG_PORTALSAV}."
-            _linha
-            _aguardar_tecla
-            return 0
-        fi
+    # Antes: `if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]` sem ramo ELSE. Com a flag
+    # vazia/invalida o bloco inteiro era pulado e o fluxo seguia para
+    # _baixar_biblioteca_sincroniza — ou seja, uma atualizacao OFF-LINE
+    # disparava descarga pela REDE e sem a checagem de espaco em disco abaixo.
+    if ! _offline_valido; then
+        _offline_erro "atualizacao de biblioteca"
+        _aguardar_tecla
+        return 1
+    fi
+
+    if [[ "${CFG_OFFLINE}" == "s" ]]; then
         _linha
-        _exibir_mensagem_centralizada "${AMARELO}" "Informe a senha para o usuario remoto:"
+        _exibir_mensagem_centralizada "${AMARELO}" "Parametro de biblioteca do servidor OFF ativo"
         _linha
-        # Verificar espaco em disco
-        if ! _verificar_espaco_disco "$E_EXEC"; then
-            _erro "Espaco em disco insuficiente em $E_EXEC"
-            _aguardar 3
-            return 1
-        fi
+        _aviso "Use a opcao 2 (Atualizacao OFF-Line) com os arquivos ja em ${CFG_PORTALSAV}."
+        _linha
+        _aguardar_tecla
+        return 0
+    fi
+
+    _linha
+    _exibir_mensagem_centralizada "${AMARELO}" "Informe a senha para o usuario remoto:"
+    _linha
+    # Verificar espaco em disco
+    if ! _verificar_espaco_disco "$E_EXEC"; then
+        _erro "Espaco em disco insuficiente em $E_EXEC"
+        _aguardar 3
+        return 1
     fi
     if ! _baixar_biblioteca_sincroniza; then
         _erro "Falha ao baixar biblioteca do servidor."
@@ -121,21 +130,27 @@ _atualizar_biblioteca_offline() {
         return 1
     fi
 
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            if ! _processar_biblioteca_offline; then
-                _erro "Falha ao processar biblioteca offline."
-                _aviso "Verifique se os arquivos estao no diretorio: ${CFG_PORTALSAV}"
-                _linha "-" "${VERMELHO}"
-                _aguardar_tecla
-                return 1
-            fi
-        else
-            if ! _salvar_atualizacao_biblioteca; then
-                _erro "Falha ao salvar atualizacao da biblioteca."
-                _aguardar_tecla
-                return 1
-            fi
+    # Antes: o mesmo `if ... =~ ^[sn]$` sem ELSE. Com a flag invalida a funcao
+    # chegava ao fim e devolvia 0 — sucesso sem ter feito NADA, sem mensagem.
+    if ! _offline_valido; then
+        _offline_erro "atualizacao off-line de biblioteca"
+        _aguardar_tecla
+        return 1
+    fi
+
+    if [[ "${CFG_OFFLINE}" == "s" ]]; then
+        if ! _processar_biblioteca_offline; then
+            _erro "Falha ao processar biblioteca offline."
+            _aviso "Verifique se os arquivos estao no diretorio: ${CFG_PORTALSAV}"
+            _linha "-" "${VERMELHO}"
+            _aguardar_tecla
+            return 1
+        fi
+    else
+        if ! _salvar_atualizacao_biblioteca; then
+            _erro "Falha ao salvar atualizacao da biblioteca."
+            _aguardar_tecla
+            return 1
         fi
     fi
 }

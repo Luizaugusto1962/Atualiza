@@ -56,6 +56,29 @@ rc=0
 _carregar_versao_seguro "${tmpdir}/nao_existe" || rc=$?
 _checar "guard: arquivo inexistente retorna 1" "1" "$rc"
 
+#---------- _carregar_versao_seguro: valor fora de ^[0-9]+$ ----------#
+# _mostrar_parametros imprime VERSAOANT com "printf '%b\n'" (sistema.sh), que
+# interpreta escapes: um .versao adulterado com "\033[2J" limpava a tela e
+# desalinhavo o menu. Valor invalido tem de ser descartado sem sobrescrever o
+# que ja estava em memoria.
+printf 'VERSAOANT="\\033[2Jversao_falsa"\nVERSAO="\\033[1;31m2026"\n' >"${tmpdir}/.versao_invalido"
+printf 'VERSAOANT=abc\nVERSAO=2026-v2\n' >"${tmpdir}/.versao_nao_numerico"
+
+VERSAOANT="2024"
+VERSAO="2025"
+
+_carregar_versao_seguro "${tmpdir}/.versao_invalido"
+_checar "valor invalido: VERSAOANT com escape nao sobrescreve" "2024" "${VERSAOANT:-}"
+_checar "valor invalido: VERSAO com escape nao sobrescreve" "2025" "${VERSAO:-}"
+
+_carregar_versao_seguro "${tmpdir}/.versao_nao_numerico"
+_checar "valor nao numerico: VERSAOANT nao sobrescreve" "2024" "${VERSAOANT:-}"
+_checar "valor nao numerico: VERSAO nao sobrescreve" "2025" "${VERSAO:-}"
+
+_carregar_versao_seguro "${tmpdir}/.versao"
+_checar "valor numerico: VERSAOANT aceito" "2025" "${VERSAOANT:-}"
+_checar "valor numerico: VERSAO aceita" "2026" "${VERSAO:-}"
+
 #---------- Extracao do IP interno (o campo apos "src") ----------#
 _extrair_src() {
     awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}'
