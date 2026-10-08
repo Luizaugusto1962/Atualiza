@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/09/2026
+# Versao: 08/10/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -733,29 +733,10 @@ _selecionar_backup() {
 }
 
 #---------- FUNCOES DE RESTAURACAO ----------#
-# SEGURANCA: Valida entradas de backup (.zip ou .tar.gz) contra path traversal
-# Uso: _validar_backup_entradas_seguras <arquivo_backup>
-_validar_backup_entradas_seguras() {
-    local arquivo_backup="${1:-}"
-    local lista_entradas=""
-
-    if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        lista_entradas=$("${DEFAULT_TAR:-tar}" -tzf "$arquivo_backup" 2>/dev/null) || return 1
-    else
-        lista_entradas=$("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_backup" 2>/dev/null) || return 1
-    fi
-
-    if grep -qE '(^|/)\.\.(/|$)|^/|^[A-Za-z]:[\\/]' <<<"$lista_entradas"; then
-        _erro "Backup contem entradas inseguras (path traversal)."
-        return 1
-    fi
-    return 0
-}
-
-# Compatibilidade: alias para chamadas existentes que usam o nome antigo
-_validar_zip_entradas_seguras() {
-    _validar_backup_entradas_seguras "$@"
-}
+# A validacao de entradas do pacote (_validar_backup_entradas_seguras e o alias
+# _validar_zip_entradas_seguras) foi movida para utils.sh: quem precisa dela
+# tambem e programas.sh, que carrega DEPOIS deste modulo, e a regra de
+# dependencia da MODULOS_CARREGAR exige apontar para frente. Ver utils.sh.
 
 # Resolve o diretorio base de destino a partir do nome do arquivo de backup
 # Formato do nome: ${CFG_EMPRESA}_${tipo}_${base_dir}_${data}.zip

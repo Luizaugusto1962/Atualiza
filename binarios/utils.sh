@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-01
+# Versao: 08/10/2026-02
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -356,6 +356,46 @@ _offline_valido() {
 # Parametros: $1=contexto (rotulo do fluxo, ex.: "atualizacao de biblioteca")
 _offline_erro() {
     _erro "Valor invalido em 'offline': '${CFG_OFFLINE:-vazio}' (esperado 's' ou 'n')${1:+ - $1}"
+}
+
+# SEGURANCA: valida as entradas de um pacote (.zip ou .tar.gz) contra path
+# traversal e caminho absoluto, ANTES de extrair.
+# Uso: _validar_backup_entradas_seguras <arquivo>
+# Retorna: 0=entradas seguras 1=entrada insegura ou arquivo ilegivel
+#
+# Sem esta checagem, um pacote com "../" ou "/etc/passwd" escapa do diretorio de
+# extracao: em programas.sh o unzip roda dentro de dir_temp_atualizacao e um
+# caminho absoluto no ZIP sobrescreve o proprio destino.
+#
+# Vive em utils.sh (e nao em backup.sh) porque quem precisa dela sao backup.sh,
+# biblioteca.sh e programas.sh: como funcao so e resolvida em runtime, mas a
+# regra de dependencia da MODULOS_CARREGAR exige apontar PARA FRENTE — utils.sh
+# carrega antes dos tres, enquanto backup.sh carregaria depois de programas.sh.
+_validar_backup_entradas_seguras() {
+    local arquivo_backup="${1:-}"
+    local lista_entradas=""
+
+    if [[ -z "$arquivo_backup" || ! -r "$arquivo_backup" ]]; then
+        return 1
+    fi
+
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        lista_entradas=$("${DEFAULT_TAR:-tar}" -tzf "$arquivo_backup" 2>/dev/null) || return 1
+    else
+        # unzip -Z1 (modo zipinfo) lista os nomes sem extrair nada.
+        lista_entradas=$("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_backup" 2>/dev/null) || return 1
+    fi
+
+    if grep -qE '(^|/)\.\.(/|$)|^/|^[A-Za-z]:[\\/]' <<<"$lista_entradas"; then
+        _erro "Pacote contem entradas inseguras (path traversal ou caminho absoluto): ${arquivo_backup}"
+        return 1
+    fi
+    return 0
+}
+
+# Compatibilidade: alias para chamadas existentes que usam o nome antigo
+_validar_zip_entradas_seguras() {
+    _validar_backup_entradas_seguras "$@"
 }
 
 # Solicita confirmacao S/N

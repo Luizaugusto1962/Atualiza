@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-01
+# Versao: 08/10/2026-02
 #
 
 # Variaveis globais esperadas
@@ -15,6 +15,9 @@ debugado="${debugado:-mclass}"                  # Sufixo para arquivos em depura
 CFG_PORTALSAV="${CFG_PORTALSAV:-}"    # Diretorio de recebimento de arquivos
 DEFAULT_ZIP="${DEFAULT_ZIP:-}"                  # Comando de compactacao (ex: zip)
 DEFAULT_UNZIP="${DEFAULT_UNZIP:-}"              # Comando de descompactacao (ex: unzip)
+# ATU_DIR_TEMP e ATU_SUFIXO_BACKUP vem de constantes.sh (mesmo bloco do
+# ARQUIVO_ZIP_ATU usado por baixar.sh) e nao sao redeclarados aqui: um default
+# duplicado neste modulo voltaria a divergir da constante.
 #---------- VARIaVEIS GLOBAIS DO MODULO ----------#
 # Arrays para armazenar programas e arquivos
 declare arquivo_compilado_atual=""
@@ -561,6 +564,23 @@ _validar_pre_requisitos_atualizacao() {
         fi
     done
 
+    # SEGURANCA: validar as entradas do pacote antes de QUALQUER extracao.
+    # O unzip roda dentro de dir_temp_atualizacao, mas um caminho absoluto
+    # dentro do ZIP (ou um "../") escapa desse diretorio — o pacote ia
+    # sobrescrever o proprio destino da atualizacao. A checagem fica aqui, e
+    # nao junto do unzip, porque este ponto e anterior a criacao do
+    # temporario, ao backup dos programas antigos e a qualquer escrita: um
+    # pacote malicioso nem chega a tocar o disco.
+    # Para um ZIP legitimo nada muda: o validador e silencioso e o fluxo segue
+    # igual. biblioteca.sh faz a mesma coisa desde _validar_backup_entradas_seguras
+    # (utils.sh), antes de extrair.
+    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+        if ! _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo}"; then
+            _erro "OPERACAO ABORTADA: pacote invalido em ${CFG_PORTALSAV}/${arquivo}"
+            return 1
+        fi
+    done
+
     return 0
 }
 
@@ -578,7 +598,12 @@ _processar_atualizacao_programas() {
     # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
     # Criar diretorio temporario para extracao
-    local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
+    # O nome vem de ATU_DIR_TEMP (constantes.sh), o mesmo que baixar.sh usa
+    # na limpeza da recepcao: o literal "dir_temp_atualizacao" duplicava o
+    # default da constante e, se a constante mudasse, a limpeza do passo 3
+    # passaria a ignorar este diretorio. O nome da local continua sendo
+    # dir_temp_atualizacao porque _cleanupAtualizacao a le por escopo dinamico.
+    local dir_temp_atualizacao="${CFG_PORTALSAV}/${ATU_DIR_TEMP}"
     rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
     if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
@@ -683,7 +708,9 @@ _processar_atualizacao_pacotes() {
     # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
     # Criar diretorio temporario para extracao isolada
-    local dir_temp_atualizacao="${CFG_PORTALSAV}/dir_temp_atualizacao"
+    # Ver _processar_atualizacao_programas: o nome vem de ATU_DIR_TEMP, e nao
+    # de um literal repetido.
+    local dir_temp_atualizacao="${CFG_PORTALSAV}/${ATU_DIR_TEMP}"
     rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
     if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
