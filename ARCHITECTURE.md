@@ -40,10 +40,10 @@ Três entry points, um binário lógico:
 
 | # | Área | Módulo(s) | Responsabilidade |
 |---|------|-----------|------------------|
-| 0 | Entry / Bootstrap | `atualiza.sh`, `principal.sh` | `case` de args, `SCRIPT_DIR/LIBS_DIR`, `_criar_diretorio_seguro`, `MODULOS_CARREGAR`, `_main`, `_inicializar_sistema`, traps `EXIT/INT/TERM/HUP` |
-| 1 | Fundação | `constantes.sh`, `config.sh`, `utils.sh` | Defaults (`DEFAULT_*`, `DESTINO_*`, `SAVISC/REBUILD`, `C_JUTIL_*`, bloco `ARQUIVO_ZIP_ATU`/`ATU_*`), `_carregar_config_seguro`, `REGISTRO_VARIAVEIS`, `_encerrar_programa/_resetando/_limpeza_emergencia`, `_msg/_ok/_aviso/_erro/_log`, cores `tput`, `_check_instalado`, `_ssh_aceitar_novo`, `_executar_expurgador_diario`, **helpers compartilhados `_offline_valido`/`_offline_erro` e `_validar_backup_entradas_seguras`** (§5) |
+| 0 | Entry / Bootstrap | `atualiza.sh`, `principal.sh` | `case` de args, `SCRIPT_DIR/LIBS_DIR`, criação inline dos 3 diretórios de bootstrap (anterior aos módulos), `MODULOS_CARREGAR`, `_main`, `_inicializar_sistema`, traps `EXIT/INT/TERM/HUP` |
+| 1 | Fundação | `constantes.sh`, `config.sh`, `utils.sh` | Defaults (`DEFAULT_*`, `DESTINO_*`, `SAVISC/REBUILD`, `C_JUTIL_*`, bloco `ARQUIVO_ZIP_ATU`/`ATU_*`), `_carregar_config_seguro`, `REGISTRO_VARIAVEIS`, `_encerrar_programa/_resetando/_limpeza_emergencia`, `_msg/_ok/_aviso/_erro/_log`, cores `tput`, `_check_instalado`, `_ssh_aceitar_novo`, `_executar_expurgador_diario`, **helpers compartilhados `_offline_valido`/`_offline_erro`, `_validar_backup_entradas_seguras` e `_garantir_diretorio` (§5)** |
 | 2 | Segurança / Identidade | `auth.sh`, `cadastro.sh`, `setup.sh` | `_login` (3 tentativas + rate limiting em `.tentativas_login`, hash `algoritmo$salt$hash` com salt, `.senhas` 0600), `_hash_senha`/`_hash_senha_simples` + allowlist de algoritmo, `_alterar_senha [usuario]`, `_cadastrar_usuario`, `_validar_config_file` antes de carregar `.config`, `_validar_ssh`, `_ssh_contexto` |
-| 3 | Transporte | `vaievem.sh` (+ `utils.sh` SSH) | `_validar_caminho_seguro` (toda op. arquivo passa aqui), `_montar_cmd_ssh/scp`, `_receber_scp`, `_enviar_rsync(_lote)`, `_baixar_programas_vaievem`, `_baixar_biblioteca_sincroniza`, `_enviar_arquivo_multi`; `_ssh_aceitar_novo` em vez de `StrictHostKeyChecking` inline; fallback senha/sem chave |
+| 3 | Transporte | `vaievem.sh` (+ `utils.sh` SSH) | `_validar_destino_ssh` (toda op. arquivo passa por `_validar_caminho_seguro`/`_garantir_diretorio` em `utils.sh`), `_montar_cmd_ssh/scp`, `_receber_scp`, `_enviar_rsync(_lote)`, `_baixar_programas_vaievem`, `_baixar_biblioteca_sincroniza`, `_enviar_arquivo_multi`; `_ssh_aceitar_novo` em vez de `StrictHostKeyChecking` inline; fallback senha/sem chave |
 | 4 | Domínio IsCOBOL | `programas.sh`, `biblioteca.sh` | Programas: online/offline/pacote, `_solicitar_programas_atualizacao` (limite 6), `_validar_pre_requisitos_atualizacao` (**portão de pacote**, §5), `_backup_programa_antigo`, `_processar_atualizacao_programas` (**restrição AGENTS.md — com exceção registrada**, ver abaixo), `_processar_reversao_programas`; Biblioteca: `_salvar_atualizacao_biblioteca` (**portão único** dos 3 fluxos, §5), `_executar_atualizacao_biblioteca` → `trans_pc/` |
 | 5 | Operações de arquivo | `arquivos.sh`, `backup.sh`, `baixar.sh`, `sistema.sh` | `arquivos.sh`: expurgo, jutil/rebuild em lote (ondas de N jobs + `wait $pid`, `C_JUTIL_PARALELO=1` default), `_listar_logs`; `backup.sh`: completo/incremental/multi-padrão, `_enviar_backup_{servidor,rede,avulso}`; `baixar.sh`: self-update online/offline (`GITHUB_UPDATE_URL`), `_limpar_recepcao_atualizacao` (§6), `_voltar_sh_anterior`; `sistema.sh`: versões Linux/IsCOBOL, `_carregar_versao_seguro` (whitelist + `^[0-9]+$`), `_manutencao_setup` |
 | 6 | Interação | `menus.sh`, `help.sh`, `lembrete.sh`, `variaveis.sh` | `_principal` + submenus (god nodes graphify: `_ler_opcao_menu`, `_exibir_cabecalho_menu`, `_principal` com 14 arestas), ajuda `M/H/Q`, `manual.txt` paginado, lembrete/notas de entrada, `_consultar_variaveis` tabular |
@@ -188,7 +188,60 @@ própria recepção e o `rm -rf` apagaria tudo.
 `programas.sh` tira o nome do temporário da mesma constante (`${ATU_DIR_TEMP}`), não de um
 literal repetido — se a constante mudar, os dois lados continuam alinhados.
 
-## 7. Diagrama de arquitetura
+Essa regra do `rm -rf` não depende mais de disciplina do chamador: `_diretorio_protegido`
+(`utils.sh`) mantém a lista dos diretórios compartilhados e o modo `recriar` de
+`_garantir_diretorio` **recusa** qualquer um deles, barra final incluída.
+
+## 7. `utils.sh:_garantir_diretorio` — porta única de diretório
+
+Toda criação e validação de diretório do sistema passa por uma função só. Antes havia seis
+implementações quase idênticas, cada uma com um bug diferente; agora há uma:
+
+| Antes | Onde | Virou |
+|---|---|---|
+| `_criar_diretorio_seguro` | `principal.sh` | `_garantir_diretorio` |
+| `_validar_diretorio_backups` | `programas.sh` | idem |
+| `_validar_diretorio_operacao` | `baixar.sh` | idem |
+| `_validar_diretorio_backup` | `arquivos.sh` | idem |
+| `_validar_diretorio_trabalho` | `arquivos.sh` | idem |
+| `_validar_diretorio_expurgavel` | `arquivos.sh` | idem |
+| `mkdir -p` inline | `auth.sh`, `backup.sh` | idem |
+
+`_validar_caminho_seguro` saiu de `vaievem.sh` e foi para `utils.sh` porque
+`_garantir_diretorio` precisa dela — `utils.sh` carrega antes, então a dependência continua
+apontando para frente e os ~30 call sites antigos não mudaram.
+
+**Modos** (`$2`, padrão `criar`):
+
+| Modo | Faz |
+|---|---|
+| `verificar` | só valida o caminho; o diretório pode não existir (limpeza de recepção) |
+| `validar` | deve existir e ser diretório legível |
+| `validar_escrita` | idem + gravável |
+| `criar` | `mkdir -p` se faltar; ajusta a permissão **só no diretório recém-criado** |
+| `recriar` | `criar` purgando antes — staging/temporário, com guarda de `_diretorio_protegido` |
+
+`$3` é o rótulo usado nas mensagens, `$4` = `silencioso` para quem usa a função como
+predicado e já imprime a própria mensagem.
+
+O que o `criar` passou a garantir, e a antiga função não (verificado contra `git show HEAD`):
+recusa `../`, metacaracteres de shell e caminho vazio/raiz **antes** de criar; nunca converte
+um arquivo em diretório apagando-o; e o `recriar` nunca apaga diretório compartilhado.
+
+O que ele deliberadamente **não** faz é re-permissonar diretório pré-existente. Quem instalou
+pode ter escolhido a permissão de propósito — ponto de montagem, volume compartilhado,
+diretório de outro dono — e um `chmod 0755` silencioso sobrescreve essa decisão. (Uma versão
+intermediária deste refactor fazia o chmod; foi revertida.)
+
+Único ponto com criação de diretório ainda inline: o bootstrap de `principal.sh`, que roda
+**antes** do `source` dos módulos e portanto antes de `utils.sh` existir.
+
+`utils.sh` é o **segundo** módulo do `MODULOS_CARREGAR` (logo depois de `constantes.sh`) por
+esse motivo: `config.sh:_configurar_diretorios` e `auth.sh` — que roda no próprio `source` —
+dependem de `_garantir_diretorio`, e `config.sh` não define nada de que `utils.sh` precise.
+Assim a cadeia inteira aponta para frente, sem inversão.
+
+## 8. Diagrama de arquitetura
 
 ```mermaid
 flowchart TB
@@ -202,7 +255,7 @@ flowchart TB
     end
 
     subgraph Bootstrap["Bootstrap — principal.sh"]
-        P1[_criar_diretorio_seguro<br/>LIBS_DIR + CFG_DIR + logs]
+        P1[mkdir + chmod inline<br/>LIBS_DIR + CFG_DIR + logs<br/>(pré-módulos)]
         P2[source 15 módulos<br/>escopo global, ordem fixa]
         P3[_main<br/>traps EXIT/INT/TERM/HUP<br/>_inicializar_sistema → _login<br/>→ _mostrar_boas_vindas → _validar_ssh → _principal]
     end
@@ -258,7 +311,7 @@ flowchart TB
     U -.->|valida entradas| BIB
 ```
 
-## 8. Cobertura de teste
+## 9. Cobertura de teste
 
 Duas suítes, ambas sem TTY, ambas com `set -euo pipefail`:
 
@@ -273,7 +326,16 @@ descartável **rodado também contra `git show HEAD:<arquivo>`** — é isso que
 regressão real de teste que passa nos dois códigos. `test_sistema.sh` é o modelo para
 adicionar um terceiro: `source` do módulo + stubs + `falhas` contador.
 
-## 9. Limites conhecidos do índice (para re-gerar com fidelidade total)
+Para `utils.sh:_garantir_diretorio` o harness cobriu os 5 modos, as recusas de caminho
+perigoso, o arquivo-onde-deveria-ser-diretório, a proteção de diretório compartilhado e o
+modo `silencioso` (32 checks). Contra `HEAD` **três** casos de segurança falham — recusa de
+`../`, recusa de metacaracteres de shell e guarda contra `rm -rf` em diretório compartilhado —
+provando que a mudança não é só refactor. A ordem de carga foi validada carregando os 15
+módulos na ordem real do `MODULOS_CARREGAR` num sandbox: com a ordem antiga
+(`config.sh` antes de `utils.sh`) `_garantir_diretorio` não existe no ponto em que
+`config.sh` é carregado.
+
+## 10. Limites conhecidos do índice (para re-gerar com fidelidade total)
 
 - Rodar `gitnexus analyze --pdg` (ou ao menos re-`analyze`) para tentar extrair
   `CALLS` Bash → `processes`/`clusters`; hoje só há `CONTAINS`.

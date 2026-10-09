@@ -4,7 +4,7 @@ set -euo pipefail
 # SISTEMA SAV - Script de Atualizacao Modular
 # principal.sh - Ponto de entrada e inicializacao do sistema
 # Padrões e regras de desenvolvimento: ver AGENTS.md
-# Versao: 07/10/2026
+# Versao: 09/10/2026-02
 # Autor: Luiz Augusto
 # Email: luizaugusto@sav.com.br
 #
@@ -43,54 +43,14 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE DEFAULT_LOGS_DIR
 declare -rx UPDATE="07/10/26"
 
 # =============================================================================
-# FUNÇÕES AUXILIARES
+# INICIALIZACAO DE DIRETORIOS (bootstrap pre-modulos)
 # =============================================================================
-
-# Cria diretorio com permissoes seguras (funcao centralizada e melhorada)
-# Parametros: $1=caminho $2=permissao(opcional, padrao=PERM_DIR_SECURE)
-#             $3=arquivo de log(opcional, ignorado; compatibilidade com chamadores)
-# Retorna: 0 se sucesso, 1 se erro
-_criar_diretorio_seguro() {
-    local caminho="${1:-}"
-    local permissao="${2:-${PERM_DIR_SECURE}}"
-    local _log="${3:-}" # aceito por compatibilidade; nao utilizado
-
-    # Validar caminho
-    if [[ -z "$caminho" ]] || [[ "$caminho" == "/" ]] || [[ "$caminho" == "//" ]]; then
-        printf "ERRO: Caminho invalido ou inseguro: %s\n" "$caminho" >&2
-        return 1
-    fi
-
-    # Se ja existe, verificar se e diretorio
-    if [[ -e "$caminho" ]]; then
-        if [[ -d "$caminho" ]]; then
-            return 0
-        else
-            printf "Erro: Caminho existe mas nao e diretorio: %s\n" "$caminho" >&2
-            return 1
-        fi
-    fi
-
-    # Criar diretorio
-    if mkdir -p "$caminho" 2>/dev/null; then
-        # Ajustar permissoes
-        if chmod "$permissao" "$caminho" 2>/dev/null; then
-            return 0
-        else
-            printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "$caminho" >&2
-            return 1
-        fi
-    else
-        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "$caminho" >&2
-        return 1
-    fi
-}
-
-# =============================================================================
-# INICIALIZAÇÃO DE DIRETÓRIOS
-# =============================================================================
-
-# Lista de diretórios obrigatórios
+# Bootstrap ANTERIOR ao carregamento dos modulos: aqui _garantir_diretorio
+# (utils.sh) ainda nao existe, entao a criacao fica inline. E o unico ponto do
+# sistema que carrega esse codigo duplicado — todos os outros passam por
+# _garantir_diretorio (utils.sh), que faz o mesmo e ainda valida o caminho.
+#
+# Lista de diretorios obrigatorios
 declare -a AUX_DIRS=("${LIBS_DIR}" "${CFG_DIR}" "${DEFAULT_LOGS_DIR}")
 
 # Nota: exit 1 direto (e nao _encerrar_programa) porque este bloco roda
@@ -102,14 +62,19 @@ for dir in "${AUX_DIRS[@]}"; do
         exit 1
     fi
 
-    # Criar diretorio caso nao exista (funcao trata os casos existente/novo)
-    if ! _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}"; then
-        printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
-        exit 1
+    # Criar diretorio caso nao exista (o if abaixo trata existente/novo)
+    if [[ ! -d "${dir}" ]]; then
+        if [[ -e "${dir}" ]]; then
+            printf "Erro: Caminho existe mas nao e diretorio: '%s'.\n" "${dir}" >&2
+            exit 1
+        fi
+        if ! mkdir -p "${dir}" 2>/dev/null; then
+            printf "Erro: Nao foi possivel criar o diretorio '%s'.\n" "${dir}" >&2
+            exit 1
+        fi
     fi
 
     # Garantir permissao tambem em diretorios pre-existentes
-    # (o chmod na funcao so cobre o caminho de criacao)
     chmod "${PERM_DIR_SECURE}" "${dir}" 2>/dev/null || {
         printf "AVISO: Nao foi possivel ajustar permissao em '%s'.\n" "${dir}" >&2
         printf "Certifique-se de que o usuario atual tem permissao para acessar e modificar este diretorio.\n" >&2
@@ -127,12 +92,17 @@ unset AUX_DIRS dir
 # de uma funcao, essas variaveis viram locais e sao perdidas ao retornar. Usar
 # `declare -g` resolveria, mas exige Bash >= 4.2 e quebra em servidores antigos
 # (Ubuntu 10.04/12.04). Por isso o `source` precisa estar neste escopo.
-# =============================================================================
+# -----------------------------------------------------------------------------
+# A ORDEM IMPORTA e so pode apontar PARA FRENTE: um modulo so pode chamar funcao
+# de outro carregado antes dele. utils.sh e o segundo de proposito —
+# _configurar_diretorios (config.sh) e auth.sh (no proprio source) dependem de
+# _garantir_diretorio, e config.sh nao define nada de que utils.sh precise.
+#============================================================================
 
 declare -a MODULOS_CARREGAR=(
     "constantes.sh" # Constantes do Sistema SAV
-    "config.sh"     # Configuracoes
     "utils.sh"      # Utilitarios basicos primeiro
+    "config.sh"     # Configuracoes
     "auth.sh"       # Autenticacao
     "lembrete.sh"   # Sistema de lembretes
     "vaievem.sh"    # Operacoes de rede

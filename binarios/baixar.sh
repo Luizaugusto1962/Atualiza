@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-01
+# Versao: 09/10/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -35,17 +35,6 @@ _executar_update() {
     # Propaga o rc: o menu embrulha em _tentar_log (utils.sh), mas um chamador
     # novo nao embrulhado perderia a falha no `set -e` do chamador.
     return "$rc"
-}
-
-# Valida se um diretorio pode ser alvo de operacoes de escrita/remocao (nao vazio, nao raiz, caminho seguro)
-# Retorna: 0=seguro 1=inseguro
-_validar_diretorio_operacao() {
-    local diretorio="${1:-}"
-
-    if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
-        return 1
-    fi
-    _validar_caminho_seguro "$diretorio"
 }
 
 # Volta ao diretorio de trabalho anterior a extracao do ZIP. O menu segue
@@ -163,19 +152,12 @@ _limpar_recepcao_atualizacao() {
         fi
     done
 
-    # SEGURANCA: validar diretorios antes de qualquer remocao
-    if ! _validar_diretorio_operacao "${CFG_PORTALSAV}"; then
-        _erro "Diretorio de recepcao invalido ou inseguro para limpeza: ${CFG_PORTALSAV}"
-        return 1
-    fi
-    if ! _validar_diretorio_operacao "${temp_dir}"; then
-        _erro "Diretorio temporario invalido ou inseguro para limpeza: ${temp_dir}"
-        return 1
-    fi
-    if ! _validar_diretorio_operacao "${staging}"; then
-        _erro "Diretorio de staging invalido ou inseguro para limpeza: ${staging}"
-        return 1
-    fi
+    # SEGURANCA: validar diretorios antes de qualquer remocao. O modo "verificar"
+    # e o correto aqui: temporario e staging podem nao existir, e o que nao pode
+    # passar e um caminho inseguro.
+    _garantir_diretorio "${CFG_PORTALSAV}" verificar "diretorio de recepcao" || return 1
+    _garantir_diretorio "${temp_dir}" verificar "diretorio temporario" || return 1
+    _garantir_diretorio "${staging}" verificar "diretorio de staging" || return 1
 
     # 1. ZIP na raiz de receber (modo online)
     if [[ -n "$arquivo_zip" && -f "${CFG_PORTALSAV}/${arquivo_zip}" ]] \
@@ -301,12 +283,10 @@ _expandir_backups_zip() {
         done
     fi
 
-    # Purga antes de criar: um run interrompido deixa o staging populado, e o unzip
+    # "recriar" purga antes: um run interrompido deixa o staging populado, e o unzip
     # sobrescreveria apenas os arquivos que colidem — um .sh.bkp antigo
     # remanescente seria restaurado como se fosse do backup escolhido.
-    rm -rf -- "$staging" 2>/dev/null || true
-    if ! _criar_diretorio_seguro "$staging" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Ao criar diretorio temporario de restauracao: ${staging}"
+    if ! _garantir_diretorio "$staging" recriar "diretorio temporario de restauracao"; then
         return 1
     fi
     if ! "${DEFAULT_UNZIP}" -o -j "$zip_backup" -d "$staging" >>"$LOG_ATU" 2>&1; then
@@ -360,14 +340,10 @@ _atualizando() {
     # temp_dir (origem da extracao), que antes so eram validados na limpeza —
     # ou seja, depois de ja terem sido usados.
     for dir_operacao in "${LIBS_DIR}" "${CFG_DIR}" "${DEFAULT_BACKUP_DIR}" "${CFG_PORTALSAV}" "${temp_dir}" "${staging}"; do
-        if ! _validar_diretorio_operacao "${dir_operacao}"; then
-            _erro "Diretorio invalido ou inseguro: ${dir_operacao}"
-            return 1
-        fi
+        _garantir_diretorio "${dir_operacao}" verificar "diretorio de operacao" || return 1
     done
-    if [[ -n "${SCRIPT_DIR:-}" ]] && ! _validar_diretorio_operacao "${SCRIPT_DIR}"; then
-        _erro "Diretorio do script principal invalido ou inseguro: ${SCRIPT_DIR}"
-        return 1
+    if [[ -n "${SCRIPT_DIR:-}" ]]; then
+        _garantir_diretorio "${SCRIPT_DIR}" verificar "diretorio do script principal" || return 1
     fi
 
     # ---------- 1. BACKUP DOS ARQUIVOS ATUAIS ----------
@@ -406,12 +382,10 @@ _atualizando() {
     # Sem ele, um modulo invalido so era descoberto DEPOIS de os anteriores
     # terem substituido os arquivos em uso, deixando o sistema meio atualizado.
     #
-    # Purga antes de criar: um run interrompido (Ctrl-C, queda de energia) deixa
-    # o staging com arquivos velhos, e o unzip sobrescreve so o que colide —
+    # O modo "recriar" purga antes: um run interrompido (Ctrl-C, queda de energia)
+    # deixa o staging com arquivos velhos, e o unzip sobrescreve so o que colide —
     # um modulo antigo remanescente passaria pela validacao e seria instalado.
-    rm -rf -- "$staging" 2>/dev/null || true
-    if ! _criar_diretorio_seguro "$staging" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
-        _erro "Ao criar diretorio de staging da atualizacao: ${staging}"
+    if ! _garantir_diretorio "$staging" recriar "diretorio de staging da atualizacao"; then
         return 1
     fi
     if ! cd -- "$staging"; then
@@ -591,20 +565,19 @@ _voltar_sh_anterior() {
     fi
 
     # SEGURANCA: validar diretorios antes de operar
-    if ! _validar_diretorio_operacao "${DEFAULT_BACKUP_DIR}"; then
-        _erro "Diretorio de backup invalido ou inseguro: ${DEFAULT_BACKUP_DIR}"
+    _garantir_diretorio "${DEFAULT_BACKUP_DIR}" verificar "diretorio de backup" || {
         _aguardar 2
         return 1
-    fi
-    if ! _validar_diretorio_operacao "${LIBS_DIR}"; then
-        _erro "Diretorio de bibliotecas invalido ou inseguro: ${LIBS_DIR}"
+    }
+    _garantir_diretorio "${LIBS_DIR}" verificar "diretorio de bibliotecas" || {
         _aguardar 2
         return 1
-    fi
-    if [[ -n "${SCRIPT_DIR:-}" ]] && ! _validar_diretorio_operacao "${SCRIPT_DIR}"; then
-        _erro "Diretorio do script principal invalido ou inseguro: ${SCRIPT_DIR}"
-        _aguardar 2
-        return 1
+    }
+    if [[ -n "${SCRIPT_DIR:-}" ]]; then
+        _garantir_diretorio "${SCRIPT_DIR}" verificar "diretorio do script principal" || {
+            _aguardar 2
+            return 1
+        }
     fi
 
     # Com ATU_SUFIXO_BACKUP vazio o glob abaixo casaria com QUALQUER arquivo de
@@ -732,16 +705,9 @@ _atualizar_online() {
         return 1
     fi
 
-    # SEGURANCA: validar diretorio de download antes de usar wget/curl
-    if ! _validar_diretorio_operacao "${CFG_PORTALSAV}"; then
-        _erro "Diretorio de download invalido ou inseguro: ${CFG_PORTALSAV}"
-        return 1
-    fi
-
-    _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio de download"
-        return 1
-    }
+    # SEGURANCA: validar o diretorio de download antes de usar wget/curl e
+    # garantir que ele exista
+    _garantir_diretorio "${CFG_PORTALSAV}" criar "diretorio de download" || return 1
     # wget e o padrao; curl e o fallback (servidores minimos podem nao ter wget).
     # Timeout/retry sao obrigatorios: sem eles, uma conexao pendurada segura o
     # menu indefinidamente — risco real em link legado.
@@ -795,19 +761,8 @@ _atualizar_offline() {
     local temp_dir="${CFG_PORTALSAV%/}/${ATU_DIR_TEMP}"
     local arquivo_zip="${ARQUIVO_ZIP_ATU}"
 
-    # SEGURANCA: validar diretorio temporario antes de operar
-    if ! _validar_diretorio_operacao "${temp_dir}"; then
-        _erro "Diretorio temporario invalido ou inseguro: ${temp_dir}"
-        return 1
-    fi
-    if [[ ! -d "$temp_dir" ]]; then
-        _erro "Diretorio temporario nao encontrado: ${temp_dir}"
-        return 1
-    fi
-    if [[ ! -r "$temp_dir" ]]; then
-        _erro "Sem permissao de leitura no diretorio temporario: ${temp_dir}"
-        return 1
-    fi
+    # SEGURANCA: validar diretorio temporario antes de operar (existe, e diretorio legivel)
+    _garantir_diretorio "${temp_dir}" validar "diretorio temporario" || return 1
 
     # -s: arquivo vazio nao e um pacote, e o `unzip -t` rejeitaria com
     # "corrompido" sem indicar que o problema foi o transporte da copia.

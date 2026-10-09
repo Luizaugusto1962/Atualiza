@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-03
+# Versao: 09/10/2026-01
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -210,10 +210,7 @@ _reverter_biblioteca() {
 # Processa biblioteca offline
 # Executa em subshell para preservar o diretorio do chamador.
 _processar_biblioteca_offline() (
-    _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio %s\n" "${CFG_PORTALSAV}" >&2
-        return 1
-    }
+    _garantir_diretorio "${CFG_PORTALSAV}" criar "diretorio de recebimento" || return 1
     cd "$CFG_PORTALSAV" || return 1
 
     _definir_variaveis_biblioteca

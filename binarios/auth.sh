@@ -34,12 +34,11 @@ arquivo_tentativas="${CFG_DIR:-}/.tentativas_login"
 # CORREÇÃO CRÍTICA: Garantir que o arquivo .senhas existe antes de operar
 # Se não existir, criar com permissões restritas
 if [[ -n "${CFG_DIR:-}" ]]; then
-    # Criar diretório de configuração se não existir
+    # Criar diretório de configuração se não existir. Roda no source do modulo,
+    # depois de utils.sh: _garantir_diretorio valida o caminho e cria com a
+    # permissao correta num passo so.
     if [[ ! -d "${CFG_DIR}" ]]; then
-        if ! mkdir -p "${CFG_DIR}" 2>/dev/null; then
-            _erro "Não foi possível criar diretório de configuração: ${CFG_DIR}" >&2
-        else
-            chmod "${PERM_DIR_SECURE:-0700}" "${CFG_DIR}" 2>/dev/null || true
+        if _garantir_diretorio "${CFG_DIR}" criar "diretorio de configuracao"; then
             _log "Diretório de configuração criado: ${CFG_DIR}" "${LOG_ATU:-/dev/null}" || true
         fi
     fi

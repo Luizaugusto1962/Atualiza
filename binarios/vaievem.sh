@@ -7,11 +7,14 @@ set -euo pipefail
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced ANTES de
 # programas.sh (dono de ARQUIVOS_PROGRAMA; guard proprio nas funcoes que o
-# usam). Requer utils.sh (_ssh_aceitar_novo, _log*), principal.sh
-# (_criar_diretorio_seguro) e constantes.sh (DEFAULT_*).
+# usam). Requer utils.sh (_garantir_diretorio, _ssh_aceitar_novo, _log*),
+# principal.sh e constantes.sh (DEFAULT_*).
+#
+# _validar_caminho_seguro, _diretorio_protegido e _garantir_diretorio vivem em
+# utils.sh (bloco "CAMINHOS E DIRETORIOS"). Nao recriar aqui.
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026
+# Versao: 09/10/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -19,35 +22,6 @@ CHAVE="${DEFAULT_CHAVE_SSH:-}"
 # =============================================================================
 # VALIDACAO DE SEGURANCA (AGENTS.md: Validate and sanitize user input)
 # =============================================================================
-# Valida caminhos contra path traversal e injeção de caracteres especiais
-# Rejeita tambem raiz ("/", "//"): nenhum destino legitimo do SAV e a raiz
-# (paridade com _validar_diretorio_backup/_validar_diretorio_expurgavel).
-# Caminhos absolutos legitimos (/savisc/...) continuam aceitos.
-# Parametros: $1=caminho
-# Retorna: 0=seguro 1=inseguro
-_validar_caminho_seguro() {
-    local caminho="${1:-}"
-    local regex_perigoso=$'[;|&$`<>"\']'
-
-    if [[ -z "$caminho" || "$caminho" == "/" || "$caminho" == "//" ]]; then
-        return 1
-    fi
-    # Item 10: teto de tamanho. Sem ele um payload gigante atravessava todas as
-    # outras verificacoes e ainda seria interpolado em log/linha de comando.
-    if (( ${#caminho} > 4096 )); then
-        return 1
-    fi
-    # Caracteres de controle (inclui \n e \r) permitiriam forjar uma linha de log
-    # e quebrar entradas baseadas em linha.
-    if [[ "$caminho" == *[$'\001'-$'\037'$'\177']* ]]; then
-        return 1
-    fi
-    if [[ "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
-        return 1
-    fi
-    return 0
-}
-
 # Valida o par usuario@servidor usado nas origens/destinos SSH
 # (user@host:path). Complementa _validar_caminho_seguro, que cobre so o path.
 # Retorna: 0=valido 1=invalido (vazio, com espaco, metacaractere ou separador)
@@ -577,15 +551,10 @@ _baixar_biblioteca_sincroniza() {
 
     _log "Iniciando download da biblioteca: ${SAVATU:-}${VERSAO:-}"
 
-    # SEGURANCA: Validar diretorio de recebimento
-    if ! _validar_caminho_seguro "${CFG_PORTALSAV:-}"; then
-        _log_erro "Erro: Diretorio de recebimento invalido."
-        return 1
-    fi
-
-    # Garantir que o diretorio de recebimento exista (substitui o pushd:
-    # nao ha mais mudanca de cwd, os downloads usam destino absoluto).
-    if ! _criar_diretorio_seguro "${CFG_PORTALSAV:-}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+    # SEGURANCA: validar E criar o diretorio de recebimento num passo so
+    # (substitui o pushd: nao ha mais mudanca de cwd, os downloads usam
+    # destino absoluto).
+    if ! _garantir_diretorio "${CFG_PORTALSAV:-}" criar "diretorio de recebimento"; then
         _log_erro "Erro: Nao foi possivel acessar/criar diretorio: ${CFG_PORTALSAV:-}"
         return 1
     fi
@@ -758,15 +727,7 @@ _baixar_programas_vaievem() {
     local caminho="${1:-${CFG_PORTALSAV}}"
 
     # SEGURANCA: validar o diretorio de recebimento ANTES de cria-lo/usar
-    if ! _validar_caminho_seguro "${caminho:-}"; then
-        _erro "Diretorio de recebimento invalido: ${caminho}"
-        return 1
-    fi
-
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio de configuracao %s\n" "${caminho}" >&2
-        return 1
-    }
+    _garantir_diretorio "${caminho}" criar "diretorio de recebimento" || return 1
 
     # Guard set -u: vaievem.sh e carregado antes de programas.sh (onde o array
     # e declarado). Em runtime o array ja existe, mas o guard protege chamadas

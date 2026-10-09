@@ -68,50 +68,13 @@ _sanitizar_entrada() {
 # Cache da validacao do REBUILD (evita stat -x por arquivo no lote)
 _JUTIL_PRONTO=""
 
-# Valida e configura diretorio de backup para operacoes de limpeza
-# Retorna: 0 se valido, 1 se invalido
-_validar_diretorio_backup() {
-    local dir="${DEFAULT_BACKUP_DIR:-}"
-
-    if [[ -z "$dir" || "$dir" == "/" || "$dir" == "//" ]]; then
-        return 1
-    fi
-
-    if ! _validar_caminho_seguro "$dir"; then
-        return 1
-    fi
-
-    if [[ ! -d "$dir" ]]; then
-        return 1
-    fi
-
-    return 0
-}
-
-# Valida e configura diretorio de trabalho para operacoes de arquivos
-# Parametros: $1 - diretorio a validar (opcional, usa base_trabalho se nao fornecido)
-# Retorna: 0 se valido, 1 se invalido
-_validar_diretorio_trabalho() {
-    local dir="${1:-${base_trabalho:-}}"
-
-    if [[ -z "$dir" ]]; then
-        return 1
-    fi
-
-    if ! _validar_caminho_seguro "$dir"; then
-        return 1
-    fi
-
-    if [[ ! -d "$dir" ]]; then
-        return 1
-    fi
-
-    if [[ ! -r "$dir" || ! -w "$dir" ]]; then
-        return 1
-    fi
-
-    return 0
-}
+# Os tres validadores que este modulo tinha (_validar_diretorio_backup,
+# _validar_diretorio_trabalho e _validar_diretorio_expurgavel) foram unificados
+# em _garantir_diretorio (utils.sh), junto com os de baixar.sh, programas.sh,
+# backup.sh, biblioteca.sh, vaievem.sh e config.sh.
+#   _validar_diretorio_backup      -> _garantir_diretorio "$dir" validar
+#   _validar_diretorio_trabalho    -> _garantir_diretorio "$dir" validar_escrita
+#   _validar_diretorio_expurgavel  -> _garantir_diretorio "$dir" verificar
 
 #---------- FUNCOES DE LIMPEZA -----------------#
 
@@ -208,7 +171,7 @@ _executar_limpeza_temporarios() {
 
     # Limpar temporarios antigos do backup (validacao unica, reaproveitada abaixo)
     local backup_ok="0"
-    if _validar_diretorio_backup; then
+    if _garantir_diretorio "${DEFAULT_BACKUP_DIR}" validar "diretorio de backup" silencioso; then
         backup_ok="1"
         find "${DEFAULT_BACKUP_DIR}" -maxdepth 1 -type f -name "Temps*" -mtime +10 -delete 2>/dev/null || true
     else
@@ -345,7 +308,7 @@ _limpar_base_especifica() {
         return 1
     fi
 
-    if ! _validar_diretorio_trabalho "${caminho_base}"; then
+    if ! _garantir_diretorio "${caminho_base}" validar_escrita "diretorio de trabalho" silencioso; then
         _log "ERRO: diretorio invalido ou inacessivel: ${caminho_base}" "${LOG_LIMPA}"
         if (( automatico )); then
             return 1
@@ -379,7 +342,7 @@ _limpar_base_especifica() {
     elif [[ "${backup_ok}" == "0" ]]; then
         backup_valido=0
     else
-        if _validar_diretorio_backup; then
+        if _garantir_diretorio "${DEFAULT_BACKUP_DIR}" validar "diretorio de backup" silencioso; then
             backup_valido=1
         fi
     fi
@@ -697,7 +660,7 @@ fi
     _exibir_mensagem_centralizada "${VERMELHO}" "Recuperando todos os arquivos principais..."
     _linha "-" "${AMARELO}"
 
-    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+    if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _erro "Diretorio ${base_trabalho} nao existe ou e inacessivel"
         return 1
     fi
@@ -773,7 +736,7 @@ _recuperar_arquivo_individual() {
     local base_trabalho="${2:-}"
 
     # Validar nome do arquivo
-    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+    if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Diretorio de trabalho invalido."
         return 1
     fi
@@ -869,7 +832,7 @@ _executar_lista_arquivos() {
         return 0
     fi
 
-    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+    if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _erro "Diretorio de trabalho invalido: $base_trabalho"
         return 1
     fi
@@ -1095,7 +1058,7 @@ _recuperar_arquivos_principais() {
 
     # Usar valor padrão se base_trabalho estiver vazia
     base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
-    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+    if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _erro "Diretorio ${base_trabalho} nao encontrado ou inacessivel"
         return 1
     fi
@@ -1162,7 +1125,7 @@ _processar_lista_arquivos() {
     local base_trabalho="${2:-}"
     local caminho_arquivo
 
-    if ! _validar_diretorio_trabalho "$base_trabalho"; then
+    if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _erro "Diretorio de trabalho invalido: $base_trabalho"
         return 1
     fi
@@ -1804,17 +1767,6 @@ _receber_arquivo_avulso() {
 
 #---------- FUNCOES DE EXPURGO ----------#
 
-# Valida se um diretorio pode ser alvo de expurgo (nao vazio, nao raiz, caminho seguro)
-# Retorna: 0=seguro 1=inseguro
-_validar_diretorio_expurgavel() {
-    local diretorio="${1:-}"
-
-    if [[ -z "$diretorio" || "$diretorio" == "/" || "$diretorio" == "//" ]]; then
-        return 1
-    fi
-    _validar_caminho_seguro "$diretorio"
-}
-
 # Executa expurgador de arquivos antigos
 _executar_expurgador() {
     # Esta varredura de +30 dias repete os mesmos diretorios de
@@ -1857,7 +1809,7 @@ _executar_expurgador() {
     local -a pids_exp=()    # PIDs do expurgo (evita `wait` sem argumento esperar jobs alheios)
     local _pe
     for diretorio in "${diretorios_limpeza[@]}"; do
-        if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
+        if [[ -d "$diretorio" ]] && _garantir_diretorio "$diretorio" verificar "diretorio de expurgo" silencioso; then
             dirs_validos+=("$diretorio")
             dirs_status+=("1")
         else
@@ -1916,7 +1868,7 @@ _executar_expurgador() {
     local -a zips_validos=()
     local -a zips_status=()
     for diretorio in "${diretorios_zip[@]}"; do
-        if [[ -d "$diretorio" ]] && _validar_diretorio_expurgavel "$diretorio"; then
+        if [[ -d "$diretorio" ]] && _garantir_diretorio "$diretorio" verificar "diretorio de expurgo" silencioso; then
             zips_validos+=("$diretorio")
             zips_status+=("1")
         else
@@ -2005,7 +1957,7 @@ _executar_expurgador_lista_dirs() {
 
         diretorio="$linha"
 
-        if ! _validar_diretorio_expurgavel "$diretorio"; then
+        if ! _garantir_diretorio "$diretorio" verificar "diretorio de expurgo" silencioso; then
             _log "AVISO: diretorio invalido ou inseguro no limpadir, ignorado: $diretorio" "${LOG_LIMPA}"
             _exibir_mensagem_centralizada "${AMARELO}" "Diretorio invalido ou inseguro: $diretorio"
             continue

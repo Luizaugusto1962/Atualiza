@@ -6,7 +6,12 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-02
+# Versao: 09/10/2026-03
+#
+# DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
+# constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
+# _configurar_diretorios e auth.sh (no proprio source) chamam _garantir_diretorio.
+# Nao mover para depois de config.sh: a regra e so para frente.
 #
 # =============================================================================
 # Definição de variáveis globais
@@ -356,6 +361,206 @@ _offline_valido() {
 # Parametros: $1=contexto (rotulo do fluxo, ex.: "atualizacao de biblioteca")
 _offline_erro() {
     _erro "Valor invalido em 'offline': '${CFG_OFFLINE:-vazio}' (esperado 's' ou 'n')${1:+ - $1}"
+}
+
+#---------- CAMINHOS E DIRETORIOS ----------#
+
+# Valida caminhos contra path traversal e injecao de caracteres especiais
+# Rejeita tambem raiz ("/", "//"): nenhum destino legitimo do SAV e a raiz.
+# Caminhos absolutos legitimos (/savisc/...) continuam aceitos.
+# Parametros: $1=caminho
+# Retorna: 0=seguro 1=inseguro
+#
+# Vive em utils.sh (e nao em vaievem.sh) porque _garantir_diretorio, logo abaixo,
+# precisa dela para validar todo diretorio antes de criar/usar — e utils.sh
+# carrega ANTES de vaievem.sh, apontando para frente. Os consumidores antigos
+# (vaievem.sh, baixar.sh, arquivos.sh, backup.sh) seguem funcionando sem tocar
+# nos call sites, porque o nome nao mudou.
+_validar_caminho_seguro() {
+    local caminho="${1:-}"
+    local regex_perigoso=$'[;|&$`<>"\']'
+
+    if [[ -z "$caminho" || "$caminho" == "/" || "$caminho" == "//" ]]; then
+        return 1
+    fi
+    # Item 10: teto de tamanho. Sem ele um payload gigante atravessava todas as
+    # outras verificacoes e ainda seria interpolado em log/linha de comando.
+    if (( ${#caminho} > 4096 )); then
+        return 1
+    fi
+    # Caracteres de controle (inclui \n e \r) permitiriam forjar uma linha de log
+    # e quebrar entradas baseadas em linha.
+    if [[ "$caminho" == *[$'\001'-$'\037'$'\177']* ]]; then
+        return 1
+    fi
+    if [[ "$caminho" == *"/.."* || "$caminho" == ".."* || "$caminho" =~ $regex_perigoso ]]; then
+        return 1
+    fi
+    return 0
+}
+
+# Indica se um caminho e um diretorio COMPARTILHADO do sistema, que nunca pode
+# ser apagado pelo modo "recriar" de _garantir_diretorio.
+# Parametros: $1=caminho
+# Retorna: 0=protegido 1=livre para recriar
+#
+# AGENTS.md: CFG_PORTALSAV e diretorio compartilhado, nao area de rascunho de
+# uma operacao. Ele recebe backup offline pendente de envio, ZIP de biblioteca
+# aguardando processamento, ZIP de reversao e o pacote do self-update — um
+# `rm -rf` ali apaga material do usuario. A comparacao ignora a barra final
+# para que "${CFG_PORTALSAV}/" tambem bata com "${CFG_PORTALSAV}".
+_diretorio_protegido() {
+    local alvo="${1:-}"
+    local -a protegidos=(
+        "${CFG_DIR:-}" "${CFG_PORTALSAV:-}" "${SCRIPT_DIR:-}" "${LIBS_DIR:-}"
+        "${RAIZ:-}" "${DEFAULT_LOGS_DIR:-}" "${DEFAULT_BACKUP_DIR:-}"
+        "${DEFAULT_BASEBACKUP_DIR:-}" "${DEFAULT_BIBLIOTECA_DIR:-}"
+        "${DEFAULT_BIBLIOTECA_ATUAL_DIR:-}" "${DEFAULT_PROGS_DIR:-}"
+        "${DEFAULT_PROGS_ATUAL_DIR:-}" "${DEFAULT_ENVIA_DIR:-}"
+    )
+    local alvo_norm="${alvo%/}"
+    local p
+
+    if [[ -z "$alvo_norm" ]]; then
+        alvo_norm="/"
+    fi
+
+    for p in "${protegidos[@]}"; do
+        if [[ -n "$p" && "${p%/}" == "$alvo_norm" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Recusa de _garantir_diretorio. Modo silencioso: existe para os chamadores que
+# usam a funcao como PREDICADO (if _garantir_diretorio ...; then) e ja imprimem
+# sua propria mensagem com outro texto — sem isso a recusa apareceria duas vezes.
+# Parametros: $1=saida ("erro" ou "silencioso") $2..=mensagem
+_dir_recusa() {
+    local saida="${1:-erro}"
+    shift
+    if [[ "$saida" == "silencioso" ]]; then
+        return 0
+    fi
+    _erro "$@"
+}
+
+# Garante que um diretorio exista, esteja seguro e tenha a permissao correta.
+# UNICA porta de entrada para "criar/validar diretorio" em todo o sistema:
+# substitui _criar_diretorio_seguro (principal.sh), _validar_diretorio_backups
+# (programas.sh), _validar_diretorio_operacao (baixar.sh),
+# _validar_diretorio_backup/_validar_diretorio_trabalho/_validar_diretorio_expurgavel
+# (arquivos.sh) e os `mkdir -p` inline de auth.sh e backup.sh.
+#
+# Parametros: $1=caminho
+#             $2=modo (padrao "criar"):
+#                 "verificar"       = so valida o caminho; pode NAO existir
+#                 "validar"         = deve existir e ser diretorio legivel
+#                 "validar_escrita" = idem + precisa ser gravavel
+#                 "criar"           = cria (mkdir -p) se faltar e ajusta a permissao
+#                                      (SO no diretorio recem-criado)
+#                 "recriar"         = "criar" purgando antes (so area de operacao)
+#             $3=rotulo (opcional; usado nas mensagens de erro, padrao "diretorio")
+#             $4=saida ("erro" [padrao] ou "silencioso" — so codigo de retorno)
+# Retorna: 0=pode ser usado 1=recusado
+#
+# "verificar" existe para quem vai apagar um caminho que talvez nem exista
+# (limpeza da recepcao): o que importa ali e o caminho ser seguro, nao a
+# existencia. Usar "validar" nesses pontos faria a limpeza abortar.
+#
+# Modo "recriar" existe para staging/temporario: um run interrompido (Ctrl-C,
+# queda de energia) deixa o diretorio populado e o unzip sobrescreve SO o que
+# colide, entao um artefato velho remanescente passaria pela validacao e seria
+# instalado. Ele recusa qualquer caminho protegido por _diretorio_protegido.
+_garantir_diretorio() {
+    local caminho="${1:-}"
+    local modo="${2:-criar}"
+    local rotulo="${3:-diretorio}"
+    local saida="${4:-erro}"
+    local permissao="${PERM_DIR_SECURE:-0755}"
+
+    if [[ -z "$caminho" ]]; then
+        _dir_recusa "$saida" "Caminho do ${rotulo} nao informado."
+        return 1
+    fi
+
+    if ! _validar_caminho_seguro "$caminho"; then
+        _dir_recusa "$saida" "${rotulo} invalido ou inseguro: ${caminho}"
+        return 1
+    fi
+
+    # Modo desconhecido e erro de programacao, nao caminho ruim: falhar aqui
+    # evita que um typo no nome do modo caia silenciosamente no `criar`.
+    case "$modo" in
+        verificar | validar | validar_escrita | criar | recriar) ;;
+        *)
+            _dir_recusa "$saida" "Modo '${modo}' desconhecido ao garantir o ${rotulo}: ${caminho}"
+            return 1
+            ;;
+    esac
+
+    # So a checagem de caminho: o diretorio pode nao existir.
+    if [[ "$modo" == "verificar" ]]; then
+        return 0
+    fi
+
+    # O modo "recriar" age ANTES do tratamento de "ja existe": e o unico modo
+    # que apaga um diretorio pre-existente, e o `if [[ -e ]]` logo abaixo
+    # devolveria 0 sem nunca chegar no purge — o staging recreated conservaria o
+    # artefato velho que a operacao existe para descartar.
+    if [[ "$modo" == "recriar" ]]; then
+        if _diretorio_protegido "$caminho"; then
+            _dir_recusa "$saida" "Recusando recriar o diretorio compartilhado: ${caminho}"
+            return 1
+        fi
+        # Nunca apagar um arquivo para "virar" diretorio: perda de dados
+        # silenciosa e pior do que abortar a operacao.
+        if [[ -e "$caminho" && ! -d "$caminho" ]]; then
+            _dir_recusa "$saida" "${rotulo}: o caminho existe e nao e diretorio: ${caminho}"
+            return 1
+        fi
+        rm -rf -- "$caminho" 2>/dev/null || true
+    fi
+
+    if [[ -e "$caminho" ]]; then
+        if [[ ! -d "$caminho" ]]; then
+            _dir_recusa "$saida" "${rotulo}: o caminho existe e nao e diretorio: ${caminho}"
+            return 1
+        fi
+        if [[ ! -r "$caminho" ]]; then
+            _dir_recusa "$saida" "${rotulo}: sem permissao de leitura: ${caminho}"
+            return 1
+        fi
+        if [[ "$modo" == "validar_escrita" && ! -w "$caminho" ]]; then
+            _dir_recusa "$saida" "${rotulo}: sem permissao de gravacao: ${caminho}"
+            return 1
+        fi
+        # Diretorio pre-existente: NAO e reapermissonado. Quem instalou pode ter
+        # escolhido a permissao de proposito (ponto de montagem, volume
+        # compartilhado, diretorio de outro dono) e um chmod 0755 here sobrescreve
+        # essa decisao em silencio. O modo "criar" so ajusta a permissao no
+        # diretorio que ele proprio acabou de criar.
+        return 0
+    fi
+
+    # Nao existe e o modo exige que existisse.
+    if [[ "$modo" == "validar" || "$modo" == "validar_escrita" ]]; then
+        _dir_recusa "$saida" "${rotulo} nao encontrado: ${caminho}"
+        return 1
+    fi
+
+    if ! mkdir -p -- "$caminho" 2>/dev/null; then
+        _dir_recusa "$saida" "Nao foi possivel criar o ${rotulo}: ${caminho}"
+        return 1
+    fi
+
+    if ! chmod "$permissao" "$caminho" 2>/dev/null; then
+        _dir_recusa "$saida" "Nao foi possivel ajustar permissao no ${rotulo}: ${caminho}"
+        return 1
+    fi
+
+    return 0
 }
 
 # SEGURANCA: valida as entradas de um pacote (.zip ou .tar.gz) contra path

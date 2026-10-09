@@ -6,7 +6,10 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026-01
+# Versao: 09/10/2026-02
+#
+# DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
+# utils.sh, de onde vem _garantir_diretorio usado por _configurar_diretorios.
 
 # =============================================================================
 # VARIAVEIS GLOBAIS PRIMITIVAS (fallback se nao definidas em constantes.sh)
@@ -263,11 +266,9 @@ _configurar_diretorios() {
         return 1
     fi
 
-    _criar_diretorio_seguro "${CFG_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio de configuracao %s\n" "${CFG_DIR}" >&2
-        return 1
-    }
-#  Lista de diretorios a serem criados com seguranca
+    _garantir_diretorio "${CFG_DIR}" criar "diretorio de configuracao" || return 1
+
+    #  Lista de diretorios a serem criados com seguranca
     local dirs=(
                "${DEFAULT_LOGS_DIR}"
                "${DEFAULT_BACKUP_DIR}"
@@ -282,10 +283,7 @@ _configurar_diretorios() {
 
     local dir
     for dir in "${dirs[@]}"; do
-        _criar_diretorio_seguro "${dir}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-            _erro "Ao criar diretorio %s\n" "${dir}" >&2
-            return 1
-        }
+        _garantir_diretorio "${dir}" criar "diretorio de configuracao" || return 1
     done
 }
 

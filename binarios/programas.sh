@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-02
+# Versao: 09/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -536,7 +536,7 @@ _validar_pre_requisitos_atualizacao() {
     fi
 
     # SEGURANCA: Validar diretorio de backups antes de qualquer operacao
-    if ! _validar_diretorio_backups; then
+    if ! _garantir_diretorio "${DEFAULT_PROGS_DIR}" criar "diretorio de backups"; then
         _erro "OPERACAO ABORTADA: Impossivel garantir integridade de backups"
         return 1
     fi
@@ -604,8 +604,9 @@ _processar_atualizacao_programas() {
     # passaria a ignorar este diretorio. O nome da local continua sendo
     # dir_temp_atualizacao porque _cleanupAtualizacao a le por escopo dinamico.
     local dir_temp_atualizacao="${CFG_PORTALSAV}/${ATU_DIR_TEMP}"
-    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
-    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+    # "recriar" purga antes: um run interrompido deixa o temporario populado e o
+    # unzip sobrescreveria so o que colide, reaproveitando um artefato velho.
+    if ! _garantir_diretorio "${dir_temp_atualizacao}" recriar "diretorio temporario"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
         _cleanupAtualizacao
         return 1
@@ -711,8 +712,9 @@ _processar_atualizacao_pacotes() {
     # Ver _processar_atualizacao_programas: o nome vem de ATU_DIR_TEMP, e nao
     # de um literal repetido.
     local dir_temp_atualizacao="${CFG_PORTALSAV}/${ATU_DIR_TEMP}"
-    rm -rf "${dir_temp_atualizacao}" 2>/dev/null || true
-    if ! _criar_diretorio_seguro "${dir_temp_atualizacao}" "${PERM_DIR_SECURE}" "${LOG_ATU}"; then
+    # "recriar" purga antes: um run interrompido deixa o temporario populado e o
+    # unzip sobrescreveria so o que colide, reaproveitando um artefato velho.
+    if ! _garantir_diretorio "${dir_temp_atualizacao}" recriar "diretorio temporario"; then
         _erro "Falha ao criar diretorio temporario ${dir_temp_atualizacao}" >&2
         _cleanupAtualizacao
         return 1
@@ -833,10 +835,7 @@ _processar_atualizacao_pacotes() {
 
 # Processa reversao de programas
 _processar_reversao_programas() {
-    _criar_diretorio_seguro "${CFG_PORTALSAV}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Erro ao criar diretorio de configuracao ${CFG_PORTALSAV}" >&2
-        return 1
-    }
+    _garantir_diretorio "${CFG_PORTALSAV}" criar "diretorio de recebimento" || return 1
 
     local programa_indice programa arquivo_origem arquivo_anterior arquivo_destino
     for programa_indice in "${!PROGRAMAS_SELECIONADOS[@]}"; do
@@ -877,15 +876,6 @@ _processar_reversao_programas() {
 }
 
 #---------- FUNCOES AUXILIARES ----------#
-
-# Valida e cria diretorio de backups se nao existir
-_validar_diretorio_backups() {
-    local caminho="${1:-${DEFAULT_PROGS_DIR}}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Erro ao criar diretorio de configuracao ${caminho}" >&2
-        return 1
-    }
-}
 
 # Valida integridade de arquivo de backup
 # Parametros: $1=arquivo_backup
@@ -1062,12 +1052,7 @@ _mover_arquivos_extraidos() {
 # Reutilizado por _processar_atualizacao_programas e _processar_atualizacao_pacotes
 # Retorna: 0 sucesso, 1 falha (apenas se o diretorio nao puder ser criado)
 _arquivar_zips_progs_dir() {
-    if [[ ! -d "${DEFAULT_PROGS_ATUAL_DIR}" ]]; then
-        _criar_diretorio_seguro "${DEFAULT_PROGS_ATUAL_DIR}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-            _erro "Falha ao criar diretorio de programas ${DEFAULT_PROGS_ATUAL_DIR}" >&2
-            return 1
-        }
-    fi
+    _garantir_diretorio "${DEFAULT_PROGS_ATUAL_DIR}" criar "diretorio de programas" || return 1
     local arquivo
     for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
         local backup_file="${arquivo%.zip}.bkp"

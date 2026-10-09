@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-01
+# Versao: 09/10/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -775,8 +775,7 @@ _rotacionar_arquivos_base() {
         return 0
     fi
 
-    if ! mkdir -p "$backup_dir" 2>/dev/null; then
-        _aviso "Nao foi possivel criar diretorio de rotacao: $backup_dir"
+    if ! _garantir_diretorio "$backup_dir" criar "diretorio de rotacao"; then
         return 1
     fi
 
@@ -1059,18 +1058,12 @@ _mover_backup_offline() {
         return 1
     fi
 
-    # SEGURANCA: Validar diretorio de destino contra path traversal e injecao
-    if ! _validar_caminho_seguro "${CFG_PORTALSAV}"; then
-        _erro "Diretorio offline invalido ou malicioso: ${CFG_PORTALSAV}"
+    # SEGURANCA: Validar diretorio de destino contra path traversal e injecao,
+# garantindo que ele exista antes de mover o backup para la.
+    if ! _garantir_diretorio "${CFG_PORTALSAV}" criar "diretorio offline"; then
         _aguardar_tecla
         return 1
     fi
-
-    local caminho="${CFG_PORTALSAV}"
-    _criar_diretorio_seguro "${caminho}" "${PERM_DIR_SECURE}" "${LOG_ATU}" || {
-        _erro "Ao criar diretorio de configuracao %s" "${caminho}"
-        return 1
-    }
 
     if mv -f -- "${DEFAULT_BASEBACKUP_DIR}/${nome_backup}" "$CFG_PORTALSAV"; then
         _exibir_mensagem_centralizada "${VERDE}" "Backup movido para: ${CFG_PORTALSAV}"
