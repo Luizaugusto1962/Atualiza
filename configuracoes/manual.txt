@@ -393,7 +393,9 @@ OPCOES DISPONIVEIS:
        (backup_biblioteca_antes_da_versao-<VERSAO>.tar.gz
         ou .zip)
     3. Escolha entre reverter todos os programas ou apenas
-       um programa especifico
+       programas especificos
+    4. Na opcao por programa, informe um ou mais nomes em MAIUSCULO
+       separados por espaco ou virgula (ex.: VENDPROD VENDCAD,CLIENTES)
 
 QUANDO ATUALIZAR A BIBLIOTECA:
 ---------------------------------------------------------------

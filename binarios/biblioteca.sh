@@ -6,11 +6,16 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-02
+# Versao: 08/10/2026-03
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
 declare LISTA_ARQUIVOS_BIBLIOTECA=""                # Lista de arquivos, separada por espaco
+
+# Teto de programas aceitos na reversao individual. A entrada virou lista
+# (espaco/virgula/ponto-e-virgula) e cada nome vira um argumento do
+# --wildcards do tar: sem teto, uma linha colada viraria command line enorme.
+declare MAX_PROGRAMAS_REVERTER="${MAX_PROGRAMAS_REVERTER:-20}"
 
 # Funcao de cleanup em caso de interrupcao
 _limpar_interrupcao() {
@@ -308,15 +313,28 @@ _processar_atualizacao_biblioteca() {
     _linha
     _aguardar 1
 
-    # Remover backup temporario se existir
-    rm -f -- "${arquivo_backup_tar}" "${caminho_backup_final}"
+    # Remove SO o .tar parcial de uma execucao anterior. O .tar.gz (o backup que
+    # o usuario usa para voltar) fica no disco ate o gzip sobrescrever: se a
+    # compactacao falhar, a biblioteca ainda tem ponto de volta.
+    rm -f -- "${arquivo_backup_tar}"
 
-    # Compactacao de E_EXEC + T_TELAS em uma unica passada
+    # Compactacao de E_EXEC + T_TELAS em uma unica passada.
+    #
+    # ESCOPO: o backup leva SOMENTE os dois diretorios da configuracao
+    # (em producao /u/sav/classes e /u/sav/tel_isc). A pasta acima deles - a
+    # anterior ao /classes - tambem contem o programa, o portal de atualizacao,
+    # o savisc e as demais bases; varrer a arvore inteira ali traria arquivos
+    # que nao sao da biblioteca. Para incluir outra pasta da biblioteca, acrescente
+    # um find nesta lista (com o filtro de extensao certo), e nao a subtree.
+    #
     # (lista via stdin evita a regravacao incremental do tar -rf por lote)
     {
         {
-            "${DEFAULT_FIND}" "${E_EXEC}/" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -print0
-            "${DEFAULT_FIND}" "${T_TELAS}/" -type f -iname "*.TEL" -print0
+            # find devolve 1 em "Permission denied" numa subpasta e ainda assim
+            # entrega a lista util; quem decide o sucesso e o tar (logo abaixo).
+            # O stderr vai para o log para nao rabiscar a barra de progresso.
+            "${DEFAULT_FIND}" "${E_EXEC}/" -type f \( -iname "*.class" -o -iname "*.jpg" -o -iname "*.png" -o -iname "brw*.*" -o -iname "*." -o -iname "*.dll" \) -print0 2>>"${LOG_ATU}" || true
+            "${DEFAULT_FIND}" "${T_TELAS}/" -type f -iname "*.TEL" -print0 2>>"${LOG_ATU}" || true
         } | "${DEFAULT_TAR}" --null -cf "${arquivo_backup_tar}" -T - >>"${LOG_ATU}" 2>&1
     } &
     local pid_tar_exec=$!
@@ -326,6 +344,19 @@ _processar_atualizacao_biblioteca() {
         for _p in "${pids[@]}"; do [[ "$_p" != "$pid_tar_exec" ]] && novos+=("$_p"); done
         pids=("${novos[@]+"${novos[@]}"}")
         ((contador++)) || true
+
+        # Guarda: tar criado e vazio nao pode virar backup. Sem ela, um E_EXEC
+        # apagado ou trocado no .config deixaria a biblioteca atual
+        # sobrescrita sem nenhuma volta possivel.
+        local _primeiro_membro
+        _primeiro_membro=$("${DEFAULT_TAR}" -tf "${arquivo_backup_tar}" 2>>"${LOG_ATU}" | head -n 1) || true
+        if [[ -z "$_primeiro_membro" ]]; then
+            _erro "Backup vazio: nenhum arquivo encontrado em ${E_EXEC} nem em ${T_TELAS}"
+            _aviso "Confira se E_EXEC e T_TELAS apontam para os diretorios certos no .config"
+            _aguardar 2
+            return 1
+        fi
+
         _ok "Compactacao de $E_EXEC e $T_TELAS concluida"
         _linha
     else
@@ -495,20 +526,31 @@ _executar_atualizacao_biblioteca() {
 
 #---------- FUNCOES DE REVERSAO ----------#
 # Extrai backup completo ou seletivo na raiz, preservando suporte TAR.GZ e ZIP.
-# Uso: _extrair_backup_biblioteca <arquivo_backup> <destino> [padrao]
+# Uso: _extrair_backup_biblioteca <arquivo_backup> <destino> [padrao ...]
+#
+# Aceita VARIOS padroes: a reversao individual restaura mais de um programa por
+# vez e cada nome vira um argumento (--wildcards no tar, filtro de nome no
+# unzip). Sem padrao, extrai o backup inteiro.
 _extrair_backup_biblioteca() {
     local arquivo_backup="${1:-}"
     local destino="${2:-}"
-    local padrao="${3:-}"
+    # Os padroes sao os argumentos a partir do terceiro; com menos de dois
+    # argumentos nao ha padrao (restauracao completa).
+    if (( $# >= 2 )); then
+        shift 2
+    else
+        shift $#
+    fi
+    local -a padroes=("$@")
 
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        if [[ -n "$padrao" ]]; then
-            "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "$destino" --wildcards "$padrao" >>"${LOG_ATU}" 2>&1
+        if (( ${#padroes[@]} > 0 )); then
+            "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "$destino" --wildcards "${padroes[@]}" >>"${LOG_ATU}" 2>&1
         else
             "${DEFAULT_TAR}" -xzf "$arquivo_backup" -C "$destino" >>"${LOG_ATU}" 2>&1
         fi
-    elif [[ -n "$padrao" ]]; then
-        "${DEFAULT_UNZIP}" -o "$arquivo_backup" "$padrao" -d "$destino" >>"${LOG_ATU}" 2>&1
+    elif (( ${#padroes[@]} > 0 )); then
+        "${DEFAULT_UNZIP}" -o "$arquivo_backup" "${padroes[@]}" -d "$destino" >>"${LOG_ATU}" 2>&1
     else
         "${DEFAULT_UNZIP}" -o "$arquivo_backup" -d "$destino" >>"${LOG_ATU}" 2>&1
     fi
@@ -529,8 +571,13 @@ _reverter_biblioteca_completa() {
     fi
 
     local temp_restore="/"
-    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
+    # O backup cobre os dois diretorios da configuracao (producao:
+    # /u/sav/classes e /u/sav/tel_isc) e volta tudo de uma vez. Extrai na raiz
+    # porque o tar remove a barra inicial do nome do membro e o caminho guardado
+    # so casa com "/".
     _exibir_mensagem_centralizada "${AMARELO}" "Voltando backup anterior (TAR)..."
+    _linha
+    _aviso "Restaurando todos os programas de ${E_EXEC} e ${T_TELAS}"
     _linha
 
     if ! _extrair_backup_biblioteca "$arquivo_backup" "$temp_restore"; then
@@ -543,10 +590,15 @@ _reverter_biblioteca_completa() {
     _aguardar_tecla
 }
 
-# Reverte programa especifico da biblioteca
+# Reverte programa(s) especifico(s) da biblioteca
+#
+# Aceita MAIS DE UM programa na mesma volta, separados por espaco, virgula ou
+# ponto e virgula ("VENDPROD VENDCAD,CLIENTES"). Todos entram em uma unica
+# leitura do backup, cada nome virando um argumento do --wildcards do tar.
+# Parametros: $1=arquivo_backup
 _reverter_programa_especifico_biblioteca() {
     local arquivo_backup="${1:-}"
-    local programa_reverter
+    local entrada_programas
     local temp_restore="/"
 
     if [[ ! -r "$arquivo_backup" ]]; then
@@ -559,37 +611,117 @@ _reverter_programa_especifico_biblioteca() {
         _aguardar_tecla
         return 1
     fi
-    # Extrai na raiz pois o backup contem caminhos absolutos (E_EXEC, T_TELAS)
-    read -rp "${AMARELO}Informe o nome do programa em MAIÚSCULO: ${NORMAL}" programa_reverter
+    # Extrai na raiz porque o backup guarda os caminhos de E_EXEC e T_TELAS
+    # (producao: /u/sav/classes e /u/sav/tel_isc).
+    read -rp "${AMARELO}Informe o(s) programa(s) em MAIUSCULO, separados por espaco ou virgula: ${NORMAL}" entrada_programas
 
-    if ! _validar_nome_programa "${programa_reverter}"; then
-        _erro "Nome do programa invalido. Use apenas letras maiusculas e numeros."
+    # read -a fatia por IFS SEM expansao de pathname: um "*" colado na entrada
+    # nao vira a lista do diretorio de trabalho.
+    local -a entradas=()
+    IFS=$' \t,;' read -r -a entradas <<< "${entrada_programas}"
+
+    local -a programas=()
+    local _nome
+    for _nome in ${entradas[@]+"${entradas[@]}"}; do
+        _nome="${_nome^^}"
+        if ! _validar_nome_programa "$_nome"; then
+            _erro "Nome de programa invalido: ${_nome}. Use apenas letras maiusculas e numeros."
+            _aguardar_tecla
+            return 1
+        fi
+        programas+=("$_nome")
+    done
+
+    if (( ${#programas[@]} == 0 )); then
+        _erro "Nenhum programa informado"
+        _aguardar_tecla
+        return 1
+    fi
+
+    if (( ${#programas[@]} > MAX_PROGRAMAS_REVERTER )); then
+        _erro "Informe no maximo ${MAX_PROGRAMAS_REVERTER} programas por vez (informados: ${#programas[@]})"
         _aguardar_tecla
         return 1
     fi
 
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Voltando versao anterior do programa ${programa_reverter} (TAR)..."
+    _exibir_mensagem_centralizada "${AMARELO}" "Voltando versao anterior de ${#programas[@]} programa(s) (TAR)..."
     _linha
 
-    local padrao
+    # Confere os nomes no indice do backup antes de extrair: o tar devolve 0
+    # mesmo sem extrair nenhum membro, entao sem esta checagem um nome
+    # digitado errado terminava em "Volta Concluida" sem ter restaurado nada.
+    local _membros
+    _membros="$(_listar_entradas_backup "$arquivo_backup")" || _membros=""
+
+    local -a programas_ok=()
+    local -a programas_ausentes=()
+    for _nome in "${programas[@]}"; do
+        if [[ -n "$_membros" ]] && grep -qF -- "${_nome}" <<<"${_membros}"; then
+            programas_ok+=("$_nome")
+        else
+            programas_ausentes+=("$_nome")
+        fi
+    done
+
+    if (( ${#programas_ausentes[@]} > 0 )); then
+        _exibir_mensagem_centralizada "${AMARELO}" "Nao encontrado(s) no backup: ${programas_ausentes[*]}"
+        _linha
+    fi
+
+    if (( ${#programas_ok[@]} == 0 )); then
+        _erro "Nenhum dos programas informados existe neste backup"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # Padroes: o nome casa em qualquer das pastas do backup (classes e telas).
+    # O prefixo por barra do ZIP legado foi mantido - ele tambem casa com o
+    # nome do membro gravado sem caminho.
+    local -a padroes=()
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        padrao="*${programa_reverter}*"
+        for _nome in "${programas_ok[@]}"; do
+            padroes+=("*${_nome}*")
+        done
     else
-        padrao="*/${programa_reverter}*"
+        for _nome in "${programas_ok[@]}"; do
+            padroes+=("*/${_nome}*")
+        done
     fi
 
-    if ! _extrair_backup_biblioteca "$arquivo_backup" "$temp_restore" "$padrao"; then
-        _erro "Ao descompactar programa ${programa_reverter}"
+    if ! _extrair_backup_biblioteca "$arquivo_backup" "$temp_restore" "${padroes[@]}"; then
+        _erro "Ao descompactar programa(s) ${programas_ok[*]}"
         _aguardar_tecla
         return 1
     fi
 
+    _log "Reversao de biblioteca: ${programas_ok[*]} restaurado(s) de ${arquivo_backup##*/}" "${LOG_ATU}"
     _aviso "Volta do Programa Concluida"
     _aguardar_tecla
 }
 
 #---------- FUNCOES AUXILIARES ----------#
+# Lista os membros de um backup (TAR.GZ ou ZIP) sem extrair nada.
+# Uso: _listar_entradas_backup <arquivo_backup>
+# Retorna: 0 com a lista em stdout; 1 se o backup nao pode ser lido.
+#
+# utils.sh tem a variante que VALIDA as entradas
+# (_validar_backup_entradas_seguras); aqui a lista volta para o chamador
+# conferir se o programa pedido existe no backup antes de extrair.
+_listar_entradas_backup() {
+    local arquivo_backup="${1:-}"
+
+    if [[ -z "$arquivo_backup" || ! -r "$arquivo_backup" ]]; then
+        return 1
+    fi
+
+    if [[ "$arquivo_backup" == *.tar.gz ]]; then
+        "${DEFAULT_TAR}" -tzf "$arquivo_backup" 2>/dev/null
+    else
+        "${DEFAULT_UNZIP}" -Z1 "$arquivo_backup" 2>/dev/null
+    fi
+}
+
 # Valida versao numerica antes de usa-la em nomes de arquivos, caminhos ou .versao.
 # Retorna 0 para uma sequencia nao vazia de digitos; 1 nos demais casos.
 _validar_versao_biblioteca() {

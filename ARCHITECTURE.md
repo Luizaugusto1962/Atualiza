@@ -145,8 +145,8 @@ Portões hoje:
 
 | Portão | Cobre | Estado |
 |---|---|---|
-| `biblioteca.sh:_salvar_atualizacao_biblioteca` (`biblioteca.sh:282`) | os 3 fluxos de update de biblioteca | adicionado em `ea2fe57` |
-| `biblioteca.sh:525` / `:557` (`_reverter_*`) | reversão, extrai em `/` | pré-existente |
+| `biblioteca.sh:_salvar_atualizacao_biblioteca` | os 3 fluxos de update de biblioteca | adicionado em `ea2fe57` |
+| `biblioteca.sh:_reverter_biblioteca_completa` / `:_reverter_programa_especifico_biblioteca` | reversão, extrai em `/` | pré-existente |
 | `programas.sh:_validar_pre_requisitos_atualizacao` (`programas.sh:578`) | update de programas e de pacotes | adicionado em `029be9b` |
 
 > **Restrição e exceção.** `AGENTS.md` proíbe alterar fluxo/saída/arquivos de
