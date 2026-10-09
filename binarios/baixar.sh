@@ -758,7 +758,7 @@ _atualizar_online() {
 }
 
 _atualizar_offline() {
-    local temp_dir="${CFG_PORTALSAV%/}/${ATU_DIR_TEMP}"
+    local temp_dir="${CFG_PORTALSAV%/}"
     local arquivo_zip="${ARQUIVO_ZIP_ATU}"
 
     # SEGURANCA: validar diretorio temporario antes de operar (existe, e diretorio legivel)
