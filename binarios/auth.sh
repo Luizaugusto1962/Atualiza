@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 07/10/2026-03
+# Versao: 15/10/2026-03
 # Autor: Luiz Augusto
 #
 # =============================================================================
@@ -42,7 +42,7 @@ if [[ -n "${CFG_DIR:-}" ]]; then
             _log "Diretório de configuração criado: ${CFG_DIR}" "${LOG_ATU:-/dev/null}" || true
         fi
     fi
-    
+
     # Criar arquivo de senhas se não existir
     if [[ ! -f "$arquivo_senhas" ]]; then
         if touch "$arquivo_senhas" 2>/dev/null; then
@@ -144,7 +144,7 @@ _hash_senha() {
         _erro "Algoritmo de hash '%s' nao encontrado." "$algoritmo" >&2
         return 1
     fi
-    
+
     local salt
     if [[ -n "$salt_existente" ]]; then
         salt="$salt_existente"
@@ -159,10 +159,10 @@ _hash_senha() {
             salt=$(printf '%016x' "$RANDOM$RANDOM$RANDOM$RANDOM")
         fi
     fi
-    
+
     local hash
     hash=$(printf '%s%s' "$salt" "$senha" | "$algoritmo" | cut -d' ' -f1)
-    
+
     printf '%s$%s$%s' "$algoritmo" "$salt" "$hash"
 }
 
@@ -234,18 +234,18 @@ _hash_tem_salt() {
 _verificar_bloqueio_usuario() {
     local usuario="${1:-}"
     local tempo_bloqueio="${C_BLOQUEIO_LOGIN:-300}"
-    
+
     [[ -z "$usuario" ]] && return 0
     [[ ! -f "$arquivo_tentativas" ]] && return 0
-    
+
     local linha
     linha=$(awk -F: -v u="$usuario" '$1 == u {print $2 "|" $3; exit}' "$arquivo_tentativas" 2>/dev/null) || true
     [[ -z "$linha" ]] && return 0
-    
+
     local tentativas timestamp_bloqueio
     tentativas="${linha%%|*}"
     timestamp_bloqueio="${linha##*|}"
-    
+
     # O arquivo e do usuario dono, entao os campos podem vir corrompidos ou
     # adulterados. Sem esta guarda, `(( tentativas >= ... ))` com texto
     # disparava "unbound variable" e o set -e derrubava a tela de login.
@@ -253,14 +253,14 @@ _verificar_bloqueio_usuario() {
         _remover_registro_tentativas "$usuario"
         return 0
     fi
-    
+
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
-    
+
     if (( tentativas >= max_tentativas )); then
         local agora
         agora=$(date +%s)
         local tempo_decorrido=$((agora - timestamp_bloqueio))
-        
+
         if (( tempo_decorrido < tempo_bloqueio )); then
             local tempo_restante=$((tempo_bloqueio - tempo_decorrido))
             local minutos=$((tempo_restante / 60))
@@ -273,7 +273,7 @@ _verificar_bloqueio_usuario() {
             return 0
         fi
     fi
-    
+
     return 0
 }
 
@@ -281,17 +281,17 @@ _verificar_bloqueio_usuario() {
 _registrar_tentativa_falha() {
     local usuario="${1:-}"
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
-    
+
     [[ -z "$usuario" ]] && return 0
-    
+
     if [[ ! -f "$arquivo_tentativas" ]]; then
         touch "$arquivo_tentativas" 2>/dev/null || return 0
         chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_tentativas" 2>/dev/null || true
     fi
-    
+
     local agora
     agora=$(date +%s)
-    
+
     # O teste de existencia precisa do mesmo padrao usado em _usuario_existe:
     # `exit 0` no corpo do awk dispara o END, e `END {exit 1}` sobrescreve o
     # status — o ramo de incremento nunca era alcancado e cada falha gerava
@@ -319,13 +319,13 @@ _registrar_tentativa_falha() {
         }
         { print }
         ' "$arquivo_tentativas" > "$tmp_tent"
-        
+
         mv -f "$tmp_tent" "$arquivo_tentativas" 2>/dev/null || rm -f -- "$tmp_tent"
         trap - RETURN
     else
         printf '%s:%s:%s\n' "$usuario" "1" "$agora" >> "$arquivo_tentativas" 2>/dev/null || true
     fi
-    
+
     chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_tentativas" 2>/dev/null || true
 }
 
@@ -334,11 +334,11 @@ _remover_registro_tentativas() {
     local usuario="${1:-}"
     [[ -z "$usuario" ]] && return 0
     [[ ! -f "$arquivo_tentativas" ]] && return 0
-    
+
     local tmp_tent
     tmp_tent=$(mktemp) || return 0
     trap 'rm -f -- "$tmp_tent"' RETURN
-    
+
     awk -F: -v u="$usuario" '$1 != u' "$arquivo_tentativas" > "$tmp_tent"
     mv -f "$tmp_tent" "$arquivo_tentativas" 2>/dev/null || rm -f -- "$tmp_tent"
     trap - RETURN
@@ -360,13 +360,13 @@ _forcar_reset_senha_legado() {
     _exibir_mensagem_centralizada "${AMARELO}" "Sua senha precisa ser atualizada por motivos de seguranca."
     _exibir_mensagem_centralizada "${CIANO}" "Por favor, defina uma nova senha."
     _linha
-    
+
     local nova_senha confirm_senha hash_nova
     # Teto de tentativas: sem ele, um `read` que falha (stdin fechada, pipe
     # sem dados) mantinha a senha vazia e o while girava para sempre.
     local tentativas_reset="${MAX_LOGIN_ATTEMPTS:-3}"
     local rodada=0
-    
+
     while (( rodada < tentativas_reset )); do
         ((rodada++)) || true
         read -rsp "${AMARELO}Digite a nova senha: ${NORMAL}" nova_senha || {
@@ -379,26 +379,26 @@ _forcar_reset_senha_legado() {
             return 1
         }
         printf "\n"
-        
+
         if [[ -z "$nova_senha" ]]; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Senha nao pode ser vazia."
             continue
         fi
-        
+
         if [[ "$nova_senha" != "$confirm_senha" ]]; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Senhas nao coincidem."
             continue
         fi
-        
+
         hash_nova=$(_hash_senha "$nova_senha") || return 1
-        
+
         local tmp_senhas
         tmp_senhas=$(mktemp) || {
             _exibir_mensagem_centralizada "${VERMELHO}" "Erro ao criar arquivo temporario."
             return 1
         }
         trap 'rm -f -- "$tmp_senhas"' RETURN
-        
+
         while IFS= read -r linha || [[ -n "$linha" ]]; do
             if [[ "$linha" == "${usuario}:"* ]]; then
                 printf '%s:%s\n' "${usuario}" "${hash_nova}"
@@ -406,7 +406,7 @@ _forcar_reset_senha_legado() {
                 printf '%s\n' "$linha"
             fi
         done < "$arquivo_senhas" > "$tmp_senhas"
-        
+
         if mv -f "$tmp_senhas" "$arquivo_senhas"; then
             chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_senhas" 2>/dev/null || true
             trap - RETURN
@@ -420,7 +420,7 @@ _forcar_reset_senha_legado() {
             return 1
         fi
     done
-    
+
     _exibir_mensagem_centralizada "${VERMELHO}" "Numero maximo de tentativas excedido."
     return 1
 }
@@ -432,7 +432,7 @@ _forcar_reset_senha_legado() {
 # Funcao para cadastrar usuario
 _cadastrar_usuario() {
     local usuario senha senha_confirm resumo_senha
-    
+
     # CORREÇÃO: Verificar se o arquivo de senhas existe, criar se necessário
     if [[ ! -f "$arquivo_senhas" ]]; then
         if [[ -n "${CFG_DIR:-}" && -d "${CFG_DIR}" ]]; then
@@ -447,7 +447,7 @@ _cadastrar_usuario() {
             return 1
         fi
     fi
-    
+
     _exibir_mensagem_centralizada "${VERMELHO}" "Cadastro de Usuario"
     _meia_linha "=" "${VERMELHO}"
     read -rp "${AMARELO}Digite o nome do usuario: ${NORMAL}" usuario
@@ -514,9 +514,13 @@ _mostrar_boas_vindas() {
     _exibir_separador_menu
     printf "\n"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
+    printf "\n"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Empresa: ${BRANCO}${CFG_EMPRESA:-N/A}${NORMAL}"
+    printf "\n"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Iscobol: ${BRANCO}${CFG_VERSAOCLASS}${NORMAL}"
+    printf "\n"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Versao Atualizacao: ${BRANCO}${UPDATE:-N/A}${NORMAL}"
+    printf "\n"
     _exibir_separador_menu
     if [[ -n "$usuario_anterior" && -n "$data_hora_anterior" ]]; then
         _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Ultimo Acesso: ${BRANCO}${usuario_anterior} - ${data_hora_anterior}${NORMAL}"
@@ -538,20 +542,20 @@ _login() {
     local max_tentativas="${MAX_LOGIN_ATTEMPTS:-3}"
     # CORREÇÃO: Resetar variável global no início do login
     usuario=""
-    
+
     # CORREÇÃO: Verificar se o arquivo de senhas existe
     if [[ ! -f "$arquivo_senhas" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Nenhum usuario cadastrado. Execute o programa de cadastro primeiro."
         return 1
     fi
-    
+
     if [[ ! -s "$arquivo_senhas" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "ALERTA: Arquivo de senhas esta vazio. Nenhum usuario cadastrado no sistema."
         _exibir_mensagem_centralizada "${AMARELO}" "Execute o programa de cadastro primeiro."
         _linha "-" "${VERMELHO}"
         return 1
     fi
-    
+
     while [[ $tentativas -le $max_tentativas ]]; do
         _exibir_mensagem_centralizada "${VERMELHO}" "Login no Sistema"
         _linha "=" "${VERDE}"
@@ -567,7 +571,7 @@ _login() {
                 _aguardar_tecla
                 return 1
             fi
-            
+
             if ! _usuario_existe "$usuario"; then
                 _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao cadastrado no sistema."
             else
@@ -616,11 +620,11 @@ _login() {
                             salt_armazenado=$(_extrair_salt "$hash_armazenado")
                             hash_esperado=$(_extrair_hash "$hash_armazenado")
                             alg_armazenado=$(_extrair_algoritmo "$hash_armazenado")
-                            
+
                             resumo_senha=$(_hash_senha "$senha" "$salt_armazenado" "$alg_armazenado")
                             local hash_calculado
                             hash_calculado=$(_extrair_hash "$resumo_senha")
-                            
+
                             if [[ "$hash_calculado" == "$hash_esperado" ]]; then
                                 clear
                                 _linha "=" "${VERDE}"
@@ -672,13 +676,13 @@ _alterar_senha() {
         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario invalido. Use apenas letras maiusculas e numeros."
         return 1
     fi
-    
+
     # CORREÇÃO: Verificar se o arquivo de senhas existe
     if [[ ! -f "$arquivo_senhas" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Arquivo de senhas nao encontrado."
         return 1
     fi
-    
+
     _exibir_mensagem_centralizada "${VERMELHO}" "Alteracao de Senha"
     _linha "=" "${VERMELHO}"
     read -rsp "${AMARELO}Digite a senha atual: ${NORMAL}" senha_atual
@@ -689,7 +693,7 @@ _alterar_senha() {
         _linha "-" "${VERMELHO}"
         return 1
     fi
-    
+
     local senha_correta=0
     if _hash_tem_salt "$hash_armazenado"; then
         local salt_armazenado hash_esperado alg_armazenado
@@ -698,11 +702,11 @@ _alterar_senha() {
         # Algoritmo do registro, nao o default: caso contrario trocar
         # HASH_ALGORITHM em constantes.sh invalidasse todas as senhas.
         alg_armazenado=$(_extrair_algoritmo "$hash_armazenado")
-        
+
         local hash_atual_completo hash_atual_calculado
         hash_atual_completo=$(_hash_senha "$senha_atual" "$salt_armazenado" "$alg_armazenado")
         hash_atual_calculado=$(_extrair_hash "$hash_atual_completo")
-        
+
         if [[ "$hash_atual_calculado" == "$hash_esperado" ]]; then
             senha_correta=1
         fi
@@ -714,13 +718,13 @@ _alterar_senha() {
             senha_correta=1
         fi
     fi
-    
+
     if (( senha_correta == 0 )); then
         _exibir_mensagem_centralizada "${VERMELHO}" "Senha atual incorreta."
         _linha "-" "${VERMELHO}"
         return 1
     fi
-    
+
     read -rsp "${AMARELO}Digite a nova senha: ${NORMAL}" nova_senha
     printf "\n"
     read -rsp "${AMARELO}Confirme a nova senha: ${NORMAL}" confirm_senha
@@ -737,14 +741,14 @@ _alterar_senha() {
         _exibir_mensagem_centralizada "${VERMELHO}" "Erro ao processar nova senha."
         return 1
     }
-    
+
     local tmp_senhas
     tmp_senhas=$(mktemp) || {
         _exibir_mensagem_centralizada "${VERMELHO}" "Erro ao criar arquivo temporario para atualizacao de senha."
         return 1
     }
     trap 'rm -f -- "$tmp_senhas"' RETURN
-    
+
     while IFS= read -r linha || [[ -n "$linha" ]]; do
         if [[ "$linha" == "${alvo_usuario}:"* ]]; then
             printf '%s:%s\n' "${alvo_usuario}" "${hash_nova}"
@@ -752,7 +756,7 @@ _alterar_senha() {
             printf '%s\n' "$linha"
         fi
     done < "$arquivo_senhas" > "$tmp_senhas"
-    
+
     if mv -f "$tmp_senhas" "$arquivo_senhas"; then
         chmod "${PERM_FILE_PRIVATE:-0600}" "$arquivo_senhas" 2>/dev/null || true
         trap - RETURN
