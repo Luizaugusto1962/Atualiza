@@ -569,8 +569,12 @@ _limpar_estado_variaveis() {
 
     # Higiene de caches/estado interno de utils.sh (nao entram em REGISTRO_VARIAVEIS)
     # _JUTIL_* e arquivos.sh: cache de validacao do REBUILD e contadores do lote.
+    # _LINKS_DUROS_DIR (mapa de hard link, arquivos.sh): so o marcador do
+    # diretorio e zerado — o array segue populado e _carregar_links_duros faz
+    # _LINKS_DUROS=() antes de repovoar, entao dado velho nunca vaza.
     unset -v _LOG_DIR_CACHE _stty_size _TEMPO_FORMATADO \
         _JUTIL_PRONTO _JUTIL_LOTE_OK _JUTIL_LOTE_FALHAS _JUTIL_LOTE_PULADOS 2>/dev/null || true
+    _LINKS_DUROS_DIR=""
 
     tput sgr0 2>/dev/null || true
     return 0

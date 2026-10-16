@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-02
+# Versao: 16/10/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -32,6 +32,76 @@ fi
 # Todas as rotinas de recuperacao passam por _executar_jutil, que dispara o
 # jutil (REBUILD) em segundo plano e acompanha com _mostrar_progresso_backup.
 declare -a PIDS_JUTIL=()                        # PIDs de jutil em segundo plano
+
+# =============================================================================
+# DETECCAO DE LINK (simbolico E duro)
+# =============================================================================
+# `test -L` so enxerga link simbolico. Link duro (ln SEM -s) e um inode comum:
+# o `test` devolve falso e o arquivo ia direto para o jutil, que reescreve o
+# mesmo inode dos dois nomes e falha. O contador de links do filesystem e a
+# unica forma de separa-lo, e ele vem em bloco (ver _carregar_links_duros).
+declare -A _LINKS_DUROS=()                     # caminho -> 1 (hard link)
+_LINKS_DUROS_DIR=""                            # diretorio coberto pelo mapa
+
+# Preenche _LINKS_DUROS com os caminhos do diretorio que tem mais de 1 link
+# duro, em UM unico find (1 fork). Medido: um `stat -c %h` por arquivo custa
+# ~4ms (5000 arquivos = 20,7s), enquanto o find gasta 0,023s sem link nenhum e
+# 0,32s com 5000 arquivos linkados. Idempotente para o mesmo diretorio.
+_carregar_links_duros() {
+    local dir="${1:-}"
+    [[ -n "$dir" ]] || return 1
+    if [[ "$dir" == "${_LINKS_DUROS_DIR:-}" ]]; then
+        return 0
+    fi
+    _LINKS_DUROS=()
+    _LINKS_DUROS_DIR="$dir"
+    local caminho
+    # -links +1 e o unico predicado que separa hard link de arquivo comum.
+    # -maxdepth 1 e -type f mantem o escopo igual ao do find de coleta.
+    while IFS= read -r -d '' caminho; do
+        _LINKS_DUROS["$caminho"]=1
+    done < <(find "$dir" -maxdepth 1 -type f -links +1 -print0 2>/dev/null)
+    return 0
+}
+
+# Verdadeiro para link simbolico OU hard link. Cobre os dois casos que a
+# recuperacao precisa pular.
+#
+# Sem mapa carregado para o diretorio do arquivo, cai em `stat` (fallback
+# lento, ~4ms/arquivo): um guard tipo `command -v` falharia em silencio e o
+# hard link voltaria a passar, que e exatamente o bug que esta funcao corrige.
+# Retorna: 0 se for link, 1 se nao for (ou se nao der para determinar).
+_eh_link() {
+    local caminho="${1:-}"
+    if [[ -z "$caminho" ]]; then
+        return 1
+    fi
+    if [[ -L "$caminho" ]]; then
+        return 0
+    fi
+    local dir="${caminho%/*}"
+    if [[ -z "$dir" || "$dir" == "$caminho" ]]; then
+        dir="."
+    fi
+    if [[ "$dir" == "${_LINKS_DUROS_DIR:-}" ]]; then
+        # Mapa deste diretorio ja carregado: decide so pela presenca no mapa
+        if [[ -n "${_LINKS_DUROS[$caminho]:-}" ]]; then
+            return 0
+        fi
+        return 1
+    fi
+    local nlinks
+    # %h no GNU coreutils, %l no BSD/macOS. Sem numero utilizavel => nao link.
+    nlinks=$(stat -c '%h' -- "$caminho" 2>/dev/null || stat -f '%l' -- "$caminho" 2>/dev/null || printf '0')
+    nlinks="${nlinks//[^0-9]/}"
+    if [[ -z "$nlinks" ]]; then
+        return 1
+    fi
+    if (( nlinks > 1 )); then
+        return 0
+    fi
+    return 1
+}
 
 # Mata PIDs de jutil ainda ativos e esvazia o rastreador. Segura sob set -u e
 # sem efeito colateral quando o array esta vazio.
@@ -681,6 +751,9 @@ fi
     # 1 unica passada no diretorio: classifica alvo vs nao-alvo em memoria
     # (evita o 2o find so para contar qtd_outros).
     local nome_base nome_lower padrao_lower e_alvo ext
+    # 1 find extra mapeia os hard links do diretorio inteiro (link duro e
+    # invisivel para o `test`). Sem ele o jutil reescreveria o inode compartilhado.
+    _carregar_links_duros "$base_trabalho" || true
     while IFS= read -r -d '' arquivo; do
         nome_base="${arquivo##*/}"
         nome_lower="${nome_base,,}"
@@ -696,12 +769,12 @@ fi
         if (( ! e_alvo )); then
             # Mesma semantica da contagem anterior: so regulares contam como
             # "nao-alvo"; links fora do padrao seguem ignorados.
-            if [[ -f "$arquivo" && ! -L "$arquivo" ]]; then
+            if [[ -f "$arquivo" ]] && ! _eh_link "$arquivo"; then
                 ((qtd_outros++)) || true
             fi
             continue
         fi
-        if [[ -L "$arquivo" ]]; then
+        if _eh_link "$arquivo"; then
             _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
             _linha "-" "${VERDE}"
             ((qtd_links++)) || true
@@ -765,6 +838,10 @@ _recuperar_arquivo_individual() {
     local arquivo
     local -A vistos=()
 
+    # Mapa de hard links da base (1 find). Sem ele o glob abaixo aceitaria
+    # link duro como arquivo normal.
+    _carregar_links_duros "$base_trabalho" || true
+
     local arquivos_encontrados=0
 
     # Montar padroes de busca sobre a base: o nome exato (arquivos sem
@@ -786,7 +863,7 @@ _recuperar_arquivo_individual() {
             [[ -e "$arquivo" || -L "$arquivo" ]] || continue
             [[ -n "${vistos[$arquivo]:-}" ]] && continue
             vistos[$arquivo]=1
-            if [[ -L "$arquivo" ]]; then
+            if _eh_link "$arquivo"; then
                 _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
                 _linha "-" "${VERDE}"
             elif [[ -f "$arquivo" ]]; then
@@ -1137,6 +1214,8 @@ _processar_lista_arquivos() {
     # recuperacao, sao lista desatualizada. Antes elas entravam no lote, viravam
     # "Nao recuperou" e inflavam _JUTIL_LOTE_FALHAS.
     local qtd_links=0 qtd_ausentes=0 qtd_vazios=0 qtd_invalidos=0
+    # A lista pode trazer milhares de entradas: o mapa evita um `stat` por linha.
+    _carregar_links_duros "$base_trabalho" || true
     local listando
     while IFS= read -r listando || [[ -n "$listando" ]]; do
         [[ -z "$listando" ]] && continue
@@ -1163,7 +1242,7 @@ _processar_lista_arquivos() {
         [[ -n "${vistos_lote[$caminho_arquivo]:-}" ]] && continue
         vistos_lote[$caminho_arquivo]=1
 
-        if [[ -L "$caminho_arquivo" ]]; then
+        if _eh_link "$caminho_arquivo"; then
             _aviso "Arquivo linkado, pulando: ${listando}"
             ((qtd_links++)) || true
         elif [[ ! -e "$caminho_arquivo" ]]; then
@@ -1212,7 +1291,7 @@ _executar_jutil_lote_sequencial() {
     local arquivo rc=0
     for arquivo in "$@"; do
         if _executar_jutil "$arquivo"; then
-            if [[ -L "$arquivo" || ! -e "$arquivo" || ! -s "$arquivo" ]]; then
+            if _eh_link "$arquivo" || [[ ! -e "$arquivo" || ! -s "$arquivo" ]]; then
                 ((_JUTIL_LOTE_PULADOS++)) || true
             else
                 ((_JUTIL_LOTE_OK++)) || true
@@ -1298,7 +1377,7 @@ _executar_jutil_lote() {
             arquivo="${fila[$indice]}"
             # Codigos de status: 0=ok, 1=falha, 2=pulado (link/vazio, ja avisado).
             # "2" mantem pulados fora de _JUTIL_LOTE_OK, que antes inflava o resumo.
-            if [[ -L "$arquivo" ]]; then
+            if _eh_link "$arquivo"; then
                 _aviso "Arquivo linkado, pulando: ${arquivo##*/}"
                 printf '2' > "${dir_status}/${indice}.status"
                 continue
@@ -1458,7 +1537,7 @@ _executar_jutil_lote() {
 # segundo plano: dispara o REBUILD com & e acompanha via _mostrar_progresso_backup.
 _executar_jutil() {
     local arquivo="${1:-}"
-    if [[ -L "$arquivo" ]]; then
+    if _eh_link "$arquivo"; then
         _aviso "Arquivo linkado, pulando recuperacao: ${arquivo##*/}"
         return 0
     fi
