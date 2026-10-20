@@ -3,6 +3,7 @@
 *.sh~
 *.json
 AGENTS.md
+ARCHITECTURE.md
 *.zip
 .claude/
 .mimocode/
@@ -21,3 +22,4 @@ testsprite_tests/tmp/config.json
 *.py
 .npm-cache/
 npm-cache/
+testes/

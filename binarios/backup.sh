@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-01
+# Versao: 20/10/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -694,8 +694,8 @@ _selecionar_backup() {
         fi
     else
         # Escolha interativa com cancelar explicito (0)
-        printf "%b\n" "${CIANO}Escolha o numero do backup (ou 0 para cancelar):${NORMAL}"
-        printf "%b\n" "${AMARELO}0) Cancelar${NORMAL}"
+        printf "%s\n" "${CIANO}Escolha o numero do backup (ou 0 para cancelar):${NORMAL}"
+        printf "%s\n" "${AMARELO}0) Cancelar${NORMAL}"
         printf "\n"
 
         while true; do

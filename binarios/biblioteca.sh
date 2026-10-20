@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-01
+# Versao: 20/10/2026-01
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -351,6 +351,7 @@ _processar_atualizacao_biblioteca() {
             _erro "Backup vazio: nenhum arquivo encontrado em ${E_EXEC} nem em ${T_TELAS}"
             _aviso "Confira se E_EXEC e T_TELAS apontam para os diretorios certos no .config"
             _aguardar 2
+            trap '_encerrar_programa 130' INT TERM
             return 1
         fi
 
@@ -358,6 +359,7 @@ _processar_atualizacao_biblioteca() {
         _linha
     else
         _erro "Falha na compactacao da biblioteca"
+        trap '_encerrar_programa 130' INT TERM
         return 1
     fi
 
@@ -375,11 +377,16 @@ _processar_atualizacao_biblioteca() {
             pids=("${novos2[@]+"${novos2[@]}"}")
         else
             _erro "Falha na compressao do arquivo de backup"
+            trap '_encerrar_programa 130' INT TERM
             return 1
         fi
     fi
 
-    cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
+    cd "${SCRIPT_DIR}" || {
+        _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2
+        trap '_encerrar_programa 130' INT TERM
+        return 1
+    }
     clear
     _linha
     _aviso "Backup Completo (Formato TAR.GZ)"
@@ -397,12 +404,18 @@ _processar_atualizacao_biblioteca() {
             _aviso "Continuando a atualizacao..."
         else
             pids=()  # Limpar PIDs se saindo
+            trap '_encerrar_programa 130' INT TERM
             return 1
         fi
     fi
 
     pids=()  # Limpar PIDs apos sucesso
-    _executar_atualizacao_biblioteca
+    local _rc_atu=0
+    _executar_atualizacao_biblioteca || _rc_atu=$?
+    # O trap de "_limpar_interrupcao" fica instalado se a funcao aninhada falhar
+    # no meio. Restaurar aqui cobre qualquer retorno antecipado dela.
+    trap '_encerrar_programa 130' INT TERM
+    return "${_rc_atu}"
 }
 
 # Executa a atualizacao da biblioteca
@@ -410,15 +423,20 @@ _executar_atualizacao_biblioteca() {
     # Validar diretorio de recebimento e a versao antes de montar arquivos ou atualizar .versao.
     if [[ -z "${CFG_PORTALSAV:-}" ]]; then
         _erro "Diretorio ${CFG_PORTALSAV:-} nao configurado"
+        trap '_encerrar_programa 130' INT TERM
         return 1
     fi
     if ! _validar_versao_biblioteca "${VERSAO:-}"; then
         _erro "Versao invalida. Informe somente numeros."
+        trap '_encerrar_programa 130' INT TERM
         return 1
     fi
 
     # Ir para o diretório onde estao os arquivos
-    cd "${CFG_PORTALSAV}" || return 1
+    cd "${CFG_PORTALSAV}" || {
+        trap '_encerrar_programa 130' INT TERM
+        return 1
+    }
 
     _definir_variaveis_biblioteca
 
@@ -460,6 +478,7 @@ _executar_atualizacao_biblioteca() {
             else
                 _erro "Ao descompactar ${arquivo} - Verifique o log ${LOG_ATU}"
                 _aguardar 2
+                trap '_encerrar_programa 130' INT TERM
                 return 1
             fi
             _linha
@@ -474,7 +493,10 @@ _executar_atualizacao_biblioteca() {
     _linha
 
     # Ir para o diretorio de recebimento para renomear arquivos
-    cd "${CFG_PORTALSAV}" || return 1
+    cd "${CFG_PORTALSAV}" || {
+        trap '_encerrar_programa 130' INT TERM
+        return 1
+    }
 
     # Mover arquivos .zip para .bkp e coletar os backups sem alterar nullglob.
     local -a arquivos=()
@@ -488,6 +510,7 @@ _executar_atualizacao_biblioteca() {
         mv -- "${arquivos[@]}" "${DEFAULT_BIBLIOTECA_ATUAL_DIR}" || {
         _erro "ao mover arquivos de backup."
         _aguardar 2
+        trap '_encerrar_programa 130' INT TERM
         return 1
         }
     else
@@ -510,6 +533,7 @@ _executar_atualizacao_biblioteca() {
         if ! printf "VERSAOANT=%s\n" "${VERSAO}" >> "${CFG_DIR}/.versao"; then
             _erro "Ao gravar arquivo de versao atualizada"
             _aguardar_tecla
+            trap '_encerrar_programa 130' INT TERM
             return 1
         fi
     fi

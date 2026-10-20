@@ -19,7 +19,7 @@ set -euo pipefail
 
 RAIZ_TESTE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# utils.sh usa as cores ja no proprio source (label _aviso em utils.sh:79).
+# utils.sh usa as cores ja no proprio source (label _aviso em utils.sh:_aviso).
 : "${VERMELHO:=}" "${VERDE:=}" "${AMARELO:=}" "${AZUL:=}"
 : "${ROXO:=}" "${CIANO:=}" "${BRANCO:=}" "${NORMAL:=}"
 

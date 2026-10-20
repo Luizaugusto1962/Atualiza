@@ -6,14 +6,14 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-02
+# Versao: 20/10/2026-01
 #
 
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
 
 # Arquivo de manual principal
 # ${CFG_DIR:-} evita "unbound variable" no source isolado do modulo (padrao dos
-# testes). Mesma defesa de auth.sh:30.
+# testes). Mesma defesa de auth.sh (atribuicao de arquivo_senhas no topo do modulo).
 arquivo_manual="${CFG_DIR:-}/manual.txt"
 
 # Exibe conteúdo com paginaçao automática

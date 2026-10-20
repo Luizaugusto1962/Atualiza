@@ -57,10 +57,12 @@ _carregar_versao_seguro "${tmpdir}/nao_existe" || rc=$?
 _checar "guard: arquivo inexistente retorna 1" "1" "$rc"
 
 #---------- _carregar_versao_seguro: valor fora de ^[0-9]+$ ----------#
-# _mostrar_parametros imprime VERSAOANT com "printf '%b\n'" (sistema.sh), que
-# interpreta escapes: um .versao adulterado com "\033[2J" limpava a tela e
-# desalinhavo o menu. Valor invalido tem de ser descartado sem sobrescrever o
-# que ja estava em memoria.
+# _mostrar_parametros usava "printf '%b\n'" (sistema.sh), que interpreta
+# escapes: um .versao adulterado com "\033[2J" limpava a tela e desalinhavo o
+# menu. Hoje sao DUAS defesas: _mostrar_parametros imprime com "%s" (a regra do
+# AGENTS.md: valor lido de arquivo nunca e impresso com "%b"), e o valor fora
+# de ^[0-9]+$ e descartado sem sobrescrever o que ja estava em memoria.
+# Este teste cobre a segunda.
 printf 'VERSAOANT="\\033[2Jversao_falsa"\nVERSAO="\\033[1;31m2026"\n' >"${tmpdir}/.versao_invalido"
 printf 'VERSAOANT=abc\nVERSAO=2026-v2\n' >"${tmpdir}/.versao_nao_numerico"
 

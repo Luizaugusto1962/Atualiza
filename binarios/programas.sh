@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-01
+# Versao: 20/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -33,7 +33,7 @@ declare -a ARQUIVOS_PROGRAMA=()
 # O padrao fica em UMA palavra (as partes do caminho vao entre aspas), igual no
 # codigo anterior — assim um diretorio com espaco nao sofre word splitting.
 # Nao extraia isto para um helper com `local -n`: nameref exige Bash 4.4+ e o
-# modulo precisa rodar em 4.0 (Ubuntu 10.04). Ver comentario em backup.sh:75.
+# modulo precisa rodar em 4.0 (Ubuntu 10.04). Ver comentario em backup.sh:_validar_pre_backup.
 
 # Cleanup compartilhado por _processar_atualizacao_programas e
 # _processar_atualizacao_pacotes: restaura cwd e remove o temporario.
@@ -755,8 +755,16 @@ _processar_atualizacao_pacotes() {
             return 1
         fi
 
-        # Listar conteudo do pacote e verificar se ha arquivos
-        lista_arquivos=$("${DEFAULT_UNZIP}" -l "${arquivo_zip}" 2>/dev/null | awk 'NR>3 && NF>=4 && $NF ~ /\.(class|TEL)$/ {print $NF}')
+        # Listar conteudo do pacote e verificar se ha arquivos.
+        # "unzip -Z1" e a listagem machine-readable (um nome por linha): o
+        # "unzip -l | awk" usado antes pegava so a ultima coluna, e um nome de
+        # arquivo com espaco ("MEU PROGRAMA.class") virava "PROGRAMA.class" —
+        # a checagem de existencia abaixo falhava e abortava um pacote valido.
+        # O awk casa contra $0 (linha inteira), preserva o nome com espaco e
+        # devolve 0 sempre — grep devolveria 1 sem match e abortaria sob set -e
+        # antes de chegar no "if [[ -z ... ]]" que trata o pacote sem arquivos.
+        # Diretorios no zip terminam em "/" e nao casam com a extensao.
+        lista_arquivos=$("${DEFAULT_UNZIP}" -Z1 "${arquivo_zip}" 2>/dev/null | awk '/\.(class|TEL)$/')
         if [[ -z "${lista_arquivos}" ]]; then
             _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
             _cleanupAtualizacao
@@ -1068,7 +1076,11 @@ _arquivar_zips_progs_dir() {
 _obter_data_arquivo() {
     local arquivo="${1:-}" # Nome do arquivo
     if [[ -f "${E_EXEC}/${arquivo}" ]]; then
-        local data_modificacao data_formatada
+        # Inicializadas vazias: se AMBOS os "stat" falharem (corrida em que o
+        # arquivo some entre o "-f" e o stat, ou stat sem "-c"), data_formatada
+        # nunca era atribuida e o [[ -n "$data_formatada" ]] abaixo disparava
+        # "unbound variable" sob set -u, abortando o programa inteiro.
+        local data_modificacao="" data_formatada=""
         data_modificacao=$(stat -c %y "${E_EXEC}/${arquivo}" 2>/dev/null)
         if [[ -n "$data_modificacao" ]]; then
             # Reformatacao "AAAA-MM-DD HH:MM:SS..." -> "DD/MM/AAAA HH:MM:SS" via substring (sem fork de date)

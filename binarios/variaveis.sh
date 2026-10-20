@@ -3,7 +3,7 @@ set -euo pipefail
 #
 # variaveis.sh - Modulo de consulta de variaveis/constantes do sistema SAV
 ## SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026
+# Versao: 20/10/2026-01
 #
 # Este modulo e carregado via source por principal.sh (ver MODULOS_CARREGAR).
 # Ponto de entrada publico: _consultar_variaveis [filtro]
@@ -117,26 +117,33 @@ _var_carregar_config() {
 # como ausentes, e um .config com "CFG_VERSAOCLASS=" legitimamente vazio
 # aparecia como NAO DEFINIDO, mandando o usuario procurar o que ja estava la.
 # Retorna: sempre 0 (e uma funcao de exibicao, nao de fluxo)
+#
+# ATENCAO: grava em _VAR_VALOR em vez de imprimir. Era `printf '%s'` e o caller
+# fazia `$(_var_obter_valor ...)` - um fork de subshell por variavel, e a tabela
+# lista 57 variaveis em 13 categorias (medido: ~200-340ms por consulta contra
+# ~45-60ms sem fork). Mesma convencao de utils.sh:_formatar_tempo.
+# Nao reintroduza a captura por $( ).
+_VAR_VALOR=""
 _var_obter_valor() {
     local nome_var="${1:-}"
     local valor
 
     if [[ ! "$nome_var" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
-        printf '%s\n' "INVALIDO"
+        _VAR_VALOR="INVALIDO"
         return 0
     fi
 
     # +_ (nao :-) so expande se a variavel EXISTE, mesmo vazia.
     if [[ -z "${!nome_var+_}" ]]; then
-        printf '%s\n' "NAO DEFINIDO"
+        _VAR_VALOR="NAO DEFINIDO"
         return 0
     fi
 
     valor="${!nome_var}"
     if [[ -z "$valor" ]]; then
-        printf '%s\n' "(vazio)"
+        _VAR_VALOR="(vazio)"
     else
-        printf '%s\n' "$valor"
+        _VAR_VALOR="$valor"
     fi
     return 0
 }
@@ -147,15 +154,17 @@ _var_obter_valor() {
 # =============================================================================
 _var_exibir_tabular() {
     local filtro="${1:-}"
-    local categoria variavel valor
+    local categoria variavel
     local -a nomes_var=()
     local categorias_exibidas=0
     local filtro_minusculo="${filtro,,}"
 
     # Sem tput (ou com terminal estreito) o %*s do cabecalho pode falhar.
+    # COLUMNS so existe em shell interativo: sem o default, "set -u" abortava
+    # o programa em execucao nao interativa (atualiza.sh < pipe).
     local largura_var=35
     local largura_valor=60
-    if (( COLUMNS > largura_var + largura_valor + 2 )); then
+    if (( ${COLUMNS:-0} > largura_var + largura_valor + 2 )); then
         largura_valor=$(( COLUMNS - largura_var - 1 ))
     fi
 
@@ -174,8 +183,13 @@ _var_exibir_tabular() {
 
     # Cabecalho da tabela
     printf "%s%-*s%s %s\n" "${VERDE}" "$largura_var" "VARIAVEL" "${NORMAL}" "VALOR"
-    printf "%-*s %s\n" "$largura_var" "$(printf '%*s' "$largura_var" '' | tr ' ' '-')" \
-        "$(printf '%*s' "$largura_valor" '' | tr ' ' '-')"
+    # Separadores sem fork: "printf -v" e builtin (sem subshell) e a troca de
+    # espaco por traco e expansao de parameter do proprio bash. Antes eram
+    # 4 forks ($(printf | tr) x 2).
+    local _sep_var _sep_valor
+    printf -v _sep_var '%*s' "$largura_var" ''
+    printf -v _sep_valor '%*s' "$largura_valor" ''
+    printf "%-*s %s\n" "$largura_var" "${_sep_var// /-}" "${_sep_valor// /-}"
 
     # Itera pela ordem declarada, nao pela ordem de hash do array assoc.
     for categoria in "${_VAR_CATEGORIAS_ORDEM[@]}"; do
@@ -195,8 +209,8 @@ _var_exibir_tabular() {
         read -ra nomes_var <<< "${_VAR_CATEGORIAS[$categoria]:-}"
         for variavel in "${nomes_var[@]}"; do
             [[ -n "$variavel" ]] || continue
-            valor=$(_var_obter_valor "$variavel")
-            printf "%-*s %s\n" "$largura_var" "$variavel" "$valor"
+            _var_obter_valor "$variavel"
+            printf "%-*s %s\n" "$largura_var" "$variavel" "$_VAR_VALOR"
         done
     done
 

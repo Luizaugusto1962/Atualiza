@@ -147,7 +147,7 @@ Portões hoje:
 |---|---|---|
 | `biblioteca.sh:_salvar_atualizacao_biblioteca` | os 3 fluxos de update de biblioteca | adicionado em `ea2fe57` |
 | `biblioteca.sh:_reverter_biblioteca_completa` / `:_reverter_programa_especifico_biblioteca` | reversão, extrai em `/` | pré-existente |
-| `programas.sh:_validar_pre_requisitos_atualizacao` (`programas.sh:578`) | update de programas e de pacotes | adicionado em `029be9b` |
+| `programas.sh:_validar_pre_requisitos_atualizacao` | update de programas e de pacotes | adicionado em `029be9b` |
 
 > **Restrição e exceção.** `AGENTS.md` proíbe alterar fluxo/saída/arquivos de
 > `_processar_atualizacao_programas`. O guard de `programas.sh` foi adicionado **com
@@ -164,7 +164,7 @@ operação**. Quatro módulos depositam lá, em tempos diferentes:
 |---|---|---|
 | `backup.sh:_mover_backup_offline` | backup `<empresa>_<tipo>_<base>_<data>.zip` | fica aguardando envio manual |
 | `vaievem.sh` / `biblioteca.sh` | ZIP de biblioteca (`*_<VERSAO>.zip`) | entre o download e o processamento |
-| `programas.sh:846` | `<programa>.zip` de reversão | durante a reversão |
+| `programas.sh:_processar_reversao_programas` | `<programa>.zip` de reversão | durante a reversão |
 | `baixar.sh` | `atualiza.zip` (ou `<zip>.part`) | durante o self-update |
 
 Consequência: **nada pode fazer `rm -rf`/`find -exec rm` no topo desse diretório.** Era

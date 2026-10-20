@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 08/10/2026-01
+# Versao: 20/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -178,10 +178,15 @@ _mostrar_versao_linux() {
 # biblioteca.sh). Whitelist estrita: um .versao adulterado nao consegue
 # sobrescrever PATH/HOME/outras variaveis do ambiente.
 # Os valores tambem sao validados como ^[0-9]+$, o mesmo criterio de
-# biblioteca.sh:_validar_versao_biblioteca. Sem isso, um VERSAOANT com
-# "\033[2J" sobrevivia ao strip de aspas e era interpretado como ESCAPE por
-# _mostrar_parametros (que imprime com "printf '%b\n'") — ou seja, um .versao
-# adulterado limpava a tela e desalinhavo o menu, em vez de so "polui-lo".
+# biblioteca.sh:_validar_versao_biblioteca. Isso segue valendo por dois
+# motivos: VERSAO alimenta nome de arquivo em biblioteca.sh (AGENTS.md), e
+# _mostrar_parametros usa o valor em rotulo de tela.
+# Historico: um VERSAOANT com "\033[2J" sobrevivia ao strip de aspas e era
+# interpretado como ESCAPE por _mostrar_parametros (que imprimia com
+# "printf '%b\n'") — ou seja, um .versao adulterado limpava a tela e
+# desalinhavo o menu, em vez de so "polui-lo". _mostrar_parametros agora usa
+# "%s" (a regra do AGENTS.md: valor lido de arquivo nunca e impresso com
+# "%b"), mas a validacao do formato continua: e a segunda camada.
 # Valor fora do padrao e descartado em silencio, como ja acontece com uma chave
 # fora da whitelist: a funcao nao deve depender de _log/_aviso para ser
 # testavel isolada (testes/test_sistema.sh so source este modulo).
@@ -224,48 +229,48 @@ _mostrar_parametros() {
     fi
     clear
     _linha "=" "${CIANO}"
-    printf '%b\n' "${VERDE}Diretorio RAIZ: ${NORMAL}${RAIZ}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio do atualiza.sh: ${NORMAL}${SCRIPT_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio da base principal: ${NORMAL}${RAIZ}${CFG_BASE_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio RAIZ: ${NORMAL}${RAIZ}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio do atualiza.sh: ${NORMAL}${SCRIPT_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio da base principal: ${NORMAL}${RAIZ}${CFG_BASE_DIR}${NORMAL}"
     if [[ -n "${CFG_BASE_DIR2:-}" ]]; then
-        printf '%b\n' "${VERDE}Diretorio da segunda base: ${NORMAL}${RAIZ}${CFG_BASE_DIR2}${NORMAL}"
+        printf '%s\n' "${VERDE}Diretorio da segunda base: ${NORMAL}${RAIZ}${CFG_BASE_DIR2}${NORMAL}"
     fi
     if [[ -n "${CFG_BASE_DIR3:-}" ]]; then
-        printf '%b\n' "${VERDE}Diretorio da terceira base: ${NORMAL}${RAIZ}${CFG_BASE_DIR3}${NORMAL}"
+        printf '%s\n' "${VERDE}Diretorio da terceira base: ${NORMAL}${RAIZ}${CFG_BASE_DIR3}${NORMAL}"
     fi
-    printf '%b\n' "${VERDE}Diretorio dos executaveis: ${NORMAL}${E_EXEC}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio das telas: ${NORMAL}${T_TELAS}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio dos logs: ${NORMAL}${DEFAULT_LOGS_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio dos olds: ${NORMAL}${DEFAULT_PROGS_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio dos progs: ${NORMAL}${DEFAULT_PROGS_ATUAL_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio do backup: ${NORMAL}${DEFAULT_BACKUP_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio de configuracoes: ${NORMAL}${CFG_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio de receber: ${NORMAL}${CFG_PORTALSAV}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio de enviar: ${NORMAL}${DEFAULT_ENVIA_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Versao em uso: ${NORMAL}${CFG_VERSAOCLASS}${NORMAL}"
-    printf '%b\n' "${VERDE}Biblioteca 1: ${NORMAL}${SAVATU1}${NORMAL}"
-    printf '%b\n' "${VERDE}Biblioteca 2: ${NORMAL}${SAVATU2}${NORMAL}"
-    printf '%b\n' "${VERDE}Biblioteca 3: ${NORMAL}${SAVATU3}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio dos executaveis: ${NORMAL}${E_EXEC}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio das telas: ${NORMAL}${T_TELAS}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio dos logs: ${NORMAL}${DEFAULT_LOGS_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio dos olds: ${NORMAL}${DEFAULT_PROGS_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio dos progs: ${NORMAL}${DEFAULT_PROGS_ATUAL_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio do backup: ${NORMAL}${DEFAULT_BACKUP_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio de configuracoes: ${NORMAL}${CFG_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio de receber: ${NORMAL}${CFG_PORTALSAV}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio de enviar: ${NORMAL}${DEFAULT_ENVIA_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Versao em uso: ${NORMAL}${CFG_VERSAOCLASS}${NORMAL}"
+    printf '%s\n' "${VERDE}Biblioteca 1: ${NORMAL}${SAVATU1}${NORMAL}"
+    printf '%s\n' "${VERDE}Biblioteca 2: ${NORMAL}${SAVATU2}${NORMAL}"
+    printf '%s\n' "${VERDE}Biblioteca 3: ${NORMAL}${SAVATU3}${NORMAL}"
     _linha "=" "${CIANO}"
     _aguardar_tecla
     clear
     _linha "=" "${CIANO}"
-    printf '%b\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${ACESSO_OFF}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Diretorio do backup da biblioteca anterior: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}${NORMAL}"
-    printf '%b\n' "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT:-desconhecida}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${ACESSO_OFF}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Diretorio do backup da biblioteca anterior: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}${NORMAL}"
+    printf '%s\n' "${VERDE}Versao da biblioteca atual: ${NORMAL}${VERSAOANT:-desconhecida}${NORMAL}"
     # VERSAO era parseada acima mas nunca exibida; e a versao alvo do .versao
     # (biblioteca.sh monta os *.zip com ela e a grava em VERSAOANT ao gravar).
-    printf '%b\n' "${VERDE}Versao da biblioteca em uso: ${NORMAL}${VERSAO:-desconhecida}${NORMAL}"
-    printf '%b\n' "${VERDE}Servidor OFF: ${NORMAL}${CFG_OFFLINE}${NORMAL}"
-    printf '%b\n' "${VERDE}Acessa as chaves: ${NORMAL}${CFG_CHAVE_SSH}${NORMAL}"
-    printf '%b\n' "${VERDE}Variavel do compilado: ${NORMAL}${compilado}${NORMAL}"
-    printf '%b\n' "${VERDE}Variavel do debugado: ${NORMAL}${debugado}${NORMAL}"
-    printf '%b\n' "${VERDE}Porta de conexao: ${NORMAL}${DEFAULT_SSH_PORTA}${NORMAL}"
-    printf '%b\n' "${VERDE}Usuario de conexao: ${NORMAL}${DEFAULT_SSH_USER}${NORMAL}"
-    printf '%b\n' "${VERDE}Servidor IP: ${NORMAL}${DEFAULT_IP_SERVER}${NORMAL}"
+    printf '%s\n' "${VERDE}Versao da biblioteca em uso: ${NORMAL}${VERSAO:-desconhecida}${NORMAL}"
+    printf '%s\n' "${VERDE}Servidor OFF: ${NORMAL}${CFG_OFFLINE}${NORMAL}"
+    printf '%s\n' "${VERDE}Acessa as chaves: ${NORMAL}${CFG_CHAVE_SSH}${NORMAL}"
+    printf '%s\n' "${VERDE}Variavel do compilado: ${NORMAL}${compilado}${NORMAL}"
+    printf '%s\n' "${VERDE}Variavel do debugado: ${NORMAL}${debugado}${NORMAL}"
+    printf '%s\n' "${VERDE}Porta de conexao: ${NORMAL}${DEFAULT_SSH_PORTA}${NORMAL}"
+    printf '%s\n' "${VERDE}Usuario de conexao: ${NORMAL}${DEFAULT_SSH_USER}${NORMAL}"
+    printf '%s\n' "${VERDE}Servidor IP: ${NORMAL}${DEFAULT_IP_SERVER}${NORMAL}"
     _linha "=" "${CIANO}"
     _aguardar_tecla
 }

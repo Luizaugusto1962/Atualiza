@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/10/2026-01
+# Versao: 20/10/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -1014,9 +1014,12 @@ _editar_lista_arquivos() {
             local indice=1
             for linha in "${linhas[@]}"; do
                 if [[ -z "$linha" ]]; then
-                    printf '%b' "${VERDE}${indice}${NORMAL} - ${AMARELO}(linha em branco)${NORMAL}\n"
+                    printf '%s\n' "${VERDE}${indice}${NORMAL} - ${AMARELO}(linha em branco)${NORMAL}"
                 else
-                    printf '%b' "${VERDE}${indice}${NORMAL} - ${linha}\n"
+                    # "%s" e nao "%b": a linha vem de um arquivo do usuario e nao
+                    # pode ser interpretada como escape. O "\n" vai no formato,
+                    # porque com "%b" ele ficava dentro do argumento.
+                    printf '%s\n' "${VERDE}${indice}${NORMAL} - ${linha}"
                 fi
                 ((indice++))
             done

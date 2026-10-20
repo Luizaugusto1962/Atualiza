@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-02
+# Versao: 20/10/2026-01
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # utils.sh, de onde vem _garantir_diretorio usado por _configurar_diretorios.
@@ -445,11 +445,19 @@ _validar_config_file() {
         # Remover espacos iniciais
         linha="${linha#"${linha%%[![:space:]]*}"}"
 
-        # Remover comentarios inline e espacos finais (alinha com _carregar_config_seguro)
+        # Remover o CR de arquivo salvo com CRLF (editado no Windows, p.ex.).
+        # Sem isto o valor carrega \r ate o parser — e a comparacao exata de
+        # "Offline=s" falhava, abortando o fluxo offline.
+        linha="${linha%$'\r'}"
+
+        # Remover comentarios inline
         if [[ "$linha" == *'#'* ]]; then
             linha="${linha%%#*}"
-            linha="${linha%"${linha##*[![:space:]]}"}"
         fi
+
+        # Remover espacos finais (fora do if, para alinhar com
+        # _carregar_config_seguro — antes o trim so rodava em linhas com "#").
+        linha="${linha%"${linha##*[![:space:]]}"}"
         [[ -z "$linha" ]] && continue
 
         # Validar formato de atribuicao

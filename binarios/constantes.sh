@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 01/10/2026-02
+# Versao: 20/10/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -54,11 +54,22 @@ _carregar_config_seguro() {
         # Remover espacos iniciais
         linha="${linha#"${linha%%[![:space:]]*}"}"
 
+        # Remover o CR de arquivo salvo com CRLF (editado no Windows, p.ex.).
+        # Sem isto o \r fica no valor e quebra comparacoes exatas — era o que
+        # fazia "Offline=s\r" falhar em _offline_valido (utils.sh) e abortar o
+        # fluxo offline com "Valor invalido em 'offline'".
+        linha="${linha%$'\r'}"
+
         # Ignorar linhas apos comentario inline
         if [[ "$linha" == *'#'* ]]; then
             linha="${linha%%#*}"
-            linha="${linha%"${linha##*[![:space:]]}"}"
         fi
+
+        # Remover espacos finais. Fica FORA do if de comentario: antes o trim
+        # so rodava em linhas com "#", e o CR do CRLF sobrevivia em todas as
+        # outras. [[:space:]] cobre \r, mas o strip explicito acima garante o
+        # resultado mesmo sob locale diferente.
+        linha="${linha%"${linha##*[![:space:]]}"}"
 
         # Ignorar se a linha ficou vazia apos remover comentario
         [[ -z "$linha" ]] && continue

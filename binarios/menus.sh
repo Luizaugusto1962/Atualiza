@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 06/10/2026-01
+# Versao: 20/10/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -40,7 +40,10 @@ _ler_opcao_menu() {
     fi
 
     _linha "=" "${BRANCO}"
-    printf '%b\n' "${AZUL}Ajuda: Digite ${AMARELO}M${AZUL} (manual) | ${AMARELO}H${AZUL} (help)|| ${AZUL}Empresa: ${BRANCO}${CFG_EMPRESA}${AZUL}| Iscobol: ${CIANO}${CFG_VERSAOCLASS}${AZUL}|"
+    # "%s" e nao "%b": CFG_EMPRESA vem do .config e nao pode ser interpretado
+    # como escape (um "\e[2J" no .config limpara a tela no meio do cabecalho).
+    # Regra do AGENTS.md: valor lido de arquivo nunca e impresso com "%b".
+    printf '%s\n' "${AZUL}Ajuda: Digite ${AMARELO}M${AZUL} (manual) | ${AMARELO}H${AZUL} (help)|| ${AZUL}Empresa: ${BRANCO}${CFG_EMPRESA}${AZUL}| Iscobol: ${CIANO}${CFG_VERSAOCLASS}${AZUL}|"
     _linha "=" "${VERDE}"
 
     if ! read -r -t "${DEFAULT_READ_TIMEOUT}" -p "${AMARELO} Digite a opcao desejada -> ${NORMAL}" lida; then
