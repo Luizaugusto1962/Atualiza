@@ -1,6 +1,25 @@
 # Auto detect text files and perform LF normalization
 # CRLF quebra os scripts .sh no Bash (servidores Linux), por isso o eol=lf
 * text=auto eol=lf
-*.zip binary
 *.json text eol=lf
+
+# Scripts Shell: sempre usar LF
+*.sh text eol=lf
+
+# Arquivos de configuração
+*.conf text eol=lf
+*.cfg text eol=lf
+
+# Documentação
+*.md text eol=lf
+*.txt text eol=lf
+
+# Arquivos binários: não converter quebras de linha
+*.zip binary
+*.gz binary
+*.png binary
+*.jpg binary
+*.pdf binary
+*.class binary
+*.TEL binary
 
