@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 21/10/2026-01
 
 # =============================================================================
 # Definir diretorio de trabalho
@@ -279,7 +279,7 @@ REBUILD="${SAVISC}${JUTIL}"
 # =============================================================================
 # ACESSO OFFLINE
 # =============================================================================
-ACESSO_OFF="${ACESSO_OFF:-${RAIZ}/portalsav/Atualiza}"
+ACESSO_OFF="${ACESSO_OFF:-${RAIZ}/portalsav/atualiza}"
 
 # =============================================================================
 # CONFIGURACAO DE LOGS E DATA
