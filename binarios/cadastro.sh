@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 #
 # cadastro.sh - Programa de Cadastro de Usuario
 # Permite cadastrar usuarios e senhas para o sistema SAV
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 02/10/2026
+# Versao: 21/10/2026
 #
 # Uso:
 #   ./atualiza.sh --cadastro  - Chamada pelo atualiza.sh (recomendado)
