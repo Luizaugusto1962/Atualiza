@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 21/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -255,7 +255,11 @@ _mostrar_parametros() {
     _aguardar_tecla
     clear
     _linha "=" "${CIANO}"
-    printf '%s\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${ACESSO_OFF}${NORMAL}"
+    # O caminho de acesso OFF so interessa no modo offline: com 'offline' = 'n'
+    # a linha nao e exibida (mesma logica de 'offline' usada acima no modulo).
+    if [[ "${CFG_OFFLINE:-n}" == "s" ]]; then
+        printf '%s\n' "${VERDE}Diretorio de configuracoes em OFF: ${NORMAL}${ACESSO_OFF}${NORMAL}"
+    fi
     printf '%s\n' "${VERDE}Diretorio para envio de backup: ${NORMAL}${CFG_BACKUP_PATH}${NORMAL}"
     printf '%s\n' "${VERDE}Diretorio do backup de base: ${NORMAL}${DEFAULT_BASEBACKUP_DIR}${NORMAL}"
     printf '%s\n' "${VERDE}Diretorio do backup da biblioteca: ${NORMAL}${DEFAULT_BIBLIOTECA_ATUAL_DIR}${NORMAL}"
