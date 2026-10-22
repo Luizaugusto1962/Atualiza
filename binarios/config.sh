@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 22/10/2026-01
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # utils.sh, de onde vem _garantir_diretorio usado por _configurar_diretorios.
@@ -580,7 +580,10 @@ _limpar_estado_variaveis() {
     # _LINKS_DUROS_DIR (mapa de hard link, arquivos.sh): so o marcador do
     # diretorio e zerado — o array segue populado e _carregar_links_duros faz
     # _LINKS_DUROS=() antes de repovoar, entao dado velho nunca vaza.
-    unset -v _LOG_DIR_CACHE _stty_size _TEMPO_FORMATADO \
+    # BACKUP_BIBLIOTECA_SELECIONADO (biblioteca.sh): backup escolhido na
+    # reversao. A funcao que o usa zera no proprio inicio, mas a limpeza de
+    # sessao deixa o shell sem estado de reversao pendente.
+    unset -v _LOG_DIR_CACHE _stty_size _TEMPO_FORMATADO BACKUP_BIBLIOTECA_SELECIONADO \
         _JUTIL_PRONTO _JUTIL_LOTE_OK _JUTIL_LOTE_FALHAS _JUTIL_LOTE_PULADOS 2>/dev/null || true
     _LINKS_DUROS_DIR=""
 

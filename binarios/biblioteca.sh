@@ -6,11 +6,21 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 22/10/2026-01
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
 declare LISTA_ARQUIVOS_BIBLIOTECA=""                # Lista de arquivos, separada por espaco
+
+# Backup da biblioteca escolhido na reversao (caminho completo do arquivo).
+declare BACKUP_BIBLIOTECA_SELECIONADO=""
+
+# Prefixo do nome dos backups da biblioteca gravados em DEFAULT_BIBLIOTECA_DIR.
+# O nome completo e "<prefixo>-<versao>.tar.gz" (formato atual) ou
+# "<prefixo>-<versao>.zip" (formato legado). Fica como constante de modulo
+# porque a criacao do backup e a listagem da reversao precisam casar com o
+# MESMO padrao.
+declare PREFIXO_BACKUP_BIBLIOTECA="${PREFIXO_BACKUP_BIBLIOTECA:-backup_biblioteca_antes_da_versao}"
 
 # Teto de programas aceitos na reversao individual. A entrada virou lista
 # (espaco/virgula/ponto-e-virgula) e cada nome vira um argumento do
@@ -47,7 +57,7 @@ _limpar_interrupcao() {
     if [[ -n "${VERSAO:-}" ]]; then
         while IFS= read -r -d '' arquivo_backup; do
             backups_parciais+=("$arquivo_backup")
-        done < <("${DEFAULT_FIND}" "${DEFAULT_BIBLIOTECA_DIR}" -maxdepth 1 -type f -name "backup_biblioteca_antes_da_versao-${VERSAO}.*" -print0)
+        done < <("${DEFAULT_FIND}" "${DEFAULT_BIBLIOTECA_DIR}" -maxdepth 1 -type f -name "${PREFIXO_BACKUP_BIBLIOTECA}-${VERSAO}.*" -print0)
     fi
     if (( ${#backups_parciais[@]} > 0 )); then
         _aviso "Backup parcial encontrado. Considere reverter manualmente com '_reverter_biblioteca'"
@@ -161,42 +171,19 @@ _atualizar_biblioteca_offline() {
 }
 
 # Reverter biblioteca para versao anterior
+# O backup e escolhido da lista de backups disponiveis (mesmo conceito da
+# reversao de programas): o usuario ve a lista numerada e digita o numero do
+# backup que deseja reverter.
 _reverter_biblioteca() {
     _meio_da_tela
-    _exibir_mensagem_centralizada "${VERMELHO}" "Informe a versao da biblioteca para reverter:"
+    _exibir_mensagem_centralizada "${VERMELHO}" "Selecione o backup da biblioteca para reverter:"
     _linha
 
-    local versao_reverter
-    read -rp "${AMARELO}Versao a reverter: ${NORMAL}" versao_reverter
-    _linha
-
-    if [[ -z "${versao_reverter}" ]]; then
-        _erro "Versao nao informada"
-        _linha
-        _aguardar_tecla
+    if ! _selecionar_backup_biblioteca_reversao; then
         return 1
     fi
 
-    if ! _validar_versao_biblioteca "${versao_reverter}"; then
-        _erro "Versao invalida. Informe somente numeros."
-        _linha
-        _aguardar_tecla
-        return 1
-    fi
-
-    # Tentar encontrar o backup tanto em .tar.gz quanto em .zip (para retrocompatibilidade)
-    local arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
-
-    if [[ ! -r "${arquivo_backup}" ]]; then
-        arquivo_backup="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.zip"
-    fi
-
-    if [[ ! -r "${arquivo_backup}" ]]; then
-        _exibir_mensagem_centralizada "${VERMELHO}" "Backup da biblioteca nao encontrado: ${NORMAL}${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${versao_reverter}.tar.gz"
-        _linha
-        _aguardar_tecla
-        return 1
-    fi
+    local arquivo_backup="${BACKUP_BIBLIOTECA_SELECIONADO}"
 
     # Perguntar se e reversao completa ou especifica
     if _confirmar "Reverter todos os programas da biblioteca?" "N"; then
@@ -298,7 +285,7 @@ _processar_atualizacao_biblioteca() {
     trap '_limpar_interrupcao' INT
     trap '_limpar_interrupcao' TERM
 
-    local arquivo_backup_tar="${DEFAULT_BIBLIOTECA_DIR}/backup_biblioteca_antes_da_versao-${VERSAO}.tar"
+    local arquivo_backup_tar="${DEFAULT_BIBLIOTECA_DIR}/${PREFIXO_BACKUP_BIBLIOTECA}-${VERSAO}.tar"
     local caminho_backup_final="${arquivo_backup_tar}.gz"
 
     # Contador de etapas concluidas (para log final)
@@ -546,6 +533,121 @@ _executar_atualizacao_biblioteca() {
 }
 
 #---------- FUNCOES DE REVERSAO ----------#
+# Seleciona o backup da biblioteca que o usuario quer reverter
+# (mesmo conceito de _selecionar_programas_reversao, em programas.sh: a lista
+# numerada e exibida e o usuario digita o numero do backup desejado, em vez de
+# digitar a versao).
+#
+# Os backups ficam em DEFAULT_BIBLIOTECA_DIR e sao nomeados
+# "<prefixo>-<versao>.tar.gz" (formato atual) ou "<prefixo>-<versao>.zip"
+# (formato legado). O ".tar" parcial — intermediario da compactacao — e
+# ignorado de proposito: nao e um backup utilizavel.
+#
+# Popula BACKUP_BIBLIOTECA_SELECIONADO com o caminho do arquivo escolhido.
+# Retorna: 0 com o backup escolhido; 1 sem backup, cancelado ou invalido.
+_selecionar_backup_biblioteca_reversao() {
+    BACKUP_BIBLIOTECA_SELECIONADO=""
+
+    if [[ ! -d "${DEFAULT_BIBLIOTECA_DIR}" ]]; then
+        _erro "Diretorio de backups da biblioteca nao encontrado: ${DEFAULT_BIBLIOTECA_DIR}"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # Globbing sem nullglob: o padrao que nao casa nada chega aqui como texto
+    # literal e e descartado pelo teste -e (mesmo padrao de programas.sh).
+    local -a linhas=()
+    local bkp nome_base versao
+    for bkp in "${DEFAULT_BIBLIOTECA_DIR}"/"${PREFIXO_BACKUP_BIBLIOTECA}"-*.tar.gz \
+               "${DEFAULT_BIBLIOTECA_DIR}"/"${PREFIXO_BACKUP_BIBLIOTECA}"-*.zip; do
+        [[ -e "$bkp" ]] || continue
+        nome_base="${bkp##*/}"
+        versao="${nome_base#"${PREFIXO_BACKUP_BIBLIOTECA}-"}"
+        versao="${versao%.tar.gz}"
+        versao="${versao%.zip}"
+        # A versao identifica o backup na tela: so entra na lista o que tem
+        # versao numerica valida.
+        if ! _validar_versao_biblioteca "${versao}"; then
+            _log_erro "Backup de biblioteca ignorado (versao invalida): ${nome_base}"
+            continue
+        fi
+        # Versao e caminho ficam juntos (separados por TAB) para o sort
+        # numerico e para a leitura do item escolhido.
+        linhas+=("${versao}"$'\t'"${bkp}")
+    done
+
+    if (( ${#linhas[@]} == 0 )); then
+        _aviso "Nenhum backup de biblioteca encontrado em ${DEFAULT_BIBLIOTECA_DIR}"
+        _aguardar_tecla
+        return 1
+    fi
+
+    # Ordena por versao numerica: a ordem alfabetica do glob colocaria a
+    # versao 10 antes da 9.
+    local -a ordenadas=()
+    local linha_ord
+    while IFS= read -r linha_ord; do
+        [[ -n "${linha_ord}" ]] || continue
+        ordenadas+=("${linha_ord}")
+    done < <(printf '%s\n' "${linhas[@]}" | sort -n -k1,1)
+
+    if (( ${#ordenadas[@]} == 0 )); then
+        _erro "Falha ao listar os backups de biblioteca em ${DEFAULT_BIBLIOTECA_DIR}"
+        _aguardar_tecla
+        return 1
+    fi
+
+    _linha
+    _exibir_mensagem_centralizada "${CIANO}" "Backups disponiveis para reversao:"
+    _linha
+
+    local indice=1
+    local caminho
+    for linha_ord in "${ordenadas[@]}"; do
+        versao="${linha_ord%%$'\t'*}"
+        caminho="${linha_ord#*$'\t'}"
+        _exibir_mensagem_centralizada "${VERDE}" "$((indice)) - Versao ${versao} [${caminho##*/}]"
+        ((indice++)) || true
+    done
+
+    _linha
+    _exibir_mensagem_centralizada "${AMARELO}" "Digite o numero do backup que deseja reverter (ou 0 para sair):"
+
+    local escolha
+    local numero
+    while true; do
+        if ! read -rp "${AMARELO}Opcao -> ${NORMAL}" escolha; then
+            _aviso "Operacao cancelada."
+            return 1
+        fi
+        _linha
+
+        if ! [[ "${escolha}" =~ ^[0-9]+$ ]]; then
+            _erro "Opcao invalida. Informe um numero entre 1 e ${#ordenadas[@]}."
+            continue
+        fi
+
+        # 10# evita que "08" seja lido como octal invalido na aritmetica.
+        numero=$((10#${escolha}))
+
+        if (( numero == 0 )); then
+            _aviso "Operacao cancelada."
+            return 1
+        fi
+
+        if (( numero < 1 || numero > ${#ordenadas[@]} )); then
+            _erro "Opcao invalida. Informe um numero entre 1 e ${#ordenadas[@]}."
+            continue
+        fi
+
+        BACKUP_BIBLIOTECA_SELECIONADO="${ordenadas[$((numero - 1))]#*$'\t'}"
+        break
+    done
+
+    _ok "Backup selecionado: ${BACKUP_BIBLIOTECA_SELECIONADO}"
+    return 0
+}
+
 # Extrai backup completo ou seletivo na raiz, preservando suporte TAR.GZ e ZIP.
 # Uso: _extrair_backup_biblioteca <arquivo_backup> <destino> [padrao ...]
 #

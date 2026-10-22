@@ -96,6 +96,11 @@ presença **e** §5 dos pacotes) → `_processar_atualizacao_biblioteca` (tar de
 `unzip -o -d "${principal_local}"` → `trans_pc/`.
 Backup → `_executar_backup[_completo|_incremental|_multiplos_padroes]` →
 `_enviar_backup_{servidor,rede,avulso}` (`enviabackup`, `portalsav/`).
+Reversão de biblioteca → `_reverter_biblioteca` →
+`_selecionar_backup_biblioteca_reversao` (lista numerada dos backups de
+`biblioteca/anterior/`, ordenada por versão — o usuário escolhe o backup, não
+digita a versão) → `_reverter_biblioteca_completa` ou
+`_reverter_programa_especifico_biblioteca` (extrai em `/`, §5).
 Arquivos → expurgo/`limpetmp`/`variosarquivos`/`indexar` → `_executar_jutil` em lote → `_listar_logs`.
 
 ### F5 — Self-update + Ferramentas (menu 5, `baixar.sh`/`sistema.sh`)
