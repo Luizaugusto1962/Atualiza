@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-03
+# Versao: 23/10/2026-04
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
@@ -970,14 +970,21 @@ _executar_expurgador_diario() {
     )
 
     # Loop otimizado para limpeza. O $4 explicita a protecao de .dat/.idx
-    # (tambem o default do helper) para deixar a decisao visivel aqui.
+    # (tambem o default do helper) para deixar a decisao visivel aqui. No topo
+    # de CFG_PORTALSAV (recepcao compartilhada) os .zip tambem entram na
+    # protecao: backup offline pendente de envio, ZIPs de biblioteca aguardando
+    # processamento e ZIPs de reversao nao podem ser expurgados pelo daily.
     local _par_limpeza
     for _par_limpeza in "${pares_limpeza[@]}"; do
         local _dias_limpeza="${_par_limpeza%%:*}"
         local _dir_limpeza="${_par_limpeza#*:}"
         if [[ -n "$_dir_limpeza" && -d "$_dir_limpeza" ]]; then
+            local _protecao_expurgo="*.dat *.idx"
+            if [[ "${_dir_limpeza%/}" == "${CFG_PORTALSAV%/}" ]]; then
+                _protecao_expurgo="*.dat *.idx *.zip"
+            fi
             _tentar_log "expurgo diario em ${_dir_limpeza}" "${LOG_LIMPA}" \
-                _limpar_arquivos_antigos "$_dir_limpeza" "$_dias_limpeza" "*.*" "*.dat *.idx"
+                _limpar_arquivos_antigos "$_dir_limpeza" "$_dias_limpeza" "*.*" "$_protecao_expurgo"
         fi
     done
 

@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 23/10/2026-02
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -1133,6 +1133,7 @@ _recuperar_arquivos_principais() {
     cd "${CFG_DIR}" || return 1
 
     if ! _selecionar_base_arquivos; then
+        cd "${SCRIPT_DIR}" 2>/dev/null || true
         return 1
     fi
 
@@ -1140,6 +1141,7 @@ _recuperar_arquivos_principais() {
     base_trabalho="${base_trabalho:-${RAIZ}${CFG_BASE_DIR}}"
     if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _erro "Diretorio ${base_trabalho} nao encontrado ou inacessivel"
+        cd "${SCRIPT_DIR}" 2>/dev/null || true
         return 1
     fi
 
@@ -1905,8 +1907,12 @@ _executar_expurgador() {
             (( dirs_status[idx] == 1 )) || continue
             (
                 diretorio="${dirs_validos[$idx]}"
-                find "${diretorio:-.}" -type f -mtime +30 \
-                    ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>"${dir_tmp_exp}/${idx}.err" | wc -l > "${dir_tmp_exp}/${idx}.count"
+                # No topo de CFG_PORTALSAV (recepcao compartilhada) os .zip
+                # tambem sao preservados: backup offline pendente de envio, ZIPs
+                # de biblioteca aguardando processamento e ZIPs de reversao.
+                excls_expurg=(! -iname "*.dat" ! -iname "*.idx")
+                [[ "${diretorio%/}" == "${CFG_PORTALSAV%/}" ]] && excls_expurg+=(! -iname "*.zip")
+                find "${diretorio:-.}" -type f -mtime +30 "${excls_expurg[@]}" -print -delete 2>"${dir_tmp_exp}/${idx}.err" | wc -l > "${dir_tmp_exp}/${idx}.count"
             ) &
             pids_exp+=("$!")
         done
@@ -1933,8 +1939,9 @@ _executar_expurgador() {
             fi
         else
             # Fallback sequencial se mktemp falhou
-            arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 \
-                ! -iname "*.dat" ! -iname "*.idx" -print -delete 2>/dev/null | wc -l)
+            excls_expurg=(! -iname "*.dat" ! -iname "*.idx")
+            [[ "${diretorio%/}" == "${CFG_PORTALSAV%/}" ]] && excls_expurg+=(! -iname "*.zip")
+            arquivos_removidos=$(find "${diretorio:-.}" -type f -mtime +30 "${excls_expurg[@]}" -print -delete 2>/dev/null | wc -l)
             arquivos_removidos="${arquivos_removidos//[[:space:]]/}"
         fi
         _log "Expurgo: ${arquivos_removidos} arquivo(s) removido(s) de ${diretorio}" "${LOG_LIMPA}"

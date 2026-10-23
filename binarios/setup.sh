@@ -13,7 +13,7 @@ umask 077
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 21/10/2026
+# Versao: 23/10/2026
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -40,6 +40,16 @@ fi
 
 tracejada="#-------------------------------------------------------------------#"
 traco="#####################################################################"
+
+# Remove metacaracteres que o parser seguro do .config (_carregar_config_seguro
+# / _validar_config_file) rejeita ([ ` ; | & < > ( ) { } $). Sem isso uma
+# entrada digitada no setup gravava um .config invalido que bloqueava o
+# carregamento do sistema inteiro na proxima execucao.
+_sanitizar_valor_setup() {
+    local valor="${1:-}"
+    valor="${valor//[\`\;|&<>()\{\}\$]/}"
+    printf '%s' "$valor"
+}
 
 # Diretorio do servidor offline
 # Configuracao inicial do sistema
@@ -207,15 +217,18 @@ _setup_diretorios() {
     echo ${tracejada}
     echo "###     ( Nome de pasta no servidor )              ###"
     read -rp "Nome da pasta da base de dados principal (Ex: /dados_jisam): " base
+    base="$(_sanitizar_valor_setup "$base")"
     base="${base:-/dados_jisam}"
     base="${base,,}"  # Normalizar para minusculo
     echo "base=${base}" >> .config
     echo ${tracejada}
     read -rp "Nome da pasta da segunda base de dados (Opcional): " base2
+    base2="$(_sanitizar_valor_setup "$base2")"
     base2="${base2,,}"  # Normalizar para minusculo
     [[ -n "$base2" ]] && echo "base2=${base2}" >> .config || echo "#base2=" >> .config
     echo ${tracejada}
     read -rp "Nome da pasta da terceira base de dados (Opcional): " base3
+    base3="$(_sanitizar_valor_setup "$base3")"
     base3="${base3,,}"  # Normalizar para minusculo
     [[ -n "$base3" ]] && echo "base3=${base3}" >> .config || echo "#base3=" >> .config
     echo ${tracejada}
@@ -299,6 +312,7 @@ _setup_backup() {
         read -rp "Nome do diretorio sem a /: " enviabackup
 
         # Monta o caminho completo esperado e salva
+        enviabackup="$(_sanitizar_valor_setup "$enviabackup")"
         enviabackup="${enviabackup,,}"  # Normalizar para minusculo
         enviabackup="/cliente/${enviabackup}_jisam"
         echo "enviabackup=${enviabackup}" >> .config
@@ -311,6 +325,7 @@ _setup_empresa() {
     echo "###   Nao pode conter espacos entre os nomes    ###"
     echo ${tracejada}
     read -rp "Nome da Empresa (sem espacos): " empresa
+    empresa="$(_sanitizar_valor_setup "$empresa")"
     empresa="${empresa^^}"  # Normalizar para maiusculo
     echo "empresa=${empresa}" >> .config
     _configure_ssh_access
@@ -356,6 +371,7 @@ _editar_variavel() {
                 ;;
             *)
                 read -rp "Novo valor para ${nome}: " novo_valor
+                novo_valor="$(_sanitizar_valor_setup "$novo_valor")"
                 # Aplicar normalizacao de caso conforme a variavel
                 case "$nome" in
                     "base"|"base2"|"base3"|"enviabackup")

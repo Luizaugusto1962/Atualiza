@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 23/10/2026-01
 #
 
 # Variaveis globais esperadas
@@ -43,7 +43,17 @@ declare -a ARQUIVOS_PROGRAMA=()
 # acima), entao nao ha estado de shell a reverter.
 _cleanupAtualizacao() {
     cd "$_cwd" || true
-    rm -rf "${dir_temp_atualizacao}"
+    # SEGURANCA: nunca remover um caminho inseguro/vazio. Se CFG_PORTALSAV
+    # estiver vazio, dir_temp_atualizacao resolveria para "/dir_temp_atualizacao"
+    # e o rm -rf atingiria a raiz — o guard abaixo impede isso.
+    if [[ -z "${dir_temp_atualizacao:-}" ]]; then
+        return 0
+    fi
+    if ! _validar_caminho_seguro "${dir_temp_atualizacao}"; then
+        _log "AVISO: cleanup recusado para caminho inseguro: ${dir_temp_atualizacao}" || true
+        return 0
+    fi
+    rm -rf -- "${dir_temp_atualizacao}" 2>/dev/null || true
 }
 #---------- FUNCOES DE ATUALIZACAO ONLINE ----------#
 
@@ -764,7 +774,7 @@ _processar_atualizacao_pacotes() {
         # devolve 0 sempre — grep devolveria 1 sem match e abortaria sob set -e
         # antes de chegar no "if [[ -z ... ]]" que trata o pacote sem arquivos.
         # Diretorios no zip terminam em "/" e nao casam com a extensao.
-        lista_arquivos=$("${DEFAULT_UNZIP}" -Z1 "${arquivo_zip}" 2>/dev/null | awk '/\.(class|TEL)$/')
+        lista_arquivos=$("${DEFAULT_UNZIP}" -Z1 "${arquivo_zip}" 2>/dev/null | awk '/\.(class|TEL)$/') || lista_arquivos=""
         if [[ -z "${lista_arquivos}" ]]; then
             _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
             _cleanupAtualizacao

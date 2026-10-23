@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-01
+# Versao: 23/10/2026-02
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -281,6 +281,15 @@ _expandir_backups_zip() {
             fi
             _erro "Opcao invalida. Informe um numero entre 1 e ${#zips_backup[@]}."
         done
+    fi
+
+    # SEGURANCA: validar as entradas do ZIP antes de extrair. O staging vive
+    # dentro de DEFAULT_BACKUP_DIR e o unzip roda com -j, mas um pacote com
+    # "../" ou caminho absoluto nao deve nem chegar a ser expandido (mesma
+    # regra dos demais pontos de extracao do sistema).
+    if ! _validar_backup_entradas_seguras "$zip_backup"; then
+        _erro "Backup rejeitado: contem entradas inseguras: ${zip_backup}"
+        return 1
     fi
 
     # "recriar" purga antes: um run interrompido deixa o staging populado, e o unzip

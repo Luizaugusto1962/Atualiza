@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 15/10/2026-03
+# Versao: 23/10/2026-04
 # Autor: Luiz Augusto
 #
 # =============================================================================
@@ -580,7 +580,7 @@ _login() {
                 if [[ -z "$senha" ]]; then
                     _exibir_mensagem_centralizada "${VERMELHO}" "Senha nao pode ser vazia."
                 else
-                    hash_armazenado=$(_obter_hash_usuario "$usuario")
+                    hash_armazenado=$(_obter_hash_usuario "$usuario") || hash_armazenado=""
                     if [[ -z "$hash_armazenado" ]]; then
                         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao encontrado."
                     else
@@ -687,7 +687,7 @@ _alterar_senha() {
     _linha "=" "${VERMELHO}"
     read -rsp "${AMARELO}Digite a senha atual: ${NORMAL}" senha_atual
     printf "\n"
-    hash_armazenado=$(_obter_hash_usuario "$alvo_usuario")
+    hash_armazenado=$(_obter_hash_usuario "$alvo_usuario") || hash_armazenado=""
     if [[ -z "$hash_armazenado" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao encontrado."
         _linha "-" "${VERMELHO}"
