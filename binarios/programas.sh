@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-01
+# Versao: 23/10/2026-02
 #
 
 # Variaveis globais esperadas
@@ -968,13 +968,10 @@ _backup_programa_antigo() {
 
     _exibir_mensagem_centralizada "${AMARELO}" "Salvando programa antigo: ${programa}"
 
-    # Backup .class (nome exato ou variante com underscore)
+    # Backup .class (programa e seus complementos: ADC066.class, ADC066A.class, ...)
     local class_files=()
-    if [[ -f "${E_EXEC}/${programa}.${EXTENSAO_CLASS}" ]]; then
-        class_files+=("${E_EXEC}/${programa}.${EXTENSAO_CLASS}")
-    fi
     local f_class
-    for f_class in "${E_EXEC}/${programa}_"*."${EXTENSAO_CLASS}"; do
+    for f_class in "${E_EXEC}/${programa}"*."${EXTENSAO_CLASS}"; do
         [[ -e "$f_class" ]] || continue
         class_files+=("$f_class")
     done
@@ -988,13 +985,10 @@ _backup_programa_antigo() {
         fi
     fi
 
-    # Backup .TEL (nome exato ou variante com underscore)
+    # Backup .TEL (programa e seus complementos)
     local tel_files=()
-    if [[ -f "${T_TELAS}/${programa}.${EXTENSAO_TELAS}" ]]; then
-        tel_files+=("${T_TELAS}/${programa}.${EXTENSAO_TELAS}")
-    fi
     local f_tel
-    for f_tel in "${T_TELAS}/${programa}_"*."${EXTENSAO_TELAS}"; do
+    for f_tel in "${T_TELAS}/${programa}"*."${EXTENSAO_TELAS}"; do
         [[ -e "$f_tel" ]] || continue
         tel_files+=("$f_tel")
     done
