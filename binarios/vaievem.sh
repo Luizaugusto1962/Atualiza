@@ -14,7 +14,7 @@ set -euo pipefail
 # utils.sh (bloco "CAMINHOS E DIRETORIOS"). Nao recriar aqui.
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 09/10/2026-01
+# Versao: 28/10/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -794,8 +794,7 @@ _baixar_programas_vaievem() {
     fi
 
     if ! "${cmd_scp[@]}" "${origens[@]}" "${caminho}/"; then
-        _log_erro "Falha no download em lote dos programas"
-        return 1
+        _log_erro "Falha no download em lote dos programas (alguns arquivos podem nao existir no servidor)"
     fi
 
     # Integridade de cada zip recebido (existe no destino absoluto ${caminho}/)
@@ -804,18 +803,19 @@ _baixar_programas_vaievem() {
     # nome contendo "/" (permitido por _validar_caminho_seguro) apontaria para
     # um arquivo que nunca existiu e a checagem falharia com falso negativo.
     local arquivo_destino
+    local _baixados_ok=0
     for arquivo in "${nomes_arquivos[@]}"; do
         arquivo_destino="${caminho%/}/${arquivo##*/}"
         if [[ ! -f "$arquivo_destino" ]]; then
-            _log_erro "Arquivo nao encontrado apos download: $arquivo"
-            return 1
+            _aviso "Arquivo nao encontrado apos download (programa inexistente?): $arquivo"
+            continue
         fi
         if [[ ! -s "$arquivo_destino" ]]; then
-            _log_erro "Arquivo recebido vazio: $arquivo"
+            _aviso "Arquivo recebido vazio: $arquivo"
             # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
             rm -f -- "$arquivo_destino"
             _aguardar 2
-            return 1
+            continue
         fi
         _linha
         # Mesmo criterio dos demais downloads: indice central. Este teste com
@@ -823,14 +823,20 @@ _baixar_programas_vaievem() {
         # (que a extracao em programas.sh faz logo em seguida) e nao logava o
         # motivo da recusa. Agora registra em LOG_ATU.
         if ! _zip_indice_valido "$arquivo_destino"; then
-            _erro "Arquivo corrompido: $arquivo"
+            _aviso "Arquivo corrompido: $arquivo"
             # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
             rm -f -- "$arquivo_destino"
             _aguardar 2
-            return 1
+            continue
         fi
         _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
+        ((_baixados_ok++)) || true
     done
+
+    if (( _baixados_ok == 0 )); then
+        _erro "Nenhum arquivo foi baixado com sucesso"
+        return 1
+    fi
 
     return 0
 }

@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-02
+# Versao: 28/10/2026-03
 #
 
 # Variaveis globais esperadas
@@ -518,18 +518,24 @@ _baixar_pacotes_vaievem() {
 # Verifica se arquivos existem no diretorio de recebimento (modo offline)
 # Retorna: 0 se todos encontrados, 1 se algum faltar
 _verificar_arquivos_offline() {
-    local erros_encontrados=0
     local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}")
+    local _encontrados=0
+    for arquivo in "${_arquivos_prog[@]}"; do
         if [[ -f "${CFG_PORTALSAV}/${arquivo}" ]]; then
             _exibir_mensagem_centralizada "${VERDE}" "Arquivo encontrado: ${arquivo}"
         else
-            _erro "Arquivo nao encontrado: ${arquivo}"
-            erros_encontrados=1
+            _aviso "Arquivo nao encontrado: ${arquivo}"
         fi
         _linha
     done
-    return "${erros_encontrados}"
+    for arquivo in "${_arquivos_prog[@]}"; do
+        [[ -f "${CFG_PORTALSAV}/${arquivo}" ]] && ((_encontrados++)) || true
+    done
+    if (( _encontrados == 0 )); then
+        return 1
+    fi
+    return 0
 }
 
 # Valida pre-requisitos comuns antes de qualquer atualizacao
@@ -567,7 +573,7 @@ _validar_pre_requisitos_atualizacao() {
 
     # Verificar se arquivos existem no diretorio de recebimento
     local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         if [[ ! -f "${CFG_PORTALSAV}/${arquivo}" ]]; then
             _erro "Arquivo nao encontrado: ${CFG_PORTALSAV}/${arquivo}"
             return 1
@@ -584,7 +590,7 @@ _validar_pre_requisitos_atualizacao() {
     # Para um ZIP legitimo nada muda: o validador e silencioso e o fluxo segue
     # igual. biblioteca.sh faz a mesma coisa desde _validar_backup_entradas_seguras
     # (utils.sh), antes de extrair.
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         if ! _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo}"; then
             _erro "OPERACAO ABORTADA: pacote invalido em ${CFG_PORTALSAV}/${arquivo}"
             return 1
@@ -596,6 +602,33 @@ _validar_pre_requisitos_atualizacao() {
 
 # Processa atualizacao dos programas
 _processar_atualizacao_programas() {
+    # Continuar caso um dos programas informados nao exista (arquivo nao
+    # baixado/disponivel): manter apenas os que possuem arquivo em
+    # CFG_PORTALSAV e prosseguir com a atualizacao do que foi baixado.
+    local -a _progs_disponiveis=() _arqs_disponiveis=()
+    local _idx_prog _arq_prog
+    for _idx_prog in "${!PROGRAMAS_SELECIONADOS[@]}"; do
+        _arq_prog="${ARQUIVOS_PROGRAMA[$_idx_prog]}"
+        if [[ -f "${CFG_PORTALSAV}/${_arq_prog}" ]]; then
+            _progs_disponiveis+=("${PROGRAMAS_SELECIONADOS[$_idx_prog]}")
+            _arqs_disponiveis+=("${_arq_prog}")
+        else
+            _aviso "Programa nao encontrado (arquivo ausente): ${_arq_prog}"
+        fi
+    done
+    if (( ${#_progs_disponiveis[@]} > 0 )); then
+        PROGRAMAS_SELECIONADOS=("${_progs_disponiveis[@]}")
+        ARQUIVOS_PROGRAMA=("${_arqs_disponiveis[@]}")
+    else
+        PROGRAMAS_SELECIONADOS=()
+        ARQUIVOS_PROGRAMA=()
+    fi
+
+    if (( ${#ARQUIVOS_PROGRAMA[@]} == 0 )); then
+        _aviso "Nenhum programa disponivel para atualizacao"
+        return 1
+    fi
+
     # Validar pre-requisitos comuns (diretorios, backups, arquivos, espaco em disco)
     if ! _validar_pre_requisitos_atualizacao; then
         return 1
@@ -624,7 +657,7 @@ _processar_atualizacao_programas() {
 
     # Mover arquivos para o diretorio temporario e acessa-lo
     local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
             _cleanupAtualizacao
@@ -654,7 +687,7 @@ _processar_atualizacao_programas() {
     _aguardar 1
 
     # Descompactar e atualizar programas
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
             _cleanupAtualizacao
@@ -674,9 +707,8 @@ _processar_atualizacao_programas() {
         done
 
         if (( ${#arquivos_programa[@]} == 0 )); then
-            _erro "Nenhum arquivo extraido para ${programa_verif}. Verifique o conteudo do pacote."
-            _cleanupAtualizacao
-            return 1
+            _aviso "Nenhum arquivo extraido para ${programa_verif}. Programa ignorado."
+            continue
         fi
     done
 
@@ -732,7 +764,7 @@ _processar_atualizacao_pacotes() {
 
     # Mover pacotes para o diretorio temporario
     local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         if ! mv -f "${CFG_PORTALSAV}/${arquivo}" "${dir_temp_atualizacao}/"; then
             _erro "ERRO: Falha ao mover ${arquivo} para diretorio temporario"
             _cleanupAtualizacao
@@ -748,7 +780,7 @@ _processar_atualizacao_pacotes() {
     fi
 
     # Descompactar pacotes no diretorio isolado
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    for arquivo in "${_arquivos_prog[@]}"; do
         if ! "${DEFAULT_UNZIP}" -o "${arquivo}" >>"${LOG_ATU}" 2>&1; then
             _erro "Erro ao descompactar ${arquivo}"
             _cleanupAtualizacao
@@ -758,7 +790,7 @@ _processar_atualizacao_pacotes() {
 
     # SEGURANCA: Validar integridade pos-extracao (cada pacote deve ter gerado arquivos)
     local arquivo_zip lista_arquivos nome_arquivo
-    for arquivo_zip in "${ARQUIVOS_PROGRAMA[@]}"; do
+    for arquivo_zip in "${_arquivos_prog[@]}"; do
         if [[ ! -f "${arquivo_zip}" ]]; then
             _erro "Pacote nao encontrado apos extracao: ${arquivo_zip}"
             _cleanupAtualizacao
@@ -1066,7 +1098,7 @@ _mover_arquivos_extraidos() {
 _arquivar_zips_progs_dir() {
     _garantir_diretorio "${DEFAULT_PROGS_ATUAL_DIR}" criar "diretorio de programas" || return 1
     local arquivo
-    for arquivo in "${ARQUIVOS_PROGRAMA[@]}"; do
+    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         local backup_file="${arquivo%.zip}.bkp"
         if ! mv -f "${arquivo}" "${DEFAULT_PROGS_ATUAL_DIR}/${backup_file}" >>"${LOG_ATU}" 2>&1; then
             _log_erro "Falha ao arquivar ${arquivo} em ${DEFAULT_PROGS_ATUAL_DIR}/${backup_file}"

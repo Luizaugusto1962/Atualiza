@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 28/10/2026-01
 #
 
 #---------- CONFIGURACOES DO SISTEMA DE AJUDA ----------#
@@ -108,7 +108,7 @@ _ler_secao_manual() {
     # Encontra linha de início da seçao
     # head -1: cabecalho duplicado no manual.txt geraria "1\n3" e mataria a
     # aritmetica logo abaixo (arithmetic syntax error).
-    linha_inicio=$(grep -n "^\[${secao}\]$" "$arquivo_manual" | cut -d: -f1 | head -1)
+    linha_inicio=$(awk -v sec="^\\[${secao}\\]$" '$0 ~ sec {print NR; exit}' "$arquivo_manual")
 
     if [[ -z "$linha_inicio" ]]; then
         _exibir_mensagem_centralizada "${AMARELO}" "Seçao [$secao] nao encontrada no manual."
@@ -119,7 +119,7 @@ _ler_secao_manual() {
     linha_inicio=$((linha_inicio + 1))
 
     # Encontra a proxima seçao apos a linha de início
-    linha_fim=$(tail -n +${linha_inicio} "$arquivo_manual" | grep -n "^\[.*\]$" | head -1 | cut -d: -f1)
+    linha_fim=$(awk -v s="$linha_inicio" 'NR>=s && $0 ~ /^\[.*\]$/ {print NR - s + 1; exit}' "$arquivo_manual")
 
     if [[ -n "$linha_fim" ]]; then
         # Há outra seçao depois, lê até ela

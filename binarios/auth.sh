@@ -239,7 +239,7 @@ _verificar_bloqueio_usuario() {
     [[ ! -f "$arquivo_tentativas" ]] && return 0
 
     local linha
-    linha=$(awk -F: -v u="$usuario" '$1 == u {print $2 "|" $3; exit}' "$arquivo_tentativas" 2>/dev/null) || true
+    linha=$(grep -m1 "^${usuario}:" "$arquivo_tentativas" 2>/dev/null | cut -d':' -f2-3 | tr ':' '|' ) || true
     [[ -z "$linha" ]] && return 0
 
     local tentativas timestamp_bloqueio
@@ -296,7 +296,7 @@ _registrar_tentativa_falha() {
     # `exit 0` no corpo do awk dispara o END, e `END {exit 1}` sobrescreve o
     # status — o ramo de incremento nunca era alcancado e cada falha gerava
     # uma linha nova (u:1:agora). O bloqueio nunca era atingido.
-    if awk -F: -v u="$usuario" '$1 == u {encontrado=1; exit} END {exit !encontrado}' "$arquivo_tentativas" 2>/dev/null; then
+    if grep -qE "^${usuario}:" "$arquivo_tentativas" 2>/dev/null; then
         local tmp_tent
         tmp_tent=$(mktemp) || return 0
         trap 'rm -f -- "$tmp_tent"' RETURN
