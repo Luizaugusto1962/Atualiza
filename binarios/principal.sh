@@ -40,7 +40,7 @@ export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE DEFAULT_LOGS_DIR
 # =============================================================================
 # VERSAO DO SISTEMA
 # =============================================================================
-declare -rx UPDATE="22/10/26"
+declare -rx UPDATE="28/10/26"
 
 # =============================================================================
 # INICIALIZACAO DE DIRETORIOS (bootstrap pre-modulos)

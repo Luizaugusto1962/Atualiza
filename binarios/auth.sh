@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-04
+# Versao: 28/10/2026-01
 # Autor: Luiz Augusto
 #
 # =============================================================================
@@ -511,6 +511,7 @@ _mostrar_boas_vindas() {
     _linha "=" "${VERDE}"
     printf "\n"
     _exibir_mensagem_centralizada "${AMARELO}" "Bem-vindo ao Sistema"
+    _exibir_mensagem_centralizada "${AMARELO}" "Uso exclusivo da SAV"
     _exibir_separador_menu
     printf "\n"
     _exibir_mensagem_centralizada_a_esquerda "${CIANO}" "Usuario: ${BRANCO}${nome_usuario}${NORMAL}"
