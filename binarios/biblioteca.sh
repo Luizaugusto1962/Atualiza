@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 22/10/2026-01
+# Versao: 29/10/2026-02
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -855,7 +855,11 @@ _validar_versao_biblioteca() {
 # Solicita versao da biblioteca
 _solicitar_versao_biblioteca() {
     _linha
-    _exibir_mensagem_centralizada "${AMARELO}" "Informe a versao da Biblioteca a ser atualizada:"
+    if [[ -f "${CFG_DIR:-}/.versao" ]]; then
+        _exibir_mensagem_centralizada "${AMARELO}" "Informe a versao da Biblioteca a ser atualizada:${NORMAL}${VERMELHO} - Versao Anterior - ${VERSAOANT:-}""${NORMAL}"
+    else
+        _exibir_mensagem_centralizada "${AMARELO}" "Informe a versao da Biblioteca a ser atualizada:${NORMAL}"
+    fi
     _linha
     printf "\n"
     read -rp "${VERDE}Informe somente o numeral da versao: ${NORMAL}" VERSAO
