@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 29/10/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -221,9 +221,9 @@ _menu_biblioteca() {
             fi
         fi
 
-        if [[ -n "${VERSAOANT:-}" ]]; then
+        if [[ -f "${CFG_DIR:-}/.versao" ]]; then
             printf "\n"
-            _exibir_mensagem_direita "${AZUL}" "Versao Anterior - ${VERSAOANT}"
+            _exibir_mensagem_direita "${AZUL}" "Versao Anterior - ${VERSAOANT:-}"
         fi
 
         local opcao
