@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 29/10/2026-01
+# Versao: 30/10/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -328,7 +328,7 @@ _menu_temporarios() {
         case "${opcao}" in
             # _tentar_log em vez de "|| true": o menu nao pode quebrar por uma limpeza
             # com falha, mas o erro precisa ficar registrado (ver utils.sh).
-            1) _tentar_log "limpeza de temporarios (menu)" "${LOG_LIMPA}" _executar_limpeza_temporarios ;;
+            1) _tentar_log "limpeza de temporarios (menu)" "${LOG_LIMPA}" _executar_limpeza_temporarios; return ;;
             2) _tentar_log "menu: adicionar_arquivo_lixo" "${LOG_LIMPA}" _adicionar_arquivo_lixo ;;
             3) _tentar_log "menu: lista_arquivos_lixo" "${LOG_LIMPA}" _lista_arquivos_lixo ;;
             9) return ;;
