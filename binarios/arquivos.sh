@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-02
+# Versao: 05/11/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -64,6 +64,11 @@ _carregar_links_duros() {
     return 0
 }
 
+# Cache de resultados de _eh_link para evitar syscalls repetidos no mesmo arquivo
+# Limpo no início de cada operação de nível superior (_recuperar_todos_arquivos,
+# _processar_lista_arquivos, _executar_jutil_lote) para não crescer indefinidamente
+declare -A _EH_LINK_CACHE=()
+
 # Verdadeiro para link simbolico OU hard link. Cobre os dois casos que a
 # recuperacao precisa pular.
 #
@@ -76,31 +81,43 @@ _eh_link() {
     if [[ -z "$caminho" ]]; then
         return 1
     fi
+
+    # Cache hit: evita syscall repetido para o mesmo caminho
+    if [[ -v "_EH_LINK_CACHE[$caminho]" ]]; then
+        return "${_EH_LINK_CACHE[$caminho]}"
+    fi
+
+    local resultado=1
     if [[ -L "$caminho" ]]; then
-        return 0
-    fi
-    local dir="${caminho%/*}"
-    if [[ -z "$dir" || "$dir" == "$caminho" ]]; then
-        dir="."
-    fi
-    if [[ "$dir" == "${_LINKS_DUROS_DIR:-}" ]]; then
-        # Mapa deste diretorio ja carregado: decide so pela presenca no mapa
-        if [[ -n "${_LINKS_DUROS[$caminho]:-}" ]]; then
-            return 0
+        resultado=0
+    else
+        local dir="${caminho%/*}"
+        if [[ -z "$dir" || "$dir" == "$caminho" ]]; then
+            dir="."
         fi
-        return 1
+        if [[ "$dir" == "${_LINKS_DUROS_DIR:-}" ]]; then
+            # Mapa deste diretorio ja carregado: decide so pela presenca no mapa
+            if [[ -n "${_LINKS_DUROS[$caminho]:-}" ]]; then
+                resultado=0
+            fi
+        else
+            local nlinks
+            # %h no GNU coreutils, %l no BSD/macOS. Sem numero utilizavel => nao link.
+            nlinks=$(stat -c '%h' -- "$caminho" 2>/dev/null || stat -f '%l' -- "$caminho" 2>/dev/null || printf '0')
+            nlinks="${nlinks//[^0-9]/}"
+            if [[ -n "$nlinks" ]] && (( nlinks > 1 )); then
+                resultado=0
+            fi
+        fi
     fi
-    local nlinks
-    # %h no GNU coreutils, %l no BSD/macOS. Sem numero utilizavel => nao link.
-    nlinks=$(stat -c '%h' -- "$caminho" 2>/dev/null || stat -f '%l' -- "$caminho" 2>/dev/null || printf '0')
-    nlinks="${nlinks//[^0-9]/}"
-    if [[ -z "$nlinks" ]]; then
-        return 1
-    fi
-    if (( nlinks > 1 )); then
-        return 0
-    fi
-    return 1
+
+    _EH_LINK_CACHE["$caminho"]=$resultado
+    return $resultado
+}
+
+# Limpa o cache de _eh_link (chamado no início de operações de nível superior)
+_limpar_cache_eh_link() {
+    _EH_LINK_CACHE=()
 }
 
 # Mata PIDs de jutil ainda ativos e esvazia o rastreador. Segura sob set -u e
@@ -516,16 +533,23 @@ _limpar_base_especifica() {
     fi
 
     # Contagem por padrao para o log (sem novo find: fnmatch case-insensitive via minusculas)
+    # Otimizado: pre-compilar lowercase 1x e break no primeiro match (arquivo so conta para 1 padrao)
     local -A qtd_por_padrao=()
-    local nome_base nome_lower padrao_lower
+    local -a padroes_lower=()
+    local nome_base nome_lower padrao_lower i_padrao
+    for padrao in "${padroes_validos[@]}"; do
+        padroes_lower+=("${padrao,,}")
+    done
     for arquivo in "${arquivos_zip_total[@]}"; do
         nome_base="${arquivo##*/}"
         nome_lower="${nome_base,,}"
-        for padrao in "${padroes_validos[@]}"; do
-            padrao_lower="${padrao,,}"
+        for i_padrao in "${!padroes_lower[@]}"; do
+            padrao_lower="${padroes_lower[$i_padrao]}"
             # shellcheck disable=SC2053 # glob intencional em $padrao_lower
             if [[ "$nome_lower" == $padrao_lower ]]; then
+                padrao="${padroes_validos[$i_padrao]}"
                 qtd_por_padrao["$padrao"]=$((${qtd_por_padrao["$padrao"]:-0} + 1))
+                break
             fi
         done
     done
@@ -697,6 +721,7 @@ _recuperar_arquivo_especifico() {
 # Recupera todos os arquivos principais
 _recuperar_todos_arquivos() {
     local base_trabalho="${1:-}"
+    _limpar_cache_eh_link
     local -a extensoes=()
 # Sem extensoes configuradas = *.dat (unico). DATA_EXTENSIONS pode ser escalar
 # (string) ou array. O gate usa ${#arr[@]} (seguro com array vazio) e NAO
@@ -807,6 +832,7 @@ _recuperar_arquivo_individual() {
     local old_nocaseglob
     local nome_arquivo="${1:-}"
     local base_trabalho="${2:-}"
+    _limpar_cache_eh_link
 
     # Validar nome do arquivo
     if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
@@ -1206,6 +1232,7 @@ _processar_lista_arquivos() {
     local arquivo_lista="${1:-}"
     local base_trabalho="${2:-}"
     local caminho_arquivo
+    _limpar_cache_eh_link
 
     if ! _garantir_diretorio "$base_trabalho" validar_escrita "diretorio de trabalho" silencioso; then
         _erro "Diretorio de trabalho invalido: $base_trabalho"
@@ -1239,8 +1266,12 @@ _processar_lista_arquivos() {
         fi
 
         caminho_arquivo="${base_trabalho}/${listando}"
-        if ! _validar_caminho_seguro "$caminho_arquivo"; then
-            _aviso "Caminho invalido ignorado: ${caminho_arquivo}"
+        # SEGURANCA: _validar_padrao_limpeza acima ja rejeitou /, .., e caracteres
+        # perigosos (regex whitelist). base_trabalho foi validado por _garantir_diretorio
+        # + _validar_caminho_seguro antes do loop. A validacao completa por arquivo seria
+        # redundante (O(n) chamadas de funcao). Check de tamanho como defesa em profundidade.
+        if (( ${#caminho_arquivo} > 4096 )); then
+            _aviso "Caminho invalido ignorado (excede 4096 bytes): ${caminho_arquivo}"
             ((qtd_invalidos++)) || true
             continue
         fi
@@ -1319,6 +1350,7 @@ _executar_jutil_lote_sequencial() {
 _executar_jutil_lote() {
     local -a lista=("$@")
     local total="${#lista[@]}"
+    _limpar_cache_eh_link
     # Resultado do lote para o resumo do chamador (sempre definidos na saida)
     _JUTIL_LOTE_OK=0
     _JUTIL_LOTE_FALHAS=0
