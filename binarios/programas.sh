@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/10/2026-03
+# Versao: 05/11/2026-01
 #
 
 # Variaveis globais esperadas
@@ -288,8 +288,12 @@ _selecionar_programas_reversao() {
         # o que permite o usuario digitar multiplos numeros separados por espaco (ex: "1 2 3").
         # Desativar glob temporariamente para evitar expansao de * e ? em ${escolha},
         # restaurando o estado anterior ao final (set +f cego alteraria o shell).
-        local _old_noglob
-        _old_noglob=$(shopt -p noglob 2>/dev/null) || _old_noglob='shopt -u noglob'
+        # Estado guardado via $- (zero fork): "f" em $- = noglob ativo; evita
+        # o fork de "$(shopt -p noglob)". Bash 4.0+ suporta $-.
+        local _old_noglob=0
+        case "$-" in
+            *f*) _old_noglob=1 ;;
+        esac
         set -f
         for token in ${escolha}; do
             if ! [[ "${token}" =~ ^[0-9]+$ ]]; then
@@ -302,7 +306,7 @@ _selecionar_programas_reversao() {
             fi
             indices+=("${token}")
         done
-        if [[ "${_old_noglob}" == *"-s"* ]]; then
+        if (( _old_noglob )); then
             set -f
         else
             set +f
@@ -572,6 +576,9 @@ _validar_pre_requisitos_atualizacao() {
     fi
 
     # Verificar se arquivos existem no diretorio de recebimento
+    # Loop unico: existencia + validacao de entradas no mesmo turno (antes
+    # eram 2 varreduras). Cada _validar_backup_entradas_seguras e 1 processo
+    # externo (unzip -Z1 + grep), entao o custo dominante e externo, nao loop.
     local arquivo
     local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
         if [[ ! -f "${CFG_PORTALSAV}/${arquivo}" ]]; then
@@ -590,12 +597,78 @@ _validar_pre_requisitos_atualizacao() {
     # Para um ZIP legitimo nada muda: o validador e silencioso e o fluxo segue
     # igual. biblioteca.sh faz a mesma coisa desde _validar_backup_entradas_seguras
     # (utils.sh), antes de extrair.
-    local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
-        if ! _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo}"; then
-            _erro "OPERACAO ABORTADA: pacote invalido em ${CFG_PORTALSAV}/${arquivo}"
-            return 1
+    if (( ${#_arquivos_prog[@]} <= 1 )); then
+        local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
+            if ! _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo}"; then
+                _erro "OPERACAO ABORTADA: pacote invalido em ${CFG_PORTALSAV}/${arquivo}"
+                return 1
+            fi
+        done
+    else
+        # Ondas de ate N jobs (padrao de arquivos.sh:_executar_jutil_lote):
+        # Bash 4.0+ sem wait -n, espera so a onda atual via "wait $pid".
+        # O resultado volta via arquivo de status; qualquer falha aborta
+        # antes de extrair, igual ao sequencial (a saida do validador e o
+        # erro, nao a ordem dos testes).
+        local paralelo=4
+        [[ "${PRE_REQUISITO_PARALELO:-}" =~ ^[0-9]+$ ]] && paralelo="${PRE_REQUISITO_PARALELO}"
+        if (( paralelo < 1 )); then
+            paralelo=1
         fi
-    done
+        if (( paralelo > ${#_arquivos_prog[@]} )); then
+            paralelo="${#_arquivos_prog[@]}"
+        fi
+        local dir_status
+        dir_status=$(_expurgador_status_dir)
+        if [[ -z "$dir_status" ]]; then
+            local -a _arquivos_prog=("${ARQUIVOS_PROGRAMA[@]}"); for arquivo in "${_arquivos_prog[@]}"; do
+                if ! _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo}"; then
+                    _erro "OPERACAO ABORTADA: pacote invalido em ${CFG_PORTALSAV}/${arquivo}"
+                    return 1
+                fi
+            done
+        else
+            local inicio=0 fim indice arquivo_val pids_onda rc_val
+            local -a pids_onda=()
+            local falhou=0 arquivo_falha=""
+            while (( inicio < ${#_arquivos_prog[@]} && falhou == 0 )); do
+                fim=$((inicio + paralelo))
+                if (( fim > ${#_arquivos_prog[@]} )); then
+                    fim="${#_arquivos_prog[@]}"
+                fi
+                pids_onda=()
+                for ((indice = inicio; indice < fim; indice++)); do
+                    arquivo_val="${_arquivos_prog[$indice]}"
+                    (
+                        _validar_backup_entradas_seguras "${CFG_PORTALSAV}/${arquivo_val}" >/dev/null 2>&1
+                        printf '%s' "$?" > "${dir_status}/${indice}.status"
+                    ) &
+                    pids_onda+=("$!")
+                done
+                for pids_onda in ${pids_onda[@]+"${pids_onda[@]}"}; do
+                    wait "$pids_onda" 2>/dev/null || true
+                done
+                for ((indice = inicio; indice < fim; indice++)); do
+                    rc_val=1
+                    if [[ -f "${dir_status}/${indice}.status" ]]; then
+                        rc_val=$(<"${dir_status}/${indice}.status")
+                    fi
+                    rc_val="${rc_val//[^0-9]/}"
+                    if [[ -z "$rc_val" || "$rc_val" != "0" ]]; then
+                        arquivo_falha="${_arquivos_prog[$indice]}"
+                        falhou=1
+                        break
+                    fi
+                done
+                inicio="$fim"
+            done
+            rm -rf -- "$dir_status" 2>/dev/null || true
+            if (( falhou )); then
+                _erro "OPERACAO ABORTADA: pacote invalido em ${CFG_PORTALSAV}/${arquivo_falha}"
+                return 1
+            fi
+        fi
+    fi
 
     return 0
 }
@@ -636,7 +709,7 @@ _processar_atualizacao_programas() {
 
     # Salvar cwd para restaurar em todas as saidas (evitar cwd em dir temporario removido)
     local _cwd
-    _cwd="$(pwd)"
+    _cwd="$PWD"
 
     # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
@@ -746,7 +819,7 @@ _processar_atualizacao_pacotes() {
 
     # #1: salvar cwd para restaurar ao final (evitar vazamento de diretorio)
     local _cwd
-    _cwd="$(pwd)"
+    _cwd="$PWD"
 
     # Cleanup via _cleanupAtualizacao (definida no nivel do modulo)
 
@@ -789,7 +862,7 @@ _processar_atualizacao_pacotes() {
     done
 
     # SEGURANCA: Validar integridade pos-extracao (cada pacote deve ter gerado arquivos)
-    local arquivo_zip lista_arquivos nome_arquivo
+    local arquivo_zip lista_arquivos nome_arquivo rc_pacote
     for arquivo_zip in "${_arquivos_prog[@]}"; do
         if [[ ! -f "${arquivo_zip}" ]]; then
             _erro "Pacote nao encontrado apos extracao: ${arquivo_zip}"
@@ -802,11 +875,28 @@ _processar_atualizacao_pacotes() {
         # "unzip -l | awk" usado antes pegava so a ultima coluna, e um nome de
         # arquivo com espaco ("MEU PROGRAMA.class") virava "PROGRAMA.class" —
         # a checagem de existencia abaixo falhava e abortava um pacote valido.
-        # O awk casa contra $0 (linha inteira), preserva o nome com espaco e
-        # devolve 0 sempre — grep devolveria 1 sem match e abortaria sob set -e
-        # antes de chegar no "if [[ -z ... ]]" que trata o pacote sem arquivos.
-        # Diretorios no zip terminam em "/" e nao casam com a extensao.
-        lista_arquivos=$("${DEFAULT_UNZIP}" -Z1 "${arquivo_zip}" 2>/dev/null | awk '/\.(class|TEL)$/') || lista_arquivos=""
+        # Filtro em puro bash (loop while-read + padrao) substitui o "awk":
+        # sem fork externo por zip. O pipeline roda em condicao de "if"
+        # (suprime o set -e) e PIPESTATUS[0] diferencia lister ilegivel.
+        lista_arquivos=""
+        if "${DEFAULT_UNZIP}" -Z1 "${arquivo_zip}" 2>/dev/null | while IFS= read -r nome_arquivo; do
+            if [[ "$nome_arquivo" == *.${EXTENSAO_CLASS} || "$nome_arquivo" == *.${EXTENSAO_TELAS} ]]; then
+                printf '%s\n' "$nome_arquivo"
+            fi
+        done > /tmp/.sav_pacote.$$ 2>/dev/null; then
+            rc_pacote=0
+        else
+            rc_pacote=1
+        fi
+        if [[ -f /tmp/.sav_pacote.$$ ]]; then
+            lista_arquivos=$(cat /tmp/.sav_pacote.$$ 2>/dev/null) || lista_arquivos=""
+            rm -f /tmp/.sav_pacote.$$ 2>/dev/null || true
+        fi
+        if (( rc_pacote != 0 )); then
+            _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
+            _cleanupAtualizacao
+            return 1
+        fi
         if [[ -z "${lista_arquivos}" ]]; then
             _erro "Pacote ${arquivo_zip} nao contem arquivos .class ou .TEL validos"
             _cleanupAtualizacao
@@ -1000,36 +1090,26 @@ _backup_programa_antigo() {
 
     _exibir_mensagem_centralizada "${AMARELO}" "Salvando programa antigo: ${programa}"
 
-    # Backup .class (programa e seus complementos: ADC066.class, ADC066A.class, ...)
-    local class_files=()
+    # Coletar .class e .TEL (programa e seus complementos) num lote unico:
+    # um so "zip" para todos (antes 2 invocacoes por programa, 1 por
+    # extensao, cada uma reabrindo o zip e pagando 1 fork/exec a mais).
+    local arquivos_backup=()
     local f_class
     for f_class in "${E_EXEC}/${programa}"*."${EXTENSAO_CLASS}"; do
         [[ -e "$f_class" ]] || continue
-        class_files+=("$f_class")
+        arquivos_backup+=("$f_class")
     done
-
-    if (( ${#class_files[@]} > 0 )); then
-        if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${class_files[@]}" >> "${LOG_ATU}" 2>&1; then
-            backup_criado=1
-        else
-            _erro "Falha ao fazer backup dos arquivos .${EXTENSAO_CLASS} de ${programa}"
-            return 1
-        fi
-    fi
-
-    # Backup .TEL (programa e seus complementos)
-    local tel_files=()
     local f_tel
     for f_tel in "${T_TELAS}/${programa}"*."${EXTENSAO_TELAS}"; do
         [[ -e "$f_tel" ]] || continue
-        tel_files+=("$f_tel")
+        arquivos_backup+=("$f_tel")
     done
 
-    if (( ${#tel_files[@]} > 0 )); then
-        if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${tel_files[@]}" >> "${LOG_ATU}" 2>&1; then
+    if (( ${#arquivos_backup[@]} > 0 )); then
+        if "${DEFAULT_ZIP}" -j "$arquivo_backup" "${arquivos_backup[@]}" >> "${LOG_ATU}" 2>&1; then
             backup_criado=1
         else
-            _erro "Falha ao fazer backup dos arquivos .${EXTENSAO_TELAS} de ${programa}"
+            _erro "Falha ao fazer backup dos arquivos de ${programa}"
             return 1
         fi
     fi
@@ -1052,6 +1132,9 @@ _backup_programa_antigo() {
 # Move arquivos extraidos (no cwd atual) para T_TELAS/E_EXEC por extensao
 # Reutilizado por _processar_atualizacao_programas e _processar_atualizacao_pacotes
 # Retorna: 0 sucesso, 1 falha (erro ja exibido e logado)
+# Otimizacao: 1 "mv" por extensao com todo o lote (antes 1 por arquivo) e
+# 1 lista de datas via _obter_datas_arquivos, sem trocar os arquivos em disco;
+# a saida por arquivo e idade sao preservadas para nao mudar fluxo/saida.
 _mover_arquivos_extraidos() {
     local extensao
     for extensao in ".${EXTENSAO_CLASS}" ".${EXTENSAO_TELAS}"; do
@@ -1063,30 +1146,35 @@ _mover_arquivos_extraidos() {
         done
 
         if (( ${#arquivos_encontrados[@]} > 0 )); then
+            local destino="${E_EXEC}/"
+            if [[ "${extensao}" == ".${EXTENSAO_TELAS}" ]]; then
+                destino="${T_TELAS}/"
+            fi
+            if ! mv -f "${arquivos_encontrados[@]}" "${destino}" >>"${LOG_ATU}" 2>&1; then
+                if [[ "${extensao}" == ".${EXTENSAO_TELAS}" ]]; then
+                    _log_erro "Falha ao mover arquivos para ${T_TELAS}/"
+                    _erro "Falha ao mover arquivos para ${T_TELAS}/"
+                    return 1
+                else
+                    _log_erro "Falha ao mover arquivos para ${E_EXEC}/"
+                    _erro "Falha ao mover arquivos para ${E_EXEC}/"
+                    _exibir_mensagem_centralizada "${AMARELO}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
+                    _exibir_mensagem_centralizada "${AMARELO}" "Use a opcao 4 de reversao para restaurar o programa anterior."
+                    return 1
+                fi
+            fi
             local arquivo
             for arquivo in "${arquivos_encontrados[@]}"; do
                 if [[ "${extensao}" == ".${EXTENSAO_TELAS}" ]]; then
-                    if ! mv -f "${arquivo}" "${T_TELAS}/" >>"${LOG_ATU}" 2>&1; then
-                        _log_erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
-                        _erro "Falha ao mover ${arquivo} para ${T_TELAS}/"
-                        return 1
-                    else
-                        _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
-                    fi
+                    _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${T_TELAS}/"
                 else
-                    if ! mv -f "${arquivo}" "${E_EXEC}/" >>"${LOG_ATU}" 2>&1; then
-                        _log_erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
-                        _erro "Falha ao mover ${arquivo} para ${E_EXEC}/"
-                        _exibir_mensagem_centralizada "${AMARELO}" "Verifique o log de atualizacao em ${LOG_ATU} para mais detalhes."
-                        _exibir_mensagem_centralizada "${AMARELO}" "Use a opcao 4 de reversao para restaurar o programa anterior."
-                        return 1
-                    else
-                        _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
-                        _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
-                        _obter_data_arquivo "${arquivo}"
-                    fi
+                    _log "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
+                    _exibir_mensagem_centralizada "${VERDE}" "Arquivo ${arquivo} movido com sucesso para ${E_EXEC}/"
                 fi
             done
+            if [[ "${extensao}" != ".${EXTENSAO_TELAS}" ]]; then
+                _obter_datas_arquivos "${arquivos_encontrados[@]}"
+            fi
         fi
     done
     return 0
@@ -1134,6 +1222,52 @@ _obter_data_arquivo() {
             _exibir_mensagem_centralizada "${AMARELO}" "Data do programa: ${data_formatada}"
         fi
     fi
+}
+
+# Obtem datas de varios arquivos com 1 "stat" para o lote (GNU) em vez de
+# 1 fork por arquivo. Mantem o fallback por arquivo para BSD/sstat.
+_obter_datas_arquivos() {
+    local -a _arquivos=("$@")
+    if (( ${#_arquivos[@]} == 0 )); then
+        return 0
+    fi
+    local -a caminhos=()
+    local _arq
+    for _arq in "${_arquivos[@]}"; do
+        if [[ -f "${E_EXEC}/${_arq}" ]]; then
+            caminhos+=("${E_EXEC}/${_arq}")
+        fi
+    done
+    if (( ${#caminhos[@]} == 0 )); then
+        return 0
+    fi
+    local linha data_modificacao data_formatada epoch nome_lote data_lote
+    local -a linhas=()
+    mapfile -t linhas < <(stat -c '%n|%y' "${caminhos[@]}" 2>/dev/null) || linhas=()
+    if (( ${#linhas[@]} > 0 )); then
+        for linha in "${linhas[@]}"; do
+            nome_lote="${linha%%|*}"
+            data_modificacao="${linha#*|}"
+            data_formatada="${data_modificacao:8:2}/${data_modificacao:5:2}/${data_modificacao:0:4} ${data_modificacao:11:8}"
+            if [[ -n "$data_formatada" ]]; then
+                _exibir_mensagem_centralizada "${VERDE}" "Nome do programa: ${nome_lote##*/}"
+                _exibir_mensagem_centralizada "${AMARELO}" "Data do programa: ${data_formatada}"
+            fi
+        done
+        return 0
+    fi
+    # Fallback BSD: 1 stat por arquivo (igual ao legado por arquivo).
+    for _arq in "${_arquivos[@]}"; do
+        epoch=$(stat -f %m "${E_EXEC}/${_arq}" 2>/dev/null) || epoch=""
+        if [[ -n "$epoch" ]]; then
+            data_lote=$(date -d "@${epoch}" +"%d/%m/%Y %H:%M:%S" 2>/dev/null || true)
+            if [[ -n "$data_lote" ]]; then
+                _exibir_mensagem_centralizada "${VERDE}" "Nome do programa: ${_arq}"
+                _exibir_mensagem_centralizada "${AMARELO}" "Data do programa: ${data_lote}"
+            fi
+        fi
+    done
+    return 0
 }
 
 # Mensagem de conclusao da reversao

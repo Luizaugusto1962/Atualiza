@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/11/2026-01
+# Versao: 05/11/2026-02
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
@@ -71,7 +71,9 @@ _formatar_e_exibir() {
     local saida
     if (( $# > 0 )) && [[ "$fmt" =~ %[sd] ]]; then
         # shellcheck disable=SC2059  # fmt e prefixo sao formatos/ literais controlados internamente
-        saida="$(printf "${prefixo}${fmt}" "$@" 2>/dev/null)" || saida="${prefixo}${fmt}"
+        # printf -v evita o fork de subshell do $(): cada _msg/_ok/_aviso/_erro
+        # e chamado em loop (ex.: programas.sh), entao o custo e multiplicado.
+        printf -v saida "${prefixo}${fmt}" "$@" 2>/dev/null || saida="${prefixo}${fmt}"
     else
         saida="${prefixo}${fmt}"
     fi
@@ -254,9 +256,9 @@ _meia_linha() {
 
     printf -v espacos "%${largura}s" ""
     linhas=${espacos// /$traco}
-    printf "%s" "${cor}"
-    printf "%*s\n" $(((colunas + largura) / 2)) "$linhas"
-    printf "%s" "${NORMAL}"
+    # Um printf so (antes 3): menos syscalls por chamada, e esta funcao e
+    # chamado em todo menu.
+    printf "%s%*s\n%s" "${cor}" $(((colunas + largura) / 2)) "$linhas" "${NORMAL}"
 }
 
 
@@ -578,21 +580,29 @@ _garantir_diretorio() {
 # carrega antes dos tres, enquanto backup.sh carregaria depois de programas.sh.
 _validar_backup_entradas_seguras() {
     local arquivo_backup="${1:-}"
-    local lista_entradas=""
 
     if [[ -z "$arquivo_backup" || ! -r "$arquivo_backup" ]]; then
         return 1
     fi
 
+    local -a cmd_listar=()
     if [[ "$arquivo_backup" == *.tar.gz ]]; then
-        lista_entradas=$("${DEFAULT_TAR:-tar}" -tzf "$arquivo_backup" 2>/dev/null) || return 1
+        cmd_listar=("${DEFAULT_TAR:-tar}" -tzf "$arquivo_backup")
     else
         # unzip -Z1 (modo zipinfo) lista os nomes sem extrair nada.
-        lista_entradas=$("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_backup" 2>/dev/null) || return 1
+        cmd_listar=("${DEFAULT_UNZIP:-unzip}" -Z1 "$arquivo_backup")
     fi
 
-    if grep -qE '(^|/)\.\.(/|$)|^/|^[A-Za-z]:[\\/]' <<<"$lista_entradas"; then
+    # Streaming: sem carregar a lista inteira em memoria. O pipeline roda em
+    # condicao de "if" (suprime o set -e) e PIPESTATUS[0] diferencia lister
+    # ilegivel (1) de entrada insegura encontrada pelo grep (0+1).
+    local rc_listador=0
+    if "${cmd_listar[@]}" 2>/dev/null | grep -qE '(^|/)\.\.(/|$)|^/|^[A-Za-z]:[\\/]'; then
         _erro "Pacote contem entradas inseguras (path traversal ou caminho absoluto): ${arquivo_backup}"
+        return 1
+    fi
+    rc_listador="${PIPESTATUS[0]}"
+    if (( rc_listador != 0 )); then
         return 1
     fi
     return 0
@@ -689,12 +699,16 @@ _mostrar_progresso_backup() {
     local barra=""
     local barra_format=""
     local status_processo=0
+    local dots_needed=0
+    local msg_format=""
+    local tempo_format=""
+    local _status_antigo=0
 
     if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
         _aviso "PID nao informado ou processo ja terminado"
         # Processo terminou antes do inicio da barra: recolher o status real
         # via wait em vez de descartar a falha (rc=0 falso-positivo).
-        local _status_antigo=0
+        _status_antigo=0
         if [[ -n "$pid" ]]; then
             wait "$pid" 2>/dev/null && _status_antigo=0 || _status_antigo=$?
         fi
@@ -710,12 +724,11 @@ _mostrar_progresso_backup() {
         # Animacao: mostrar letras do texto base progressivamente e preencher com pontos
         anim_pos=$(( (decorrido - 1) % texto_len ))
         barra="${texto_base:0:anim_pos + 1}"
-        local dots_needed=$((texto_len - ${#barra}))
+        dots_needed=$((texto_len - ${#barra}))
         printf -v barra_format "%s%${dots_needed}s" "$barra" ""
         barra="${barra_format// /.}"
 
         # Formatar campos com tamanho fixo para que \r sobrescreva corretamente
-        local msg_format tempo_format
         printf -v msg_format "%-25s" "$msg"
         _formatar_tempo "$decorrido"
         printf -v tempo_format "%8s" "$_TEMPO_FORMATADO"
@@ -723,7 +736,10 @@ _mostrar_progresso_backup() {
         printf "\r\033[K%s[INFORMATIVO]%s %s |%s| %s" \
             "${CIANO}" "${NORMAL}" "${msg_format}" "${VERDE}${barra}${NORMAL}" "${AMARELO}${tempo_format}"
 
-        sleep 1
+        # Pause builtin (zero fork): "sleep 1" e um fork/exec externo por
+        # segundo de cada etapa; "read -t 1" pausa sem fork, mesmo padrao
+        # de utils.sh:_aguardar. O timeout inteiro evita o fork por tick.
+        read -rt 1 <> <(:) || :
     done
 
     # Coletar status de saida
@@ -734,7 +750,6 @@ _mostrar_progresso_backup() {
     printf "\033[?25h" 2>/dev/null || true
 
     # Formatar e exibir resultado final
-    local msg_format tempo_format
     printf -v msg_format "%-25s" "$msg"
     _formatar_tempo "$decorrido"
     printf -v tempo_format "%8s" "$_TEMPO_FORMATADO"
@@ -969,11 +984,12 @@ _executar_expurgador_diario() {
         "30:${viewvix}"
     )
 
-    # Loop otimizado para limpeza. O $4 explicita a protecao de .dat/.idx
-    # (tambem o default do helper) para deixar a decisao visivel aqui. No topo
-    # de CFG_PORTALSAV (recepcao compartilhada) os .zip tambem entram na
-    # protecao: backup offline pendente de envio, ZIPs de biblioteca aguardando
-    # processamento e ZIPs de reversao nao podem ser expurgados pelo daily.
+    # Expurgo em ondas de ate N jobs (padrao de arquivos.sh:_executar_jutil_lote):
+    # Bash 4.0+ sem wait -n, espera so a onda atual via "wait $pid". Jobs em
+    # subshell herdam as funcoes por export de escopo dinamico; o status volta
+    # via arquivo de status, e a saida final e sequencial. REGISTRO_VARIAVEIS
+    # nao cobre os caches internos, igual a _LOG_DIR_CACHE/_SSH_VERSAO_CACHE.
+    local -a pares_alvo=()
     local _par_limpeza
     for _par_limpeza in "${pares_limpeza[@]}"; do
         local _dias_limpeza="${_par_limpeza%%:*}"
@@ -983,10 +999,64 @@ _executar_expurgador_diario() {
             if [[ "${_dir_limpeza%/}" == "${CFG_PORTALSAV%/}" ]]; then
                 _protecao_expurgo="*.dat *.idx *.zip"
             fi
-            _tentar_log "expurgo diario em ${_dir_limpeza}" "${LOG_LIMPA}" \
-                _limpar_arquivos_antigos "$_dir_limpeza" "$_dias_limpeza" "*.*" "$_protecao_expurgo"
+            pares_alvo+=("$_dias_limpeza|$_dir_limpeza|$_protecao_expurgo")
         fi
     done
+
+    local paralelo=4
+    [[ "${EXPURGADOR_PARALELO:-}" =~ ^[0-9]+$ ]] && paralelo="${EXPURGADOR_PARALELO}"
+    if (( paralelo < 1 )); then
+        paralelo=1
+    fi
+    if (( ${#pares_alvo[@]} <= 1 || paralelo <= 1 )); then
+        local _alvo
+        for _alvo in ${pares_alvo[@]+"${pares_alvo[@]}"}; do
+            IFS='|' read -r _d _dir _prot <<< "$_alvo"
+            _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
+                _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot"
+        done
+    else
+        if (( paralelo > ${#pares_alvo[@]} )); then
+            paralelo="${#pares_alvo[@]}"
+        fi
+        local dir_status
+        dir_status=$(_expurgador_status_dir)
+        if [[ -z "$dir_status" ]]; then
+            # Fallback sequencial: sem dir de status, nao ha ganho em paralelo.
+            local _alvo
+            for _alvo in "${pares_alvo[@]}"; do
+                IFS='|' read -r _d _dir _prot <<< "$_alvo"
+                _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
+                    _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot"
+            done
+        else
+            local inicio=0 fim i indice num_onda pids_onda
+            local -a pid_onda=()
+            while (( inicio < ${#pares_alvo[@]} )); do
+                fim=$((inicio + paralelo))
+                if (( fim > ${#pares_alvo[@]} )); then
+                    fim="${#pares_alvo[@]}"
+                fi
+                pids_onda=()
+                pid_onda=()
+                for ((indice = inicio; indice < fim; indice++)); do
+                    IFS='|' read -r _d _dir _prot <<< "${pares_alvo[$indice]}"
+                    (
+                        _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
+                            _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot" || true
+                        printf '0' > "${dir_status}/${indice}.status"
+                    ) &
+                    pids_onda+=("$!")
+                    pid_onda+=("${indice}")
+                done
+                for num_onda in ${pids_onda[@]+"${pids_onda[@]}"}; do
+                    wait "$num_onda" 2>/dev/null || true
+                done
+                inicio="$fim"
+            done
+            rm -rf -- "$dir_status" 2>/dev/null || true
+        fi
+    fi
 
     # Criar flag para hoje (somente se o diretorio de flag for valido)
     if [[ -n "${flag_file:-}" ]] && touch "$flag_file" 2>/dev/null; then
@@ -994,6 +1064,13 @@ _executar_expurgador_diario() {
     fi
 
     return 0
+}
+
+# Cria diretorio temporario para status das ondas do expurgador.
+_expurgador_status_dir() {
+    local dir_status=""
+    dir_status=$(mktemp -d -t expurgador.XXXXXX 2>/dev/null) || dir_status=""
+    printf '%s' "$dir_status"
 }
 
 # Funcao para checar se os programas necessarios estao instalados
@@ -1214,7 +1291,10 @@ _enviar_chave_para_servidor() {
         return 0
     fi
     if grep -qE '\-o' <<< "$uso_ssh_copy_id"; then
-        ssh_copy_cmd+=(-o "StrictHostKeyChecking=$(_ssh_aceitar_novo)")
+        # Cache direto: chamar sem $() (sem fork de subshell) e ler a variavel.
+        # O $() anterior pagava um fork por transferencia mesmo com cache.
+        _ssh_aceitar_novo >/dev/null
+        ssh_copy_cmd+=(-o "StrictHostKeyChecking=${_SSH_ACEITAR_NOVO}")
         ssh_copy_cmd+=(-o "ConnectTimeout=${SSH_TIMEOUT:-15}")
     fi
     ssh_copy_cmd+=("${SSH_USUARIO}@${SSH_SERV}")
@@ -1237,9 +1317,11 @@ _enviar_chave_para_servidor() {
 # -------------------------------------------------------------------------
 _testar_conexao() {
     _msg "Testando conexao sem senha..."
+    # Cache direto: chamar sem $() (sem fork) e ler a variavel.
+    _ssh_aceitar_novo >/dev/null
     if ssh -o BatchMode=yes \
         -o ConnectTimeout=10 \
-        -o "StrictHostKeyChecking=$(_ssh_aceitar_novo)" \
+        -o "StrictHostKeyChecking=${_SSH_ACEITAR_NOVO}" \
         -i "$SSH_CHAVE" \
         -p "$SSH_PORTA" \
         "${SSH_USUARIO}@${SSH_SERV}" \

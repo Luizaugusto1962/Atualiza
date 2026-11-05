@@ -154,11 +154,18 @@ Portões hoje:
 | `biblioteca.sh:_reverter_biblioteca_completa` / `:_reverter_programa_especifico_biblioteca` | reversão, extrai em `/` | pré-existente |
 | `programas.sh:_validar_pre_requisitos_atualizacao` | update de programas e de pacotes | adicionado em `029be9b` |
 
-> **Restrição e exceção.** `AGENTS.md` proíbe alterar fluxo/saída/arquivos de
+> **Restricao e excecao.** `AGENTS.md` proibe alterar fluxo/saida/arquivos de
 > `_processar_atualizacao_programas`. O guard de `programas.sh` foi adicionado **com
-> autorização explícita** e com escopo delimitado: para ZIP legítimo o validador é
-> silencioso e fluxo, saída e arquivos são idênticos; o comportamento só muda para ZIP com
-> `../`/absoluto, que passavam a escrever fora do temporário.
+> autorizacao explicita** e com escopo delimitado: para ZIP legitimo o validador e
+> silencioso e fluxo, saida e arquivos sao identicos; o comportamento so muda para ZIP com
+> `../`/absoluto, que passavam a escrever fora do temporario.
+>
+> Excecao ampliada em 05/11/2026 (otimizacao de performance): `programas.sh:_mover_arquivos_extraidos`
+> faz 1 `mv` por extensao com todo o lote e `programas.sh:_backup_programa_antigo` faz 1 `zip`
+> para `.class`+`.TEL` (antes 1 `mv`/`zip` por arquivo/extensao). Para caminho feliz o
+> resultado em disco e identico; muda apenas o volume de processos externos. A saida por
+> arquivo, o log por arquivo e as datas via `programas.sh:_obter_datas_arquivos` sao
+> preservadas, entao fluxo e saida observavel nao mudam.
 
 ## 6. `CFG_PORTALSAV` — recepção compartilhada
 
