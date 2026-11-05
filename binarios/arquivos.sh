@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/11/2026-01
+# Versao: 05/11/2026-02
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -951,7 +951,9 @@ _executar_lista_arquivos() {
     local -a ordem_bases=()
 
     while IFS= read -r linha || [[ -n "$linha" ]]; do
-        linha=$(_sanitizar_entrada "$linha")
+        # Inline (sem fork por linha): a entrada vem de arquivo, nao do
+        # teclado. Mesma regra de _sanitizar_entrada: so 0x20..0x7E.
+        linha="${linha//[^ -~]/}"
         linha="${linha#"${linha%%[![:space:]]*}"}"
         linha="${linha%"${linha##*[![:space:]]}"}"
         [[ -z "$linha" ]] && continue

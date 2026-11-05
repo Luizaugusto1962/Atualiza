@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 29/10/2026-01
+# Versao: 05/11/2026-01
 # Autor: Luiz Augusto
 #
 # =============================================================================
@@ -451,7 +451,9 @@ _cadastrar_usuario() {
     _exibir_mensagem_centralizada "${VERMELHO}" "Cadastro de Usuario"
     _meia_linha "=" "${VERMELHO}"
     read -rp "${AMARELO}Digite o nome do usuario: ${NORMAL}" usuario
-    usuario=$(_upper "$(_trim "$usuario")")
+    usuario="${usuario#"${usuario%%[![:space:]]*}"}"
+    usuario="${usuario%"${usuario##*[![:space:]]}"}"
+    usuario="${usuario^^}"
     if [[ -z "$usuario" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Usuario nao pode ser vazio."
         return 1
@@ -560,7 +562,9 @@ _login() {
         _exibir_mensagem_centralizada "${VERMELHO}" "Login no Sistema"
         _linha "=" "${VERDE}"
         read -rp "${AMARELO}Usuario: ${NORMAL}" usuario
-        usuario=$(_upper "$(_trim "$usuario")")
+        usuario="${usuario#"${usuario%%[![:space:]]*}"}"
+        usuario="${usuario%"${usuario##*[![:space:]]}"}"
+        usuario="${usuario^^}"
         if [[ -z "$usuario" ]]; then
             _exibir_mensagem_centralizada "${VERMELHO}" "Nome de usuario nao pode ser vazio."
         elif ! _usuario_valido "$usuario"; then
@@ -667,7 +671,10 @@ _login() {
 _alterar_senha() {
     local senha_atual nova_senha confirm_senha hash_nova hash_armazenado
     local alvo_usuario
-    alvo_usuario=$(_upper "$(_trim "${1:-${usuario:-}}")")
+    alvo_usuario="${1:-${usuario:-}}"
+    alvo_usuario="${alvo_usuario#"${alvo_usuario%%[![:space:]]*}"}"
+    alvo_usuario="${alvo_usuario%"${alvo_usuario##*[![:space:]]}"}"
+    alvo_usuario="${alvo_usuario^^}"
     if [[ -z "$alvo_usuario" ]]; then
         _exibir_mensagem_centralizada "${VERMELHO}" "Informe o usuario ou faca login para alterar a senha."
         return 1
