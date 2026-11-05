@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-04
+# Versao: 05/11/2026-01
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
@@ -1039,9 +1039,6 @@ _check_instalado() {
     fi
 }
 
-
-
-
 # ---------- COMPATIBILIDADE SSH ----------
 # Retorna opcao para StrictHostKeyChecking que aceita automaticamente chaves
 # novas, evitando que a primeira conexao trave pedindo confirmacao interativa
@@ -1050,18 +1047,35 @@ _check_instalado() {
 # - 'no' em clientes antigos (RHEL 6/CentOS 6, OpenSSH 5.x) que nao reconhecem
 #   'accept-new' — tambem aceita chaves novas sem interromper o fluxo.
 # NUNCA escreva StrictHostKeyChecking=aceitar diretamente — chame esta funcao.
+#
+# A versao do cliente e lida UMA vez por sessao (cache em _SSH_VERSAO_CACHE,
+# fora de REGISTRO_VARIAVEIS como _LOG_DIR_CACHE/_JUTIL_PRONTO) e a opcao e
+# guardada em _SSH_ACEITAR_NOVO. Sem isso, cada transferencia de vaievem.sh
+# pagava um fork de `ssh -V` duas vezes (scp/rsync) so para decidir entre
+# 'accept-new' e 'no'. O servidor nao troca de OpenSSH durante a execucao.
+_SSH_ACEITAR_NOVO=""
+
 _ssh_aceitar_novo() {
+    if [[ -n "$_SSH_ACEITAR_NOVO" ]]; then
+        printf '%s' "$_SSH_ACEITAR_NOVO"
+        return 0
+    fi
     local versao
-    versao="$(ssh -V 2>&1 || true)"
+    versao="${_SSH_VERSAO_CACHE-$(ssh -V 2>&1 || true)}"
+    _SSH_VERSAO_CACHE="$versao"
     if [[ "${versao}" =~ OpenSSH_([0-9]+)\.([0-9]+) ]]; then
         local maior="${BASH_REMATCH[1]}"
         local menor="${BASH_REMATCH[2]}"
         if (( maior > 7 )) || (( maior == 7 && menor >= 6 )); then
-            printf 'accept-new'
-            return 0
+            _SSH_ACEITAR_NOVO="accept-new"
+        else
+            _SSH_ACEITAR_NOVO="no"
         fi
+    else
+        _SSH_ACEITAR_NOVO="no"
     fi
-    printf 'no'
+    printf '%s' "$_SSH_ACEITAR_NOVO"
+    return 0
 }
 
 #---------- FUNCOES DE CHAVES SSH ----------#

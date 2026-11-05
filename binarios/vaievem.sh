@@ -14,7 +14,7 @@ set -euo pipefail
 # utils.sh (bloco "CAMINHOS E DIRETORIOS"). Nao recriar aqui.
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 28/10/2026-01
+# Versao: 05/11/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
@@ -88,7 +88,6 @@ _usar_chave_ssh() {
     fi
     return 0
 }
-
 
 # Constrói o comando scp em um array nomeado, com opções de conexão e (opcional) chave SSH.
 # Uso: _montar_cmd_scp <nome_array_ref> <porta> [timeout] [alive_interval] [alive_count]
@@ -205,25 +204,33 @@ _montar_cmd_ssh() {
     return 0
 }
 
+# Regex de elemento que dispensa aspas (caminho de chave/path tipico).
+# Usado por _proteger_arg_shell e por _juntar_comando.
+_RE_ARG_SHELL_SEGURO='^[A-Za-z0-9@%_+=:,./-]+$'
+
 # Protege um argumento para uso dentro de string interpretada por shell
 # (caso do rsync -e). Elementos simples passam nus; os demais vao entre aspas
 # simples POSIX com escape de ' embutida. Equivale ao %q para os casos reais
 # (caminho de chave com espacos ou $).
 # Uso: _proteger_arg_shell <texto>  (imprime o texto protegido)
+# PARIDADE: publica o resultado em _PROTEGIDO (sem subshell); o printf e so
+# conveniencia para chamador de terminal. Quem precisa do valor sem fork deve
+# chamar assim — o caso de _juntar_comando, em loop.
 _proteger_arg_shell() {
     local _texto="${1:-}"
-    local _re_seguro='^[A-Za-z0-9@%_+=:,./-]+$'
 
-    if [[ "$_texto" =~ $_re_seguro ]]; then
-        printf '%s' "$_texto"
-        return 0
+    if [[ "$_texto" =~ $_RE_ARG_SHELL_SEGURO ]]; then
+        _PROTEGIDO="$_texto"
+    else
+        # Aspas simples: ' vira '\'' (fecha, escapa, reabre)
+        _PROTEGIDO="'${_texto//\'/\'\\\'\'}'"
     fi
-    # Aspas simples: ' vira '\'' (fecha, escapa, reabre)
-    printf "'%s'" "${_texto//\'/\'\\\'\'}"
+    printf '%s' "$_PROTEGIDO"
+    return 0
 }
 
 # Junta um array de comando em uma unica string para o rsync -e (que exige
-# string, nao array). Usa SEMPRE _proteger_arg_shell (aspas simples POSIX).
+# string, nao array). Usa SEMPRE as aspas simples POSIX de _proteger_arg_shell.
 # Uso: _juntar_comando <elemento...>
 #
 # Antes havia dois caminhos: `printf %q` em Bash 4.4+ e aspas POSIX em 4.0-4.2.
@@ -231,6 +238,9 @@ _proteger_arg_shell() {
 # (ANSI-C quoting), que dash/sh nao interpreta, e o rsync entrega o valor de -e
 # a um shell. Em Ubuntu 10.04/12.04 o /bin/sh e dash, entao o caminho %q quebrava
 # justamente onde o fallback funcionaria. Agora so existe o caminho seguro.
+# PERFORMANCE: a protecao roda inline (mesma regra de _proteger_arg_shell), sem
+# `$(...)` por elemento. O array tem ~9-11 itens e o subshell custava ~0,8 ms
+# por elemento medido no alvo de teste — mais que todo o resto da funcao junto.
 # SEGURANCA: sem eval/indirecao — recebe os elementos ja expandidos pelo
 # chamador, que e o dono do array (evita manipulacao de nome de variavel).
 _juntar_comando() {
@@ -241,9 +251,14 @@ _juntar_comando() {
     fi
 
     local _cmd_junto=""
-    local _p
+    local _p _prot
     for _p in "${_partes[@]}"; do
-        _cmd_junto+="$(_proteger_arg_shell "$_p") "
+        if [[ "$_p" =~ $_RE_ARG_SHELL_SEGURO ]]; then
+            _prot="$_p"
+        else
+            _prot="'${_p//\'/\'\\\'\'}'"
+        fi
+        _cmd_junto+="${_prot} "
     done
     printf '%s' "${_cmd_junto% }"
 }
@@ -393,6 +408,48 @@ _receber_scp() {
 }
 
 
+# Monta o comando SSH do rsync -e e o destino "usuario@host:caminho" para upload.
+# Uso: _preparar_rsync <porta> <destino_remoto> <usuario> <servidor>
+# Saida: _RSYNC_CMD_SSH (string ja protegida por _juntar_comando) e
+#        _RSYNC_DESTINO (usuario@servidor:destino_remoto)
+# Retorna: 0=ok 1=erro (ja logado)
+#
+# A montagem estava duplicada em _enviar_rsync e _enviar_rsync_lote. Unificar
+# garante que as duas funcoes validem o mesmo e nao paguem dois forks de
+# _juntar_comando por envio.
+_preparar_rsync() {
+    local porta="${1:-}"
+    local destino_remoto="${2:-}"
+    local usuario_remoto="${3:-}"
+    local servidor="${4:-}"
+
+    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
+        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
+        return 1
+    fi
+
+    _RSYNC_DESTINO="${usuario_remoto}@${servidor}:${destino_remoto}"
+
+    if ! _validar_origem_remota "$_RSYNC_DESTINO"; then
+        _log_erro "Destino remoto invalido: ${_RSYNC_DESTINO}"
+        return 1
+    fi
+
+    local -a ssh_cmd_parts=()
+    if ! _montar_cmd_ssh ssh_cmd_parts "$porta"; then
+        _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
+        return 1
+    fi
+    # Invariante: nunca expandir array de comando vazio (ver _receber_scp).
+    if (( ${#ssh_cmd_parts[@]} == 0 )); then
+        _log_erro "Array de comandos SSH vazio apos _montar_cmd_ssh (abortando)"
+        return 1
+    fi
+
+    _RSYNC_CMD_SSH="$(_juntar_comando "${ssh_cmd_parts[@]}")"
+    return 0
+}
+
 # Upload via RSYNC
 # Parametros: $1=arquivo_local $2=destino_remoto(caminho) $3=servidor $4=porta $5=usuario
 # NOTA: $2 sobrescreve CFG_BACKUP_PATH para uso nesta chamada. Se omitido, usa CFG_BACKUP_PATH global.
@@ -421,37 +478,17 @@ _enviar_rsync() {
     local usuario_remoto="${5:-$DEFAULT_SSH_USER}"
     _log "Iniciando upload RSYNC: ${arquivo_local}"
 
-    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
-        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
-        return 1
-    fi
-
-    local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
-
-    if ! _validar_origem_remota "$destino_completo"; then
-        _log_erro "Destino remoto invalido: ${destino_completo}"
-        return 1
-    fi
-
     # SEGURANCA: Construir opções de forma segura usando arrays
     # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
     # (ex: SMB) rejeitam chmod com "Operation not permitted"
     local base_rsync=("rsync" "-rtzP")
-    local -a ssh_cmd_parts=()
-    if ! _montar_cmd_ssh ssh_cmd_parts "$porta"; then
-        _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
+    local _RSYNC_CMD_SSH="" _RSYNC_DESTINO=""
+    if ! _preparar_rsync "$porta" "$destino_remoto" "$usuario_remoto" "$servidor"; then
         return 1
     fi
-    # Invariante: nunca expandir array de comando vazio (ver _receber_scp).
-    if (( ${#ssh_cmd_parts[@]} == 0 )); then
-        _log_erro "Array de comandos SSH vazio apos _montar_cmd_ssh (abortando)"
-        return 1
-    fi
-    local cmd_ssh
-    cmd_ssh="$(_juntar_comando "${ssh_cmd_parts[@]}")"
 
     # Executa o upload (única chamada)
-    if "${base_rsync[@]}" -e "${cmd_ssh}" "$arquivo_local" "$destino_completo"; then
+    if "${base_rsync[@]}" -e "${_RSYNC_CMD_SSH}" "$arquivo_local" "$_RSYNC_DESTINO"; then
         _log_sucesso "Upload RSYNC concluido: ${arquivo_local}"
         return 0
     else
@@ -496,37 +533,17 @@ _enviar_rsync_lote() {
     local usuario_remoto="${DEFAULT_SSH_USER:-}"
     _log "Iniciando upload RSYNC em lote: ${#arquivos_locais[@]} arquivo(s)"
 
-    if ! _validar_destino_ssh "$usuario_remoto" "$servidor"; then
-        _log_erro "Usuario/servidor SSH invalido: ${usuario_remoto}@${servidor}"
-        return 1
-    fi
-
-    local destino_completo="${usuario_remoto}@${servidor}:${destino_remoto}"
-
-    if ! _validar_origem_remota "$destino_completo"; then
-        _log_erro "Destino remoto invalido: ${destino_completo}"
-        return 1
-    fi
-
     # SEGURANCA: Construir opções de forma segura usando arrays
     # -rtzP (em vez de -a): nao preserva permissoes/dono/grupo, pois alguns mounts de clientes
     # (ex: SMB) rejeitam chmod com "Operation not permitted"
     local base_rsync=("rsync" "-rtzP")
-    local -a ssh_cmd_parts=()
-    if ! _montar_cmd_ssh ssh_cmd_parts "$porta"; then
-        _log_erro "Falha ao montar opcoes SSH para upload RSYNC"
+    local _RSYNC_CMD_SSH="" _RSYNC_DESTINO=""
+    if ! _preparar_rsync "$porta" "$destino_remoto" "$usuario_remoto" "$servidor"; then
         return 1
     fi
-    # Invariante: nunca expandir array de comando vazio (ver _receber_scp).
-    if (( ${#ssh_cmd_parts[@]} == 0 )); then
-        _log_erro "Array de comandos SSH vazio apos _montar_cmd_ssh (abortando)"
-        return 1
-    fi
-    local cmd_ssh
-    cmd_ssh="$(_juntar_comando "${ssh_cmd_parts[@]}")"
 
     # Executa o upload de todos os arquivos em uma unica chamada (1 conexao SSH)
-    if "${base_rsync[@]}" -e "${cmd_ssh}" "${arquivos_locais[@]}" "$destino_completo"; then
+    if "${base_rsync[@]}" -e "${_RSYNC_CMD_SSH}" "${arquivos_locais[@]}" "$_RSYNC_DESTINO"; then
         _log_sucesso "Upload RSYNC em lote concluido: ${#arquivos_locais[@]} arquivo(s)"
         return 0
     else
@@ -804,17 +821,19 @@ _baixar_programas_vaievem() {
     # um arquivo que nunca existiu e a checagem falharia com falso negativo.
     local arquivo_destino
     local _baixados_ok=0
+    local _baixados_falha=0
     for arquivo in "${nomes_arquivos[@]}"; do
         arquivo_destino="${caminho%/}/${arquivo##*/}"
         if [[ ! -f "$arquivo_destino" ]]; then
             _aviso "Arquivo nao encontrado apos download (programa inexistente?): $arquivo"
+            ((_baixados_falha++)) || true
             continue
         fi
         if [[ ! -s "$arquivo_destino" ]]; then
             _aviso "Arquivo recebido vazio: $arquivo"
             # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
             rm -f -- "$arquivo_destino"
-            _aguardar 2
+            ((_baixados_falha++)) || true
             continue
         fi
         _linha
@@ -826,12 +845,19 @@ _baixar_programas_vaievem() {
             _aviso "Arquivo corrompido: $arquivo"
             # SEGURANCA: Usar '--' para prevenir injeção de opções no rm
             rm -f -- "$arquivo_destino"
-            _aguardar 2
+            ((_baixados_falha++)) || true
             continue
         fi
         _exibir_mensagem_centralizada "${VERDE}" "Download concluido: $arquivo"
         ((_baixados_ok++)) || true
     done
+
+    # Uma unica pausa ao fim do lote em vez de 2 s por arquivo com falha:
+    # com N programas ausentes o loop antigo parava 2N segundos antes de
+    # decidir o resultado.
+    if (( _baixados_falha > 0 )); then
+        _aguardar 2
+    fi
 
     if (( _baixados_ok == 0 )); then
         _erro "Nenhum arquivo foi baixado com sucesso"
