@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/10/2026-01
+# Versao: 30/10/2026-02
 # Autor: Luiz Augusto
 #
 
@@ -108,10 +108,12 @@ _exibir_separador_menu() {
     _meia_linha "-" "${AMARELO}"
 }
 
-# Exibe rodape de menu com opcao de saida
+# Exibe rodape de menu com opcao de volta menu
+# Parametro opcional $1: texto da opcao 9 (padrao: "Menu Anterior")
 _exibir_rodape_menu() {
+    local texto="${1:-Menu Anterior}"
     _exibir_separador_menu
-    _exibir_mensagem_centralizada_a_esquerda "${BRANCO}" "9${VERMELHO} -|: Menu Anterior "
+    _exibir_mensagem_centralizada_a_esquerda "${BRANCO}" "9${VERMELHO} -|: ${texto} "
 }
 
 # Processa selecao de opcao de menu com validacao
@@ -135,9 +137,8 @@ _principal() {
         _exibir_opcao_menu "4" "Gerenciar Arquivos"
         _exibir_opcao_menu "5" "Ferramentas"
         _exibir_opcao_menu "0" "Sistema de Ajuda"
-        _exibir_rodape_menu
+        _exibir_rodape_menu "Sair do Menu"
         printf "\n"
-#        _exibir_mensagem_direita "${AZUL}" "${UPDATE:-}"
 
         local opcao
         if ! _ler_opcao_menu "principal" opcao; then
