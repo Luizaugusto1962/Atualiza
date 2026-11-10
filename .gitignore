@@ -2,8 +2,6 @@
 *.un~
 *.sh~
 *.json
-AGENTS.md
-ARCHITECTURE.md
 *.zip
 .claude/
 .mimocode/
