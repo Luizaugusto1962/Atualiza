@@ -32,6 +32,7 @@ A ordem do `MODULOS_CARREGAR` não é estética: **uma função só pode ser cha
 ```bash
 bash -n binarios/<modulo>.sh
 shellcheck -S warning binarios/<modulo>.sh   # hoje 100% limpo em todo o repo
+bash testes/run_all.sh                      # TODAS as suítes + resumo (517 checks); roda sem TTY
 bash testes/test_sistema.sh                  # suíte de sistema.sh (16 checks); roda sem TTY
 bash testes/test_auth.sh                     # suíte de auth.sh (63 checks); roda sem TTY
 bash testes/test_utils.sh                    # suíte de utils.sh (80 checks); roda sem TTY
@@ -43,10 +44,14 @@ bash testes/test_constantes.sh               # suíte de constantes.sh (38 check
 bash testes/test_config.sh                   # suíte de config.sh (45 checks); roda sem TTY
 bash testes/test_arquivos.sh                 # suíte de arquivos.sh (42 checks); roda sem TTY
 bash testes/test_vaievem.sh                  # suíte de vaievem.sh (52 checks); roda sem TTY
+bash testes/test_principal.sh                # suíte de principal.sh (49 checks); roda sem TTY
 ```
 
-- **Onze** suítes, todas com `set -euo pipefail` e sem TTY, todas passando. Não há runner, `bats` nem `trunk`. `shellcheck` e `shfmt` estão instalados no Windows (winget) mas o repo não os invoca em script.
-- **Ainda não há suíte para `setup.sh`, `principal.sh`, `cadastro.sh`, `help.sh`, `lembrete.sh`, `menus.sh` e `variaveis.sh`** — os sete restantes são de apresentação/orquestração, sem lógica de decisão isolável. Mudança de segurança nesses módulos ainda exige harness próprio (throwaway, fora do repo) e ele **precisa ser rodado também contra o `git show HEAD:<arquivo>`** para provar que o teste falha no código antigo — um teste que passa nos dois não é regressão.
+- **Doze** suítes, todas com `set -euo pipefail` e sem TTY, todas passando. Não há runner, `bats` nem `trunk`. `shellcheck` e `shfmt` estão instalados no Windows (winget) mas o repo não os invoca em script.
+- **`testes/run_all.sh` é o runner**: descobre as suítes por glob (`testes/test_*.sh`), roda todas em sequência e imprime o resumo por suíte + as falhas detalhadas; sai com 1 se alguma falhar. Opções: `-v` (saída completa), `-o` (só as que falharam), `-k <filtro>` (só as que casam com o filtro). Ele **não** usa `set -e` de propósito: o objetivo é rodar todas as suítes mesmo quando uma falha, para o relatório mostrar o estado completo.
+- **Ainda não há suíte para `setup.sh`, `cadastro.sh`, `help.sh`, `lembrete.sh`, `menus.sh` e `variaveis.sh`** — os seis restantes são de apresentação, sem lógica de decisão isolável. Mudança de segurança nesses módulos ainda exige harness próprio (throwaway, fora do repo) e ele **precisa ser rodado também contra o `git show HEAD:<arquivo>`** para provar que o teste falha no código antigo — um teste que passa nos dois não é regressão.
+- **`testes/test_principal.sh` é o "harness de carga" que o AGENTS.md exige antes de mexer na ordem**: ele extrai a ordem do `MODULOS_CARREGAR` **do fonte** (nunca de uma cópia hardcoded), confere a cadeia estática (chamada em tempo de source apontando para módulo já carregado) e carrega os 15 módulos na ordem extraída num sandbox, conferindo a cadeia a cada passo. Contra `fac4885^` (quando `utils.sh` ainda era o terceiro) ele acusa exatamente 3 checks: a posição de `utils.sh`, a de `config.sh` e a ausência de `_garantir_diretorio` em `utils.sh`.
+- **A cadeia tem 3 referências conhecidas para trás** (`constantes.sh` → `_encerrar_programa`, de `config.sh`), todas atrás do guard "sourced vs executed" — `constantes.sh` nunca é executado direto. A suíte exige que **qualquer nova** referência para trás apareça na lista; se alguém corrigir as três, é só remover a linha da lista.
 - Todas as suítes seguem o modelo de `test_sistema.sh`: `source` do módulo + stubs + contador `falhas`. Os diretórios "protegidos" usados nos testes são clones em `mktemp -d` — em especial `SCRIPT_DIR`, que **nunca** pode apontar para o repo de verdade (o modo `recriar` faria `rm -rf` nele se a proteção regredisse).
 - `testes/test_utils.sh`, `testes/test_programas.sh`, `testes/test_biblioteca.sh` e `testes/test_baixar.sh` exigem `python3` para fabricar os ZIPs maliciosos (`zipfile`): a CLI `zip` recusa entrada `../`.
 - **`testes/test_biblioteca.sh` não exercita o caminho feliz da extração**: `_reverter_biblioteca_completa` extrai em `/`, então o pacote malicioso do teste usa a entrada absoluta `/tmp/atualiza_suite_sentinel.txt` — se a validação regredisse, o arquivo apareceria no `/tmp` e o teste falharia. É uma troca deliberada: segurança primeiro.
@@ -106,7 +111,7 @@ bash testes/test_vaievem.sh                  # suíte de vaievem.sh (52 checks);
 - Também ignorados: `*.json` (exceto `.vscode/sftp.json`, que é rastreado), `*.zip`, `*.py` (exceto `fix_backup.py`, rastreado), `docs/`, `.claude/`, `.planning/`. `.gitignore` não afeta arquivo já rastreado — é por isso que `fix_backup.py` e `.vscode/sftp.json` estão no índice apesar das regras.
 - Tooling novo na raiz (config do prettier, do shellcheck) não entra no repo sem `git add -f`.
 - `configuracoes/.config` e `configuracoes/.versao` são de runtime: **não** estão no `.gitignore` e **não** estão versionados (`git ls-files configuracoes/` mostra só `.senhas`, `indexar`, `lembrete`, `limpetmp`, `manual.txt`, `variosarquivos`). Rodar `--setup` localmente os cria como untracked — não commite. `configuracoes/.senhas`, ao contrário, **está versionado**.
-- **Só 53 arquivos são rastreados** (`git ls-files | wc -l`), e alguns são entulho já commitado (`A.dat`, `OK1.dat`, `fix_backup.ps1`, `fix_backup.py`, `fix_rename.ps1`, `graphify-out/`). Confirme com `git ls-files` antes de assumir que algo está versionado.
+- **Só 55 arquivos são rastreados** (`git ls-files | wc -l`), e alguns são entulho já commitado (`A.dat`, `OK1.dat`, `fix_backup.ps1`, `fix_backup.py`, `fix_rename.ps1`, `graphify-out/`). Confirme com `git ls-files` antes de assumir que algo está versionado.
 - **A regra `testes/` do `.gitignore` foi removida em 11/11/2026**: até lá, qualquer suíte nova em `testes/` nascia **ignorada** e só entrava no repo com `git add -f` (foi assim que `test_utils.sh`, `test_programas.sh`, `test_biblioteca.sh`, `test_backup.sh` e `test_baixar.sh` entraram). Agora `git add` normal funciona — mas confira com `git check-ignore -v testes/<arquivo>` se voltar a aparecer na lista.
 - `opencode_ori.json` (ignorado) tem uma **API key em texto puro**; nunca copie essa chave para outro lugar.
 - `.vscode/sftp.json` é rastreado e carrega `host`, `username`, `remotePath` do servidor de deploy. Não tem senha, mas é dado de infraestrutura — não edite à toa.

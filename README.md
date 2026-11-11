@@ -80,6 +80,7 @@ Suítes isoladas por módulo, sem TTY e sem rede. Cada uma faz `source` do módu
 sob teste com stubs e conta as verificações:
 
 ```bash
+bash testes/run_all.sh          # todas as suítes + resumo (517 checks)
 bash testes/test_sistema.sh      # sistema.sh    — parser do .versao e IP interno
 bash testes/test_auth.sh         # auth.sh       — rate limit, hash, .senhas
 bash testes/test_utils.sh        # utils.sh      — caminhos, diretorios, pacotes, ssh
@@ -91,7 +92,11 @@ bash testes/test_constantes.sh   # constantes.sh — parser seguro do .config
 bash testes/test_config.sh       # config.sh     — scanner do .config, registro de variaveis
 bash testes/test_arquivos.sh     # arquivos.sh   — padrao de limpeza, link duro, base
 bash testes/test_vaievem.sh      # vaievem.sh    — destino/origem ssh, quoting, staging
+bash testes/test_principal.sh    # principal.sh  — ordem de carga dos modulos, fluxo do _main
 ```
+
+O `run_all.sh` aceita `-v` (saída completa), `-o` (só as suítes que falharam) e
+`-k <filtro>` (só as suítes cujo nome casa com o filtro).
 
 ### Resultados dos Testes
 
@@ -108,6 +113,7 @@ bash testes/test_vaievem.sh      # vaievem.sh    — destino/origem ssh, quoting
 | test_config.sh | 45 | Scanner do `.config`, registro e limpeza de variáveis |
 | test_arquivos.sh | 42 | Padrão de limpeza, detecção de link duro, base de trabalho |
 | test_vaievem.sh | 52 | Destino/origem SSH, quoting POSIX de argumento, staging |
+| test_principal.sh | 49 | Ordem de carga dos 15 módulos (cadeia) e fluxo do `_main` |
 
 ## Validação e Qualidade
 

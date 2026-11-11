@@ -325,7 +325,7 @@ flowchart TB
 
 ## 9. Cobertura de teste
 
-Onze suítes, todas sem TTY, todas com `set -euo pipefail`:
+Doze suítes, todas sem TTY, todas com `set -euo pipefail`:
 
 | Suíte | Módulo | Checks |
 |---|---|---|
@@ -340,29 +340,54 @@ Onze suítes, todas sem TTY, todas com `set -euo pipefail`:
 | `testes/test_config.sh` | `config.sh` (source isolado) | 45 |
 | `testes/test_arquivos.sh` | `arquivos.sh` (source isolado) | 42 |
 | `testes/test_vaievem.sh` | `vaievem.sh` (source isolado) | 52 |
+| `testes/test_principal.sh` | `principal.sh` (ordem de carga + fluxo) | 49 |
 
-Não há suíte para `setup.sh`, `principal.sh`, `cadastro.sh`, `help.sh`,
-`lembrete.sh`, `menus.sh` e `variaveis.sh` — os sete restantes são de
-apresentação/orquestração, sem lógica de decisão isolável — nem runner
-(`bats`/`trunk`). Mudança de segurança nesses módulos ainda exige harness
-descartável **rodado também contra `git show HEAD:<arquivo>`** — é isso que
-distingue regressão real de teste que passa nos dois códigos. `test_sistema.sh` é
-o modelo para adicionar uma doze: `source` do módulo + stubs + `falhas`
-contador.
+`testes/run_all.sh` é o runner: descobre as suítes por glob, roda todas em
+sequência e imprime o resumo por suíte mais as falhas detalhadas (sai com 1 se
+alguma falhar). Opções: `-v` (saída completa), `-o` (só as que falharam),
+`-k <filtro>` (só as que casam com o filtro). Ele não usa `set -e` de propósito:
+o objetivo é rodar todas as suítes mesmo quando uma falha, para o relatório
+mostrar o estado completo em vez de parar no primeiro problema.
 
-Todas as suítes seguem esse modelo e foram validadas como guarda de regressão,
-rodando cada uma contra o código antigo (`git show <rev>:<módulo>`) num
-repo-falso com `testes/` do tree atual:
+Não há suíte para `setup.sh`, `cadastro.sh`, `help.sh`, `lembrete.sh`, `menus.sh`
+e `variaveis.sh` — os seis restantes são de apresentação, sem lógica de decisão
+isolável — nem `bats`/`trunk`. Mudança de segurança nesses módulos ainda
+exige harness descartável **rodado também contra `git show HEAD:<arquivo>`** — é
+isso que distingue regressão real de teste que passa nos dois códigos.
+`test_sistema.sh` é o modelo para adicionar uma treze: `source` do módulo +
+stubs + `falhas` contador.
+
+`testes/test_principal.sh` é o **harness de carga** que a seção "Ordem de carga"
+deste documento exige antes de mexer na ordem. Ele:
+
+1. extrai a ordem do `MODULOS_CARREGAR` **do fonte** (nunca de uma cópia);
+2. confere a cadeia **estática**: toda chamada em tempo de source (topo do
+   módulo) precisa apontar para um módulo já carregado — as únicas três
+   referências para trás são as de `constantes.sh` → `_encerrar_programa`, atrás
+   do guard "sourced vs executed";
+3. confere a cadeia **empírica**: carrega os 15 módulos na ordem extraída, num
+   sandbox, e a cada passo confirma que todas as funções dos módulos já
+   carregados existem;
+4. exercita o fluxo do `_main` (caminho feliz + os três abortos).
+
+Contra `fac4885^` — quando `utils.sh` ainda era o **terceiro** módulo — a suíte
+acusa exatamente três checks: a posição de `utils.sh`, a de `config.sh` e a
+ausência de `_garantir_diretorio` em `utils.sh`. É a prova de que mexer na
+ordem sem rodar o harness quebra em runtime.
+
+Todas as suítes seguem o modelo de `test_sistema.sh` e foram validadas como
+guarda de regressão, rodando cada uma contra o código antigo
+(`git show <rev>:<módulo>`) num repo-falso com `testes/` do tree atual:
 
 | Revisão antiga | O que faltava | Checks de segurança que falham |
 |---|---|---|
-| `029be9b^` | portão de pacote inseguro em `programas.sh` | 8/43 |
-| `fac4885^` | refactor para `_garantir_diretorio` | 4/43 |
-| `ea2fe57^` | barra de caminho absoluto antes do `unzip -d /` da biblioteca | 5/43 |
-| `721c108^` | validação da flag `Offline` | 10/43 |
-| `b9f0fef^` | concatenação do diretório temporário na validação | 1/43 |
-| `6c08d82^` / `963ef1a^` | **lista de chaves bloqueadas do `.config`** | 17/43 |
-| `ccf6434^` | default de `$_SSH_ACEITAR_NOVO` | 1/43 |
+| `029be9b^` | portão de pacote inseguro em `programas.sh` | 8/46 |
+| `fac4885^` | refactor para `_garantir_diretorio` e ordem de carga | 5/46 |
+| `ea2fe57^` | barra de caminho absoluto antes do `unzip -d /` da biblioteca | 5/46 |
+| `721c108^` | validação da flag `Offline` | 10/46 |
+| `b9f0fef^` | concatenação do diretório temporário na validação | 1/46 |
+| `6c08d82^` / `963ef1a^` | **lista de chaves bloqueadas do `.config`** | 17/46 |
+| `ccf6434^` | default de `$_SSH_ACEITAR_NOVO` | 1/46 |
 
 O caso `6c08d82^` é o mais eloqüente: contra o parser antigo, `test_constantes.sh`
 acusa **23 checks** — o `.config` de então sobrescrevia `PATH`, `SHELL` e
