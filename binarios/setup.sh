@@ -13,7 +13,7 @@ umask 077
 #   ./atualiza.sh --setup --edit   - Edicao das configuracoes existentes
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026
+# Versao: 11/11/2026-01
 #---------- FUNCAO DE LOGICA DE NEGOCIO ----------#
 # Variaveis globais esperadas
 verclass="${verclass:-}"           # Versao do IsCobol (ex: 2018, 2020, 2023, 2024, 2025)
@@ -45,17 +45,77 @@ traco="#####################################################################"
 # / _validar_config_file) rejeita ([ ` ; | & < > ( ) { } $). Sem isso uma
 # entrada digitada no setup gravava um .config invalido que bloqueava o
 # carregamento do sistema inteiro na proxima execucao.
+#
+# O conjunto vem de uma variavel de proposito: escrito como literal dentro do
+# "${valor//.../}" o Bash descarta o "\" antes de ";" "|" "&" "{" "}", e o
+# conjunto efetivo perde ">", "(" e ")" — justamente os caracteres que o
+# parser tambem rejeita. Com o conjunto incompleto, um nome de empresa com
+# parenteses (ex: "ACME (SP)") era gravado e o sistema recusava o .config
+# na execucao seguinte.
+#
+# "#" entra no conjunto porque o parser trata o resto da linha como comentario
+# inline: sem remover, "EMPRESA#LTDA" era truncado silenciosamente para
+# "EMPRESA".
 _sanitizar_valor_setup() {
     local valor="${1:-}"
-    valor="${valor//[\`\;|&<>()\{\}\$]/}"
+    local perigoso='[\`;&|<>(){}$#]'
+    valor="${valor//$perigoso/}"
     printf '%s' "$valor"
+}
+
+# Le uma opcao de UM caractere do teclado sem deixar o "Enter" pendente no
+# buffer de entrada.
+#
+# "read -n1" devolve assim que le 1 caractere e DEIXA o "\n" do Enter no
+# buffer: a leitura seguinte consome esse "\n" vazio e todas as respostas
+# posteriores caem no campo errado (base2 <- base, base3 <- base2, ...).
+# Ler a linha inteira e usar o primeiro caractere elimina o deslocamento.
+#
+# Parametros: $1 = prompt, $2 = nome da variavel de destino
+# Retorna: 0 se leu, 1 se a entrada acabou (EOF)
+_ler_opcao() {
+    local _entrada=""
+    read -rp "$1" _entrada || return 1
+    printf -v "$2" '%s' "${_entrada:0:1}"
+}
+
+# Aborta o setup porque a entrada acabou (EOF) no meio das perguntas.
+#
+# Sem isso o script seguia com valores vazios e gravava um ".config" que o
+# proprio sistema recusa a carregar (Offline vazio, base vazia).
+#
+# O ".config" parcial e removido, MAS o conteudo anterior e restaurado do
+# backup: sem isso, um setup interrompido apagava uma configuracao valida que
+# o cliente ja tinha. Se nao havia configuracao anterior, o parcial e so
+# removido.
+_abortar_setup_parcial() {
+    printf "%s\n" "Entrada encerrada antes do fim. Configuracao nao gravada." >&2
+    local cfg="${CFG_DIR:-.}/.config"
+    if [[ -f "${cfg}" ]]; then
+        rm -f "${cfg}"
+    fi
+    if [[ -f "${cfg}.bkp" ]]; then
+        cp "${cfg}.bkp" "${cfg}"
+        printf "%s\n" "A configuracao anterior foi restaurada." >&2
+    fi
+    _encerrar_programa 1
 }
 
 # Diretorio do servidor offline
 # Configuracao inicial do sistema
 _initial_setup() {
-    clear
+    # "clear" devolve 1 quando o TERM e ausente ou "dumb"; com "set -e" no topo
+    # isso abortava o setup inteiro antes da primeira pergunta. O "|| true"
+    # segue o padrao ja usado em cadastro.sh.
+    clear 2>/dev/null || true
     _carregar_constantes_setup
+
+    # Backup do .config existente antes de sobrescreve-lo: se o setup for
+    # interrompido no meio, o abort restaura este backup em vez de deixar o
+    # cliente sem configuracao.
+    if [[ -f .config ]]; then
+        cp .config .config.bkp
+    fi
 
     # Header inicial
     echo "$traco"
@@ -79,9 +139,7 @@ _initial_setup() {
 
     # Criar atalho global (requer permissao de root)
     if [[ $EUID -eq 0 ]]; then
-        printf 'cd %s\n./atualiza.sh\n' "${SCRIPT_DIR}" > /usr/local/bin/atualiza
-        chmod "${PERM_FILE_EXEC:-0755}" /usr/local/bin/atualiza
-        printf "%s\n" "Atalho /usr/local/bin/atualiza criado com sucesso."
+        _criar_atalho_global || true
     else
         printf "%s\n" "AVISO: Sem permissao de root. Atalho global nao criado."
         printf "Execute 'sudo %s/atualiza.sh --setup' para criar o atalho.\n" "${SCRIPT_DIR}"
@@ -105,7 +163,9 @@ _edit_setup() {
         echo "Arquivos de configuracao nao encontrados. Execute o setup inicial primeiro."
         _encerrar_programa 1
     fi
-    clear
+    # Ver o comentario em _initial_setup: "clear" pode falhar (TERM ausente)
+    # e nao pode derrubar o setup sob "set -e".
+    clear 2>/dev/null || true
     echo "=================================================="
     echo "Carregando parametros para edicao..."
     echo "=================================================="
@@ -139,13 +199,17 @@ _edit_setup() {
 
     echo "Arquivo .config atualizado com sucesso!"
 
-    # Configurar SSH se habilitado
+    # Configurar SSH se habilitado. O "|| true" impede que uma conexao SSH
+    # recusada aborte o script sob "set -e": o .config ja foi gravado e o
+    # usuario so precisa ser avisado.
     if [[ "${acessossh}" == "s" ]]; then
-        _configure_ssh_access
+        _configure_ssh_access || true
     fi
 
     echo "$tracejada"
-    read -rp "Pressione Enter para sair..."
+    # O "|| true" cobre o EOF: sem entrada, o "read" devolve 1 e o "set -e"
+    # abortava com codigo 1 mesmo com o .config ja gravado com sucesso.
+    read -rp "Pressione Enter para sair..." || true
     _encerrar_programa 0
 }
 
@@ -161,8 +225,7 @@ _setup_iscobol() {
     echo "3) Versao 2024"
     echo "4) Versao 2025"
     echo "5) Versao 2026"
-    read -rp "Escolha a versao -> " -n1 VERSAO
-    echo
+    _ler_opcao "Escolha a versao -> " VERSAO || _encerrar_programa 1
 
     case "$VERSAO" in
         1) _2020 ;;
@@ -216,18 +279,18 @@ _2026() {
 _setup_diretorios() {
     echo ${tracejada}
     echo "###     ( Nome de pasta no servidor )              ###"
-    read -rp "Nome da pasta da base de dados principal (Ex: /dados_jisam): " base
+    read -rp "Nome da pasta da base de dados principal (Ex: /dados_jisam): " base || _abortar_setup_parcial
     base="$(_sanitizar_valor_setup "$base")"
     base="${base:-/dados_jisam}"
     base="${base,,}"  # Normalizar para minusculo
     echo "base=${base}" >> .config
     echo ${tracejada}
-    read -rp "Nome da pasta da segunda base de dados (Opcional): " base2
+    read -rp "Nome da pasta da segunda base de dados (Opcional): " base2 || _abortar_setup_parcial
     base2="$(_sanitizar_valor_setup "$base2")"
     base2="${base2,,}"  # Normalizar para minusculo
     [[ -n "$base2" ]] && echo "base2=${base2}" >> .config || echo "#base2=" >> .config
     echo ${tracejada}
-    read -rp "Nome da pasta da terceira base de dados (Opcional): " base3
+    read -rp "Nome da pasta da terceira base de dados (Opcional): " base3 || _abortar_setup_parcial
     base3="$(_sanitizar_valor_setup "$base3")"
     base3="${base3,,}"  # Normalizar para minusculo
     [[ -n "$base3" ]] && echo "base3=${base3}" >> .config || echo "#base3=" >> .config
@@ -236,8 +299,7 @@ _setup_diretorios() {
 _setup_acesso_remoto() {
     echo "###      ( FACILITADOR DE ACESSO REMOTO )         ###"
     while true; do
-        read -rp "Ativar acesso facil (SSH) [S/N]: " -n1 acessossh
-        echo
+        _ler_opcao "Ativar acesso facil (SSH) [S/N]: " acessossh || _encerrar_programa 1
         if [[ "${acessossh,,}" =~ ^[sn]$ ]]; then
             break
         else
@@ -254,8 +316,7 @@ _setup_acesso_remoto() {
 _setup_chave_acesso() {
     echo "###      ( FACILITADOR DE CHAVE DE ACESSO REMOTO )         ###"
     while true; do
-        read -rp "Permiti chaves de acesso [S/N]: " -n1 chavessh
-        echo
+        _ler_opcao "Permiti chaves de acesso [S/N]: " chavessh || _encerrar_programa 1
         if [[ "${chavessh,,}" =~ ^[sn]$ ]]; then
             break
         else
@@ -274,8 +335,7 @@ _setup_offline() {
     local opt
     echo "###      ( Tipo de acesso        )         ###"
     while true; do
-        read -rp "Servidor OFF [S/N]: " -n1 opt
-        echo
+        _ler_opcao "Servidor OFF [S/N]: " opt || _encerrar_programa 1
         if [[ "${opt,,}" =~ ^[sn]$ ]]; then
             break
         else
@@ -309,7 +369,7 @@ _setup_backup() {
         echo "Exemplo: para o cliente 'Fulano', digite somente 'fulano'"
         echo "${tracejada}"
 
-        read -rp "Nome do diretorio sem a /: " enviabackup
+        read -rp "Nome do diretorio sem a /: " enviabackup || _abortar_setup_parcial
 
         # Monta o caminho completo esperado e salva
         enviabackup="$(_sanitizar_valor_setup "$enviabackup")"
@@ -324,11 +384,19 @@ _setup_empresa() {
     echo "###     ( NOME DA empresa )                   ###"
     echo "###   Nao pode conter espacos entre os nomes    ###"
     echo ${tracejada}
-    read -rp "Nome da Empresa (sem espacos): " empresa
+    read -rp "Nome da Empresa (sem espacos): " empresa || _abortar_setup_parcial
     empresa="$(_sanitizar_valor_setup "$empresa")"
     empresa="${empresa^^}"  # Normalizar para maiusculo
     echo "empresa=${empresa}" >> .config
-    _configure_ssh_access
+    # Configurar o acesso SSH so quando ele foi habilitado: o "_edit_setup"
+    # ja faz essa checagem, e aqui ela faltava — o setup escrevia o
+    # ~/.ssh/config e testava a conexao mesmo com "acessossh=n".
+    #
+    # O "|| true" evita que uma conexao SSH recusada aborte o script sob
+    # "set -e": o .config ja foi gravado e o usuario so precisa ser avisado.
+    if [[ "${acessossh,,}" == "s" ]]; then
+        _configure_ssh_access || true
+    fi
 }
 
 
@@ -348,7 +416,9 @@ _editar_variavel() {
     local alterar opt novo_valor
 
     while true; do
-        read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar
+        # O "|| break" trata o EOF: sem entrada, o "read" devolve 1 e o loop
+        # giraria para sempre. Sem resposta, o valor atual e preservado.
+        read -rp "Deseja alterar ${nome} (valor atual: ${valor_atual})? [s/N] " alterar || break
         if [[ "${alterar,,}" =~ ^[sn]$ ]]; then
             break
         else
@@ -359,7 +429,7 @@ _editar_variavel() {
         case "$nome" in
             "acessossh"|"chavessh"|"Offline")
                 while true; do
-                    read -rp "Novo valor [s/n]: " opt
+                    read -rp "Novo valor [s/n]: " opt || true
                     if [[ "${opt,,}" =~ ^[sn]$ ]]; then
                         [[ "${opt,,}" == "s" ]] && printf -v "$nome" '%s' "s"
                         [[ "${opt,,}" == "n" ]] && printf -v "$nome" '%s' "n"
@@ -370,7 +440,7 @@ _editar_variavel() {
                 done
                 ;;
             *)
-                read -rp "Novo valor para ${nome}: " novo_valor
+                read -rp "Novo valor para ${nome}: " novo_valor || true
                 novo_valor="$(_sanitizar_valor_setup "$novo_valor")"
                 # Aplicar normalizacao de caso conforme a variavel
                 case "$nome" in
@@ -393,6 +463,30 @@ _recreate_config_files() {
     local tracejada="#-------------------------------------------------------------------#"
     echo "Recriando arquivos de configuracao..."
 
+    # Chaves que o setup NAO gerencia (ex: "sistema=iscobol", "dbmaker=n")
+    # sao preservadas: o arquivo e reescrito do zero, e sem esta copia elas
+    # sumiriam do .config do cliente a cada edicao.
+    local _extras=""
+    local _linha _chave
+    if [[ -f .config ]]; then
+        while IFS= read -r _linha || [[ -n "$_linha" ]]; do
+            [[ "$_linha" =~ ^[[:space:]]*# ]] && continue
+            # O "BASH_REMATCH" e sobrescrito a cada regex: a chave e extraida
+            # na MESMA expressao que valida a linha.
+            [[ "$_linha" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]] || continue
+            _chave="${BASH_REMATCH[1]}"
+            # O "continue" DENTRO de um "case" nao pula o "while": no Bash ele
+            # aplica ao proprio "case". Por isso o filtro e um "if".
+            case "$_chave" in
+                "verclass"|"acessossh"|"chavessh"|"Offline"|"enviabackup"|"empresa"|"base"|"base2"|"base3")
+                    _chave=""
+                    ;;
+            esac
+            [[ -z "$_chave" ]] && continue
+            _extras+="${_linha}"$'\n'
+        done < .config
+    fi
+
     {
         echo "verclass=${verclass}"
         echo "acessossh=${acessossh}"
@@ -403,11 +497,45 @@ _recreate_config_files() {
         echo "base=${base}"
         [[ -n "$base2" ]] && echo "base2=${base2}" || echo "#base2="
         [[ -n "$base3" ]] && echo "base3=${base3}" || echo "#base3="
+        [[ -n "$_extras" ]] && printf '%s' "${_extras%$'\n'}"
     } > .config
     echo "$tracejada"
 }
 
 #---------- FUNCOES AUXILIARES ----------#
+# Marcadores do bloco do servidor SAV dentro do ~/.ssh/config do usuario.
+# Delimitam a unica parte do arquivo que o setup reescreve: todo o resto
+# (os outros hosts configurados pelo administrador) e preservado.
+_SAV_SSH_INICIO="# >>> SAV (setup) >>>"
+_SAV_SSH_FIM="# <<< SAV (setup) <<<"
+
+# Cria o atalho global do programa em /usr/local/bin/atualiza.
+#
+# O arquivo gerado precisa de shebang: sem ele, a execucao direta falha com
+# ENOEXEC (o shell so fallback para /bin/sh quando o proprio shell chama).
+# O caminho vai entre aspas com %q: um SCRIPT_DIR com espaco gerava um "cd"
+# invalido. Os argumentos sao repassados com "$@", senao "atualiza --setup"
+# seria engolido pelo atalho.
+_criar_atalho_global() {
+    local destino="${1:-/usr/local/bin/atualiza}"
+
+    # Backup do atalho anterior: sobrescrever sem copia previa impede o
+    # administrador de recuperar um atalho customized.
+    if [[ -f "${destino}" ]]; then
+        cp -p "${destino}" "${destino}.bkp" 2>/dev/null || true
+    fi
+
+    {
+        printf '#!/usr/bin/env bash\n'
+        printf '# Gerado automaticamente pelo setup do SISTEMA SAV.\n'
+        printf 'cd %q || exit 1\n' "${SCRIPT_DIR}"
+        printf 'exec ./atualiza.sh "$@"\n'
+    } > "${destino}"
+
+    chmod "${PERM_FILE_EXEC:-0755}" "${destino}"
+    printf "%s\n" "Atalho ${destino} criado com sucesso."
+}
+
 # Configura acesso SSH facilitado
 #===================================================================
 # _configure_ssh_access - Versão FINAL com SSH no diretório padrão ~/.ssh
@@ -434,10 +562,47 @@ _configure_ssh_access() {
     chmod 0700 "${dir_ssh}"           # ~/.ssh deve ser 0700 para o OpenSSH aceitar as chaves
     chmod "${PERM_DIR_SECURE}" "${base_caminho}"
 
-    # ====================== CRIA NOVO ARQUIVO ~/.ssh/config ======================
-    echo "Criando novo arquivo de configuracao SSH em ${arquivo_confg_ssh}..."
+    # ====================== ATUALIZA ~/.ssh/config ======================
+    #
+    # O ~/.ssh/config do usuario NAO e sobrescrito: as entradas existentes
+    # (outros hosts, IdentityFile, ProxyJump...) sao preservadas e apenas o
+    # bloco do servidor SAV e (re)escrito. Antes, o setup destruia o config
+    # inteiro e a configuracao de SSH do administrador se perdia sem aviso.
+    #
+    # A mesclagem e feita no proprio arquivo, e nao via "Include": a diretiva
+    # Include so existe no OpenSSH 5.9 (2011) e o alvo ainda roda Ubuntu 10.04
+    # (OpenSSH 5.3).
+    echo "Criando configuracao SSH em ${arquivo_confg_ssh}..."
 
-    cat > "${arquivo_confg_ssh}" << EOF
+    # Backup do config anterior do usuario, uma unica vez: o conteudo
+    # original fica preservado em .config.sav.bak.
+    if [[ -f "${arquivo_confg_ssh}" && ! -f "${arquivo_confg_ssh}.sav.bak" ]]; then
+        cp -p "${arquivo_confg_ssh}" "${arquivo_confg_ssh}.sav.bak" 2>/dev/null || true
+        echo "Copia do ~/.ssh/config original salva em ${arquivo_confg_ssh}.sav.bak"
+    fi
+
+    local _linha _em_bloco=0 _parte=""
+    if [[ -f "${arquivo_confg_ssh}" ]]; then
+        while IFS= read -r _linha || [[ -n "$_linha" ]]; do
+            # Reconhece o bloco SAV de uma execucao anterior: ele e descartado
+            # e reescrito abaixo, para nao duplicar o Host sav_servidor.
+            if [[ "${_linha}" == "${_SAV_SSH_INICIO}" ]]; then
+                _em_bloco=1
+                continue
+            fi
+            if [[ "${_linha}" == "${_SAV_SSH_FIM}" ]]; then
+                _em_bloco=0
+                continue
+            fi
+            [[ "${_em_bloco}" -eq 1 ]] && continue
+            _parte+="${_linha}"$'\n'
+        done < "${arquivo_confg_ssh}"
+    fi
+
+    {
+        printf '%s' "${_parte}"
+        cat << EOF
+${_SAV_SSH_INICIO}
 # ================================================
 # Configuracao SAV - Gerada automaticamente
 # Data: $(date '+%d/%m/%Y %H:%M:%S')
@@ -453,10 +618,12 @@ Host sav_servidor
     ServerAliveInterval ${SSH_ALIVE_INTERVAL}
     ServerAliveCountMax ${SSH_ALIVE_COUNT}
     ConnectTimeout ${SSH_TIMEOUT}
+${_SAV_SSH_FIM}
 EOF
+    } > "${arquivo_confg_ssh}"
 
     chmod "${PERM_FILE_PRIVATE}" "${arquivo_confg_ssh}"
-    echo "Novo arquivo ~/.ssh/config criado com sucesso!"
+    echo "Configuracao SSH atualizada com sucesso em ${arquivo_confg_ssh}"
 
     # ====================== TESTE DE CONEXAO ======================
     echo
@@ -536,11 +703,15 @@ cd "${SCRIPT_DIR}" || _encerrar_programa 1
         # Verificar se os arquivos de configuracao ja existem
 
         if [[ -f "${CFG_DIR}/.config" ]]; then
-            clear
+            # Ver o comentario em _initial_setup: "clear" pode falhar (TERM
+            # ausente) e nao pode derrubar o setup sob "set -e".
+            clear 2>/dev/null || true
             echo "Arquivos de configuracao ja existem."
             local choice
             while true; do
-                read -rp "Deseja sobrescrevê-los com a configuracao inicial? [s/N]: " choice
+                # O "|| break" evita o loop infinito quando a entrada acaba
+                # (EOF): sem resposta, a operacao e cancelada.
+                read -rp "Deseja sobrescrevê-los com a configuracao inicial? [s/N]: " choice || break
                 if [[ "${choice,,}" =~ ^[sn]$ ]]; then
                     break
                 else
@@ -562,5 +733,11 @@ cd "${SCRIPT_DIR}" || _encerrar_programa 1
     fi
 }
 
-# Executar a funcao principal
-main "$@"
+# Executar a funcao principal.
+#
+# O guard permite que o modulo seja "source"ado por uma suite de testes sem
+# disparar o fluxo interativo (o mesmo padrao usado em constantes.sh). Quando
+# executado, "$0" e o proprio script e o fluxo roda normal.
+if [[ "${BASH_SOURCE[0]:-}" == "${0:-}" ]]; then
+    main "$@"
+fi
