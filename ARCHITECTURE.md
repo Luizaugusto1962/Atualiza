@@ -325,27 +325,40 @@ flowchart TB
 
 ## 9. Cobertura de teste
 
-Duas suítes, ambas sem TTY, ambas com `set -euo pipefail`:
+Quatro suítes, todas sem TTY, todas com `set -euo pipefail`:
 
 | Suíte | Módulo | Checks |
 |---|---|---|
 | `testes/test_sistema.sh` | `sistema.sh` (source isolado) | 16 |
 | `testes/test_auth.sh` | `auth.sh` (source isolado) | 63 |
+| `testes/test_utils.sh` | `utils.sh` (source isolado) | 80 |
+| `testes/test_programas.sh` | `programas.sh` (source isolado) | 22 |
 
-Não há suíte para `utils.sh`, `programas.sh`, `biblioteca.sh`, `backup.sh` nem `baixar.sh`,
-nem runner (`bats`/`trunk`). Mudança de segurança nesses módulos foi verificada com harness
-descartável **rodado também contra `git show HEAD:<arquivo>`** — é isso que distingue
-regressão real de teste que passa nos dois códigos. `test_sistema.sh` é o modelo para
-adicionar um terceiro: `source` do módulo + stubs + `falhas` contador.
+Não há suíte para `biblioteca.sh`, `backup.sh` nem `baixar.sh`, nem runner
+(`bats`/`trunk`). Mudança de segurança nesses módulos ainda exige harness
+descartável **rodado também contra `git show HEAD:<arquivo>`** — é isso que
+distingue regressão real de teste que passa nos dois códigos. `test_sistema.sh` é
+o modelo para adicionar uma quinta: `source` do módulo + stubs + `falhas`
+contador.
 
-Para `utils.sh:_garantir_diretorio` o harness cobriu os 5 modos, as recusas de caminho
-perigoso, o arquivo-onde-deveria-ser-diretório, a proteção de diretório compartilhado e o
-modo `silencioso` (32 checks). Contra `HEAD` **três** casos de segurança falham — recusa de
-`../`, recusa de metacaracteres de shell e guarda contra `rm -rf` em diretório compartilhado —
-provando que a mudança não é só refactor. A ordem de carga foi validada carregando os 15
-módulos na ordem real do `MODULOS_CARREGAR` num sandbox: com a ordem antiga
-(`config.sh` antes de `utils.sh`) `_garantir_diretorio` não existe no ponto em que
-`config.sh` é carregado.
+`testes/test_utils.sh` e `testes/test_programas.sh` seguem esse modelo e foram
+validados como guarda de regressão: contra `029be9b^` (antes do portão de
+pacote inseguro) 8 das 13 verificações de segurança falham, contra `fac4885^`
+(antes do refactor para `_garantir_diretorio`) 4 falham, e contra `ccf6434^` a
+verificação `ssh: resultado cacheado reaproveitado` falha — é ela que prende a
+leitura de `$_SSH_ACEITAR_NOVO` sem default em `utils.sh:_ssh_aceitar_novo`
+(`config.sh` faz `unset -v _SSH_ACEITAR_NOVO` na limpeza de estado, e `set -u`
+transformava a leitura em "unbound variable").
+
+Para `utils.sh:_garantir_diretorio` o harness anterior cobriu os 5 modos, as
+recusas de caminho perigoso, o arquivo-onde-deveria-ser-diretório, a proteção de
+diretório compartilhado e o modo `silencioso` (32 checks). Contra `HEAD` **três**
+casos de segurança falham — recusa de `../`, recusa de metacaracteres de shell e
+guarda contra `rm -rf` em diretório compartilhado — provando que a mudança não é
+só refactor. A ordem de carga foi validada carregando os 15 módulos na ordem real
+do `MODULOS_CARREGAR` num sandbox: com a ordem antiga (`config.sh` antes de
+`utils.sh`) `_garantir_diretorio` não existe no ponto em que `config.sh` é
+carregado.
 
 ## 10. Limites conhecidos do índice (para re-gerar com fidelidade total)
 

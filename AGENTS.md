@@ -34,10 +34,14 @@ bash -n binarios/<modulo>.sh
 shellcheck -S warning binarios/<modulo>.sh   # hoje 100% limpo em todo o repo
 bash testes/test_sistema.sh                  # suíte de sistema.sh (16 checks); roda sem TTY
 bash testes/test_auth.sh                     # suíte de auth.sh (63 checks); roda sem TTY
+bash testes/test_utils.sh                    # suíte de utils.sh (80 checks); roda sem TTY
+bash testes/test_programas.sh                # suíte de programas.sh (22 checks); roda sem TTY
 ```
 
-- **Duas** suítes, ambas com `set -euo pipefail` e sem TTY, ambas passando. Não há runner, `bats` nem `trunk`. `shellcheck` e `shfmt` estão instalados no Windows (winget) mas o repo não os invoca em script.
-- **Não há suíte para `utils.sh`, `programas.sh`, `biblioteca.sh`, `backup.sh` nem `baixar.sh`.** Mudança de segurança nesses módulos precisa de harness próprio (throwaway, fora do repo) e ele **precisa ser rodado também contra o `git show HEAD:<arquivo>`** para provar que o teste falha no código antigo — um teste que passa nos dois não é regressão.
+- **Quatro** suítes, todas com `set -euo pipefail` e sem TTY, todas passando. Não há runner, `bats` nem `trunk`. `shellcheck` e `shfmt` estão instalados no Windows (winget) mas o repo não os invoca em script.
+- **Não há suíte para `biblioteca.sh`, `backup.sh` nem `baixar.sh`.** Mudança de segurança nesses módulos precisa de harness próprio (throwaway, fora do repo) e ele **precisa ser rodado também contra o `git show HEAD:<arquivo>`** para provar que o teste falha no código antigo — um teste que passa nos dois não é regressão.
+- `utils.sh` e `programas.sh` **têm suíte desde 11/11/2026** (`testes/test_utils.sh`, `testes/test_programas.sh`), seguindo o modelo de `test_sistema.sh`: `source` do módulo + stubs + contador `falhas`. Os diretórios "protegidos" usados nos testes são clones em `mktemp -d` — em especial `SCRIPT_DIR`, que **nunca** pode apontar para o repo de verdade (o modo `recriar` faria `rm -rf` nele se a proteção regredisse).
+- `testes/test_utils.sh` e `testes/test_programas.sh` exigem `python3` para fabricar os ZIPs maliciosos (`zipfile`): a CLI `zip` recusa entrada `../`.
 - `package.json` declara `husky` + `lint-staged` + `prettier`, mas **não há `.husky/` instalado** e o arquivo **é JSON inválido** (dois objetos `{...}` colados — `ConvertFrom-Json` falha na linha 8). Não tente rodar `npm install`/`lint-staged`: quebra. Formatação de shell é manual: indentação de 4 espaços.
 - Um módulo novo precisa ser **adicionado a `MODULOS_CARREGAR`** e ao `principal.sh`, senão o programa nem carrega.
 - Ao mover uma função entre módulos, `bash -n` **não** acha erro — o erro só aparece em runtime. Confira os call sites com `grep` e rode as suítes.
@@ -92,10 +96,11 @@ bash testes/test_auth.sh                     # suíte de auth.sh (63 checks); ro
 - Também ignorados: `*.json` (exceto `.vscode/sftp.json`, que é rastreado), `*.zip`, `*.py` (exceto `fix_backup.py`, rastreado), `docs/`, `.claude/`, `.planning/`. `.gitignore` não afeta arquivo já rastreado — é por isso que `fix_backup.py` e `.vscode/sftp.json` estão no índice apesar das regras.
 - Tooling novo na raiz (config do prettier, do shellcheck) não entra no repo sem `git add -f`.
 - `configuracoes/.config` e `configuracoes/.versao` são de runtime: **não** estão no `.gitignore` e **não** estão versionados (`git ls-files configuracoes/` mostra só `.senhas`, `indexar`, `lembrete`, `limpetmp`, `manual.txt`, `variosarquivos`). Rodar `--setup` localmente os cria como untracked — não commite. `configuracoes/.senhas`, ao contrário, **está versionado**.
-- **Só 43 arquivos são rastreados** (`git ls-files | wc -l`), e alguns são entulho já commitado (`A.dat`, `OK1.dat`, `fix_backup.ps1`, `fix_backup.py`, `fix_rename.ps1`, `graphify-out/`). Confirme com `git ls-files` antes de assumir que algo está versionado.
+- **Só 46 arquivos são rastreados** (`git ls-files | wc -l`), e alguns são entulho já commitado (`A.dat`, `OK1.dat`, `fix_backup.ps1`, `fix_backup.py`, `fix_rename.ps1`, `graphify-out/`). Confirme com `git ls-files` antes de assumir que algo está versionado.
+- **`.gitignore` termina com `testes/`** (linha 23): qualquer suíte nova em `testes/` nasce **ignorada** e só entra no repo com `git add -f`. É por isso que `testes/test_auth.sh` e `testes/test_sistema.sh` estão versionados (foram adicionados antes da regra) e é assim que `testes/test_utils.sh` e `testes/test_programas.sh` entraram. Sem o `-f`, `git add .` não pega a suíte nova.
 - `opencode_ori.json` (ignorado) tem uma **API key em texto puro**; nunca copie essa chave para outro lugar.
 - `.vscode/sftp.json` é rastreado e carrega `host`, `username`, `remotePath` do servidor de deploy. Não tem senha, mas é dado de infraestrutura — não edite à toa.
-- `README.md` está desatualizado: lista `move_dir.sh` (removido), um diretório `docs/` (inexistente), diz "20 scripts" em `binarios/` (são **18** arquivos `.sh`, dos quais 15 entram no `MODULOS_CARREGAR`) e cita três suítes de teste (`smoke_test.sh`, `teste_basico.sh`, `teste_config.sh`) que não existem — as reais são `test_sistema.sh` e `test_auth.sh`. Confie em `binarios/`, `principal.sh` e `ARCHITECTURE.md`.
+- `README.md` está parcialmente desatualizado: lista `move_dir.sh` (removido), um diretório `docs/` (inexistente) e diz "20 scripts" em `binarios/` (são **18** arquivos `.sh`, dos quais 15 entram no `MODULOS_CARREGAR`). A seção **Testes** foi corrigida em 11/11/2026 (as quatro suítes reais: `test_sistema.sh`, `test_auth.sh`, `test_utils.sh`, `test_programas.sh`). O resto do README ainda não é fonte confiável — confie em `binarios/`, `principal.sh` e `ARCHITECTURE.md`.
 - `ARCHITECTURE.md` é o mapa por fluxo/módulo e remete para cá na restrição de `_processar_atualizacao_programas` — mantenha os dois coerentes.
 - `.planning/` (PROJECT.md / ROADMAP.md / STATE.md, ignorados pelo git) descreve o sistema com precisão: produção madura, sem fases de construção.
 

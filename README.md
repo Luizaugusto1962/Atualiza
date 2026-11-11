@@ -76,26 +76,24 @@ O diretório `configuracoes/` armazena:
 
 ## Testes
 
-O sistema inclui scripts de teste para validação:
+Suítes isoladas por módulo, sem TTY e sem rede. Cada uma faz `source` do módulo
+sob teste com stubs e conta as verificações:
 
 ```bash
-# Teste de smoke (requisitos e estrutura básica)
-./testes/smoke_test.sh
-
-# Testes básicos (estrutura, permissões, sintaxe)
-./testes/teste_basico.sh
-
-# Testes de configuração
-./testes/teste_config.sh
+bash testes/test_sistema.sh      # sistema.sh  — parser do .versao e IP interno
+bash testes/test_auth.sh         # auth.sh     — rate limit, hash, .senhas
+bash testes/test_utils.sh        # utils.sh    — caminhos, diretorios, pacotes, ssh
+bash testes/test_programas.sh    # programas.sh — portao de pacote, integridade, cleanup
 ```
 
 ### Resultados dos Testes
 
-| Teste | Resultado | Descrição |
-|-------|-----------|-----------|
-| smoke_test.sh | ✓ 10/10 pass | Requisitos, executáveis, sintaxe |
-| teste_basico.sh | ✓ 43/43 pass | Estrutura, módulos, shebang, sintaxe |
-| teste_config.sh | ✓ 6/6 pass | Configurações, arquivos de ajuda |
+| Suíte | Checks | Descrição |
+|-------|--------|-----------|
+| test_sistema.sh | 16 | Parser do `.versao`, extração do IP interno |
+| test_auth.sh | 63 | Rate limiting, formato de hash, gravação de `.senhas` |
+| test_utils.sh | 80 | Validação de caminhos, `_garantir_diretorio`, entradas de pacote, SSH |
+| test_programas.sh | 22 | Portão de pacote inseguro, integridade de backup, cleanup |
 
 ## Validação e Qualidade
 
