@@ -325,7 +325,7 @@ flowchart TB
 
 ## 9. Cobertura de teste
 
-Quatro suítes, todas sem TTY, todas com `set -euo pipefail`:
+Onze suítes, todas sem TTY, todas com `set -euo pipefail`:
 
 | Suíte | Módulo | Checks |
 |---|---|---|
@@ -333,22 +333,54 @@ Quatro suítes, todas sem TTY, todas com `set -euo pipefail`:
 | `testes/test_auth.sh` | `auth.sh` (source isolado) | 63 |
 | `testes/test_utils.sh` | `utils.sh` (source isolado) | 80 |
 | `testes/test_programas.sh` | `programas.sh` (source isolado) | 22 |
+| `testes/test_biblioteca.sh` | `biblioteca.sh` (source isolado) | 38 |
+| `testes/test_backup.sh` | `backup.sh` (source isolado) | 35 |
+| `testes/test_baixar.sh` | `baixar.sh` (source isolado) | 37 |
+| `testes/test_constantes.sh` | `constantes.sh` (source isolado) | 38 |
+| `testes/test_config.sh` | `config.sh` (source isolado) | 45 |
+| `testes/test_arquivos.sh` | `arquivos.sh` (source isolado) | 42 |
+| `testes/test_vaievem.sh` | `vaievem.sh` (source isolado) | 52 |
 
-Não há suíte para `biblioteca.sh`, `backup.sh` nem `baixar.sh`, nem runner
+Não há suíte para `setup.sh`, `principal.sh`, `cadastro.sh`, `help.sh`,
+`lembrete.sh`, `menus.sh` e `variaveis.sh` — os sete restantes são de
+apresentação/orquestração, sem lógica de decisão isolável — nem runner
 (`bats`/`trunk`). Mudança de segurança nesses módulos ainda exige harness
 descartável **rodado também contra `git show HEAD:<arquivo>`** — é isso que
 distingue regressão real de teste que passa nos dois códigos. `test_sistema.sh` é
-o modelo para adicionar uma quinta: `source` do módulo + stubs + `falhas`
+o modelo para adicionar uma doze: `source` do módulo + stubs + `falhas`
 contador.
 
-`testes/test_utils.sh` e `testes/test_programas.sh` seguem esse modelo e foram
-validados como guarda de regressão: contra `029be9b^` (antes do portão de
-pacote inseguro) 8 das 13 verificações de segurança falham, contra `fac4885^`
-(antes do refactor para `_garantir_diretorio`) 4 falham, e contra `ccf6434^` a
-verificação `ssh: resultado cacheado reaproveitado` falha — é ela que prende a
-leitura de `$_SSH_ACEITAR_NOVO` sem default em `utils.sh:_ssh_aceitar_novo`
-(`config.sh` faz `unset -v _SSH_ACEITAR_NOVO` na limpeza de estado, e `set -u`
-transformava a leitura em "unbound variable").
+Todas as suítes seguem esse modelo e foram validadas como guarda de regressão,
+rodando cada uma contra o código antigo (`git show <rev>:<módulo>`) num
+repo-falso com `testes/` do tree atual:
+
+| Revisão antiga | O que faltava | Checks de segurança que falham |
+|---|---|---|
+| `029be9b^` | portão de pacote inseguro em `programas.sh` | 8/43 |
+| `fac4885^` | refactor para `_garantir_diretorio` | 4/43 |
+| `ea2fe57^` | barra de caminho absoluto antes do `unzip -d /` da biblioteca | 5/43 |
+| `721c108^` | validação da flag `Offline` | 10/43 |
+| `b9f0fef^` | concatenação do diretório temporário na validação | 1/43 |
+| `6c08d82^` / `963ef1a^` | **lista de chaves bloqueadas do `.config`** | 17/43 |
+| `ccf6434^` | default de `$_SSH_ACEITAR_NOVO` | 1/43 |
+
+O caso `6c08d82^` é o mais eloqüente: contra o parser antigo, `test_constantes.sh`
+acusa **23 checks** — o `.config` de então sobrescrevia `PATH`, `SHELL` e
+`BASH_ENV` com o valor do atacante (sequestro do interpretador). O teste roda o
+parser em sub-shell porque, contra aquela versão, a contaminação derrubava até
+o `rm` da limpeza da própria suíte.
+
+Contra `ccf6434^` a verificação `ssh: resultado cacheado reaproveitado` falha —
+é ela que prende a leitura de `$_SSH_ACEITAR_NOVO` sem default em
+`utils.sh:_ssh_aceitar_novo` (`config.sh` faz `unset -v _SSH_ACEITAR_NOVO` na
+limpeza de estado, e `set -u` transformava a leitura em "unbound variable").
+
+`testes/test_biblioteca.sh` não exercita o caminho feliz da extração:
+`_reverter_biblioteca_completa` extrai em `/`, então o pacote malicioso do teste
+usa a entrada absoluta `/tmp/atualiza_suite_sentinel.txt` — se a validação
+regredisse, o arquivo apareceria no `/tmp` e o teste falharia. `testes/test_baixar.sh`
+faz o mesmo pelo outro lado: garante que a limpeza da recepção **preserve** o
+backup offline pendente, o ZIP de biblioteca e o ZIP de reversão.
 
 Para `utils.sh:_garantir_diretorio` o harness anterior cobriu os 5 modos, as
 recusas de caminho perigoso, o arquivo-onde-deveria-ser-diretório, a proteção de

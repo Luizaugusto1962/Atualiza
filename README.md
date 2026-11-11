@@ -80,10 +80,17 @@ Suítes isoladas por módulo, sem TTY e sem rede. Cada uma faz `source` do módu
 sob teste com stubs e conta as verificações:
 
 ```bash
-bash testes/test_sistema.sh      # sistema.sh  — parser do .versao e IP interno
-bash testes/test_auth.sh         # auth.sh     — rate limit, hash, .senhas
-bash testes/test_utils.sh        # utils.sh    — caminhos, diretorios, pacotes, ssh
-bash testes/test_programas.sh    # programas.sh — portao de pacote, integridade, cleanup
+bash testes/test_sistema.sh      # sistema.sh    — parser do .versao e IP interno
+bash testes/test_auth.sh         # auth.sh       — rate limit, hash, .senhas
+bash testes/test_utils.sh        # utils.sh      — caminhos, diretorios, pacotes, ssh
+bash testes/test_programas.sh    # programas.sh  — portao de pacote, integridade, cleanup
+bash testes/test_biblioteca.sh   # biblioteca.sh — extracao na raiz, flag offline
+bash testes/test_backup.sh       # backup.sh     — pre-requisitos, espaco, lista do ZIP
+bash testes/test_baixar.sh       # baixar.sh     — limpeza da recepcao, staging, download
+bash testes/test_constantes.sh   # constantes.sh — parser seguro do .config
+bash testes/test_config.sh       # config.sh     — scanner do .config, registro de variaveis
+bash testes/test_arquivos.sh     # arquivos.sh   — padrao de limpeza, link duro, base
+bash testes/test_vaievem.sh      # vaievem.sh    — destino/origem ssh, quoting, staging
 ```
 
 ### Resultados dos Testes
@@ -94,6 +101,13 @@ bash testes/test_programas.sh    # programas.sh — portao de pacote, integridad
 | test_auth.sh | 63 | Rate limiting, formato de hash, gravação de `.senhas` |
 | test_utils.sh | 80 | Validação de caminhos, `_garantir_diretorio`, entradas de pacote, SSH |
 | test_programas.sh | 22 | Portão de pacote inseguro, integridade de backup, cleanup |
+| test_biblioteca.sh | 38 | Extração na raiz, portão de pacote inseguro, flag `Offline` |
+| test_backup.sh | 35 | Pré-requisitos do backup, espaço em disco, lista do ZIP |
+| test_baixar.sh | 37 | Limpeza da recepção, staging, validação de URL |
+| test_constantes.sh | 38 | Parser do `.config`, chaves bloqueadas por segurança |
+| test_config.sh | 45 | Scanner do `.config`, registro e limpeza de variáveis |
+| test_arquivos.sh | 42 | Padrão de limpeza, detecção de link duro, base de trabalho |
+| test_vaievem.sh | 52 | Destino/origem SSH, quoting POSIX de argumento, staging |
 
 ## Validação e Qualidade
 
