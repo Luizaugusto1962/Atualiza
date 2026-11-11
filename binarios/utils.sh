@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/11/2026-02
+# Versao: 11/11/2026-01
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
@@ -1133,7 +1133,7 @@ _check_instalado() {
 _SSH_ACEITAR_NOVO=""
 
 _ssh_aceitar_novo() {
-    if [[ -n "$_SSH_ACEITAR_NOVO" ]]; then
+    if [[ -n "${_SSH_ACEITAR_NOVO:-}" ]]; then
         printf '%s' "$_SSH_ACEITAR_NOVO"
         return 0
     fi
