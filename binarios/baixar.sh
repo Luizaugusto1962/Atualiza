@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-02
+# Versao: 23/10/2026-03
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
@@ -50,7 +50,7 @@ _voltar_dir_trabalho() {
     return 0
 }
 
-# Copia os scripts atuais para DEFAULT_BACKUP_DIR e compacta tudo em um ZIP.
+# Move os scripts atuais para DEFAULT_BACKUP_DIR e compacta tudo em um ZIP.
 # Rodar antes de sobrescrever qualquer modulo e o que torna _voltar_sh_anterior
 # possivel; por isso, se nada foi copiado, a atualizacao NAO deve prosseguir.
 # Retorna: 0=backup ok (ZIP compactado ou apenas arquivos avulsos) 1=falha
@@ -80,7 +80,7 @@ _coletar_backups() {
 
     for arquivo in "${arquivos_sh[@]}"; do
         nome_base="${arquivo##*/}"
-        if cp -f "$arquivo" "${DEFAULT_BACKUP_DIR}/${nome_base}${ATU_SUFIXO_BACKUP}" 2>/dev/null; then
+        if mv -f "$arquivo" "${DEFAULT_BACKUP_DIR}/${nome_base}${ATU_SUFIXO_BACKUP}" 2>/dev/null; then
             _exibir_mensagem_centralizada "${VERDE}" "Backup do arquivo ${nome_base} feito com sucesso"
             ((backup_sucesso++)) || true
         else
@@ -91,7 +91,7 @@ _coletar_backups() {
     done
 
     if [[ -n "${SCRIPT_DIR:-}" ]] && [[ -f "${SCRIPT_DIR}/atualiza.sh" ]]; then
-        if cp -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh${ATU_SUFIXO_BACKUP}" 2>/dev/null; then
+        if mv -f "${SCRIPT_DIR}/atualiza.sh" "${DEFAULT_BACKUP_DIR}/atualiza.sh${ATU_SUFIXO_BACKUP}" 2>/dev/null; then
             _exibir_mensagem_centralizada "${VERDE}" "Backup do arquivo atualiza.sh feito com sucesso"
             ((backup_sucesso++)) || true
         else
@@ -105,7 +105,7 @@ _coletar_backups() {
         return 1
     fi
     if (( backup_sucesso == 0 )); then
-        _aviso "Nenhum arquivo foi copiado para backup"
+        _aviso "Nenhum arquivo foi movido para backup"
         return 1
     fi
 
