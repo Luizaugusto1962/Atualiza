@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/10/2026-03
+# Versao: 11/11/2026-01
 #
 # =============================================================================
 # FUNCOES DE ATUALIZACAO
