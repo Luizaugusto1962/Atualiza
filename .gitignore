@@ -18,5 +18,5 @@ pacote.bat
 *.py
 .npm-cache/
 npm-cache/
-testes/*.sh
+testes/
 
