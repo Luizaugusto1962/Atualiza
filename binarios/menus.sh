@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 30/10/2026-02
+# Versao: 13/11/2026-01
 # Autor: Luiz Augusto
 #
 
@@ -113,7 +113,7 @@ _exibir_separador_menu() {
 _exibir_rodape_menu() {
     local texto="${1:-Menu Anterior}"
     _exibir_separador_menu
-    _exibir_mensagem_centralizada_a_esquerda "${BRANCO}" "9${VERMELHO} -|: ${texto} "
+    _exibir_mensagem_centralizada_a_esquerda "${BRANCO}" "0${VERMELHO} -|: ${texto} "
 }
 
 # Processa selecao de opcao de menu com validacao
@@ -136,7 +136,7 @@ _principal() {
         _exibir_opcao_menu "3" "Rotinas de Backup"
         _exibir_opcao_menu "4" "Gerenciar Arquivos"
         _exibir_opcao_menu "5" "Ferramentas"
-        _exibir_opcao_menu "0" "Sistema de Ajuda"
+        _exibir_opcao_menu "9" "Sistema de Ajuda"
         _exibir_rodape_menu "Sair do Menu"
         printf "\n"
 
@@ -151,8 +151,8 @@ _principal() {
             3) _menu_backup ;;
             4) _menu_arquivos ;;
             5) _menu_ferramentas ;;
-            0) _menu_ajuda_principal ;;
-            9)
+            9) _menu_ajuda_principal ;;
+            0)
                 clear
                 _encerrar_programa 0
                 ;;
@@ -190,7 +190,7 @@ _menu_programas() {
             2) _tentar_log "menu: atualizar_programa_offline" "${LOG_LIMPA}" _atualizar_programa_offline ;;
             3) _tentar_log "menu: atualizar_programa_pacote" "${LOG_LIMPA}" _atualizar_programa_pacote ;;
             4) _tentar_log "menu: reverter_programa" "${LOG_LIMPA}" _reverter_programa ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -236,7 +236,7 @@ _menu_biblioteca() {
             1) _tentar_log "menu: atualizar_transpc" "${LOG_LIMPA}" _atualizar_transpc ;;
             2) _tentar_log "menu: atualizar_biblioteca_offline" "${LOG_LIMPA}" _atualizar_biblioteca_offline ;;
             3) _tentar_log "menu: reverter_biblioteca" "${LOG_LIMPA}" _reverter_biblioteca ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -268,7 +268,7 @@ _menu_arquivos() {
             2) _tentar_log "menu: menu_temporarios" "${LOG_LIMPA}" _menu_temporarios ;;
             3) _tentar_log "menu: executar_expurgador" "${LOG_LIMPA}" _executar_expurgador "arquivos" ;;
             4) _tentar_log "menu: menu_transferencia_arquivos" "${LOG_LIMPA}" _menu_transferencia_arquivos ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -302,7 +302,7 @@ _menu_ferramentas() {
             4) _tentar_log "menu: menu_avisos" "${LOG_LIMPA}" _menu_avisos ;;
             5) _tentar_log "menu: menu_logs" "${LOG_LIMPA}" _menu_logs ;;
             6) _tentar_log "menu: voltar_sh_anterior" "${LOG_LIMPA}" _voltar_sh_anterior ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -332,7 +332,7 @@ _menu_temporarios() {
             1) _tentar_log "limpeza de temporarios (menu)" "${LOG_LIMPA}" _executar_limpeza_temporarios; return ;;
             2) _tentar_log "menu: adicionar_arquivo_lixo" "${LOG_LIMPA}" _adicionar_arquivo_lixo ;;
             3) _tentar_log "menu: lista_arquivos_lixo" "${LOG_LIMPA}" _lista_arquivos_lixo ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -363,7 +363,7 @@ _menu_recuperar_arquivos() {
             2) _tentar_log "menu: recuperar_arquivos_principais" "${LOG_LIMPA}" _recuperar_arquivos_principais ;;
             3) _tentar_log "menu: executar_lista_arquivos" "${LOG_LIMPA}" _executar_lista_arquivos ;;
             4) _tentar_log "menu: editar_lista_arquivos" "${LOG_LIMPA}" _editar_lista_arquivos ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -394,7 +394,7 @@ _menu_backup() {
             2) _tentar_log "menu: executar_backup_multiplos_padroes" "${LOG_LIMPA}" _executar_backup_multiplos_padroes ;;
             3) _tentar_log "menu: restaurar_backup" "${LOG_LIMPA}" _restaurar_backup ;;
             4) _tentar_log "menu: enviar_backup_avulso" "${LOG_LIMPA}" _enviar_backup_avulso ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -419,7 +419,7 @@ _menu_transferencia_arquivos() {
         case "${opcao}" in
             1) _tentar_log "menu: enviar_arquivo_avulso" "${LOG_LIMPA}" _enviar_arquivo_avulso ;;
             2) _tentar_log "menu: receber_arquivo_avulso" "${LOG_LIMPA}" _receber_arquivo_avulso ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -449,7 +449,7 @@ _menu_configs() {
             2) _tentar_log "menu: mostrar_versao_iscobol" "${LOG_LIMPA}" _mostrar_versao_iscobol ;;
             3) _tentar_log "menu: mostrar_versao_linux" "${LOG_LIMPA}" _mostrar_versao_linux ;;
             4) _tentar_log "menu: consultar_variaveis" "${LOG_LIMPA}" _consultar_variaveis ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -478,7 +478,7 @@ _menu_setups() {
                 _tentar_log "menu: manutencao_setup" "${LOG_LIMPA}" _manutencao_setup
                 ;;
             3) _tentar_log "menu: menu_configurar_ssh" "${LOG_LIMPA}" _menu_configurar_ssh ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -515,7 +515,7 @@ _menu_lembretes() {
                 ;;
             3) _tentar_log "menu: editar_nota_existente" "${LOG_LIMPA}" _editar_nota_existente ;;
             4) _tentar_log "menu: apagar_nota_existente" "${LOG_LIMPA}" _apagar_nota_existente ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -543,7 +543,7 @@ _menu_avisos() {
             1) _tentar_log "menu: gerar_aviso_entrada" "${LOG_LIMPA}" _gerar_aviso_entrada ;;
             2) _tentar_log "menu: editar_aviso_existente" "${LOG_LIMPA}" _editar_aviso_existente ;;
             3) _tentar_log "menu: apagar_aviso_entrada" "${LOG_LIMPA}" _apagar_aviso_entrada ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -569,7 +569,7 @@ _menu_logs() {
         case "${opcao}" in
             1) _tentar_log "menu: listar_logs_atualizacao" "${LOG_LIMPA}" _listar_logs_atualizacao ;;
             2) _tentar_log "menu: listar_logs_limpeza" "${LOG_LIMPA}" _listar_logs_limpeza ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -607,7 +607,7 @@ _menu_ajuda_principal() {
             4) _tentar_log "menu: buscar_manual" "${LOG_LIMPA}" _buscar_manual ;;
             5) _tentar_log "menu: exportar_manual" "${LOG_LIMPA}" _exportar_manual ;;
             6) _tentar_log "menu: menu_selecao_contexto" "${LOG_LIMPA}" _menu_selecao_contexto ;;
-            9) return ;;
+            0) return ;;
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -635,7 +635,7 @@ _menu_selecao_contexto() {
     printf "%s\n" "${VERDE}12${NORMAL} - Configuracoes"
     printf "%s\n" "${VERDE}13${NORMAL} - Avisos"
     printf "%s\n" "${VERDE}14${NORMAL} - Logs"
-    printf "%s\n" "${BRANCO}15${VERMELHO} -|: Menu Anterior "
+    printf "%s\n" "${BRANCO}0${VERMELHO} -|: Menu Anterior "
     printf "\n"
     _linha "=" "${CIANO}"
 
@@ -659,7 +659,7 @@ _menu_selecao_contexto() {
         12) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "configs" ;;
         13) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "aviso" ;;
         14) _tentar_log "menu: exibir_ajuda_contextual" "${LOG_LIMPA}" _exibir_ajuda_contextual "logs" ;;
-        15) return ;;
+        0) return ;;
         *) _processar_opcao_invalida ;;
     esac
 }
@@ -705,7 +705,7 @@ _menu_escolha_base() {
                     _processar_opcao_invalida
                 fi
                 ;;
-            9) return 1 ;; # Sair: retorna erro para o chamador abandonar a operacao sem mensagem de base nao selecionada
+            0) return 1 ;; # Sair: retorna erro para o chamador abandonar a operacao sem mensagem de base nao selecionada
             *) _processar_opcao_invalida ;;
         esac
     done
@@ -739,7 +739,7 @@ _menu_tipo_backup() {
                 export tipo_backup
                 return 0
                 ;;
-            9)
+            0)
                 tipo_backup=""
                 export tipo_backup
                 return 1
@@ -886,7 +886,7 @@ _menu_escolha_base_restauracao() {
         fi
 
         case "${opcao}" in
-            9)
+            0)
                 _aviso "Operacao cancelada."
                 return 1
                 ;;

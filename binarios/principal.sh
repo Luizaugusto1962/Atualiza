@@ -38,9 +38,9 @@ DEFAULT_LOGS_DIR="${DEFAULT_LOGS_DIR:-${SCRIPT_DIR}/logs}"
 export SCRIPT_DIR LIBS_DIR CFG_DIR PERM_DIR_SECURE DEFAULT_LOGS_DIR
 
 # =============================================================================
-# VERSAO DO SISTEMA
+# CONTROLE DE VERSAO DO SISTEMA.
 # =============================================================================
-declare -rx UPDATE="11/11/26"
+declare -rx UPDATE="13/11/26"
 
 # =============================================================================
 # INICIALIZACAO DE DIRETORIOS (bootstrap pre-modulos)
