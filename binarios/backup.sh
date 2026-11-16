@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 20/10/2026-01
+# Versao: 16/11/2026-01
 
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio base principal.
@@ -121,12 +121,6 @@ _validar_pre_backup() {
         _aguardar 3
         return 1
     fi
-    
-    # Devolver valor ao chamador (nameref manual, compativel com Bash 4.2+)
-    printf -v "$var_name" '%s' "${_base_ref}"
-    
-    # Devolver valor ao chamador (nameref manual, compativel com Bash 4.2+)
-#    printf -v "$1" '%s' "${_base_ref}"
 
     # Validar se o diretorio base existe
     if [[ ! -d "${_base_ref}" ]]; then
@@ -134,6 +128,11 @@ _validar_pre_backup() {
         _aguardar 3
         return 1
     fi
+
+    # Devolver valor ao chamador APOS validacao de existencia:
+    # o chamador so recebe o caminho depois que o diretorio foi confirmado como valido.
+    # (nameref manual, compativel com Bash 4.2+)
+    printf -v "$var_name" '%s' "${_base_ref}"
 
     # VALIDAÇÃO: Verificar DEFAULT_BASEBACKUP_DIR antes de usar
     if [[ -z "${DEFAULT_BASEBACKUP_DIR:-}" ]]; then
@@ -355,24 +354,26 @@ _enviar_backup_avulso() {
         return 0
     fi
 
-    # Validar que o nome do backup foi definido
-    if [[ -z "${nome_backup:-}" ]]; then
-        _erro "Nome do backup nao definido"
+    # Validar que backup_selecionado foi definido por _selecionar_backup
+    if [[ -z "${backup_selecionado:-}" ]]; then
+        _erro "Erro interno: backup_selecionado nao definido apos _selecionar_backup"
         _aguardar_tecla
         return 1
     fi
 
-    if [[ "${CFG_OFFLINE}" =~ ^[sn]$ ]]; then
-        if [[ "${CFG_OFFLINE}" == "s" ]]; then
-            _mover_backup_offline "$nome_backup"
-            return
-        fi
+    if ! _offline_valido; then
+        _offline_erro "envio avulso de backup"
+        _aguardar_tecla
+        return 1
+    fi
 
-        if _confirmar "Enviar backup via rede?" "S"; then
-            _enviar_backup_rede "$nome_backup"
-        fi
-    else
-        _aviso "CFG_OFFLINE nao configurado corretamente. Nenhuma acao de envio feita."
+    if [[ "${CFG_OFFLINE}" == "s" ]]; then
+        _mover_backup_offline "$nome_backup"
+        return
+    fi
+
+    if _confirmar "Enviar backup via rede?" "S"; then
+        _enviar_backup_rede "$nome_backup"
     fi
 }
 
@@ -429,10 +430,13 @@ _coletar_arquivos_backup() {
 
     # A lista vai para arquivo (nao pode ir para $( ) porque $( ) remove NUL)
     local _lista_tmp="${DEFAULT_BASEBACKUP_DIR}/.lista_backup_$$.tmp"
-    "$_find" . "${find_args[@]}" -printf '%s\t%p\0' > "$_lista_tmp" 2>/dev/null || true
+    local rc_find=0
+    "$_find" . "${find_args[@]}" -printf '%s\t%p\0' > "$_lista_tmp" 2>/dev/null || rc_find=$?
 
-    # find sem -printf (implementacao nao-GNU): refaz a listagem sem tamanhos
-    if [[ ! -s "$_lista_tmp" ]]; then
+    # find sem -printf (implementacao nao-GNU): refaz a listagem sem tamanhos.
+    # Fallback ativado APENAS quando find retornou erro (rc != 0), nao quando
+    # simplesmente nao encontrou arquivos (lista vazia mas rc == 0).
+    if [[ ! -s "$_lista_tmp" ]] && [[ $rc_find -ne 0 ]]; then
         "$_find" . "${find_args[@]}" -print0 > "$_lista_tmp" 2>/dev/null || true
     fi
 
@@ -528,6 +532,18 @@ _compactar_backup() {
     printf '%s\0' "${_BACKUP_LISTA[@]}" \
         | xargs -0 -r "$DEFAULT_ZIP" "${zip_flags[@]}" "$arquivo_tmp" > "$log_parcial" 2>&1 || rc_zip=$?
 
+    # Quando xargs divide em multiplos lotes e o disco esgota no meio, o zip
+    # falha com rc != 0 e o arquivo .tmp fica corrompido. O erro sera
+    # detectado por _validar_integridade_backup abaixo; aqui apenas
+    # diagnosticamos se o espaco disponivel esta baixo para facilitar o debug.
+    if [[ $rc_zip -ne 0 ]]; then
+        local espaco_pos_falha
+        espaco_pos_falha=$(df -kP "$_dir_destino" 2>/dev/null | awk 'NR==2 {print $4}') || espaco_pos_falha=""
+        if [[ "$espaco_pos_falha" =~ ^[0-9]+$ ]] && (( espaco_pos_falha < 102400 )); then
+            _log "ZIP: rc=${rc_zip} — possivelmente sem espaco em disco (disponivel: ${espaco_pos_falha}KB)" "$log_zip"
+        fi
+    fi
+
     # Saida do zip vai para o log de verdade; aqui so a contagem de linhas
     local qtd_erro=0
     if [[ -s "$log_parcial" ]]; then
@@ -617,15 +633,21 @@ _executar_backup_arquivo() {
     local arquivo_destino="${1:-}"
     local modo="${2:-}"
     local data_referencia="${3:-}"
+    local _cwd
+    _cwd="$(pwd)"
 
     # Validar diretorio de trabalho
     if ! _diretorio_trabalho; then
         _erro "Falha ao acessar diretorio de trabalho"
+        cd "$_cwd" || true
         return 1
     fi
 
     _coletar_arquivos_backup "$modo" "$data_referencia"
-    _compactar_backup "$arquivo_destino" "$modo"
+    local _rc_compactar=0
+    _compactar_backup "$arquivo_destino" "$modo" || _rc_compactar=$?
+    cd "$_cwd" || true
+    return $_rc_compactar
 }
 # Muda para o diretorio de trabalho
 # Retorna: 0 se sucesso, 1 se erro
@@ -852,6 +874,7 @@ _restaurar_backup_completo() {
 
     _ok "Restauracao completa concluida"
     _aguardar_tecla
+    return 0
 }
 
 # Restaura(s) arquivo(s) especifico(s)
@@ -1120,11 +1143,21 @@ _verificar_backups_recentes() {
     local padrao_empresa
     padrao_empresa=$(_escapar_glob "$CFG_EMPRESA")
 
-    if find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -mtime -2 -name "${padrao_empresa}_*.zip" -print -quit | grep -q .; then
+    local -a _backups_recentes=()
+    mapfile -t _backups_recentes < <(
+        find "${DEFAULT_BASEBACKUP_DIR}" -maxdepth 1 -mtime -2 \
+            -name "${padrao_empresa}_*.zip" -print 2>/dev/null \
+        | sort -r
+    ) || true
+
+    if (( ${#_backups_recentes[@]} > 0 )); then
         _linha
         _exibir_mensagem_centralizada "${CIANO}" "Ja existe backup recente em $DEFAULT_BASEBACKUP_DIR:"
         _linha
-        ls -ltrh "${DEFAULT_BASEBACKUP_DIR}"/"${padrao_empresa}"_*.zip 2>/dev/null
+        local _arq
+        for _arq in "${_backups_recentes[@]}"; do
+            printf '%s\n' "$_arq"
+        done
         _linha
         return 0
     fi
