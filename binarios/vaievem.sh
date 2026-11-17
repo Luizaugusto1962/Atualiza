@@ -502,7 +502,7 @@ _enviar_rsync() {
 # Parametros: $1=destino_remoto(caminho) $2...=arquivos_locais
 _enviar_rsync_lote() {
     local destino_remoto="${1:-}"
-    shift
+    shift || true
     local -a arquivos_locais=("$@")
 
     if [[ -z "$destino_remoto" || ${#arquivos_locais[@]} -eq 0 ]]; then
