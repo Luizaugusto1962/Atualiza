@@ -14,7 +14,7 @@ set -euo pipefail
 # utils.sh (bloco "CAMINHOS E DIRETORIOS"). Nao recriar aqui.
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/11/2026-01
+# Versao: 17/11/2026-01
 #
 
 CHAVE="${DEFAULT_CHAVE_SSH:-}"
