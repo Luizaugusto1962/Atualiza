@@ -736,7 +736,10 @@ _reverter_programa_especifico_biblioteca() {
     fi
     # Extrai na raiz porque o backup guarda os caminhos de E_EXEC e T_TELAS
     # (producao: /u/sav/classes e /u/sav/tel_isc).
-    read -rp "${AMARELO}Informe o(s) programa(s) em MAIUSCULO, separados por espaco ou virgula: ${NORMAL}" entrada_programas
+    if ! read -rp "${AMARELO}Informe o(s) programa(s) em MAIUSCULO, separados por espaco ou virgula: ${NORMAL}" entrada_programas; then
+        _aviso "Operacao cancelada."
+        return 1
+    fi
 
     # read -a fatia por IFS SEM expansao de pathname: um "*" colado na entrada
     # nao vira a lista do diretorio de trabalho.
@@ -862,7 +865,8 @@ _solicitar_versao_biblioteca() {
     fi
     _linha
     printf "\n"
-    read -rp "${VERDE}Informe somente o numeral da versao: ${NORMAL}" VERSAO
+    VERSAO=""
+    read -rp "${VERDE}Informe somente o numeral da versao: ${NORMAL}" VERSAO || true
 
     if [[ -z "${VERSAO}" ]]; then
         printf "\n"
