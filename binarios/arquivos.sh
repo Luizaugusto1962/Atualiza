@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/11/2026-02
+# Versao: 16/11/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -434,12 +434,12 @@ _limpar_base_especifica() {
         fi
     fi
     if (( ! backup_valido )); then
-        _log "ERRO: diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}" "${LOG_LIMPA}"
-        if (( automatico )); then
-            return 1
+        # CORRECAO Bug 5: backup indisponivel bloqueia apenas a compactacao, nao
+        # a remocao dos temporarios. Prosseguir sem zip e avisar no log.
+        _log "AVISO: backup invalido/indisponivel — temporarios serao removidos SEM compactacao: ${DEFAULT_BACKUP_DIR:-vazio}" "${LOG_LIMPA}"
+        if (( ! automatico )); then
+            _aviso "Backup indisponivel. Arquivos temporarios serao removidos sem compactacao."
         fi
-        _erro "Diretorio de backup invalido ou inseguro para compactacao: ${DEFAULT_BACKUP_DIR:-vazio}"
-        return 1
     fi
 
     # Ler lista de arquivos temporarios (ignora vazias e comentarios)
@@ -563,17 +563,19 @@ _limpar_base_especifica() {
 
     # 1 unico zip (evita reescrever o arquivo central N vezes) + 1 rm em lote
     # $DEFAULT_ZIP sem aspas para suportar flags (ex: "zip -j")
-    if $DEFAULT_ZIP "${DEFAULT_BACKUP_DIR}/${zip_temporarios}" "${arquivos_zip_total[@]}" >>"${LOG_LIMPA}" 2>&1; then
-        _log "Arquivos temporarios compactados em lote: ${qtd_total} arquivo(s) -> ${zip_temporarios}" "${LOG_LIMPA}"
-        if rm -f -- "${arquivos_zip_total[@]}"; then
-            _log "Arquivos removidos em lote: ${qtd_total} arquivo(s)" "${LOG_LIMPA}"
+    if (( backup_valido )); then
+        if $DEFAULT_ZIP "${DEFAULT_BACKUP_DIR}/${zip_temporarios}" "${arquivos_zip_total[@]}" >>"${LOG_LIMPA}" 2>&1; then
+            _log "Arquivos temporarios compactados em lote: ${qtd_total} arquivo(s) -> ${zip_temporarios}" "${LOG_LIMPA}"
         else
-            _log "AVISO: falha ao remover arquivos em lote (${qtd_total} arquivo(s))" "${LOG_LIMPA}"
+            _log "ERRO ao compactar lote (${qtd_total} arquivo(s)) em ${zip_temporarios}" "${LOG_LIMPA}"
+            _erro "  >> Ao compactar lote de temporarios (${qtd_total} arquivo(s))"
+            return 1
         fi
+    fi
+    if rm -f -- "${arquivos_zip_total[@]}"; then
+        _log "Arquivos removidos em lote: ${qtd_total} arquivo(s)" "${LOG_LIMPA}"
     else
-        _log "ERRO ao compactar lote (${qtd_total} arquivo(s)) em ${zip_temporarios}" "${LOG_LIMPA}"
-        _erro "  >> Ao compactar lote de temporarios (${qtd_total} arquivo(s))"
-        return 1
+        _log "AVISO: falha ao remover arquivos em lote (${qtd_total} arquivo(s))" "${LOG_LIMPA}"
     fi
 
     if (( ! automatico )); then
@@ -667,6 +669,7 @@ _recuperar_arquivo_especifico() {
 
     # Loop para permitir múltiplas recuperações
     while [[ "${continuar}" =~ ^[Ss]$ ]]; do
+        clear
         _meio_da_tela
         _exibir_mensagem_centralizada "${CIANO}" "Informe o nome do arquivo a ser recuperado ou ENTER para todos:"
         _linha
@@ -713,7 +716,6 @@ _recuperar_arquivo_especifico() {
         # Se vazio, assumir "N"
         [[ -z "$continuar" ]] && continuar="N"
 
-    clear
     done
     cd "${SCRIPT_DIR}" || { _erro "Ao acessar o diretorio %s\n" "${SCRIPT_DIR}" >&2; return 1; }
 }
@@ -1179,15 +1181,17 @@ _recuperar_arquivos_principais() {
     var_ano4=$(date +%Y)
 
     # Criar lista temporaria (glob seguro em vez de ls — evita quebra por nomes com espacos/glob)
+    # CORRECAO Bug 1: usar prefixo absoluto (base_trabalho/) nos globs para que a
+    # expansao ocorra na base de dados real, nao no CWD (que e CFG_DIR apos o cd acima).
     # shopt -p retorna 1 com opção desligada — || true evita abortar sob set -e.
     old_nullglob=$(shopt -p nullglob) || true
     shopt -s nullglob
     {
         local arquivo_ate arquivo_nfe
-        for arquivo_ate in ATE"${var_ano}"*.dat; do
+        for arquivo_ate in "${base_trabalho}"/ATE"${var_ano}"*.dat; do
             printf '%s\n' "${arquivo_ate##*/}"
         done
-        for arquivo_nfe in NFE?"${var_ano4}".*.dat; do
+        for arquivo_nfe in "${base_trabalho}"/NFE?"${var_ano4}".*.dat; do
             printf '%s\n' "${arquivo_nfe##*/}"
         done
     } > "${CFG_DIR}/indexar2"
@@ -1503,7 +1507,8 @@ _executar_jutil_lote() {
             if _executar_jutil "$arq_retry"; then
                 ok_lista+=("$arq_retry")
                 ((concluidos++)) || true
-                ((falhas--)) || true
+                # Proteger contra underflow: so decrementa se falhas > 0
+                if (( falhas > 0 )); then ((falhas--)) || true; fi
             else
                 _erro "jutil morto pelo sistema em: ${arq_retry##*/}. Memoria insuficiente? Reduza C_JUTIL_PARALELO ou use C_JUTIL_SEQUENCIAL=1"
             fi
@@ -1983,14 +1988,18 @@ _executar_expurgador() {
     done
 
     local diretorios_zip=(
-        "${E_EXEC}/"
-        "${T_TELAS}/"
+        "${E_EXEC:-}/"
+        "${T_TELAS:-}/"
     )
 
     # Limpar arquivos ZIP antigos especificos (paralelo, mesma tecnica)
     local -a zips_validos=()
     local -a zips_status=()
     for diretorio in "${diretorios_zip[@]}"; do
+        # Guard: E_EXEC/T_TELAS nao configurados resultam em "/" — ignorar
+        if [[ -z "${diretorio%/}" ]]; then
+            continue
+        fi
         if [[ -d "$diretorio" ]] && _garantir_diretorio "$diretorio" verificar "diretorio de expurgo" silencioso; then
             zips_validos+=("$diretorio")
             zips_status+=("1")
