@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 05/11/2026-01
+# Versao: 17/11/2026-01
 #
 
 # Variaveis globais esperadas
@@ -270,10 +270,7 @@ _selecionar_programas_reversao() {
 
     local escolha
     while true; do
-        if ! read -rp "${AMARELO}Opcao -> ${NORMAL}" escolha; then
-            _aviso "Operacao cancelada."
-            return 1
-        fi
+        read -rp "${AMARELO}Opcao -> ${NORMAL}" escolha
         _linha
 
         # Tratar cancelamento
@@ -403,9 +400,7 @@ _resolver_arquivo_compilado() {
     _exibir_mensagem_centralizada "${VERMELHO}" "Informe o tipo de compilacao (1 - Normal, 2 - Depuracao):"
     _linha
 
-    if ! read -rp "${AMARELO}Tipo de compilacao: ${NORMAL}" tipo_compilacao; then
-        return 1
-    fi
+    read -rp "${AMARELO}Tipo de compilacao: ${NORMAL}" tipo_compilacao
 
     if [[ "$tipo_compilacao" == "1" ]]; then
         arquivo_compilado_atual="${nome_item}${compilado}.zip"
@@ -463,11 +458,7 @@ _coletar_artefatos_atualizacao() {
         _exibir_mensagem_centralizada "${VERMELHO}" "$mensagem_item"
         _linha
 
-        if ! read -rp "${AMARELO}Nome do ${rotulo_item} (ENTER para finalizar): ${NORMAL}" item; then
-            _aviso "Operacao cancelada."
-            saiu_por_enter=1
-            break
-        fi
+        read -rp "${AMARELO}Nome do ${rotulo_item} (ENTER para finalizar): ${NORMAL}" item
         _linha
 
         if [[ -z "${item}" ]]; then
