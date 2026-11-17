@@ -270,7 +270,10 @@ _selecionar_programas_reversao() {
 
     local escolha
     while true; do
-        read -rp "${AMARELO}Opcao -> ${NORMAL}" escolha
+        if ! read -rp "${AMARELO}Opcao -> ${NORMAL}" escolha; then
+            _aviso "Operacao cancelada."
+            return 1
+        fi
         _linha
 
         # Tratar cancelamento
@@ -400,7 +403,9 @@ _resolver_arquivo_compilado() {
     _exibir_mensagem_centralizada "${VERMELHO}" "Informe o tipo de compilacao (1 - Normal, 2 - Depuracao):"
     _linha
 
-    read -rp "${AMARELO}Tipo de compilacao: ${NORMAL}" tipo_compilacao
+    if ! read -rp "${AMARELO}Tipo de compilacao: ${NORMAL}" tipo_compilacao; then
+        return 1
+    fi
 
     if [[ "$tipo_compilacao" == "1" ]]; then
         arquivo_compilado_atual="${nome_item}${compilado}.zip"
@@ -458,7 +463,11 @@ _coletar_artefatos_atualizacao() {
         _exibir_mensagem_centralizada "${VERMELHO}" "$mensagem_item"
         _linha
 
-        read -rp "${AMARELO}Nome do ${rotulo_item} (ENTER para finalizar): ${NORMAL}" item
+        if ! read -rp "${AMARELO}Nome do ${rotulo_item} (ENTER para finalizar): ${NORMAL}" item; then
+            _aviso "Operacao cancelada."
+            saiu_por_enter=1
+            break
+        fi
         _linha
 
         if [[ -z "${item}" ]]; then
