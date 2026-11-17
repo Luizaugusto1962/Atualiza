@@ -915,7 +915,7 @@ _limpar_arquivos_antigos() {
     local -a _nao_apagar=()
     read -r -a _nao_apagar <<< "$nao_apagar"
     local _excl
-    for _excl in ${_nao_apagar[@]+"${_nao_apagar[@]}"}; do
+    for _excl in "${_nao_apagar[@]+"${_nao_apagar[@]}"}"; do
         [[ -z "$_excl" ]] && continue
         find_exclusoes+=("!" -iname "$_excl")
     done
@@ -1010,7 +1010,7 @@ _executar_expurgador_diario() {
     fi
     if (( ${#pares_alvo[@]} <= 1 || paralelo <= 1 )); then
         local _alvo
-        for _alvo in ${pares_alvo[@]+"${pares_alvo[@]}"}; do
+        for _alvo in "${pares_alvo[@]+"${pares_alvo[@]}"}"; do
             IFS='|' read -r _d _dir _prot <<< "$_alvo"
             _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
                 _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot"
@@ -1049,7 +1049,7 @@ _executar_expurgador_diario() {
                     pids_onda+=("$!")
                     pid_onda+=("${indice}")
                 done
-                for num_onda in ${pids_onda[@]+"${pids_onda[@]}"}; do
+                for num_onda in "${pids_onda[@]+"${pids_onda[@]}"}"; do
                     wait "$num_onda" 2>/dev/null || true
                 done
                 inicio="$fim"
