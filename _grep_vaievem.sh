@@ -1,0 +1,1 @@
+grep -n 'for .* in \${' /mnt/d/Projetos/Atualiza/binarios/vaievem.sh
