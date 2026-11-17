@@ -1,0 +1,1 @@
+grep -n '$(' /mnt/d/Projetos/Atualiza/binarios/utils.sh
