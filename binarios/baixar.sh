@@ -375,6 +375,17 @@ _atualizando() {
         return 1
     fi
 
+    # SEGURANCA: validar as entradas do ZIP antes de extrair/instalar. Um
+    # pacote com "../" ou caminho absoluto nao deve nem chegar a ser
+    # expandido, mesmo com -j (junk paths) achatando os caminhos — a regra e
+    # a mesma dos demais pontos de extracao do sistema.
+    if ! _validar_backup_entradas_seguras "$origem_zip"; then
+        _erro "Pacote rejeitado: contem entradas inseguras: ${origem_zip}"
+        _voltar_dir_trabalho "${_pwd_anterior}"
+        _aviso "Pacote preservado em: ${origem_zip}"
+        return 1
+    fi
+
     # SEGURANCA: validar integridade do zip ANTES de extrair/instalar.
     # Um pacote corrompido extrairia arquivos parciais que seriam instalados
     # como se fossem validos nas etapas abaixo.
