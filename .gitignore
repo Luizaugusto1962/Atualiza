@@ -19,4 +19,4 @@ pacote.bat
 .npm-cache/
 npm-cache/
 testes/
-_grep*.sh
+_grep*
