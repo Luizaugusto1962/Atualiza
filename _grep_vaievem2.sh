@@ -1,1 +1,0 @@
-grep -n '\${[A-Za-z_]*\[@\]}' /mnt/d/Projetos/Atualiza/binarios/vaievem.sh | grep -v '"'
