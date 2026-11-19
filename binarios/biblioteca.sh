@@ -6,7 +6,7 @@ set -euo pipefail
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/11/2026-01
+# Versao: 19/11/2026-02
 #
 declare pids=()                                     # Array global para rastrear PIDs de background
 declare ATUALIZA1="" ATUALIZA2="" ATUALIZA3=""      # Variaveis de artefatos
@@ -335,17 +335,17 @@ _processar_atualizacao_biblioteca() {
         local _primeiro_membro
         _primeiro_membro=$("${DEFAULT_TAR}" -tf "${arquivo_backup_tar}" 2>>"${LOG_ATU}" | head -n 1) || true
         if [[ -z "$_primeiro_membro" ]]; then
-            _erro "Backup vazio: nenhum arquivo encontrado em ${E_EXEC} nem em ${T_TELAS}"
+            _erro "Diretorio para o Backup vazio: nenhum arquivo encontrado em ${E_EXEC} nem em ${T_TELAS}"
             _aviso "Confira se E_EXEC e T_TELAS apontam para os diretorios certos no .config"
             _aguardar 2
             trap '_encerrar_programa 130' INT TERM
             return 1
         fi
 
-        _ok "Compactacao de $E_EXEC e $T_TELAS concluida"
+        _ok "Verificacao dos diretorios $E_EXEC e $T_TELAS concluida"
         _linha
     else
-        _erro "Falha na compactacao da biblioteca"
+        _erro "Falha na verificacao dos diretorios $E_EXEC e $T_TELAS"
         trap '_encerrar_programa 130' INT TERM
         return 1
     fi
@@ -380,7 +380,9 @@ _processar_atualizacao_biblioteca() {
     _linha
     _aguardar 1
 
-    # Verificar se backup foi criado
+    # Verificar se backup foi criado: o ponto de volta do estado anterior
+    # tem que existir E estar completo — compactacao interrompida deixa
+    # .tar.gz parcial no disco, que nao e um backup utilizavel.
     if [[ ! -r "${caminho_backup_final}" ]]; then
         _linha
         _aviso "Backup nao encontrado no diretorio ou dados nao informados"
@@ -388,6 +390,18 @@ _processar_atualizacao_biblioteca() {
         _aguardar 2
 
         if _confirmar "Deseja continuar a atualizacao?" "S"; then
+            _aviso "Continuando a atualizacao..."
+        else
+            pids=()  # Limpar PIDs se saindo
+            trap '_encerrar_programa 130' INT TERM
+            return 1
+        fi
+    elif ! _backup_biblioteca_completo "${caminho_backup_final}"; then
+        _erro "Backup anterior incompleto ou ilegivel: ${caminho_backup_final}"
+        _aviso "A atualizacao segue SEM ponto de volta confiavel para o estado anterior."
+        _aguardar 2
+
+        if _confirmar "Deseja continuar a atualizacao mesmo assim?" "N"; then
             _aviso "Continuando a atualizacao..."
         else
             pids=()  # Limpar PIDs se saindo
@@ -403,6 +417,22 @@ _processar_atualizacao_biblioteca() {
     # no meio. Restaurar aqui cobre qualquer retorno antecipado dela.
     trap '_encerrar_programa 130' INT TERM
     return "${_rc_atu}"
+}
+
+# Verifica se o backup da biblioteca e um ponto de volta util (chamada de
+# _processar_atualizacao_bibliotica): existe, tem conteudo, o stream gzip
+# esta valido e o tar lista membros. Compactacao interrompida deixa .tar.gz
+# parcial — o gzip -t e o tar -tzf detectam isso, e um tar sem membros
+# listaveis tambem e recusado. Retorna: 0=completo, 1=ausente ou incompleto.
+_backup_biblioteca_completo() {
+    local arquivo="${1:-}"
+    local listagem
+
+    [[ -n "${arquivo}" && -s "${arquivo}" ]] || return 1
+    gzip -t "${arquivo}" 2>>"${LOG_ATU}" || return 1
+    listagem=$("${DEFAULT_TAR}" -tzf "${arquivo}" 2>>"${LOG_ATU}") || return 1
+    [[ -n "${listagem}" ]] || return 1
+    return 0
 }
 
 # Executa a atualizacao da biblioteca
