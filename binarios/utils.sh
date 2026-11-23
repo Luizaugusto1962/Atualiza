@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 17/11/2026-01
+# Versao: 23/11/2026-01
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
@@ -1004,14 +1004,17 @@ _executar_expurgador_diario() {
     done
 
     local paralelo=4
-    [[ "${EXPURGADOR_PARALELO:-}" =~ ^[0-9]+$ ]] && paralelo="${EXPURGADOR_PARALELO}"
+    if [[ "${EXPURGADOR_PARALELO:-}" =~ ^[0-9]+$ ]]; then
+        paralelo="${EXPURGADOR_PARALELO}"
+    fi
     if (( paralelo < 1 )); then
         paralelo=1
     fi
     if (( ${#pares_alvo[@]} <= 1 || paralelo <= 1 )); then
         local _alvo
         for _alvo in "${pares_alvo[@]+"${pares_alvo[@]}"}"; do
-            IFS='|' read -r _d _dir _prot <<< "$_alvo"
+            local _d="" _dir="" _prot=""
+            IFS='|' read -r _d _dir _prot <<< "$_alvo" || true
             _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
                 _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot"
         done
@@ -1025,7 +1028,8 @@ _executar_expurgador_diario() {
             # Fallback sequencial: sem dir de status, nao ha ganho em paralelo.
             local _alvo
             for _alvo in "${pares_alvo[@]}"; do
-                IFS='|' read -r _d _dir _prot <<< "$_alvo"
+                local _d="" _dir="" _prot=""
+                IFS='|' read -r _d _dir _prot <<< "$_alvo" || true
                 _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
                     _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot"
             done
@@ -1040,7 +1044,8 @@ _executar_expurgador_diario() {
                 pids_onda=()
                 pid_onda=()
                 for ((indice = inicio; indice < fim; indice++)); do
-                    IFS='|' read -r _d _dir _prot <<< "${pares_alvo[$indice]}"
+                    local _d="" _dir="" _prot=""
+                    IFS='|' read -r _d _dir _prot <<< "${pares_alvo[$indice]}" || true
                     (
                         _tentar_log "expurgo diario em ${_dir}" "${LOG_LIMPA}" \
                             _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot" || true
