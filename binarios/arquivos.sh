@@ -5,7 +5,7 @@ set -euo pipefail
 # Responsavel por limpeza, recuperacao, transferencia e expurgo de arquivos
 # Padrões e regras de desenvolvimento: ver AGENTS.md
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 16/11/2026-01
+# Versao: 27/11/2026-01
 #
 # Variaveis globais esperadas
 CFG_BASE_DIR="${CFG_BASE_DIR:-}"                # Caminho do diretorio da primeira base de dados.
@@ -1406,7 +1406,6 @@ _executar_jutil_lote() {
     local arquivo status_arquivo
     local falhas=0 concluidos=0 pulados=0
     local -a pids_onda=()
-    local -a idx_onda=()
 
     local fim i indice
     while (( inicio < ${#fila[@]} )); do
@@ -1415,7 +1414,6 @@ _executar_jutil_lote() {
             fim=${#fila[@]}
         fi
         pids_onda=()
-        idx_onda=()
         for ((indice = inicio; indice < fim; indice++)); do
             arquivo="${fila[$indice]}"
             # Codigos de status: 0=ok, 1=falha, 2=pulado (link/vazio, ja avisado).
@@ -1445,7 +1443,6 @@ _executar_jutil_lote() {
                 printf '%s' "$rc" > "${dir_status}/${indice}.status"
             } &
             pids_onda+=("$!")
-            idx_onda+=("$indice")
             PIDS_JUTIL+=("$!")
         done
         # Esperar so a onda atual (mantem no maximo N simultaneos)
