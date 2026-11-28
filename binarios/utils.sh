@@ -6,7 +6,7 @@ set -euo pipefail
 # Padroes e regras de desenvolvimento: ver AGENTS.md
 #
 # SISTEMA SAV - Script de Atualizacao Modular
-# Versao: 23/11/2026-01
+# Versao: 28/11/2026-01
 #
 # DEPENDENCIAS DE CARGA (principal.sh): este modulo e sourced DEPOIS de
 # constantes.sh (PERM_DIR_SECURE, DEFAULT_*) e ANTES de config.sh, porque
@@ -1034,7 +1034,7 @@ _executar_expurgador_diario() {
                     _limpar_arquivos_antigos "$_dir" "$_d" "*.*" "$_prot"
             done
         else
-            local inicio=0 fim i indice num_onda pids_onda
+            local inicio=0 fim indice num_onda pids_onda
             local -a pid_onda=()
             while (( inicio < ${#pares_alvo[@]} )); do
                 fim=$((inicio + paralelo))
